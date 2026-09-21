@@ -163,6 +163,8 @@ class Engine:
         cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitBrowserExtension)
         cfg.browserExtensionPort.valueChanged.connect(self._emitBrowserExtension)
 
+        self._runtimeStatusService.statusChanged.connect(lambda _: self._emitRuntimes())
+
         self._categoryService.categoriesChanged.connect(self._emitCategoryState)
         cfg.isCategoryEnabled.valueChanged.connect(self._emitCategoryState)
         cfg.downloadFolder.valueChanged.connect(self._emitCategoryState)
@@ -217,6 +219,9 @@ class Engine:
 
     def _emitSettings(self, *_args):
         self._flows.setState("settings", self.settings())
+
+    def _emitRuntimes(self):
+        self._flows.setState("runtimes", self.runtimes())
 
     def _emitCategoryState(self, *_args):
         self._flows.setState("categoryState", self.categoryState())

@@ -156,11 +156,19 @@ fun InfoSettingRow(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val anchor = settingsAnchor(title)
     ListItem(
         content = { Text(title) },
-        supportingContent = subtitle?.let { { Text(it) } },
+        supportingContent = if (subtitle == null && footer == null) null else {
+            {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    subtitle?.let { Text(it) }
+                    footer?.invoke()
+                }
+            }
+        },
         trailingContent = trailing,
         colors = ListItemDefaults.segmentedColors(
             containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,

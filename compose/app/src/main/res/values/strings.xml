@@ -217,7 +217,8 @@
     <string name="runtime_checking">检查中…</string>
     <string name="runtime_install">安装</string>
     <string name="runtime_update">更新</string>
-    <string name="runtime_installing">安装中 %1$d%%</string>
+    <string name="runtime_installing">安装中…</string>
+    <string name="runtime_retry">重试</string>
 
     <string name="task_share_ratio">分享率 %1$s</string>
     <string name="task_upload_time">已上传 %1$s</string>
