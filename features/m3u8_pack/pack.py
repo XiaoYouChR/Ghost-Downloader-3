@@ -109,16 +109,20 @@ class M3U8Parser(TaskParser):
         extension = "ts" if isLive else m3u8Config.outputFormat.value
         streams = self._parseStreams(body, manifestType)
 
-        cd = responseHeaders.get("content-disposition", "")
         name = ""
-        if cd:
-            msg = Message()
-            msg["Content-Disposition"] = cd
-            params = msg.get_params(header="Content-Disposition")
-            paramDict = {k.lower(): v for k, v in params}
-            name = collapse_rfc2231_value(
-                paramDict.get("filename") or paramDict.get("filename*") or ""
-            ).strip("\"' ")
+        if isinstance(options, PageTaskOptions) and options.pageTitle:
+            name = toSafeFilename(options.pageTitle, fallback="")
+
+        if not name:
+            cd = responseHeaders.get("content-disposition", "")
+            if cd:
+                msg = Message()
+                msg["Content-Disposition"] = cd
+                params = msg.get_params(header="Content-Disposition")
+                paramDict = {k.lower(): v for k, v in params}
+                name = collapse_rfc2231_value(
+                    paramDict.get("filename") or paramDict.get("filename*") or ""
+                ).strip("\"' ")
 
         if not name:
             parsedManifest = urlparse(manifestUrl)
