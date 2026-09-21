@@ -225,6 +225,7 @@
     <string name="task_file_count">%1$d 个文件</string>
     <string name="task_detail_name">文件名</string>
     <string name="task_detail_url">链接</string>
+    <string name="task_detail_output_path">输出路径</string>
     <string name="task_detail_created">创建时间</string>
     <string name="task_detail_category">分类</string>
     <string name="task_detail_info">信息</string>

@@ -239,7 +239,7 @@ fun TaskDetailPage(
 
             item {
                 Spacer(Modifier.height(16.dp))
-                InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl)
+                InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl, onCopyPath = ::copyPath)
                 if (categories.isEnabled) {
                     val category = categories.categories.firstOrNull { it.categoryId == detail.categoryId }
                     ListItem(
@@ -432,7 +432,7 @@ private fun ActionRow(detail: TaskDetail, onAction: (TaskAction) -> Unit) {
 }
 
 @Composable
-private fun InfoSection(detail: TaskDetail, onRename: () -> Unit, onCopyUrl: () -> Unit) {
+private fun InfoSection(detail: TaskDetail, onRename: () -> Unit, onCopyUrl: () -> Unit, onCopyPath: () -> Unit) {
     SectionTitle(stringResource(R.string.task_detail_info))
 
     ListItem(
@@ -461,6 +461,17 @@ private fun InfoSection(detail: TaskDetail, onRename: () -> Unit, onCopyUrl: () 
             }
         },
     ) { Text(stringResource(R.string.task_detail_url)) }
+    ListItem(
+        supportingContent = { Text(detail.outputPath, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        trailingContent = {
+            IconButton(onClick = onCopyPath) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_copy),
+                    contentDescription = stringResource(R.string.task_detail_copy_path),
+                )
+            }
+        },
+    ) { Text(stringResource(R.string.task_detail_output_path)) }
     if (detail.createdAt > 0) {
         ListItem(
             supportingContent = { Text(formatTimestamp(detail.createdAt)) },
