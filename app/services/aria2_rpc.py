@@ -80,15 +80,34 @@ class Aria2RpcServer:
 
     async def _onConnection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
-            header = await reader.readuntil(b"\r\n\r\n")
-            contentLength = 0
-            for line in header.split(b"\r\n"):
-                if line.lower().startswith(b"content-length:"):
-                    contentLength = int(line.split(b":", 1)[1].strip())
+            await reader.readline()
+
+            headers = {}
+            while True:
+                line = await reader.readline()
+                if line == b"\r\n":
                     break
-            body = await reader.readexactly(contentLength)
+                if b":" in line:
+                    k, v = line.split(b":", 1)
+                    headers[k.decode().strip().lower()] = v.strip().decode()
+
+            if headers.get("upgrade", "").lower() == "websocket":
+                await self._onWebSocketConnection(reader, writer, headers)
+                return
+
+            await self._onHttpRequest(reader, writer, headers)
+        except Exception as e:
+            logger.warning("Aria2 RPC connection failed: {}", e)
+            writer.close()
+            await writer.wait_closed()
+
+    async def _onHttpRequest(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, headers: dict[str, str]) -> None:
+        try:
+            contentLength = int(headers.get("content-length", "0"))
+            body = await reader.readexactly(contentLength) if contentLength else b""
             response = self._dispatchRpc(body)
             payload = json.dumps(response, ensure_ascii=False).encode("utf-8")
+
             httpHeader = (
                 f"HTTP/1.1 200 OK\r\n"
                 f"Content-Type: application/json\r\n"
@@ -97,7 +116,71 @@ class Aria2RpcServer:
                 f"\r\n"
             ).encode("utf-8")
             writer.write(httpHeader + payload)
+            await writer.drain()
         except (asyncio.IncompleteReadError, asyncio.LimitOverrunError, ValueError):
+            pass
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    async def _onWebSocketConnection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, headers: dict[str, str]) -> None:
+        import base64
+        import hashlib
+
+        key = headers.get("sec-websocket-key", "")
+        acceptKey = base64.b64encode(
+            hashlib.sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()
+        ).decode()
+
+        handshake = (
+            f"HTTP/1.1 101 Switching Protocols\r\n"
+            f"Upgrade: websocket\r\n"
+            f"Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Accept: {acceptKey}\r\n"
+            f"\r\n"
+        ).encode()
+        writer.write(handshake)
+        await writer.drain()
+
+        try:
+            while True:
+                firstByte = await reader.readexactly(1)
+                opcode = firstByte[0] & 0x0F
+                if opcode == 0x08:
+                    break
+
+                secondByte = (await reader.readexactly(1))[0]
+                isMasked = (secondByte & 0x80) != 0
+                payloadLen = secondByte & 0x7F
+
+                if payloadLen == 126:
+                    payloadLen = int.from_bytes(await reader.readexactly(2), "big")
+                elif payloadLen == 127:
+                    payloadLen = int.from_bytes(await reader.readexactly(8), "big")
+
+                maskingKey = await reader.readexactly(4) if isMasked else None
+                payload = await reader.readexactly(payloadLen)
+
+                if isMasked and maskingKey:
+                    payload = bytes(b ^ maskingKey[i % 4] for i, b in enumerate(payload))
+
+                response = self._dispatchRpc(payload)
+                responseData = json.dumps(response, ensure_ascii=False).encode("utf-8")
+
+                frame = bytearray([0x81])
+                if len(responseData) <= 125:
+                    frame.append(len(responseData))
+                elif len(responseData) <= 65535:
+                    frame.append(126)
+                    frame.extend(len(responseData).to_bytes(2, "big"))
+                else:
+                    frame.append(127)
+                    frame.extend(len(responseData).to_bytes(8, "big"))
+                frame.extend(responseData)
+
+                writer.write(bytes(frame))
+                await writer.drain()
+        except (asyncio.IncompleteReadError, ConnectionResetError):
             pass
         finally:
             writer.close()
@@ -132,10 +215,9 @@ class Aria2RpcServer:
 
         if method == "aria2.addUri":
             return self._addUri(rpcId, params)
-        elif method == "aria2.getVersion":
+        if method == "aria2.getVersion":
             return {"jsonrpc": "2.0", "id": rpcId, "result": {"version": VERSION, "enabledFeatures": ["HTTPS"]}}
-        else:
-            return {"jsonrpc": "2.0", "id": rpcId, "error": {"code": JSONRPC_METHOD_NOT_FOUND, "message": "Method not found"}}
+        return {"jsonrpc": "2.0", "id": rpcId, "error": {"code": JSONRPC_METHOD_NOT_FOUND, "message": "Method not found"}}
 
     def _addUri(self, rpcId: Any, params: list) -> dict:
         uris = params[0] if params and isinstance(params[0], list) else []
@@ -152,20 +234,15 @@ class Aria2RpcServer:
         headers: dict[str, str] = {}
         if isinstance(rawHeaders, str):
             rawHeaders = [rawHeaders]
-        if isinstance(rawHeaders, list):
-            for h in rawHeaders:
-                if isinstance(h, str) and ":" in h:
-                    k, v = h.split(":", 1)
-                    headers[k.strip()] = v.strip()
+        for h in rawHeaders:
+            if isinstance(h, str) and ":" in h:
+                k, v = h.split(":", 1)
+                headers[k.strip()] = v.strip()
 
-        ua = options.get("user-agent", "")
-        if isinstance(ua, str) and ua:
+        if ua := options.get("user-agent"):
             headers.setdefault("User-Agent", ua)
-        referer = options.get("referer", "")
-        if isinstance(referer, str) and referer:
+        if referer := options.get("referer"):
             headers.setdefault("Referer", referer)
-
-        gid = token_hex(8)
 
         from app.models.task import TaskOptions
 
@@ -183,7 +260,7 @@ class Aria2RpcServer:
             failed=self._onTaskParseFailed,
         )
 
-        return {"jsonrpc": "2.0", "id": rpcId, "result": gid}
+        return {"jsonrpc": "2.0", "id": rpcId, "result": token_hex(8)}
 
     def _onTaskParsed(self, task: Task, filename: str = "") -> None:
         if filename:
