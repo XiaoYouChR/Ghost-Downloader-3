@@ -16,6 +16,13 @@ import com.xychr.ghostdownloader.ui.platform.shareText
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -44,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +65,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -205,15 +214,34 @@ fun TaskDetailPage(
             )
         },
     ) { padding ->
+        var contentVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(50)
+            contentVisible = true
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         ) {
-            item { ProgressSection(detail) }
+            item {
+                AnimatedVisibility(
+                    visible = contentVisible,
+                    enter = fadeIn(animationSpec = tween(300)) +
+                            slideInVertically(animationSpec = tween(300)) { it / 4 }
+                ) {
+                    ProgressSection(detail)
+                }
+            }
 
             item {
                 Spacer(Modifier.height(16.dp))
-                ActionRow(detail) { action ->
+                AnimatedVisibility(
+                    visible = contentVisible,
+                    enter = fadeIn(animationSpec = tween(300, delayMillis = 100)) +
+                            slideInVertically(animationSpec = tween(300, delayMillis = 100)) { it / 4 }
+                ) {
+                    ActionRow(detail) { action ->
                     when (action) {
                         TaskAction.STOP -> viewModel.stop()
                         TaskAction.PAUSE -> viewModel.pause()
@@ -235,40 +263,61 @@ fun TaskDetailPage(
                         TaskAction.FILES, TaskAction.EDIT, TaskAction.CATEGORY -> Unit
                     }
                 }
+                }
             }
 
             item {
                 Spacer(Modifier.height(16.dp))
-                InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl, onCopyPath = ::copyPath)
-                if (categories.isEnabled) {
-                    val category = categories.categories.firstOrNull { it.categoryId == detail.categoryId }
-                    ListItem(
-                        supportingContent = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Icon(
-                                    painterResource(categoryIconRes(category?.icon ?: "DOCUMENT")),
-                                    null, Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(category?.name ?: stringResource(R.string.task_uncategorized))
-                            }
-                        },
-                        trailingContent = {
-                            IconButton(onClick = { shouldCategorize = true }) {
-                                Icon(
-                                    painterResource(R.drawable.ic_edit),
-                                    contentDescription = stringResource(R.string.task_change_category),
-                                )
-                            }
-                        },
-                    ) { Text(stringResource(R.string.task_detail_category)) }
+                AnimatedVisibility(
+                    visible = contentVisible,
+                    enter = fadeIn(animationSpec = tween(300, delayMillis = 200)) +
+                            slideInVertically(animationSpec = tween(300, delayMillis = 200)) { it / 4 }
+                ) {
+                    InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl, onCopyPath = ::copyPath)
                 }
-                if (detail.canEdit && detail.status != TaskStatus.COMPLETED) TextButton(onClick = {
-                    onNavigate(TaskEditRoute(taskId))
-                }) { Text(stringResource(R.string.task_edit_options)) }
+                if (categories.isEnabled) {
+                    AnimatedVisibility(
+                        visible = contentVisible,
+                        enter = fadeIn(animationSpec = tween(300, delayMillis = 250)) +
+                                slideInVertically(animationSpec = tween(300, delayMillis = 250)) { it / 4 }
+                    ) {
+                        val category = categories.categories.firstOrNull { it.categoryId == detail.categoryId }
+                        ListItem(
+                            supportingContent = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        painterResource(categoryIconRes(category?.icon ?: "DOCUMENT")),
+                                        null, Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(category?.name ?: stringResource(R.string.task_uncategorized))
+                                }
+                            },
+                            trailingContent = {
+                                IconButton(onClick = { shouldCategorize = true }) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_edit),
+                                        contentDescription = stringResource(R.string.task_change_category),
+                                    )
+                                }
+                            },
+                        ) { Text(stringResource(R.string.task_detail_category)) }
+                    }
+                }
+                if (detail.canEdit && detail.status != TaskStatus.COMPLETED) {
+                    AnimatedVisibility(
+                        visible = contentVisible,
+                        enter = fadeIn(animationSpec = tween(300, delayMillis = 300)) +
+                                slideInVertically(animationSpec = tween(300, delayMillis = 300)) { it / 4 }
+                    ) {
+                        TextButton(onClick = { onNavigate(TaskEditRoute(taskId)) }) {
+                            Text(stringResource(R.string.task_edit_options))
+                        }
+                    }
+                }
             }
 
             if (detail.files.isNotEmpty()) {
@@ -279,7 +328,9 @@ fun TaskDetailPage(
                         Text(stringResource(toFileSelectLabel(detail.fileSelectKind)))
                     }
                 }
-                items(detail.files, key = { it.index }) { file -> TaskFileRow(file) }
+                items(detail.files, key = { it.index }) { file ->
+                    TaskFileRow(file)
+                }
             }
             if (detail.packFields.isNotEmpty()) {
                 item {
@@ -287,10 +338,10 @@ fun TaskDetailPage(
                     PackRegistry[detail.packId]?.detailExtra?.invoke(detail.packFields)
                 }
             }
-            detail.error?.let {
+            detail.error?.let { error ->
                 item {
                     Spacer(Modifier.height(16.dp))
-                    ErrorSection(it)
+                    ErrorSection(error)
                 }
             }
 
@@ -415,14 +466,31 @@ private fun ActionRow(detail: TaskDetail, onAction: (TaskAction) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Button(onClick = { onAction(main.action) }, enabled = main.isEnabled) {
-                Icon(painterResource(main.icon), null)
-                Text(stringResource(main.label), Modifier.padding(start = 4.dp))
+            AnimatedVisibility(
+                visible = main.isEnabled,
+                enter = fadeIn(animationSpec = tween(200)) + scaleIn(initialScale = 0.8f, animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(150)) + scaleOut(targetScale = 0.8f, animationSpec = tween(150))
+            ) {
+                Button(onClick = { onAction(main.action) }) {
+                    Icon(painterResource(main.icon), null)
+                    Text(stringResource(main.label), Modifier.padding(start = 4.dp))
+                }
+            }
+            if (!main.isEnabled) {
+                Button(onClick = { }, enabled = false) {
+                    Icon(painterResource(main.icon), null)
+                    Text(stringResource(main.label), Modifier.padding(start = 4.dp))
+                }
             }
             if (main.action == TaskAction.OPEN_FILE) {
-                OutlinedButton(onClick = { onAction(TaskAction.SHARE_FILE) }) {
-                    Icon(painterResource(shareFileSpec.icon), null)
-                    Text(stringResource(shareFileSpec.label), Modifier.padding(start = 4.dp))
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(animationSpec = tween(200)) + scaleIn(initialScale = 0.8f, animationSpec = tween(200))
+                ) {
+                    OutlinedButton(onClick = { onAction(TaskAction.SHARE_FILE) }) {
+                        Icon(painterResource(shareFileSpec.icon), null)
+                        Text(stringResource(shareFileSpec.label), Modifier.padding(start = 4.dp))
+                    }
                 }
             }
         }
