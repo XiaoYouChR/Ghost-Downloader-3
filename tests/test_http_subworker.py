@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
+from app.client import buildClient as realBuildClient
 from features.http_pack.task import HttpTask, HttpTaskStep, HttpSubworker, PermanentDownloadError, RangeNotSupportedError
 from app.models.task import TaskStatus, TaskError
 from tests.helpers import buildFileContent, buildRangeHandler, runStep
@@ -626,6 +627,103 @@ class TestStallRecovery:
         assert (tmp_path / "test.bin").read_bytes() == content
         assert hasStalled
         releaseHang.set()
+
+    async def test_hung_headers_recover_and_complete(self, server, tmp_path, monkeypatch):
+        """Response headers never arrive; the attempt ends and a new one completes the file."""
+        content = buildFileContent(500)
+        hasHung = False
+        releaseHang = asyncio.Event()
+
+        async def hangHeadersOnce(request: web.Request) -> web.StreamResponse:
+            nonlocal hasHung
+            rangeHeader = request.headers.get("Range", "")
+            if rangeHeader == "bytes=0-0":
+                return web.Response(
+                    status=206,
+                    body=content[:1],
+                    headers={
+                        "Content-Range": f"bytes 0-0/{len(content)}",
+                        "Content-Length": "1",
+                    },
+                )
+            if not hasHung:
+                hasHung = True
+                try:
+                    await releaseHang.wait()
+                except asyncio.CancelledError:
+                    raise
+                return web.Response(status=500, text="released after hang")
+
+            rangeSpec = rangeHeader.replace("bytes=", "")
+            parts = rangeSpec.split("-")
+            start = int(parts[0])
+            end = int(parts[1]) if len(parts) > 1 and parts[1] else len(content) - 1
+            body = content[start:end + 1]
+            return web.Response(
+                status=206,
+                body=body,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                    "Content-Length": str(len(body)),
+                },
+            )
+
+        monkeypatch.setattr("features.http_pack.task.STREAM_READ_TIMEOUT", 1)
+
+        _real_sleep = asyncio.sleep
+
+        async def fast_sleep(n):
+            await _real_sleep(0 if n >= 5 else min(n, 0.01))
+
+        monkeypatch.setattr(asyncio, "sleep", fast_sleep)
+
+        url = await server(hangHeadersOnce)
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
+        task.setStatus(TaskStatus.RUNNING)
+
+        try:
+            await asyncio.wait_for(runStep(step), timeout=10)
+            assert (tmp_path / "test.bin").read_bytes() == content
+            assert hasHung
+        finally:
+            releaseHang.set()
+
+    async def test_dead_client_retries_on_a_new_one(self, server, tmp_path, monkeypatch):
+        """A client that cannot fetch does not keep the Task Step. The next attempt finishes the file."""
+        content = buildFileContent(500)
+        firstAttempt = True
+
+        class DeadClient:
+            async def get(self, *args, **kwargs):
+                raise ConnectionError("dead connection")
+
+            def close(self):
+                pass
+
+        def buildClient(**kwargs):
+            nonlocal firstAttempt
+            if kwargs.get("readTimeout") is not None and firstAttempt:
+                firstAttempt = False
+                return DeadClient()
+            return realBuildClient(**kwargs)
+
+        monkeypatch.setattr("features.http_pack.task.buildClient", buildClient)
+
+        _real_sleep = asyncio.sleep
+
+        async def fast_sleep(n):
+            await _real_sleep(0 if n >= 5 else min(n, 0.01))
+
+        monkeypatch.setattr(asyncio, "sleep", fast_sleep)
+
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await asyncio.wait_for(runStep(step), timeout=10)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        assert firstAttempt is False
 
 
 if __name__ == "__main__":
