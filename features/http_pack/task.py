@@ -254,38 +254,48 @@ class HttpTaskStep(TaskStep):
             if recordFile is not None:
                 recordFile.close()
 
-    async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
-        try:
-            await self._runSubworkerWith(subworker, fd, client)
-        finally:
-            client.close()
+    async def _fetch(self, client, headers):
+        return await asyncio.wait_for(
+            client.get(self._effectiveUrl, headers=headers),
+            timeout=STREAM_READ_TIMEOUT,
+        )
 
-    async def _runSubworkerWith(self, subworker: HttpSubworker, fd: int, client) -> None:
+    def _openClient(self):
+        return buildClient(
+            emulation=self._emulation,
+            userAgent=self.userAgent or None,
+            readTimeout=STREAM_READ_TIMEOUT,
+        )
+
+    async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
+                client = self._openClient()
                 try:
-                    httpPos = self.httpByteOffset + subworker.position
-                    headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-", "accept-encoding": "identity"}
-                    response = await client.get(self._effectiveUrl, headers=headers)
                     try:
-                        status = response.status.as_int()
-                        if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
-                            raise PermanentDownloadError(status)
-                        if status == 200:
-                            raise RangeNotSupportedError()
-                        if status != 206:
-                            raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
-                        async for chunk in response.stream():
-                            if not chunk:
-                                continue
-                            pwrite(fd, chunk, subworker.position)
-                            subworker.receivedBytes += len(chunk)
-                            self._reportSpeed(len(chunk))
-                            await self._waitForSpeedLimit()
+                        httpPos = self.httpByteOffset + subworker.position
+                        headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-", "accept-encoding": "identity"}
+                        response = await self._fetch(client, headers)
+                        try:
+                            status = response.status.as_int()
+                            if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
+                                raise PermanentDownloadError(status)
+                            if status == 200:
+                                raise RangeNotSupportedError()
+                            if status != 206:
+                                raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
+                            async for chunk in response.stream():
+                                if not chunk:
+                                    continue
+                                pwrite(fd, chunk, subworker.position)
+                                subworker.receivedBytes += len(chunk)
+                                self._reportSpeed(len(chunk))
+                                await self._waitForSpeedLimit()
+                        finally:
+                            response.close()
+                        return
                     finally:
-                        response.close()
-                    return
+                        client.close()
                 except CancelledError:
                     raise
                 except (PermanentDownloadError, RangeNotSupportedError):
@@ -298,27 +308,31 @@ class HttpTaskStep(TaskStep):
 
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
             while True:
+                client = self._openClient()
                 try:
-                    ftruncate(fd, 0)
-                    subworker.receivedBytes = 0
-                    response = await client.get(self._effectiveUrl, headers=dict(self._effectiveHeaders))
                     try:
-                        status = response.status.as_int()
-                        if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
-                            raise PermanentDownloadError(status)
-                        if status != 200:
-                            raise Exception(f"服务器返回了异常状态码：{status}")
-                        async for chunk in response.stream():
-                            if not chunk:
-                                continue
-                            pwrite(fd, chunk, subworker.receivedBytes)
-                            subworker.receivedBytes += len(chunk)
-                            self._reportSpeed(len(chunk))
-                            await self._waitForSpeedLimit()
+                        ftruncate(fd, 0)
+                        subworker.receivedBytes = 0
+                        response = await self._fetch(client, dict(self._effectiveHeaders))
+                        try:
+                            status = response.status.as_int()
+                            if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
+                                raise PermanentDownloadError(status)
+                            if status != 200:
+                                raise Exception(f"服务器返回了异常状态码：{status}")
+                            async for chunk in response.stream():
+                                if not chunk:
+                                    continue
+                                pwrite(fd, chunk, subworker.receivedBytes)
+                                subworker.receivedBytes += len(chunk)
+                                self._reportSpeed(len(chunk))
+                                await self._waitForSpeedLimit()
+                        finally:
+                            response.close()
+                        ftruncate(fd, subworker.receivedBytes)
+                        return
                     finally:
-                        response.close()
-                    ftruncate(fd, subworker.receivedBytes)
-                    return
+                        client.close()
                 except CancelledError:
                     raise
                 except PermanentDownloadError:
@@ -331,41 +345,44 @@ class HttpTaskStep(TaskStep):
 
         else:
             while subworker.position <= subworker.end:
+                client = self._openClient()
                 try:
-                    httpPos = self.httpByteOffset + subworker.position
-                    httpEnd = self.httpByteOffset + subworker.end
-                    headers = {
-                        **self._effectiveHeaders,
-                        "range": f"bytes={httpPos}-{httpEnd}",
-                        "accept-encoding": "identity",
-                    }
-                    response = await client.get(self._effectiveUrl, headers=headers)
                     try:
-                        status = response.status.as_int()
-                        if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
-                            raise PermanentDownloadError(status)
-                        if status == 200:
-                            raise RangeNotSupportedError()
-                        if status != 206:
-                            raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
-                        async for chunk in response.stream():
-                            if not chunk:
-                                continue
-                            remaining = subworker.end - subworker.position + 1
-                            if len(chunk) > remaining:
-                                chunk = chunk[:remaining]
-                            pwrite(fd, chunk, subworker.position)
-                            subworker.receivedBytes += len(chunk)
-                            self._reportSpeed(len(chunk))
-                            await self._waitForSpeedLimit()
-                            if subworker.position > subworker.end:
-                                break
+                        httpPos = self.httpByteOffset + subworker.position
+                        httpEnd = self.httpByteOffset + subworker.end
+                        headers = {
+                            **self._effectiveHeaders,
+                            "range": f"bytes={httpPos}-{httpEnd}",
+                            "accept-encoding": "identity",
+                        }
+                        response = await self._fetch(client, headers)
+                        try:
+                            status = response.status.as_int()
+                            if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
+                                raise PermanentDownloadError(status)
+                            if status == 200:
+                                raise RangeNotSupportedError()
+                            if status != 206:
+                                raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
+                            async for chunk in response.stream():
+                                if not chunk:
+                                    continue
+                                remaining = subworker.end - subworker.position + 1
+                                if len(chunk) > remaining:
+                                    chunk = chunk[:remaining]
+                                pwrite(fd, chunk, subworker.position)
+                                subworker.receivedBytes += len(chunk)
+                                self._reportSpeed(len(chunk))
+                                await self._waitForSpeedLimit()
+                                if subworker.position > subworker.end:
+                                    break
+                        finally:
+                            response.close()
+
+                        if subworker.position > subworker.end:
+                            subworker.receivedBytes = subworker.end - subworker.start + 1
                     finally:
-                        response.close()
-
-                    if subworker.position > subworker.end:
-                        subworker.receivedBytes = subworker.end - subworker.start + 1
-
+                        client.close()
                 except CancelledError:
                     raise
                 except (PermanentDownloadError, RangeNotSupportedError):
