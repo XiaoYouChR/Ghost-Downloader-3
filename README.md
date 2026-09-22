@@ -29,11 +29,11 @@
 <!-- FEATURES -->
 ## Features
 
-* **Fast where it matters.** Every downloader is fast on a good connection. Smart chunking without file merging, auto-detects bandwidth headroom. Real-browser TLS fingerprints, invisible to anti-bot checks. Downloads complete, whatever the network.
-* **One app instead of five.** Five tools is a habit, not a necessity. Every protocol — `HTTP`, `Magnet/BT`, `FTP`, `M3U8`, `MPEG-DASH`, `eD2k` — plus purpose-built parsers: `YouTube` and `Bilibili` with clip selection and any quality, `GitHub` and `HuggingFace` with mirror acceleration. Broad where it counts, deep where it matters.
-* **See it. Sniff it. Download it.** A download button floats right on the video, any quality; every medium on the page, listed in the popup. Click it, or download as you normally would — the desktop app takes over either way. No copying links, signed-in state included.
-* **Native on every platform.** It shows in the details. One app, four systems — everywhere, just right.
-* **Always in control.** Change on command, stop on command. `aria2`-compatible RPC for third-party tools; change the URL, headers, or proxy mid-download — the progress you've earned stays.
+* **Fast where it matters.** Every downloader is fast on a good connection. The real test is a bad one. Smart chunking without file merging. Auto-detects bandwidth. Real-browser TLS fingerprints, invisible to anti-bot checks.
+* **One app instead of five.** Everything in one place, nothing watered down. `HTTP`, `Magnet/BT`, `FTP`, `M3U8`, `MPEG-DASH`, `eD2k`. `YouTube` and `Bilibili` with clip selection, any quality and subtitles, playlists and multi-part episodes. `GitHub` and `HuggingFace` with mirror acceleration.
+* **See it. Sniff it. Download it.** A download button follows the video, any quality you want. The extension popup lists every medium on the page. Click it there, or just download as you normally would, the desktop app takes over seamlessly. No copying links, and authentication state carries over.
+* **Native on every platform.** It shows in the details. One app, four systems, native experience everywhere.
+* **Always in control** Effortlessly. `aria2`-compatible RPC API for third-party tools. Change the URL, headers, or proxy mid-download. Progress is never lost.
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
