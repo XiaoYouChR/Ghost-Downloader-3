@@ -10,7 +10,6 @@ def taskFields(task) -> dict:
         "progressMode": "hidden" if task.isSharing else "determinate",
         "statusText": N("TaskState", "共享中") if task.isSharing else "",
         "secondarySpeed": task.uploadRate,
-        "canPause": not task.isSharing,
         "packFields": {
             "peers": None if active is None else {
                 "active": active, "total": max(active, task.totalPeerCount),

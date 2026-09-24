@@ -293,7 +293,6 @@ class Engine:
         return {
             "id": task.taskId,
             "packId": task.packId or "",
-            "canPause": task.canPause,
             "canEdit": task.canEdit,
             "categoryId": task.category or "",
             "outputPath": str(task.outputPath),
@@ -310,6 +309,7 @@ class Engine:
             "completedAt": task.completedAt,
             "error": task.lastError.toDict() if task.lastError else None,
             **self._adapterFields(task, 'taskFields'),
+            "canPause": task.canPause,
         }
 
     def _allFields(self, task) -> dict:

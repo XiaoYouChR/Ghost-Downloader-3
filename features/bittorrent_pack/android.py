@@ -19,8 +19,6 @@ def taskFields(task) -> dict:
         "progressMode": "hidden" if task.isSeeding else "determinate",
         "statusText": STATE_TEXT.get(task.stateText, ""),
         "secondarySpeed": task.uploadRate,
-        "canStop": task.isSeeding,
-        "canPause": not task.isSeeding,
         "packFields": {
             "peers": {"active": task.peerCount, "total": task.totalPeerCount},
             "shareRatio": task.shareRatioPercent,

@@ -27,7 +27,6 @@ class TaskListStateTest {
         val tasks = listOf(
             TaskUiState(id = "safe", status = "RUNNING", canPause = true),
             TaskUiState(id = "live", status = "RUNNING", canPause = false),
-            TaskUiState(id = "seeding", status = "RUNNING", canPause = false),
             TaskUiState(id = "waiting", status = "WAITING", canPause = true),
             TaskUiState(id = "paused", status = "PAUSED"),
             TaskUiState(id = "failed", status = "FAILED"),
