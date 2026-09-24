@@ -18,6 +18,7 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.config.paths import APP_DATA_DIR
+from app.platform.filesystem import probe
 from app.signal import Signal
 from app.update import isNewer
 
@@ -172,8 +173,8 @@ def toTaskSummary(task: Task) -> dict:
         "speed": speed,
         "createdAt": task.createdAt,
         "canPause": task.canPause,
-        "canOpenFile": outputPath.exists(),
-        "canOpenFolder": outputPath.parent.exists(),
+        "canOpenFile": probe(outputPath),
+        "canOpenFolder": probe(outputPath.parent),
         "fileExt": outputPath.suffix.lstrip(".").lower(),
         "packName": task.packId,
     }
@@ -599,7 +600,7 @@ class BrowserService:
 
             elif action == TaskAction.OPEN_FILE:
                 path = Path(task.outputPath)
-                if not path.exists():
+                if not probe(path):
                     self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId,
                                      ok=False, message="文件尚未生成")
                     return
@@ -607,7 +608,7 @@ class BrowserService:
 
             elif action == TaskAction.OPEN_FOLDER:
                 path = Path(task.outputPath)
-                if not path.parent.exists():
+                if not probe(path.parent):
                     self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId,
                                      ok=False, message="目录不存在")
                     return

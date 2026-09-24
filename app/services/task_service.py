@@ -12,7 +12,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
-from app.platform.filesystem import splitStemExt
+from app.platform.filesystem import probe, splitStemExt
 from app.signal import Signal
 
 if TYPE_CHECKING:
@@ -210,7 +210,7 @@ class TaskService:
 
         def isTaken() -> bool:
             op = task.outputPath
-            return op in storePaths or Path(op).exists() or Path(f"{op}.ghd").exists()
+            return op in storePaths or probe(op) or probe(f"{op}.ghd")
 
         if not isTaken():
             return
@@ -318,7 +318,7 @@ class TaskService:
         from app.models.task import TaskStatus
         for task in self._store.loadSaved():
             self.taskAdded.emit(task)
-            if task.status == TaskStatus.COMPLETED and task.hasOutputFile and Path(task.outputPath).exists():
+            if task.status == TaskStatus.COMPLETED and task.hasOutputFile and probe(task.outputPath):
                 self._watchFile(task)
             elif task.status in {TaskStatus.WAITING, TaskStatus.RUNNING}:
                 task.setStatus(TaskStatus.WAITING)
@@ -440,7 +440,7 @@ class TaskService:
         self._fileWatcher.removePath(path)
 
     def _onWatchedFileChanged(self, path: str) -> None:
-        if Path(path).exists():
+        if probe(path):
             return
         taskId = self._watchedPaths.pop(path, None)
         if taskId is None:

@@ -20,6 +20,7 @@ from app.view.components.scroll_area import ScrollArea
 from app.config.cfg import cfg
 from app.format import toReadableSize
 from app.models.task import TaskStatus
+from app.platform.filesystem import probe
 from app.view.cards.task_cards import TaskCard
 from app.view.components.category_settings import toCategoryName
 from app.view.components.labels import IconBodyLabel
@@ -374,7 +375,7 @@ class TaskPage(QWidget):
         self._selectedIds.clear()
         for taskId in self._displayOrder:
             task = self._taskService.taskById(taskId)
-            if task and task.hasOutputFile and not Path(task.outputPath).exists():
+            if task and task.hasOutputFile and not probe(task.outputPath):
                 self._selectedIds.add(taskId)
         for taskId, card in self._liveCards.items():
             card.setChecked(taskId in self._selectedIds)
@@ -748,7 +749,7 @@ class TaskPage(QWidget):
                 if (task := self._taskService.taskById(tid))
                 and task.status == TaskStatus.COMPLETED
                 and task.hasOutputFile
-                and Path(task.outputPath).exists()
+                and probe(task.outputPath)
             ]
         else:
             task = self._taskService.taskById(taskId)

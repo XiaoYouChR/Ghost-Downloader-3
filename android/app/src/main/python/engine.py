@@ -15,6 +15,7 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL
 from app.platform.file_watcher import InotifyFileWatcher
+from app.platform.filesystem import probe, probeDirectory
 
 
 class HashState:
@@ -298,9 +299,9 @@ class Engine:
             "outputPath": str(task.outputPath),
             "outputFolder": str(task.outputFolder),
             "hasOutputFile": task.hasOutputFile,
-            "isOutputFolder": Path(task.outputPath).is_dir(),
+            "isOutputFolder": probeDirectory(task.outputPath),
             "isFileMissing": (task.status == TaskStatus.COMPLETED and task.hasOutputFile
-                              and not Path(task.outputPath).exists()),
+                              and not probe(task.outputPath)),
             "name": task.name,
             "url": task.url,
             "status": task.status.name,
