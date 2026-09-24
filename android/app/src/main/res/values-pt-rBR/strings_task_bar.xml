@@ -5,4 +5,6 @@
     <string name="task_bar_speed">Velocidade total de download %1$s</string>
     <string name="task_bar_start_all">Iniciar todas (%1$d)</string>
     <string name="task_bar_start_selected">Iniciar selecionadas (%1$d)</string>
+    <string name="task_bar_speed_limited">Velocidade total de download %1$s, limitada a %2$s</string>
+    <string name="task_bar_edit_speed_limit">Alterar limite de velocidade</string>
 </resources>

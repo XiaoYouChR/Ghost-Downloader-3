@@ -67,6 +67,7 @@ class SpinBoxSettingCard(SettingCard):
         r = configItem.range
         self.spinBox.setRange(int(r[0] * division), int(r[1] * division))
         self.spinBox.setValue(int(configItem.value * division))
+        configItem.valueChanged.connect(self._onValueChanged)
 
         self.hBoxLayout.addWidget(self.spinBox)
         self.hBoxLayout.addSpacing(24)
@@ -75,6 +76,9 @@ class SpinBoxSettingCard(SettingCard):
         if event.type() == QEvent.Type.Wheel:
             return True
         return super().eventFilter(watched, event)
+
+    def _onValueChanged(self, value: int) -> None:
+        self.spinBox.setValue(int(value * self._division))
 
     def leaveEvent(self, event):
         cfg.set(self._configItem, int(self.spinBox.value() / self._division))

@@ -70,6 +70,7 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.ui.components.notice.LocalSnackbar
 import com.xychr.ghostdownloader.ui.navigation.Route
+import com.xychr.ghostdownloader.ui.pages.settings.SettingsViewModel
 import com.xychr.ghostdownloader.ui.navigation.TaskDetailRoute
 import com.xychr.ghostdownloader.ui.navigation.TaskFilesRoute
 import com.xychr.ghostdownloader.ui.navigation.TaskEditRoute
@@ -90,8 +91,10 @@ fun TasksPage(
     onManageCategories: () -> Unit,
     bottomContentPadding: Dp = 0.dp,
     viewModel: TaskViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val taskState by viewModel.state.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val allTasks = taskState.tasks
     val categoryState by viewModel.categories.collectAsStateWithLifecycle()
     var categoryFilter by rememberSaveable { mutableStateOf<String?>(null) }
@@ -191,12 +194,18 @@ fun TasksPage(
                     isSelecting = selection.isActive, isSearching = isSearching, query = query,
                     selectedCount = selection.count, taskCount = visibleTasks.size,
                     hasLoaded = taskState.hasLoaded, speed = buildTotalSpeed(allTasks),
+                    isSpeedLimitEnabled = settings?.isSpeedLimitEnabled == true,
+                    speedLimit = settings?.speedLimitation ?: 0,
                     targets = targets,
                     isSubmitting = isSubmitting, sortField = sortField, isDescending = isDescending,
                 ),
                 onQueryChange = { query = it },
                 onSort = { field, descending -> sortField = field; isDescending = descending },
                 onAction = ::runPageAction,
+                onSpeedLimitConfirm = { isEnabled, speedLimit ->
+                    settingsViewModel.set("speedLimitation", speedLimit)
+                    settingsViewModel.set("isSpeedLimitEnabled", isEnabled)
+                },
             )
         },
         floatingActionButton = {

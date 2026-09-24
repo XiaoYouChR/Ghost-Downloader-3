@@ -5,4 +5,6 @@
     <string name="task_bar_speed">合計ダウンロード速度 %1$s</string>
     <string name="task_bar_start_all">すべて開始（%1$d）</string>
     <string name="task_bar_start_selected">選択したものを開始（%1$d）</string>
+    <string name="task_bar_speed_limited">合計ダウンロード速度 %1$s、制限 %2$s</string>
+    <string name="task_bar_edit_speed_limit">速度制限を変更</string>
 </resources>

@@ -9,8 +9,8 @@ from PySide6.QtGui import QActionGroup, QColor, QCursor, QDesktopServices, QKeyS
 from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
-    FluentIcon, IconWidget, InfoBar, InfoBarPosition, MenuIndicatorType, PushButton,
-    RoundMenu, SegmentedToggleToolWidget, ToggleToolButton,
+    FluentIcon, Flyout, FlyoutView, IconWidget, InfoBar, InfoBarPosition, MenuIndicatorType, PushButton,
+    RoundMenu, SegmentedToggleToolWidget, SpinBox, ToggleToolButton,
     ToolButton, ToolTipFilter, isDarkTheme,
 )
 
@@ -239,12 +239,13 @@ class TaskPage(QWidget):
         self.categoryFilterButton.setMenu(self.categoryFilterMenu)
         self.categoryFilterButton.setVisible(cfg.isCategoryEnabled.value)
 
-        self.rateLimitButton.setChecked(cfg.isSpeedLimitEnabled.value)
+        self.rateLimitButton.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._onSpeedLimitChanged()
 
         for btn, tip in (
             (self.selectButton, self.tr("选择任务")),
             (self.planButton, self.tr("计划任务")),
-            (self.rateLimitButton, self.tr("限速")),
+            (self.rateLimitButton, self.tr("限速（右键修改）")),
             (self.categoryFilterButton, self.tr("按分类筛选")),
         ):
             btn.setToolTip(tip)
@@ -295,6 +296,9 @@ class TaskPage(QWidget):
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self._isSelectionMode))
         self.planButton.clicked.connect(self._onPlanButtonClicked)
         self.rateLimitButton.clicked.connect(self._onRateLimitToggled)
+        self.rateLimitButton.customContextMenuRequested.connect(self._onRateLimitMenuRequested)
+        cfg.isSpeedLimitEnabled.valueChanged.connect(self._onSpeedLimitChanged)
+        cfg.speedLimitation.valueChanged.connect(self._onSpeedLimitChanged)
 
         self.createdAtSortAction.triggered.connect(lambda: self.setSortField(SortField.CREATED_AT))
         self.completedAtSortAction.triggered.connect(lambda: self.setSortField(SortField.COMPLETED_AT))
@@ -437,10 +441,35 @@ class TaskPage(QWidget):
     # ── toolbar handlers ──
 
     def _onSpeedChanged(self, speed: int) -> None:
-        self.speedBadge.setText(f"{toReadableSize(speed)}/s")
+        text = f"{toReadableSize(speed)}/s"
+        if cfg.isSpeedLimitEnabled.value:
+            text += f" / {toReadableSize(cfg.speedLimitation.value)}/s"
+        self.speedBadge.setText(text)
+
+    def _onSpeedLimitChanged(self, _value=None) -> None:
+        self.rateLimitButton.setChecked(cfg.isSpeedLimitEnabled.value)
+        self._onSpeedChanged(self._speedMeter.currentSpeed)
 
     def _onRateLimitToggled(self) -> None:
         cfg.set(cfg.isSpeedLimitEnabled, self.rateLimitButton.isChecked())
+
+    def _onRateLimitMenuRequested(self) -> None:
+        spinBox = SpinBox()
+        spinBox.setSingleStep(512)
+        spinBox.setMinimumWidth(180)
+        spinBox.setSuffix(" KB/s")
+        spinBox.setKeyboardTracking(False)
+        low, high = cfg.speedLimitation.range
+        spinBox.setRange(low // 1024, high // 1024)
+        spinBox.setValue(cfg.speedLimitation.value // 1024)
+        spinBox.valueChanged.connect(self._onRateLimitValueChanged)
+        view = FlyoutView(self.tr("下载限速"), "")
+        view.addWidget(spinBox)
+        Flyout.make(view, self.rateLimitButton, self.window())
+
+    def _onRateLimitValueChanged(self, value: int) -> None:
+        cfg.set(cfg.speedLimitation, value * 1024)
+        cfg.set(cfg.isSpeedLimitEnabled, True)
 
     def _onPlanButtonClicked(self) -> None:
         plan = self._plan

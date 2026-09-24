@@ -1,13 +1,16 @@
 package com.xychr.ghostdownloader.ui.components.task
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -15,12 +18,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 
 private val SortField.labelRes: Int
@@ -46,6 +52,8 @@ data class TaskTopBarState(
     val taskCount: Int = 0,
     val hasLoaded: Boolean = false,
     val speed: Long = 0,
+    val isSpeedLimitEnabled: Boolean = false,
+    val speedLimit: Int = 0,
     val targets: TaskBatchTargets = TaskBatchTargets(),
     val isSubmitting: Boolean = false,
     val sortField: SortField = SortField.CREATED,
@@ -63,8 +71,19 @@ fun TasksTopBar(
     onQueryChange: (String) -> Unit,
     onSort: (SortField, Boolean) -> Unit,
     onAction: (TaskPageAction) -> Unit,
+    onSpeedLimitConfirm: (isEnabled: Boolean, speedLimit: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var isEditingSpeedLimit by remember { mutableStateOf(false) }
+    if (isEditingSpeedLimit) SpeedLimitDialog(
+        isEnabled = state.isSpeedLimitEnabled,
+        speedLimit = state.speedLimit,
+        onConfirm = { isEnabled, speedLimit ->
+            onSpeedLimitConfirm(isEnabled, speedLimit)
+            isEditingSpeedLimit = false
+        },
+        onDismiss = { isEditingSpeedLimit = false },
+    )
     val containerColor by animateColorAsState(
         targetValue = if (state.isSelecting) MaterialTheme.colorScheme.secondaryContainer
         else MaterialTheme.colorScheme.surface,
@@ -83,7 +102,9 @@ fun TasksTopBar(
                 else -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.nav_tasks), maxLines = 1)
                     Spacer(Modifier.weight(1f))
-                    TaskSpeedBadge(state.speed)
+                    TaskSpeedBadge(state.speed, state.isSpeedLimitEnabled, state.speedLimit) {
+                        isEditingSpeedLimit = true
+                    }
                 }
             }
         },
@@ -117,11 +138,18 @@ fun TasksTopBar(
 }
 
 @Composable
-private fun TaskSpeedBadge(speed: Long) {
+private fun TaskSpeedBadge(speed: Long, isSpeedLimitEnabled: Boolean, speedLimit: Int, onClick: () -> Unit) {
     val rate = formatSpeed(speed).ifEmpty { "0 KB/s" }
-    val label = stringResource(R.string.task_bar_speed, rate)
+    val limit = formatSpeed(speedLimit.toLong())
+    val label = if (isSpeedLimitEnabled) stringResource(R.string.task_bar_speed_limited, rate, limit)
+    else stringResource(R.string.task_bar_speed, rate)
     Row(
-        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = label },
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .clickable(onClickLabel = stringResource(R.string.task_bar_edit_speed_limit), role = Role.Button, onClick = onClick)
+            .minimumInteractiveComponentSize()
+            .padding(horizontal = 8.dp)
+            .semantics(mergeDescendants = true) { contentDescription = label },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -132,12 +160,61 @@ private fun TaskSpeedBadge(speed: Long) {
         )
         Spacer(Modifier.width(4.dp))
         Text(
-            text = rate,
+            text = if (isSpeedLimitEnabled) "$rate / $limit" else rate,
             style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
             color = MaterialTheme.colorScheme.primary,
             maxLines = 1,
         )
     }
+}
+
+/** 输入限速值即视为想限速：Switch 当场翻开，确定前就看得到结果。 */
+@Composable
+private fun SpeedLimitDialog(
+    isEnabled: Boolean,
+    speedLimit: Int,
+    onConfirm: (isEnabled: Boolean, speedLimit: Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val range = SettingRanges["speedLimitation"].let { it.first / 1024..it.last / 1024 }
+    var isChecked by remember { mutableStateOf(isEnabled) }
+    var text by remember { mutableStateOf((speedLimit / 1024).toString()) }
+    val entered = text.toIntOrNull()?.takeIf { it in range }
+    val title = stringResource(R.string.settings_speed_limit_enabled)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .toggleable(isChecked, role = Role.Switch) { isChecked = it },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(title, Modifier.weight(1f))
+                    Switch(checked = isChecked, onCheckedChange = null)
+                }
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.filter(Char::isDigit).take(9); isChecked = true },
+                    label = { Text(stringResource(R.string.settings_speed_limit)) },
+                    suffix = { Text("KB/s") },
+                    isError = entered == null,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { entered?.let { onConfirm(isChecked, it * 1024) } }, enabled = entered != null) {
+                Text(stringResource(R.string.action_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
 }
 
 @Composable

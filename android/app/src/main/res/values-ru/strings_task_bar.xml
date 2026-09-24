@@ -5,4 +5,6 @@
     <string name="task_bar_speed">Общая скорость %1$s</string>
     <string name="task_bar_start_all">Запустить все (%1$d)</string>
     <string name="task_bar_start_selected">Запустить выбранные (%1$d)</string>
+    <string name="task_bar_speed_limited">Общая скорость %1$s, ограничение %2$s</string>
+    <string name="task_bar_edit_speed_limit">Изменить ограничение скорости</string>
 </resources>
