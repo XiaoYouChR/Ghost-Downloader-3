@@ -19,7 +19,7 @@ from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
-from app.platform.filesystem import probe, probeDirectory
+from app.platform.filesystem import isExisting, isFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 from app.view.components.category_settings import toCategoryName
 from app.i18n import toLocalizedError
@@ -90,12 +90,12 @@ VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, N("TaskCar
     default=BUTTON_HIDDEN,
     states={
         TaskStatus.COMPLETED: lambda t: ButtonState(
-            enabled=t.hasOutputFile and probe(t.outputPath)),
+            enabled=t.hasOutputFile and isExisting(t.outputPath)),
     })
 
 OPEN_FILE_BUTTON = ButtonSpec("openFile", FluentIcon.LINK, N("TaskCard", "打开文件"), states={
     TaskStatus.COMPLETED: lambda t: ButtonState(
-        enabled=not t.hasOutputFile or probe(t.outputPath)),
+        enabled=not t.hasOutputFile or isExisting(t.outputPath)),
 })
 
 OPEN_FOLDER_BUTTON = ButtonSpec("openFolder", FluentIcon.FOLDER, N("TaskCard", "打开文件夹"))
@@ -255,7 +255,7 @@ class TaskCard(CardWidget):
         elif task.status == TaskStatus.COMPLETED:
             self.progressBar.pause()
             self.progressBar.hide()
-            self._isFileMissing = task.hasOutputFile and not probe(task.outputPath)
+            self._isFileMissing = task.hasOutputFile and not isExisting(task.outputPath)
             if self._isFileMissing:
                 self._setStatus(self.tr("文件不存在"))
                 self.statusLabel.setTextColor(QColor(200, 160, 80), QColor(200, 170, 100))
@@ -336,7 +336,7 @@ class TaskCard(CardWidget):
             self._taskService.delete(self._task, deleteFiles.isChecked())
 
     def _onVerifyHashClicked(self) -> None:
-        if probeDirectory(self._task.outputPath) or not probe(self._task.outputPath):
+        if isFolder(self._task.outputPath) or not isExisting(self._task.outputPath):
             self._setStatus(self.tr("文件不存在，无法校验"))
             return
         from app.view.dialogs.file_hash import FileHashDialog
@@ -456,7 +456,7 @@ class TaskCard(CardWidget):
     def _canDrag(self) -> bool:
         return (self._task.status == TaskStatus.COMPLETED
                 and self._task.hasOutputFile
-                and probe(self._task.outputPath))
+                and isExisting(self._task.outputPath))
 
     def resizeEvent(self, e) -> None:
         self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)

@@ -18,7 +18,7 @@ WINDOWS_RESERVED_FILENAMES = {
 }
 
 
-def probe(path: str | PathLike[str]) -> bool:
+def isExisting(path: str | PathLike[str]) -> bool:
     try:
         Path(path).stat()
     except (OSError, ValueError):
@@ -26,7 +26,7 @@ def probe(path: str | PathLike[str]) -> bool:
     return True
 
 
-def probeDirectory(path: str | PathLike[str]) -> bool:
+def isFolder(path: str | PathLike[str]) -> bool:
     try:
         return S_ISDIR(Path(path).stat().st_mode)
     except (OSError, ValueError):
