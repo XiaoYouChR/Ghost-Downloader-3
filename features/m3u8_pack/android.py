@@ -49,7 +49,6 @@ def taskFields(task) -> dict:
         "statusText": (N("TaskState", "等待中") if waiting else N("TaskState", "录制中"))
                       if isRunning else "",
         "canStop": isRunning and step is not None,
-        "canPause": False,
         "packFields": {
             "liveElapsed": step.liveElapsed if step else "",
             "recordLimit": step.recordLimit if step else "",
