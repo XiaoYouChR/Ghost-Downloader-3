@@ -85,7 +85,6 @@
     <string name="engine_taskstate_40bcaa84" formatted="false">校验已有文件</string>
     <string name="engine_taskstate_42bf155e" formatted="false">检查续传状态</string>
     <string name="engine_taskstate_5dceaa04" formatted="false">录制中</string>
-    <string name="engine_taskstate_6defa74a" formatted="false">暂停做种</string>
     <string name="engine_taskstate_94deeae2" formatted="false">共享中</string>
     <string name="engine_taskstate_9741aa95" formatted="false">获取元数据</string>
     <string name="engine_taskstate_a68a7138" formatted="false">做种中</string>

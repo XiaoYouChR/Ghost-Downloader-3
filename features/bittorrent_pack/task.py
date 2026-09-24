@@ -4,10 +4,14 @@ import asyncio
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING
 
 from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus
 from app.platform.filesystem import deletePath, toPosixPath
 from .config import bittorrentConfig
+
+if TYPE_CHECKING:
+    from .session import TorrentParams, TorrentProgress
 
 
 @dataclass(kw_only=True)
@@ -22,6 +26,7 @@ class BTFile(TaskFile):
 class BTTask(Task):
     packId: str = "bt"
     canEdit = True
+    canSeed = True
     fileType = BTFile
     sourceType: str = "torrent"
     torrentData: str = ""
@@ -29,7 +34,6 @@ class BTTask(Task):
     trackers: list[str] = field(default_factory=list)
     shareRatioPercent: float = 0
     seedingTimeSeconds: int = 0
-    isSeeding: bool = False
     stateText: str = ""
     peerCount: int = 0
     totalPeerCount: int = 0
@@ -43,7 +47,7 @@ class BTTask(Task):
                 item if isinstance(item, BTFile) else BTFile(**item)
                 for item in self.files
             ]
-        self._fileSelectionVersion = 0
+        self.selectionVersion = 0
         super().__post_init__()
         self.fileSize = sum(f.size for f in self.files if f.selected)
 
@@ -89,7 +93,7 @@ class BTTask(Task):
                 f.completed = False
         if not changed:
             return
-        self._fileSelectionVersion += 1
+        self.selectionVersion += 1
         self.fileSize = sum(f.size for f in self.files if f.selected)
 
         from .session import btSession
@@ -119,7 +123,6 @@ class BTTask(Task):
         self.resumeData = ""
         self.shareRatioPercent = 0
         self.seedingTimeSeconds = 0
-        self.isSeeding = False
         self.stateText = ""
         self.peerCount = 0
         self.totalPeerCount = 0
@@ -131,6 +134,48 @@ class BTTask(Task):
             f.completed = False
         return result
 
+    def buildParams(self) -> TorrentParams:
+        from .session import TorrentParams
+        fileRenames = {}
+        for f in self.files:
+            mapped = self.toRelativePath(f)
+            if mapped != f.relativePath:
+                fileRenames[f.index] = mapped
+        return TorrentParams(
+            torrentData=b64decode(self.torrentData),
+            savePath=str(self.outputFolder),
+            resumeData=b64decode(self.resumeData) if self.resumeData else b"",
+            trackers=self.trackers.copy(),
+            filePriorities=self.priorities(),
+            fileRenames=fileRenames,
+            seedingTimeSeconds=self.seedingTimeSeconds,
+        )
+
+    def updateStats(self, p: TorrentProgress) -> None:
+        self.stateText = p.stateText
+        self.peerCount = p.peerCount
+        self.totalPeerCount = p.totalPeerCount
+        self.seedCount = p.seedCount
+        self.downloadRate = p.downloadRate
+        self.uploadRate = p.uploadRate
+        self.shareRatioPercent = p.shareRatioPercent
+        self.seedingTimeSeconds = p.seedingTimeSeconds
+
+    async def runSeeding(self, isManual: bool) -> None:
+        from loguru import logger
+        from .session import btSession
+        try:
+            resumeData = await btSession.runSeeding(
+                self.taskId, self.buildParams(), isManual, onProgress=self.updateStats)
+            self.resumeData = b64encode(resumeData).decode()
+            logger.info("{} 做种达到上限: 分享率 {:.2f}%, 做种时间 {}s",
+                        self.name, self.shareRatioPercent, self.seedingTimeSeconds)
+        finally:
+            cached = btSession.lastResumeData(self.taskId)
+            if cached:
+                self.resumeData = b64encode(cached).decode()
+            self.uploadRate = 0
+
 @dataclass(kw_only=True)
 class BTTaskStep(TaskStep):
     @property
@@ -138,7 +183,7 @@ class BTTaskStep(TaskStep):
         return self.task.outputPath
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        from .session import btSession, TorrentParams, TorrentProgress
+        from .session import btSession, TorrentProgress
 
         task: BTTask = self.task
 
@@ -157,32 +202,8 @@ class BTTaskStep(TaskStep):
                 from loguru import logger
                 logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", task.name)
 
-        fileRenames = {}
-        for f in task.files:
-            mapped = task.toRelativePath(f)
-            if mapped != f.relativePath:
-                fileRenames[f.index] = mapped
-
-        params = TorrentParams(
-            torrentData=b64decode(task.torrentData),
-            savePath=str(task.outputFolder),
-            resumeData=b64decode(task.resumeData) if task.resumeData else b"",
-            trackers=task.trackers.copy(),
-            filePriorities=task.priorities(),
-            fileRenames=fileRenames,
-            seedingTimeSeconds=task.seedingTimeSeconds,
-        )
-
         def onProgress(p: TorrentProgress):
-            task.stateText = p.stateText
-            task.peerCount = p.peerCount
-            task.totalPeerCount = p.totalPeerCount
-            task.seedCount = p.seedCount
-            task.isSeeding = p.isSeeding
-            task.downloadRate = p.downloadRate
-            task.uploadRate = p.uploadRate
-            task.shareRatioPercent = p.shareRatioPercent
-            task.seedingTimeSeconds = p.seedingTimeSeconds
+            task.updateStats(p)
             if p.totalWanted > 0:
                 task.fileSize = p.totalWanted
 
@@ -201,20 +222,22 @@ class BTTaskStep(TaskStep):
                 f.downloadedBytes = dl
                 f.completed = f.size > 0 and dl >= f.size
 
-        try:
-            resumeData = await btSession.run(task.taskId, params, onProgress=onProgress)
-            task.resumeData = b64encode(resumeData).decode()
-        except asyncio.CancelledError:
-            cached = btSession.lastResumeData(task.taskId)
-            if cached:
-                task.resumeData = b64encode(cached).decode()
-            task.stateText = "paused_seeding" if task.isSeeding else "paused_downloading"
-            task.isSeeding = False
-            raise
-        except Exception:
-            cached = btSession.lastResumeData(task.taskId)
-            if cached:
-                task.resumeData = b64encode(cached).decode()
-            raise
+        selectionVersion = None
+        while selectionVersion != task.selectionVersion:
+            selectionVersion = task.selectionVersion
+            try:
+                resumeData = await btSession.run(task.taskId, task.buildParams(), onProgress=onProgress)
+                task.resumeData = b64encode(resumeData).decode()
+            except asyncio.CancelledError:
+                cached = btSession.lastResumeData(task.taskId)
+                if cached:
+                    task.resumeData = b64encode(cached).decode()
+                task.stateText = "paused_downloading"
+                raise
+            except Exception:
+                cached = btSession.lastResumeData(task.taskId)
+                if cached:
+                    task.resumeData = b64encode(cached).decode()
+                raise
 
         self.setStatus(TaskStatus.COMPLETED)

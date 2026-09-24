@@ -195,6 +195,7 @@
     <string name="notification_preparing">準備中…</string>
     <string name="notification_resume_all">すべて再開</string>
     <string name="notification_serving">ローカルサービス待機中</string>
+    <string name="notification_seeding">%1$d 個のタスクをシード中</string>
     <string name="oobe_appearance_subtitle">インターフェースの言語と外観を選択します</string>
     <string name="oobe_back">戻る</string>
     <string name="oobe_basic_subtitle">ダウンロードファイルの保存場所を設定します</string>

@@ -111,6 +111,10 @@ class KeepAliveService : Service() {
                 )
                 .build()
 
+            "seeding" -> builder
+                .setContentText(getString(R.string.notification_seeding, state.count))
+                .build()
+
             "serving" -> builder
                 .setContentText(getString(R.string.notification_serving))
                 .addAction(

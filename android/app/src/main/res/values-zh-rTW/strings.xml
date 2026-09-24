@@ -60,8 +60,8 @@
     <string name="bt_section_seeding">做種</string>
     <string name="bt_section_tracker">Tracker</string>
     <string name="bt_section_transfer">傳輸</string>
-    <string name="bt_seeding_ratio_limit">自動暫停做種分享率</string>
-    <string name="bt_seeding_time_limit">自動暫停做種時長</string>
+    <string name="bt_seeding_ratio_limit">自動停止做種分享率</string>
+    <string name="bt_seeding_time_limit">自動停止做種時長</string>
     <string name="bt_sequential_download">順序下載</string>
     <string name="bt_sequential_download_desc">依檔案順序下載，適合邊下載邊觀看但通常會影響整體效率</string>
     <string name="bt_storage_allocate">預配置</string>
@@ -114,7 +114,7 @@
     <string name="ed2k_section_source">引導來源</string>
     <string name="ed2k_server_met_source">伺服器列表來源</string>
     <string name="ed2k_server_met_source_desc">未設定，eD2k server.met 檔案的 URL</string>
-    <string name="ed2k_sharing_time_limit">自動暫停共享時長</string>
+    <string name="ed2k_sharing_time_limit">自動停止共享時長</string>
     <string name="file_name">檔案名稱</string>
     <string name="file_rename">重新命名</string>
     <string name="file_select_all">全選</string>
@@ -195,6 +195,7 @@
     <string name="notification_preparing">準備中…</string>
     <string name="notification_resume_all">全部繼續</string>
     <string name="notification_serving">本機服務待命中</string>
+    <string name="notification_seeding">%1$d 個任務做種中</string>
     <string name="oobe_appearance_subtitle">選擇介面語言與外觀</string>
     <string name="oobe_back">上一步</string>
     <string name="oobe_basic_subtitle">設定下載檔案的儲存位置</string>

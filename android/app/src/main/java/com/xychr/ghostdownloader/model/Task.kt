@@ -16,6 +16,8 @@ interface TaskActionSource {
     val status: String
     val canPause: Boolean
     val canStop: Boolean
+    val canSeed: Boolean
+    val isSeeding: Boolean
     val hasOutputFile: Boolean
     val isOutputFolder: Boolean
     val isFileMissing: Boolean
@@ -62,6 +64,8 @@ data class TaskUiState(
     val statusText: String = "",
     val secondarySpeed: Long = 0,
     override val canStop: Boolean = false,
+    override val canSeed: Boolean = false,
+    override val isSeeding: Boolean = false,
     val fileSelectKind: String = "",
     val canSelectFiles: Boolean = true,
     val packFields: JsonObject = JsonObject(emptyMap()),
@@ -102,6 +106,8 @@ data class TaskDetail(
     val statusText: String = "",
     val secondarySpeed: Long = 0,
     override val canStop: Boolean = false,
+    override val canSeed: Boolean = false,
+    override val isSeeding: Boolean = false,
     val fileSelectKind: String = "",
     val canSelectFiles: Boolean = true,
     val packFields: JsonObject = JsonObject(emptyMap()),

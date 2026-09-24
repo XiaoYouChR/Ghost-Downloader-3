@@ -91,6 +91,8 @@
     <string name="task_sort_queue">キューの順序</string>
     <string name="task_sort_size">ファイルサイズ</string>
     <string name="task_stop_save">停止して保存</string>
+    <string name="task_start_seeding">シードを開始</string>
+    <string name="task_stop_seeding">シードを停止</string>
     <string name="task_stream">ビデオトラック</string>
     <string name="task_target_folder">対象ディレクトリ：%1$s</string>
     <string name="task_trim_clear">トリミングをクリア</string>

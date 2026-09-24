@@ -91,6 +91,8 @@
     <string name="task_sort_queue">依佇列順序</string>
     <string name="task_sort_size">檔案大小</string>
     <string name="task_stop_save">停止並儲存</string>
+    <string name="task_start_seeding">開始做種</string>
+    <string name="task_stop_seeding">停止做種</string>
     <string name="task_stream">視訊軌道</string>
     <string name="task_target_folder">目標目錄：%1$s</string>
     <string name="task_trim_clear">清除裁剪</string>

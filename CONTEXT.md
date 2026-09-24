@@ -58,6 +58,11 @@ _Avoid_: 与泛义"资源"混淆
 Task 在下载循环中的当前执行。一个 Task 同时只有零或一个活跃的 Task Run。
 _Avoid_: execution、session
 
+**Seeding**:
+已完成的 Task 继续向他人提供其成品。不是 Task Run，不占任务槽，Task 保持 COMPLETED。
+用户可随时开关；到达上限或用户关掉后不再自动恢复，否则随应用启动恢复。
+_Avoid_: 与 Seed（Pack 同步）混淆；sharing；第六个 Task 状态
+
 **Task Step**:
 Task 内的一个可执行步骤。一个 Task 可能有一个或多个 Step。
 _Avoid_: stage、phase、action

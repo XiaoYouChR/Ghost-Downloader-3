@@ -323,9 +323,8 @@
             <translation>検証待ち</translation>
         </message>
         <message>
-            <location filename="../../../features/bittorrent_pack/cards.py" line="62" />
             <source>已暂停做种</source>
-            <translation>シード一時停止中</translation>
+            <translation type="vanished">シード一時停止中</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/cards.py" line="63" />
@@ -726,23 +725,23 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="75" />
-            <source>自动暂停做种分享率</source>
-            <translation>自動一時停止シード共有率</translation>
+            <source>自动停止做种分享率</source>
+            <translation>自動停止シード共有率</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="76" />
-            <source>0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
-            <translation>0 は共有率による自動一時停止無効、100% は共有率 1.0</translation>
+            <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
+            <translation>0 は共有率による自動停止無効、100% は共有率 1.0</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="78" />
-            <source>自动暂停做种时长</source>
-            <translation>自動一時停止シード時間</translation>
+            <source>自动停止做种时长</source>
+            <translation>自動停止シード時間</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="79" />
-            <source>0 表示不按做种时长自动暂停</source>
-            <translation>0 はシード時間による自動一時停止無効</translation>
+            <source>0 表示不按做种时长自动停止</source>
+            <translation>0 はシード時間による自動停止無効</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="81" />
@@ -1587,13 +1586,13 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="76" />
-            <source>自动暂停共享时长</source>
-            <translation>共有時間の自動一時停止</translation>
+            <source>自动停止共享时长</source>
+            <translation>共有時間の自動停止</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="77" />
-            <source>0 表示不按共享时长自动暂停</source>
-            <translation>0 は共有時間による自動一時停止無効</translation>
+            <source>0 表示不按共享时长自动停止</source>
+            <translation>0 は共有時間による自動停止無効</translation>
         </message>
     </context>
     <context>

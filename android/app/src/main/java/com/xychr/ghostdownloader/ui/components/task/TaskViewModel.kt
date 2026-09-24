@@ -25,6 +25,10 @@ class TaskViewModel : ViewModel() {
 
     fun stop(taskId: String) = request("stopTask", taskId)
 
+    fun startSeeding(taskId: String) = request("startSeeding", taskId)
+
+    fun stopSeeding(taskId: String) = request("stopSeeding", taskId)
+
     fun resume(taskId: String) {
         request("resume", taskId)
     }

@@ -141,6 +141,8 @@ class TaskService:
     taskCompleted = Signal(object)
     taskFailed = Signal(object)
     tasksAllCompleted = Signal()
+    seedingStarted = Signal(object)
+    seedingStopped = Signal(object)
     queueChanged = Signal()
     fileDisappeared = Signal(object)
     fileDeleteDenied = Signal()
@@ -152,6 +154,7 @@ class TaskService:
         self._speedMeter = speedMeter
         self._store = TaskStore()
         self._queue = TaskQueue()
+        self._seeding: dict[str, str] = {}
         self._fileWatcher = fileWatcher
         self._watchedPaths: dict[str, str] = {}
         self._fileWatcher.fileChanged.connect(self._onWatchedFileChanged)
@@ -189,6 +192,7 @@ class TaskService:
         if task.taskId in self._store.tasks:
             return
         task.category, task.outputFolder = self._categoryService.outputFolderOf(task)
+        task.shouldSeed = True
         self._deduplicateOutput(task)
         self._store.add(task)
         self._flushSoon()
@@ -228,9 +232,19 @@ class TaskService:
             return
         self._schedule(task)
 
+    def startSeeding(self, task: Task) -> None:
+        task.shouldSeed = True
+        self._flushSoon()
+        self._seed(task, isManual=True)
+
+    def stopSeeding(self, task: Task) -> None:
+        task.shouldSeed = False
+        self._flushSoon()
+        self._cancelWork(task)
+
     def pause(self, task: Task) -> None:
         from app.models.task import TaskStatus
-        self._cancelRun(task)
+        self._cancelWork(task)
         task.setStatus(TaskStatus.PAUSED)
         self._flushSoon()
         self.taskPaused.emit(task)
@@ -242,7 +256,7 @@ class TaskService:
         if shouldDeleteFiles and not canDelete and not self._hasNotifiedDeleteDenied:
             self._hasNotifiedDeleteDenied = True
             self.fileDeleteDenied.emit()
-        self._cancelRun(task, finished=task.deleteFiles if canDelete else None)
+        self._cancelWork(task, finished=task.deleteFiles if canDelete else None)
         self._store.remove(task.taskId)
         self._flushSoon()
         self.taskRemoved.emit(task.taskId)
@@ -255,7 +269,7 @@ class TaskService:
             task.reset()
             self._flushSoon()
             self._schedule(task)
-        self._cancelRun(task, finished=onStopped)
+        self._cancelWork(task, finished=onStopped)
 
     def edit(self, task: Task, options: dict, newTask: Task | None = None) -> None:
         needsDelete = newTask is not None and not task.canReuseProgress(newTask)
@@ -267,7 +281,7 @@ class TaskService:
             task.setOptions(options)
             self._flushSoon()
             self._schedule(task)
-        self._cancelRun(task, finished=onStopped)
+        self._cancelWork(task, finished=onStopped)
 
     def setCategory(self, task: Task, categoryId: str) -> None:
         task.category = categoryId
@@ -284,7 +298,7 @@ class TaskService:
             if wasCompleted and task.files and any(f.selected and not f.completed for f in task.files):
                 task.completedAt = 0
                 self._unwatchFile(task)
-                self._schedule(task)
+                self._cancelWork(task, finished=lambda: self._schedule(task))
             self._flushSoon()
 
         isRunningDeselected = False
@@ -299,7 +313,7 @@ class TaskService:
             def onStopped():
                 apply()
                 self._schedule(task)
-            self._cancelRun(task, finished=onStopped)
+            self._cancelWork(task, finished=onStopped)
             return
         apply()
 
@@ -320,6 +334,8 @@ class TaskService:
             self.taskAdded.emit(task)
             if task.status == TaskStatus.COMPLETED and task.hasOutputFile and isExisting(task.outputPath):
                 self._watchFile(task)
+                if task.canSeed and task.shouldSeed:
+                    self._seed(task)
             elif task.status in {TaskStatus.WAITING, TaskStatus.RUNNING}:
                 task.setStatus(TaskStatus.WAITING)
                 self._schedule(task)
@@ -373,6 +389,25 @@ class TaskService:
         self._queue.run(task.taskId, workId)
         self.taskStarted.emit(task)
 
+    def _seed(self, task: Task, isManual: bool = False) -> None:
+        task.isSeeding = True
+        self._seeding[task.taskId] = self._coroutineRunner.submit(
+            task.runSeeding(isManual),
+            done=lambda _: self._onSeedingDone(task),
+            failed=lambda _: self._onSeedingEnded(task),
+        )
+        self.seedingStarted.emit(task)
+
+    def _onSeedingDone(self, task: Task) -> None:
+        task.shouldSeed = False
+        self._onSeedingEnded(task)
+
+    def _onSeedingEnded(self, task: Task) -> None:
+        self._seeding.pop(task.taskId, None)
+        task.isSeeding = False
+        self._flushSoon()
+        self.seedingStopped.emit(task)
+
     def _canDeleteIn(self, folder: Path) -> bool:
         if sys.platform != "darwin":
             return True
@@ -384,9 +419,12 @@ class TaskService:
         except OSError:
             return True
 
-    def _cancelRun(self, task: Task, finished: Callable = None) -> None:
-        workId = self._queue.workIdOf(task.taskId)
+    def _cancelWork(self, task: Task, finished: Callable = None) -> None:
+        workId = self._queue.workIdOf(task.taskId) or self._seeding.pop(task.taskId, None)
         self._queue.cancel(task.taskId)
+        if task.isSeeding:
+            task.isSeeding = False
+            self.seedingStopped.emit(task)
         if workId is not None:
             self._coroutineRunner.cancel(workId, finished=finished)
         elif finished is not None:
@@ -397,7 +435,7 @@ class TaskService:
         for taskId in self._queue.runningIds()[cfg.maxTaskNum.value:]:
             task = self._store.taskById(taskId)
             if task is not None and task.canPause:
-                self._cancelRun(task)
+                self._cancelWork(task)
                 task.setStatus(TaskStatus.WAITING)
                 self._queue.wait(taskId)
         self._pump()
@@ -412,11 +450,14 @@ class TaskService:
                 self._dispatch(task)
 
     def _onRunDone(self, task: Task) -> None:
+        from app.models.task import TaskStatus
         self._queue.done(task.taskId)
         self._flushSoon()
         self.taskCompleted.emit(task)
         if task.hasOutputFile:
             self._watchFile(task)
+        if task.status == TaskStatus.COMPLETED and task.canSeed and task.shouldSeed:
+            self._seed(task)
         self._pump()
         if self._queue.runningCount() == 0:
             self.tasksAllCompleted.emit()
@@ -447,4 +488,5 @@ class TaskService:
             return
         task = self._store.taskById(taskId)
         if task is not None:
+            self._cancelWork(task)
             self.fileDisappeared.emit(task)

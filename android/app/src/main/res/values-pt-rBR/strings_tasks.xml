@@ -91,6 +91,8 @@
     <string name="task_sort_queue">Ordem da fila</string>
     <string name="task_sort_size">Tamanho do arquivo</string>
     <string name="task_stop_save">Parar e salvar</string>
+    <string name="task_start_seeding">Começar a semear</string>
+    <string name="task_stop_seeding">Parar de semear</string>
     <string name="task_stream">Trilha de vídeo</string>
     <string name="task_target_folder">Pasta de destino: %1$s</string>
     <string name="task_trim_clear">Limpar corte</string>

@@ -290,6 +290,8 @@ fun TasksPage(
                                             TaskAction.STOP -> viewModel.stop(task.id)
                                             TaskAction.PAUSE -> viewModel.pause(task.id)
                                             TaskAction.RESUME -> viewModel.resume(task.id)
+                                            TaskAction.START_SEEDING -> viewModel.startSeeding(task.id)
+                                            TaskAction.STOP_SEEDING -> viewModel.stopSeeding(task.id)
                                             TaskAction.FILES -> onNavigate(TaskFilesRoute(task.id))
                                             TaskAction.EDIT -> onNavigate(TaskEditRoute(task.id))
                                             TaskAction.CATEGORY -> categoryTaskIds = listOf(task.id)

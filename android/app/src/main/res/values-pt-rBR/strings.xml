@@ -60,8 +60,8 @@
     <string name="bt_section_seeding">Seeding</string>
     <string name="bt_section_tracker">Tracker</string>
     <string name="bt_section_transfer">Transferência</string>
-    <string name="bt_seeding_ratio_limit">Taxa de compartilhamento para pausar automaticamente</string>
-    <string name="bt_seeding_time_limit">Tempo de compartilhamento para pausar automaticamente</string>
+    <string name="bt_seeding_ratio_limit">Taxa de compartilhamento para parar automaticamente</string>
+    <string name="bt_seeding_time_limit">Tempo de compartilhamento para parar automaticamente</string>
     <string name="bt_sequential_download">Download sequencial</string>
     <string name="bt_sequential_download_desc">Baixa em ordem de arquivo, adequado para assistir enquanto baixa, mas geralmente reduz a eficiência geral</string>
     <string name="bt_storage_allocate">Pré-alocação</string>
@@ -114,7 +114,7 @@
     <string name="ed2k_section_source">Fonte de inicialização</string>
     <string name="ed2k_server_met_source">Fonte da lista de servidores</string>
     <string name="ed2k_server_met_source_desc">Não definido, URL do arquivo server.met eD2k</string>
-    <string name="ed2k_sharing_time_limit">Tempo de compartilhamento para pausar automaticamente</string>
+    <string name="ed2k_sharing_time_limit">Tempo de compartilhamento para parar automaticamente</string>
     <string name="file_name">Nome do arquivo</string>
     <string name="file_rename">Renomear</string>
     <string name="file_select_all">Selecionar todos</string>
@@ -195,6 +195,7 @@
     <string name="notification_preparing">Preparando…</string>
     <string name="notification_resume_all">Continuar todas</string>
     <string name="notification_serving">Serviço local em espera</string>
+    <string name="notification_seeding">Semeando %1$d tarefas</string>
     <string name="oobe_appearance_subtitle">Escolha o idioma e a aparência da interface</string>
     <string name="oobe_back">Anterior</string>
     <string name="oobe_basic_subtitle">Defina o local para salvar os arquivos baixados</string>

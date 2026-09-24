@@ -1,5 +1,6 @@
 """Android View adapter for BittorrentPack."""
 from app.i18n import N
+from app.models.task import TaskStatus
 
 UI_CLASS = "com.xychr.ghostdownloader.features.bittorrent_pack.BitTorrentUi"
 
@@ -9,15 +10,21 @@ STATE_TEXT = {
     "downloading_metadata": N("TaskState", "获取元数据"),
     "allocating": N("TaskState", "分配文件中"),
     "queued_for_checking": N("TaskState", "等待校验"),
-    "seeding": N("TaskState", "做种中"),
-    "paused_seeding": N("TaskState", "暂停做种"),
 }
+
+
+def toStatusText(task) -> str:
+    if task.isSeeding:
+        return N("TaskState", "做种中")
+    if task.status == TaskStatus.COMPLETED:
+        return ""
+    return STATE_TEXT.get(task.stateText, "")
 
 
 def taskFields(task) -> dict:
     return {
         "progressMode": "hidden" if task.isSeeding else "determinate",
-        "statusText": STATE_TEXT.get(task.stateText, ""),
+        "statusText": toStatusText(task),
         "secondarySpeed": task.uploadRate,
         "packFields": {
             "peers": {"active": task.peerCount, "total": task.totalPeerCount},

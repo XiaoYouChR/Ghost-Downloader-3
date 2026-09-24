@@ -5,7 +5,7 @@ from qfluentwidgets import FluentIcon
 from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus
 from app.view.cards.draft_cards import MultiFileDraftCard
-from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, toSizeText
+from app.view.cards.task_cards import ETA_FIELD, SIZE_FIELD, FieldSpec, MultiFileTaskCard
 from app.view.components.labels import IconBodyLabel
 from app.view.dialogs.file_select import FileSelectDialog
 from .task import BTTask
@@ -16,28 +16,17 @@ class TorrentFileSelectDialog(FileSelectDialog):
         return self._task.toRelativePath(file)
 
 
-def toBtEtaText(task: BTTask, speed: int, received: int) -> str | None:
-    if task.isSeeding:
-        return None
-    if task.fileSize > 0 and speed > 0:
-        return toReadableTime(int((task.fileSize - received) / speed))
-    return "--"
-
-
-def toBtSizeText(task: BTTask, speed: int, received: int) -> str | None:
-    if task.status == TaskStatus.RUNNING and task.isSeeding:
-        return None
-    return toSizeText(task, speed, received)
+def toUploadText(task: BTTask, _speed: int, _received: int) -> str:
+    return f"{toReadableSize(task.uploadRate)}/s"
 
 
 BT_SPEED_FIELD = FieldSpec("speed", FluentIcon.DOWNLOAD, {
-    TaskStatus.RUNNING: lambda t, s, r: None if t.isSeeding else f"{toReadableSize(s)}/s",
+    TaskStatus.RUNNING: lambda t, s, r: f"{toReadableSize(s)}/s",
 })
 BT_UPLOAD_FIELD = FieldSpec("upload", FluentIcon.SHARE, {
-    TaskStatus.RUNNING: lambda t, s, r: f"{toReadableSize(t.uploadRate)}/s",
+    TaskStatus.RUNNING: toUploadText,
+    TaskStatus.COMPLETED: lambda t, s, r: toUploadText(t, s, r) if t.isSeeding else None,
 })
-BT_ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toBtEtaText})
-BT_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toBtSizeText})
 
 
 def toPeerText(task: BTTask, _speed: int, _received: int) -> str:
@@ -46,9 +35,10 @@ def toPeerText(task: BTTask, _speed: int, _received: int) -> str:
     )
 
 
-BT_PEERS_FIELD = FieldSpec(
-    "peers", FluentIcon.INFO, {TaskStatus.RUNNING: toPeerText}
-)
+BT_PEERS_FIELD = FieldSpec("peers", FluentIcon.INFO, {
+    TaskStatus.RUNNING: toPeerText,
+    TaskStatus.COMPLETED: lambda t, s, r: toPeerText(t, s, r) if t.isSeeding else None,
+})
 
 BT_STATE_LABELS = {
     "checking_files":       N("BTTaskCard", "校验已有文件"),
@@ -59,7 +49,6 @@ BT_STATE_LABELS = {
     "seeding":              N("BTTaskCard", "做种中"),
     "allocating":           N("BTTaskCard", "分配文件中"),
     "queued_for_checking":  N("BTTaskCard", "等待校验"),
-    "paused_seeding":       N("BTTaskCard", "已暂停做种"),
     "paused_downloading":   N("BTTaskCard", "已暂停下载"),
 }
 
@@ -87,14 +76,13 @@ class BTTaskCard(MultiFileTaskCard):
     uploadLabel: IconBodyLabel
     fileSelectDialog = TorrentFileSelectDialog
     infoFields = [
-        BT_SPEED_FIELD, BT_UPLOAD_FIELD, BT_ETA_FIELD, BT_SIZE_FIELD,
+        BT_SPEED_FIELD, BT_UPLOAD_FIELD, ETA_FIELD, SIZE_FIELD,
         BT_PEERS_FIELD,
     ]
 
     def _refreshForStatus(self, task):
         super()._refreshForStatus(task)
-        if task.status == TaskStatus.RUNNING and task.isSeeding:
-            self.progressBar.hide()
+        if task.isSeeding and not self._isFileMissing:
             parts = []
             if task.shareRatioPercent > 0:
                 parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))

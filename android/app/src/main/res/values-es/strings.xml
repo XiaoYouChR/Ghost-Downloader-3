@@ -60,8 +60,8 @@
     <string name="bt_section_seeding">Compartir</string>
     <string name="bt_section_tracker">Rastreador</string>
     <string name="bt_section_transfer">Transferencia</string>
-    <string name="bt_seeding_ratio_limit">Proporción para pausar automáticamente el compartir</string>
-    <string name="bt_seeding_time_limit">Duración para pausar automáticamente el compartir</string>
+    <string name="bt_seeding_ratio_limit">Proporción para detener automáticamente el compartir</string>
+    <string name="bt_seeding_time_limit">Duración para detener automáticamente el compartir</string>
     <string name="bt_sequential_download">Descarga secuencial</string>
     <string name="bt_sequential_download_desc">Descarga en el orden de los archivos, útil para ver mientras se descarga, pero suele reducir el rendimiento global</string>
     <string name="bt_storage_allocate">Preasignación</string>
@@ -114,7 +114,7 @@
     <string name="ed2k_section_source">Fuentes de arranque</string>
     <string name="ed2k_server_met_source">Fuente de lista de servidores</string>
     <string name="ed2k_server_met_source_desc">No configurado; URL de un archivo server.met eD2k</string>
-    <string name="ed2k_sharing_time_limit">Duración para pausar automáticamente el compartir</string>
+    <string name="ed2k_sharing_time_limit">Duración para detener automáticamente el compartir</string>
     <string name="file_name">Nombre del archivo</string>
     <string name="file_rename">Renombrar</string>
     <string name="file_select_all">Seleccionar todo</string>
@@ -195,6 +195,7 @@
     <string name="notification_preparing">Preparando…</string>
     <string name="notification_resume_all">Reanudar todo</string>
     <string name="notification_serving">Servicio local en espera</string>
+    <string name="notification_seeding">Compartiendo %1$d tareas</string>
     <string name="oobe_appearance_subtitle">Elige el idioma y la apariencia de la interfaz</string>
     <string name="oobe_back">Atrás</string>
     <string name="oobe_basic_subtitle">Establece la carpeta de descargas</string>

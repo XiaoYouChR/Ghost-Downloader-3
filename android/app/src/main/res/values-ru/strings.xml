@@ -60,8 +60,8 @@
     <string name="bt_section_seeding">Раздача</string>
     <string name="bt_section_tracker">Трекер</string>
     <string name="bt_section_transfer">Передача</string>
-    <string name="bt_seeding_ratio_limit">Автопауза раздачи по рейтингу</string>
-    <string name="bt_seeding_time_limit">Автопауза раздачи по времени</string>
+    <string name="bt_seeding_ratio_limit">Автоостановка раздачи по рейтингу</string>
+    <string name="bt_seeding_time_limit">Автоостановка раздачи по времени</string>
     <string name="bt_sequential_download">Последовательная загрузка</string>
     <string name="bt_sequential_download_desc">Загружать файлы по порядку, удобно для просмотра, но обычно снижает общую скорость</string>
     <string name="bt_storage_allocate">Предвыделение</string>
@@ -114,7 +114,7 @@
     <string name="ed2k_section_source">Источники загрузки</string>
     <string name="ed2k_server_met_source">Источник списка серверов</string>
     <string name="ed2k_server_met_source_desc">Не задано, URL файла server.met eD2k</string>
-    <string name="ed2k_sharing_time_limit">Автопауза общего доступа по времени</string>
+    <string name="ed2k_sharing_time_limit">Автоостановка общего доступа по времени</string>
     <string name="file_name">Имя файла</string>
     <string name="file_rename">Переименовать</string>
     <string name="file_select_all">Выбрать все</string>
@@ -195,6 +195,7 @@
     <string name="notification_preparing">Подготовка…</string>
     <string name="notification_resume_all">Продолжить все</string>
     <string name="notification_serving">Локальный сервис ожидает</string>
+    <string name="notification_seeding">Раздача: %1$d задач</string>
     <string name="oobe_appearance_subtitle">Выберите язык интерфейса и тему</string>
     <string name="oobe_back">Назад</string>
     <string name="oobe_basic_subtitle">Выберите папку для сохранения файлов</string>

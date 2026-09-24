@@ -134,8 +134,8 @@
     <string name="bt_save_magnet_file">保存 Magnet 种子文件</string>
     <string name="bt_save_magnet_file_desc">下载 magnet 链接时额外保存 .torrent 文件</string>
     <string name="bt_max_upload_speed">上传限速</string>
-    <string name="bt_seeding_ratio_limit">自动暂停做种分享率</string>
-    <string name="bt_seeding_time_limit">自动暂停做种时长</string>
+    <string name="bt_seeding_ratio_limit">自动停止做种分享率</string>
+    <string name="bt_seeding_time_limit">自动停止做种时长</string>
     <string name="m3u8_section_output">输出</string>
     <string name="m3u8_section_decrypt">解密</string>
     <string name="m3u8_decryption_engine">解密引擎</string>
@@ -209,7 +209,7 @@
     <string name="ed2k_server_met_source_desc">未设置，eD2k server.met 文件的 URL</string>
     <string name="ed2k_nodes_dat_source">DHT 节点源</string>
     <string name="ed2k_nodes_dat_source_desc">未设置，KAD nodes.dat 文件的 URL</string>
-    <string name="ed2k_sharing_time_limit">自动暂停共享时长</string>
+    <string name="ed2k_sharing_time_limit">自动停止共享时长</string>
 
     <string name="settings_section_runtimes">运行环境</string>
     <string name="runtime_bundled">已内置</string>
@@ -325,6 +325,7 @@
     <string name="notification_pause_all">全部暂停</string>
     <string name="notification_resume_all">全部继续</string>
     <string name="notification_serving">本机服务待命中</string>
+    <string name="notification_seeding">%1$d 个任务做种中</string>
     <string name="settings_section_local_service">本机服务</string>
     <string name="settings_aria2_rpc">Aria2 RPC 兼容</string>
     <string name="settings_aria2_rpc_desc">接收本机浏览器扩展和外部工具发来的下载链接</string>

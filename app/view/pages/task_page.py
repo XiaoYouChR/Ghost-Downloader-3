@@ -150,7 +150,7 @@ class TaskPage(QWidget):
         self._selectedIds: set[str] = set()
         self._bandSnapshot: set[str] = set()
         self._bandMerge = set.__or__
-        self._runningIds: set[str] = set()
+        self._tickingIds: set[str] = set()
 
         self._refreshListTimer = QTimer(self, singleShot=True)
         self._refreshListTimer.setInterval(0)
@@ -158,7 +158,7 @@ class TaskPage(QWidget):
 
         self._cardRefreshTimer = QTimer(self)
         self._cardRefreshTimer.setInterval(1000)
-        self._cardRefreshTimer.timeout.connect(self._refreshRunningCards)
+        self._cardRefreshTimer.timeout.connect(self._refreshTickingCards)
 
         self.scrollArea = ScrollArea(self)
         self.scrollWidget = QWidget(self)
@@ -284,7 +284,8 @@ class TaskPage(QWidget):
         self._taskService.taskPaused.connect(self._onTaskStopped)
         self._taskService.taskCompleted.connect(self._onTaskStopped)
         self._taskService.taskFailed.connect(self._onTaskStopped)
-        self._taskService.tasksAllCompleted.connect(self._onAllCompleted)
+        self._taskService.seedingStarted.connect(self._onSeedingStarted)
+        self._taskService.seedingStopped.connect(self._onSeedingStopped)
         self._taskService.queueChanged.connect(self._onQueueChanged)
         self._taskService.fileDisappeared.connect(self._onFileDisappeared)
         self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied)
@@ -633,10 +634,11 @@ class TaskPage(QWidget):
             tasks.sort(key=lambda t: t.createdAt, reverse=not self._sortAscending)
 
         self._displayOrder = [t.taskId for t in tasks]
-        self._runningIds = {t.taskId for t in self._taskService.tasks if t.status == TaskStatus.RUNNING}
-        if self._runningIds and not self._cardRefreshTimer.isActive():
+        self._tickingIds = {t.taskId for t in self._taskService.tasks
+                            if t.status == TaskStatus.RUNNING or t.isSeeding}
+        if self._tickingIds and not self._cardRefreshTimer.isActive():
             self._cardRefreshTimer.start()
-        elif not self._runningIds and self._cardRefreshTimer.isActive():
+        elif not self._tickingIds and self._cardRefreshTimer.isActive():
             self._cardRefreshTimer.stop()
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         count = len(self._displayOrder)
@@ -720,14 +722,14 @@ class TaskPage(QWidget):
             card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
             card.show()
 
-    def _refreshRunningCards(self) -> None:
-        for taskId in self._runningIds:
+    def _refreshTickingCards(self) -> None:
+        for taskId in self._tickingIds:
             card = self._liveCards.get(taskId)
             if card is not None:
                 card.refresh()
 
     def _onTaskStarted(self, task: Task) -> None:
-        self._runningIds.add(task.taskId)
+        self._tickingIds.add(task.taskId)
         card = self._liveCards.get(task.taskId)
         if card is not None:
             card.refresh()
@@ -736,17 +738,29 @@ class TaskPage(QWidget):
         self._onQueueChanged()
 
     def _onTaskStopped(self, task: Task) -> None:
-        self._runningIds.discard(task.taskId)
+        self._tickingIds.discard(task.taskId)
         card = self._liveCards.get(task.taskId)
         if card is not None:
             card.refresh()
-        if not self._runningIds:
+        if not self._tickingIds:
             self._cardRefreshTimer.stop()
         self._onQueueChanged()
 
-    def _onAllCompleted(self) -> None:
-        self._runningIds.clear()
-        self._cardRefreshTimer.stop()
+    def _onSeedingStarted(self, task: Task) -> None:
+        self._tickingIds.add(task.taskId)
+        card = self._liveCards.get(task.taskId)
+        if card is not None:
+            card.refresh()
+        if not self._cardRefreshTimer.isActive():
+            self._cardRefreshTimer.start()
+
+    def _onSeedingStopped(self, task: Task) -> None:
+        self._tickingIds.discard(task.taskId)
+        card = self._liveCards.get(task.taskId)
+        if card is not None:
+            card.refresh(force=True)
+        if not self._tickingIds:
+            self._cardRefreshTimer.stop()
 
     # ── band selection ──
 
@@ -824,10 +838,10 @@ class TaskPage(QWidget):
         if card is not None:
             self._unmountCard(card)
         self._selectedIds.discard(taskId)
-        self._runningIds.discard(taskId)
+        self._tickingIds.discard(taskId)
         if self._selectionAnchor == taskId:
             self._selectionAnchor = None
-        if not self._runningIds:
+        if not self._tickingIds:
             self._cardRefreshTimer.stop()
         self._refreshListTimer.start()
 

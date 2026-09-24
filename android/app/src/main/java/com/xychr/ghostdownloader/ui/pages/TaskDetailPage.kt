@@ -104,6 +104,7 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
                 if (task != null) _detail.value = _detail.value.copy(
                     status = task.status, canPause = task.canPause,
                     canStop = task.canStop, error = task.error,
+                    canSeed = task.canSeed, isSeeding = task.isSeeding,
                     hasOutputFile = task.hasOutputFile,
                     isOutputFolder = task.isOutputFolder,
                     isFileMissing = task.isFileMissing,
@@ -115,6 +116,8 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
 
     fun pause() = push("pause")
     fun stop() = push("stopTask")
+    fun startSeeding() = push("startSeeding")
+    fun stopSeeding() = push("stopSeeding")
 
     fun resume() {
         push("resume")
@@ -243,6 +246,8 @@ fun TaskDetailPage(
                         TaskAction.STOP -> viewModel.stop()
                         TaskAction.PAUSE -> viewModel.pause()
                         TaskAction.RESUME -> viewModel.resume()
+                        TaskAction.START_SEEDING -> viewModel.startSeeding()
+                        TaskAction.STOP_SEEDING -> viewModel.stopSeeding()
                         TaskAction.OPEN_FILE -> context.openTaskFile(detail.outputPath)
                         TaskAction.OPEN_FOLDER -> context.openFolder(detail.outputFolder)
                         TaskAction.SHARE_FILE -> if (!context.shareTaskFile(detail.outputPath)) {

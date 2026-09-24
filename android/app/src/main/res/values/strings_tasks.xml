@@ -58,6 +58,8 @@
     <string name="task_select_season">选择合集</string>
     <string name="task_select_pages">选择分P</string>
     <string name="task_stop_save">停止并保存</string>
+    <string name="task_start_seeding">开始做种</string>
+    <string name="task_stop_seeding">停止做种</string>
     <string name="task_retry">重试</string>
     <string name="task_peers">连接 %1$d / %2$d</string>
     <string name="task_shared_time">已共享 %1$s</string>

@@ -163,11 +163,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="62"/>
-        <source>已暂停做种</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="63"/>
         <source>已暂停下载</source>
         <translation type="unfinished"></translation>
@@ -509,22 +504,22 @@ http://example.com/{mp4,mkv}/video</source>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="75"/>
-        <source>自动暂停做种分享率</source>
+        <source>自动停止做种分享率</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="76"/>
-        <source>0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
+        <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="78"/>
-        <source>自动暂停做种时长</source>
+        <source>自动停止做种时长</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="79"/>
-        <source>0 表示不按做种时长自动暂停</source>
+        <source>0 表示不按做种时长自动停止</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1087,12 +1082,12 @@ http://example.com/{mp4,mkv}/video</source>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="76"/>
-        <source>自动暂停共享时长</source>
+        <source>自动停止共享时长</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="77"/>
-        <source>0 表示不按共享时长自动暂停</source>
+        <source>0 表示不按共享时长自动停止</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

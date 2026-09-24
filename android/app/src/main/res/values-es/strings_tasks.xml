@@ -91,6 +91,8 @@
     <string name="task_sort_queue">Orden de la cola</string>
     <string name="task_sort_size">Tamaño de archivo</string>
     <string name="task_stop_save">Detener y guardar</string>
+    <string name="task_start_seeding">Empezar a compartir</string>
+    <string name="task_stop_seeding">Dejar de compartir</string>
     <string name="task_stream">Pista de vídeo</string>
     <string name="task_target_folder">Carpeta de destino: %1$s</string>
     <string name="task_trim_clear">Quitar recorte</string>

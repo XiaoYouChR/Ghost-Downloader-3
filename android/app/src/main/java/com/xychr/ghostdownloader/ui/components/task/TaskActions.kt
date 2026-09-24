@@ -9,7 +9,7 @@ import com.xychr.ghostdownloader.model.TaskUiState
 import com.xychr.ghostdownloader.model.hasSingleFile
 
 enum class TaskAction {
-    STOP, PAUSE, RESUME,
+    STOP, PAUSE, RESUME, START_SEEDING, STOP_SEEDING,
     OPEN_FILE, OPEN_FOLDER, SHARE_FILE,
     FILES, EDIT, CATEGORY, COPY_URL, COPY_PATH, SHARE_URL, MOVE_TO_FRONT, REDOWNLOAD, VERIFY_HASH, DELETE,
 }
@@ -34,10 +34,13 @@ fun buildTaskMainAction(source: TaskActionSource): TaskActionSpec = when {
     )
     source.status == TaskStatus.FAILED ->
         TaskActionSpec(TaskAction.RESUME, R.string.task_retry, R.drawable.ic_refresh)
+    source.isSeeding ->
+        TaskActionSpec(TaskAction.STOP_SEEDING, R.string.task_stop_seeding, R.drawable.ic_pause)
+    source.status == TaskStatus.COMPLETED && source.canSeed && !source.isFileMissing ->
+        TaskActionSpec(TaskAction.START_SEEDING, R.string.task_start_seeding, R.drawable.ic_play)
     source.status == TaskStatus.COMPLETED && source.hasSingleFile && source.isFileMissing ->
         redownloadSpec
-    source.status == TaskStatus.COMPLETED && source.hasSingleFile ->
-        TaskActionSpec(TaskAction.OPEN_FILE, R.string.task_detail_open_file, R.drawable.ic_open_in_new)
+    source.status == TaskStatus.COMPLETED && source.hasSingleFile -> openFileSpec
     source.status == TaskStatus.COMPLETED -> openFolderSpec
     else -> TaskActionSpec(TaskAction.RESUME, R.string.action_resume, R.drawable.ic_play)
 }
@@ -59,6 +62,7 @@ fun buildTaskActions(task: TaskUiState, isCategoryEnabled: Boolean): TaskActions
 
     val inline = when {
         task.status == TaskStatus.COMPLETED -> buildList {
+            if (main.action in seedingActions && task.hasSingleFile) add(openFileSpec)
             if (main.action != TaskAction.OPEN_FOLDER) add(openFolderSpec)
             if (main.action == TaskAction.OPEN_FILE) add(shareFileSpec)
             if (main.action != TaskAction.REDOWNLOAD) add(redownloadSpec)
@@ -88,6 +92,11 @@ fun buildTaskActions(task: TaskUiState, isCategoryEnabled: Boolean): TaskActions
 
     return TaskActions(main, inline, menu)
 }
+
+private val seedingActions = setOf(TaskAction.START_SEEDING, TaskAction.STOP_SEEDING)
+
+private val openFileSpec =
+    TaskActionSpec(TaskAction.OPEN_FILE, R.string.task_detail_open_file, R.drawable.ic_open_in_new)
 
 private val openFolderSpec =
     TaskActionSpec(TaskAction.OPEN_FOLDER, R.string.task_detail_open_folder, R.drawable.ic_folder_open)

@@ -53,6 +53,28 @@ class TaskActionsTest {
         assertFalse(installed.actionIds().inline.any { it.action == TaskAction.OPEN_FILE })
     }
 
+    @Test fun seedingTaskStopsSeedingAndKeepsOpening() {
+        val task = TaskUiState(status = "COMPLETED", hasOutputFile = true, canSeed = true, isSeeding = true)
+        val built = task.actionIds()
+        assertEquals(TaskAction.STOP_SEEDING, built.main.action)
+        assertEquals(
+            listOf(TaskAction.OPEN_FILE, TaskAction.OPEN_FOLDER, TaskAction.REDOWNLOAD),
+            built.inline.map { it.action },
+        )
+    }
+
+    @Test fun seedableCompletedTaskStartsSeeding() {
+        val task = TaskUiState(status = "COMPLETED", hasOutputFile = true, isOutputFolder = true, canSeed = true)
+        val built = task.actionIds()
+        assertEquals(TaskAction.START_SEEDING, built.main.action)
+        assertEquals(listOf(TaskAction.OPEN_FOLDER, TaskAction.REDOWNLOAD), built.inline.map { it.action })
+    }
+
+    @Test fun seedableTaskWithMissingFileCannotSeed() {
+        val task = TaskUiState(status = "COMPLETED", hasOutputFile = true, isFileMissing = true, canSeed = true)
+        assertEquals(TaskAction.REDOWNLOAD, task.actionIds().main.action)
+    }
+
     @Test fun failedTaskRetriesAndKeepsRedownload() {
         val task = TaskUiState(status = "FAILED")
         val built = task.actionIds()

@@ -123,8 +123,7 @@ class Engine:
         cfg.browserExtensionPort.valueChanged.connect(self._onBrowserPortChanged)
 
         self._coroutineRunner.start()
-        self._taskService.taskStarted.connect(lambda _: self._speedMeter.start())
-        self._taskService.tasksAllCompleted.connect(self._speedMeter.stop)
+        self._bindSpeedMeter()
         self._taskService.resumeSaved()
         self._featureService.activate()
         self._setupFlows()
@@ -138,6 +137,17 @@ class Engine:
             self._coroutineRunner.submit(self._checkUpdateAtStartup())
         logger.info("Engine started, dataDir={}", APP_DATA_DIR)
 
+    def _bindSpeedMeter(self):
+        self._taskService.taskStarted.connect(lambda _: self._speedMeter.start())
+        self._taskService.seedingStarted.connect(lambda _: self._speedMeter.start())
+        self._taskService.tasksAllCompleted.connect(self._onTaskWorkEnded)
+        self._taskService.seedingStopped.connect(self._onTaskWorkEnded)
+
+    def _onTaskWorkEnded(self, *_args):
+        if self._taskService.runningCount() == 0 and not any(
+                t.isSeeding for t in self._taskService.tasks):
+            self._speedMeter.stop()
+
     def _setupFlows(self):
         for signal in (
             self._taskService.taskAdded,
@@ -147,6 +157,8 @@ class Engine:
             self._taskService.taskCompleted,
             self._taskService.taskFailed,
             self._taskService.tasksAllCompleted,
+            self._taskService.seedingStarted,
+            self._taskService.seedingStopped,
         ):
             signal.connect(self._emitKeepAlive)
             signal.connect(self._emitTasks)
@@ -311,6 +323,8 @@ class Engine:
             "error": task.lastError.toDict() if task.lastError else None,
             **self._adapterFields(task, 'taskFields'),
             "canPause": task.canPause,
+            "canSeed": task.canSeed,
+            "isSeeding": task.isSeeding,
         }
 
     def _allFields(self, task) -> dict:
@@ -343,7 +357,7 @@ class Engine:
         from app.models.task import TaskStatus
         return json.dumps({
             t.taskId: self._listFields(t)
-            for t in self._taskService.tasks if t.status == TaskStatus.RUNNING
+            for t in self._taskService.tasks if t.status == TaskStatus.RUNNING or t.isSeeding
         }, ensure_ascii=False)
 
     def pause(self, taskId: str):
@@ -365,6 +379,16 @@ class Engine:
 
     def resumeAll(self):
         self._taskService.startAll()
+
+    def startSeeding(self, taskId: str):
+        task = self._taskService.taskById(taskId)
+        if task and task.canSeed and not task.isSeeding:
+            self._taskService.startSeeding(task)
+
+    def stopSeeding(self, taskId: str):
+        task = self._taskService.taskById(taskId)
+        if task and task.isSeeding:
+            self._taskService.stopSeeding(task)
 
     def stopTask(self, taskId: str):
         task = self._taskService.taskById(taskId)
@@ -918,6 +942,10 @@ class Engine:
                 "progress": sum(s[0] for s in snapshots) / len(running),
                 "speed": sum(s[1] for s in snapshots),
             })
+
+        seeding = sum(t.isSeeding for t in self._taskService.tasks)
+        if seeding:
+            return json.dumps({"reason": "seeding", "count": seeding})
 
         if self._aria2RpcServer.isRunning or self._browserService.boundPort:
             return json.dumps({"reason": "serving"})

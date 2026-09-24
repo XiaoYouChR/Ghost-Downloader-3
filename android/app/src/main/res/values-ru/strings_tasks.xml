@@ -91,6 +91,8 @@
     <string name="task_sort_queue">По очереди</string>
     <string name="task_sort_size">По размеру</string>
     <string name="task_stop_save">Остановить и сохранить</string>
+    <string name="task_start_seeding">Начать раздачу</string>
+    <string name="task_stop_seeding">Остановить раздачу</string>
     <string name="task_stream">Видеодорожка</string>
     <string name="task_target_folder">Папка назначения: %1$s</string>
     <string name="task_trim_clear">Сбросить обрезку</string>

@@ -80,6 +80,7 @@ class TorrentProgress:
     totalPeerCount: int
     seedCount: int
     isSeeding: bool
+    isFinished: bool
     downloadRate: int
     uploadRate: int
     shareRatioPercent: float
@@ -95,6 +96,7 @@ class ActiveTorrent:
     handle: lt.torrent_handle
     done: asyncio.Future
     onProgress: Callable[[TorrentProgress], None] | None
+    isDone: Callable[[TorrentProgress], bool]
     seedBase: int
     seedStart: int | None = None
     pollCount: int = 0
@@ -136,6 +138,18 @@ class BTSession:
 
     async def run(self, taskId: str, params: TorrentParams,
                   onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
+        return await self._run(taskId, params, onProgress, isDone=lambda p: p.isFinished)
+
+    async def runSeeding(self, taskId: str, params: TorrentParams, isManual: bool,
+                         onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
+        def isDone(p: TorrentProgress) -> bool:
+            return not isManual and p.isSeeding and self._isSeedingLimitReached(
+                p.shareRatioPercent, p.seedingTimeSeconds)
+        return await self._run(taskId, params, onProgress, isDone)
+
+    async def _run(self, taskId: str, params: TorrentParams,
+                   onProgress: Callable[[TorrentProgress], None] | None,
+                   isDone: Callable[[TorrentProgress], bool]) -> bytes:
         self._ensureSession()
         handle = self._addTorrent(params)
 
@@ -146,7 +160,7 @@ class BTSession:
 
         done = asyncio.get_running_loop().create_future()
         entry = ActiveTorrent(
-            handle=handle, done=done, onProgress=onProgress,
+            handle=handle, done=done, onProgress=onProgress, isDone=isDone,
             seedBase=params.seedingTimeSeconds,
         )
         self._active[taskId] = entry
@@ -474,32 +488,31 @@ class BTSession:
         totalWanted = status.total_wanted
         progress = (receivedBytes / totalWanted * 100) if totalWanted > 0 else 0
 
+        torrentProgress = TorrentProgress(
+            stateText=stateText,
+            peerCount=status.num_peers,
+            totalPeerCount=max(status.num_peers, status.list_peers),
+            seedCount=status.num_seeds,
+            isSeeding=isSeeding,
+            isFinished=status.is_finished,
+            downloadRate=downloadRate,
+            uploadRate=uploadRate,
+            shareRatioPercent=shareRatioPercent,
+            seedingTimeSeconds=seedingTimeSeconds,
+            progress=progress,
+            receivedBytes=receivedBytes,
+            totalWanted=totalWanted,
+            fileProgress=list(entry.handle.file_progress()),
+        )
         if entry.onProgress is not None:
-            entry.onProgress(TorrentProgress(
-                stateText=stateText,
-                peerCount=status.num_peers,
-                totalPeerCount=max(status.num_peers, status.list_peers),
-                seedCount=status.num_seeds,
-                isSeeding=isSeeding,
-                downloadRate=downloadRate,
-                uploadRate=uploadRate,
-                shareRatioPercent=shareRatioPercent,
-                seedingTimeSeconds=seedingTimeSeconds,
-                progress=progress,
-                receivedBytes=receivedBytes,
-                totalWanted=totalWanted,
-                fileProgress=list(entry.handle.file_progress()),
-            ))
+            entry.onProgress(torrentProgress)
 
         if entry.pendingPriorities is not None:
             entry.handle.prioritize_files(entry.pendingPriorities)
             entry.pendingPriorities = None
 
-        if isSeeding and not entry.done.done():
-            if self._isSeedingLimitReached(shareRatioPercent, seedingTimeSeconds):
-                logger.info("自动暂停做种: 分享率 {:.2f}%, 做种时间 {}s",
-                            shareRatioPercent, seedingTimeSeconds)
-                entry.done.set_result(None)
+        if not entry.done.done() and entry.isDone(torrentProgress):
+            entry.done.set_result(None)
 
         entry.pollCount += 1
         if entry.pollCount % _RESUME_SAVE_INTERVAL == 0:

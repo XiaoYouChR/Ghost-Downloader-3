@@ -40,8 +40,7 @@ class ED2kSession:
         name: str,
         outputFolder: Path,
         onStarted: Callable[[RunResult], None] | None = None,
-        onProgress: Callable[[Transfer, int], None] | None = None,
-        sharingTimeSeconds: int = 0,
+        onProgress: Callable[[Transfer], None] | None = None,
     ) -> None:
         _, linkSize, linkHash = parseEd2kLink(link)
         identity = toTransferKey(linkHash, linkSize)
@@ -84,18 +83,13 @@ class ED2kSession:
             if wasCancelled:
                 raise asyncio.CancelledError()
 
-            sharingStart = 0.0
-            loop = asyncio.get_running_loop()
             async for snapshot in client.snapshots():
                 for t in snapshot.transfers:
                     if t.hash != fileHash:
                         continue
-                    if not sharingStart and t.state == TransferState.FINISHED:
-                        sharingStart = loop.time() - sharingTimeSeconds
-                    elapsed = int(loop.time() - sharingStart) if sharingStart else 0
                     if onProgress:
-                        onProgress(t, elapsed)
-                    if sharingStart and isSharingLimitReached(elapsed):
+                        onProgress(t)
+                    if t.state == TransferState.FINISHED:
                         await client.pause(fileHash)
                         return
                     break
@@ -106,6 +100,47 @@ class ED2kSession:
                     await self._client.pause(fileHash)
                 except Exception as e:
                     logger.opt(exception=e).warning("暂停 eD2k 传输失败")
+            raise
+        finally:
+            self._activeTransfers.discard(identity)
+
+    async def runSeeding(
+        self,
+        link: str,
+        fileHash: str,
+        seedingTimeSeconds: int,
+        isManual: bool,
+        onProgress: Callable[[Transfer, int], None],
+    ) -> None:
+        _, linkSize, linkHash = parseEd2kLink(link)
+        identity = toTransferKey(linkHash, linkSize)
+        if identity in self._activeTransfers:
+            raise TaskError("该 eD2k 链接已在下载中")
+        self._activeTransfers.add(identity)
+
+        try:
+            await self._open()
+            client = self._client
+            await client.resume(fileHash)
+            loop = asyncio.get_running_loop()
+            seedingStart = loop.time() - seedingTimeSeconds
+            async for snapshot in client.snapshots():
+                for t in snapshot.transfers:
+                    if t.hash != fileHash:
+                        continue
+                    elapsed = int(loop.time() - seedingStart)
+                    onProgress(t, elapsed)
+                    if not isManual and isSeedingLimitReached(elapsed):
+                        await client.pause(fileHash)
+                        return
+                    break
+            raise asyncio.CancelledError()
+        except asyncio.CancelledError:
+            if self._client is not None:
+                try:
+                    await self._client.pause(fileHash)
+                except Exception as e:
+                    logger.opt(exception=e).warning("暂停 eD2k 做种失败")
             raise
         finally:
             self._activeTransfers.discard(identity)
@@ -157,8 +192,8 @@ class ED2kSession:
 ed2kSession = ED2kSession()
 
 
-def isSharingLimitReached(elapsed: int) -> bool:
-    limit = ed2kConfig.sharingTimeLimit.value
+def isSeedingLimitReached(elapsed: int) -> bool:
+    limit = ed2kConfig.seedingTimeLimit.value
     return limit > 0 and elapsed >= limit * 60
 
 

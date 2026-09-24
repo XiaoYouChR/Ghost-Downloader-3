@@ -89,7 +89,6 @@ internal val engineStrings: Map<String, Int> = mapOf(
     "校验已有文件" to R.string.engine_taskstate_40bcaa84,
     "检查续传状态" to R.string.engine_taskstate_42bf155e,
     "录制中" to R.string.engine_taskstate_5dceaa04,
-    "暂停做种" to R.string.engine_taskstate_6defa74a,
     "共享中" to R.string.engine_taskstate_94deeae2,
     "获取元数据" to R.string.engine_taskstate_9741aa95,
     "做种中" to R.string.engine_taskstate_a68a7138,

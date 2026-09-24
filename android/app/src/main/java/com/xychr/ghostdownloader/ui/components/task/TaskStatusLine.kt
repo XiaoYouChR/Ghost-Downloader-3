@@ -37,6 +37,8 @@ fun TaskStatusLine(
 
         isFileMissing -> listOf(stringResource(R.string.task_status_file_missing))
 
+        status == TaskStatus.COMPLETED && statusText.isNotEmpty() -> listOf(engineText(statusText))
+
         status == TaskStatus.COMPLETED ->
             listOf(stringResource(R.string.task_status_completed), formatTimestamp(completedAt))
                 .filter(String::isNotEmpty)

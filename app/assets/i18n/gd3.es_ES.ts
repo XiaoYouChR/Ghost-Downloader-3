@@ -167,9 +167,8 @@
             <translation>Esperando verificación</translation>
         </message>
         <message>
-            <location filename="../../../features/bittorrent_pack/cards.py" line="62" />
             <source>已暂停做种</source>
-            <translation>Compartición pausada</translation>
+            <translation type="vanished">Compartición pausada</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/cards.py" line="63" />
@@ -518,22 +517,22 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="75" />
-            <source>自动暂停做种分享率</source>
+            <source>自动停止做种分享率</source>
             <translation>Automático Seeding Ratio Límite</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="76" />
-            <source>0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
+            <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
             <translation>0 = sin límite de ratio; 100% = ratio de 1.0</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="78" />
-            <source>自动暂停做种时长</source>
+            <source>自动停止做种时长</source>
             <translation>Automático Seeding Time Límite</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="79" />
-            <source>0 表示不按做种时长自动暂停</source>
+            <source>0 表示不按做种时长自动停止</source>
             <translation>0 = sin límite de tiempo de compartición</translation>
         </message>
         <message>
@@ -1102,12 +1101,12 @@ You can adjust all options in Ajustes at any time.</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="76" />
-            <source>自动暂停共享时长</source>
+            <source>自动停止共享时长</source>
             <translation>Tiempo límite de compartición automática</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="77" />
-            <source>0 表示不按共享时长自动暂停</source>
+            <source>0 表示不按共享时长自动停止</source>
             <translation>0 = sin límite por tiempo de compartición</translation>
         </message>
     </context>

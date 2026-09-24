@@ -201,6 +201,7 @@ class Task:
     canEdit: ClassVar[bool] = False
     fileType: ClassVar[type] = TaskFile
     hasOutputFile: ClassVar[bool] = True
+    canSeed: ClassVar[bool] = False
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -218,6 +219,8 @@ class Task:
     fileSize: int = 0
     files: list[TaskFile] | None = None
     category: str | None = None
+    shouldSeed: bool = False
+    isSeeding: bool = field(default=False, init=False, repr=False)
 
     @property
     def outputPath(self) -> str:
@@ -360,6 +363,7 @@ class Task:
 
     def reset(self) -> TaskStatus:
         self.completedAt = 0
+        self.shouldSeed = True
         if not self.steps:
             self.status = TaskStatus.WAITING
             return self.status
@@ -440,6 +444,9 @@ class Task:
                 currentStep.setError(toTaskError(e))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
+
+    async def runSeeding(self, isManual: bool) -> None:
+        raise NotImplementedError
 
     def toDict(self) -> dict:
         from app.models.serialization import toDict

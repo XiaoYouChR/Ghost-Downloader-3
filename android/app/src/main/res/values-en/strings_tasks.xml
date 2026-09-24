@@ -91,6 +91,8 @@
     <string name="task_sort_queue">Queue order</string>
     <string name="task_sort_size">File size</string>
     <string name="task_stop_save">Stop and save</string>
+    <string name="task_start_seeding">Start seeding</string>
+    <string name="task_stop_seeding">Stop seeding</string>
     <string name="task_stream">Video track</string>
     <string name="task_target_folder">Target directory: %1$s</string>
     <string name="task_trim_clear">Clear trim</string>

@@ -59,9 +59,9 @@ fun ED2kSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
     SettingSection(title = stringResource(R.string.ed2k_section_sharing)) {
         NumberSettingRow(
             title = stringResource(R.string.ed2k_sharing_time_limit),
-            value = config.int(k("sharingTimeLimit")),
-            range = SettingRanges[k("sharingTimeLimit")],
-            onConfirm = { set(k("sharingTimeLimit"), it) },
+            value = config.int(k("seedingTimeLimit")),
+            range = SettingRanges[k("seedingTimeLimit")],
+            onConfirm = { set(k("seedingTimeLimit"), it) },
             unit = "min",
             valueText = { if (it == 0) unlimited else "$it min" },
         )
