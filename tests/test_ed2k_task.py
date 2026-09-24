@@ -197,34 +197,91 @@ async def test_transfer_exists_resumes_existing(monkeypatch, tmp_path):
     assert fakeClient.removed == []
 
 
-async def test_finished_enters_sharing_immediately(monkeypatch, tmp_path):
-    class FinishedClient(FakeClient):
-        async def addLink(self, link: str, outputDir: Path) -> Transfer:
-            transfer = await super().addLink(link, outputDir)
-            self.transfer = replace(
-                transfer,
-                state=TransferState.FINISHED,
-                done=transfer.size,
-                received=transfer.size,
-            )
-            return self.transfer
+class FinishedClient(FakeClient):
+    async def addLink(self, link: str, outputDir: Path) -> Transfer:
+        transfer = await super().addLink(link, outputDir)
+        self.transfer = replace(
+            transfer,
+            state=TransferState.FINISHED,
+            done=transfer.size,
+            received=transfer.size,
+            uploadRate=512,
+        )
+        return self.transfer
 
+
+async def test_download_completes_when_finished(monkeypatch, tmp_path):
     fakeClient = FinishedClient()
     session = session_module.ED2kSession()
     session._client = fakeClient
     monkeypatch.setattr(session_module, "ed2kSession", session)
     task = makeTask(tmp_path)
 
-    running = asyncio.create_task(task.steps[0].run(lambda _: None, None))
-    await fakeClient.snapshotStarted.wait()
+    await task.steps[0].run(lambda _: None, None)
 
-    assert task.isSharing
-    assert task.sharingTimeSeconds == 0
+    assert task.status == TaskStatus.COMPLETED
     assert task.steps[0].receivedBytes == 1234
+    assert fakeClient.paused == [FILE_HASH]
+    assert not session._activeTransfers
 
-    running.cancel()
+
+async def completeDownload(monkeypatch, tmp_path) -> tuple[ED2kTask, FakeClient]:
+    fakeClient = FinishedClient()
+    session = session_module.ED2kSession()
+    session._client = fakeClient
+    monkeypatch.setattr(session_module, "ed2kSession", session)
+    task = makeTask(tmp_path)
+    await task.steps[0].run(lambda _: None, None)
+    fakeClient.paused.clear()
+    fakeClient.snapshotStarted.clear()
+    return task, fakeClient
+
+
+async def test_seeding_resumes_transfer_until_stopped(monkeypatch, tmp_path):
+    task, fakeClient = await completeDownload(monkeypatch, tmp_path)
+
+    seeding = asyncio.create_task(task.runSeeding(isManual=False))
+    await fakeClient.snapshotStarted.wait()
+    await asyncio.sleep(0)
+
+    assert fakeClient.resumed == [FILE_HASH]
+    assert task.uploadRate == 512
+
+    seeding.cancel()
     with pytest.raises(asyncio.CancelledError):
-        await running
+        await seeding
+
+    assert fakeClient.paused == [FILE_HASH]
+    assert task.uploadRate == 0
+    assert not session_module.ed2kSession._activeTransfers
+
+
+async def test_seeding_ends_at_limit(monkeypatch, tmp_path):
+    from ed2k_pack.config import ed2kConfig
+    monkeypatch.setattr(ed2kConfig.seedingTimeLimit, "value", 1)
+    task, fakeClient = await completeDownload(monkeypatch, tmp_path)
+    task.seedingTimeSeconds = 120
+
+    await task.runSeeding(isManual=False)
+
+    assert fakeClient.paused == [FILE_HASH]
+    assert task.seedingTimeSeconds >= 120
+
+
+async def test_manual_seeding_ignores_limit(monkeypatch, tmp_path):
+    from ed2k_pack.config import ed2kConfig
+    monkeypatch.setattr(ed2kConfig.seedingTimeLimit, "value", 1)
+    task, fakeClient = await completeDownload(monkeypatch, tmp_path)
+    task.seedingTimeSeconds = 120
+
+    seeding = asyncio.create_task(task.runSeeding(isManual=True))
+    await fakeClient.snapshotStarted.wait()
+    await asyncio.sleep(0)
+
+    assert not seeding.done()
+    seeding.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await seeding
 
 
 async def test_parser_rejects_active_duplicate_on_add_task_page(monkeypatch, tmp_path):

@@ -524,3 +524,236 @@ class TestEdit:
         initial_count = len(runner.submitted)
         svc.edit(task, {})
         assert len(runner.submitted) > initial_count
+
+
+@dataclass(kw_only=True, eq=False)
+class SeedTask(Task):
+    canSeed = True
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.seedingCalls: list[bool] = []
+
+    def runSeeding(self, isManual):
+        self.seedingCalls.append(isManual)
+        return StubStep(stepIndex=0).run(None, None)
+
+
+def makeSeedTask(taskId: str, tmp_path: Path) -> SeedTask:
+    task = SeedTask(name=f"{taskId}.bin", url="magnet:?xt=urn:btih:x", packId="bt",
+                    taskId=taskId, steps=[StubStep(stepIndex=0)], outputFolder=tmp_path)
+    return task
+
+
+def finishRun(runner, task):
+    workId, done, _ = runner.dispatched[-1]
+    task.setStatus(TaskStatus.COMPLETED)
+    done(None)
+    return workId
+
+
+class TestSeeding:
+
+    def test_completed_run_frees_slot_and_starts_seeding(self, service, tmp_path, qtbot):
+        svc, runner = service
+        task = makeSeedTask("sd1", tmp_path)
+        svc.add(task)
+        with qtbot.waitSignal(svc.seedingStarted, timeout=1000), \
+                qtbot.waitSignal(svc.tasksAllCompleted, timeout=1000):
+            finishRun(runner, task)
+        assert task.status == TaskStatus.COMPLETED
+        assert task.isSeeding
+        assert task.seedingCalls == [False]
+        assert svc.runningCount() == 0
+
+    def test_seeding_does_not_block_queue(self, service, tmp_path, monkeypatch):
+        from app.config.cfg import cfg
+        svc, runner = service
+        monkeypatch.setattr(cfg.maxTaskNum, "value", 1)
+        seed = makeSeedTask("sd2", tmp_path)
+        other = makeTask("sd2-other")
+        svc.add(seed)
+        svc.add(other)
+        finishRun(runner, seed)
+        assert other.status == TaskStatus.RUNNING
+
+    def test_task_that_cannot_seed_does_not_seed(self, service):
+        svc, runner = service
+        task = makeTask("sd3")
+        svc.add(task)
+        count = len(runner.dispatched)
+        finishRun(runner, task)
+        assert not task.isSeeding
+        assert len(runner.dispatched) == count
+
+    def test_should_not_seed_skips_seeding(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd4", tmp_path)
+        svc.add(task)
+        task.shouldSeed = False
+        finishRun(runner, task)
+        assert not task.isSeeding
+        assert task.seedingCalls == []
+
+    def test_stop_seeding_cancels_and_remembers(self, service, tmp_path, qtbot):
+        svc, runner = service
+        task = makeSeedTask("sd5", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        seedingWorkId = runner.submitted[-1][0]
+        with qtbot.waitSignal(svc.seedingStopped, timeout=1000):
+            svc.stopSeeding(task)
+        assert seedingWorkId in runner.cancelled
+        assert not task.isSeeding
+        assert not task.shouldSeed
+        assert task.status == TaskStatus.COMPLETED
+
+    def test_start_seeding_is_manual(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd6", tmp_path)
+        svc.add(task)
+        task.shouldSeed = False
+        finishRun(runner, task)
+        svc.startSeeding(task)
+        assert task.isSeeding
+        assert task.shouldSeed
+        assert task.seedingCalls == [True]
+        assert svc.runningCount() == 0
+
+    def test_seeding_ending_by_itself_is_remembered(self, service, tmp_path, qtbot):
+        svc, runner = service
+        task = makeSeedTask("sd7", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        _, done, _ = runner.submitted[-1]
+        with qtbot.waitSignal(svc.seedingStopped, timeout=1000):
+            done(None)
+        assert not task.isSeeding
+        assert not task.shouldSeed
+
+    def test_seeding_failure_keeps_wish(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd8", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        _, _, failed = runner.submitted[-1]
+        failed(RuntimeError("tracker"))
+        assert not task.isSeeding
+        assert task.shouldSeed
+        assert task.status == TaskStatus.COMPLETED
+
+    def test_delete_stops_seeding(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd9", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        seedingWorkId = runner.submitted[-1][0]
+        svc.delete(task, shouldDeleteFiles=False)
+        assert seedingWorkId in runner.cancelled
+
+    def test_redownload_stops_seeding_and_restores_wish(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd10", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        svc.stopSeeding(task)
+        svc.startSeeding(task)
+        seedingWorkId = runner.submitted[-1][0]
+        task.shouldSeed = False
+        svc.redownload(task)
+        assert seedingWorkId in runner.cancelled
+        assert task.shouldSeed
+        assert task.status == TaskStatus.RUNNING
+
+    def test_revive_stops_seeding_before_run(self, service, tmp_path):
+        from app.models.task import TaskFile
+        svc, runner = service
+        task = makeSeedTask("sd11", tmp_path)
+        task.files = [TaskFile(index=0, relativePath="a", completed=True),
+                      TaskFile(index=1, relativePath="b", selected=False)]
+        svc.add(task)
+        finishRun(runner, task)
+        seedingWorkId = runner.submitted[-1][0]
+        task.setSelection = lambda indexes: setattr(task.files[1], "selected", True)
+        svc.updateSelection(task, {0, 1})
+        assert seedingWorkId in runner.cancelled
+        assert not task.isSeeding
+        assert runner.submitted[-1][0] != seedingWorkId
+
+    def test_saved_seeding_task_resumes_seeding(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd12", tmp_path)
+        task.shouldSeed = True
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / task.name).touch()
+        svc._store.loadSaved = lambda: [task]
+        svc.resumeSaved()
+        assert task.isSeeding
+        assert task.seedingCalls == [False]
+
+    def test_saved_task_with_missing_file_does_not_seed(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd13", tmp_path)
+        task.setStatus(TaskStatus.COMPLETED)
+        svc._store.loadSaved = lambda: [task]
+        svc.resumeSaved()
+        assert not task.isSeeding
+
+    def test_file_disappearing_stops_seeding(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd14", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        seedingWorkId = runner.submitted[-1][0]
+        svc._onWatchedFileChanged(task.outputPath)
+        assert seedingWorkId in runner.cancelled
+        assert not task.isSeeding
+        assert task.shouldSeed
+
+    def test_seeding_state_is_not_persisted(self, tmp_path):
+        task = makeSeedTask("sd15", tmp_path)
+        task.shouldSeed = True
+        task.isSeeding = True
+        data = task.toDict()
+        assert "isSeeding" not in data
+        assert data["shouldSeed"] is True
+
+    def test_new_task_wants_seeding(self, service, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sd16", tmp_path)
+        svc.add(task)
+        assert task.shouldSeed
+
+    def test_record_from_before_seeding_existed_does_not_seed(self, service, tmp_path):
+        svc, runner = service
+        old = makeSeedTask("sd17", tmp_path)
+        old.setStatus(TaskStatus.COMPLETED)
+        record = old.toDict()
+        record.pop("shouldSeed")
+        restored = SeedTask.fromDict(record)
+        (tmp_path / restored.name).touch()
+        svc._store.loadSaved = lambda: [restored]
+        svc.resumeSaved()
+        assert not restored.shouldSeed
+        assert not restored.isSeeding
+
+    def test_stale_run_done_after_revive_does_not_seed(self, service, tmp_path):
+        from app.models.task import TaskFile
+        svc, runner = service
+        task = makeSeedTask("sd18", tmp_path)
+        task.files = [TaskFile(index=0, relativePath="a", completed=True),
+                      TaskFile(index=1, relativePath="b", selected=False)]
+        svc.add(task)
+        _, staleDone, _ = runner.dispatched[-1]
+        task.setStatus(TaskStatus.COMPLETED)
+
+        def select(indexes):
+            task.files[1].selected = True
+            task.steps[0].status = TaskStatus.WAITING
+            task.updateStatus()
+        task.setSelection = select
+        svc.updateSelection(task, {0, 1})
+        assert task.status == TaskStatus.RUNNING
+
+        staleDone(None)
+        assert not task.isSeeding

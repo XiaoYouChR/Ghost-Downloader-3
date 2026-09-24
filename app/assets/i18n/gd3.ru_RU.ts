@@ -323,9 +323,8 @@
             <translation>Ожидание проверки</translation>
         </message>
         <message>
-            <location filename="../../../features/bittorrent_pack/cards.py" line="62" />
             <source>已暂停做种</source>
-            <translation>Приостановлена раздача</translation>
+            <translation type="vanished">Приостановлена раздача</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/cards.py" line="63" />
@@ -726,22 +725,22 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="75" />
-            <source>自动暂停做种分享率</source>
-            <translation>Автопауза по ratio</translation>
+            <source>自动停止做种分享率</source>
+            <translation>Автоостановка по ratio</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="76" />
-            <source>0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
+            <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
             <translation>0 — не останавливать по коэффициенту, 100% — коэффициент 1.0</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="78" />
-            <source>自动暂停做种时长</source>
-            <translation>Автопауза по времени</translation>
+            <source>自动停止做种时长</source>
+            <translation>Автоостановка по времени</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="79" />
-            <source>0 表示不按做种时长自动暂停</source>
+            <source>0 表示不按做种时长自动停止</source>
             <translation>0 — не останавливать по времени сидирования</translation>
         </message>
         <message>
@@ -1587,12 +1586,12 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="76" />
-            <source>自动暂停共享时长</source>
-            <translation>Автопауза по времени раздачи</translation>
+            <source>自动停止共享时长</source>
+            <translation>Автоостановка по времени раздачи</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="77" />
-            <source>0 表示不按共享时长自动暂停</source>
+            <source>0 表示不按共享时长自动停止</source>
             <translation>0 — не останавливать по времени раздачи</translation>
         </message>
     </context>

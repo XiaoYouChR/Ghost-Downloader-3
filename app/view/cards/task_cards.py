@@ -80,7 +80,9 @@ SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toSizeText})
 
 TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, N("TaskCard", "暂停/继续"), PrimaryToolButton, states={
     TaskStatus.RUNNING: lambda t: ButtonState(icon=FluentIcon.PAUSE, enabled=t.canPause),
-    TaskStatus.COMPLETED: lambda t: ButtonState(enabled=False),
+    TaskStatus.COMPLETED: lambda t: ButtonState(
+        icon=FluentIcon.PAUSE if t.isSeeding else None,
+        enabled=t.canSeed and (not t.hasOutputFile or isExisting(t.outputPath))),
 })
 
 SELECT_FILES_BUTTON = ButtonSpec("selectFiles", FluentIcon.LIBRARY, N("TaskCard", "选择文件"),
@@ -214,7 +216,8 @@ class TaskCard(CardWidget):
         self._categoryService.categoriesChanged.connect(self._refreshCategoryIcon)
 
     def refresh(self, force: bool = False) -> None:
-        if not force and self._lastStatus == self._task.status and self._task.status != TaskStatus.RUNNING:
+        if (not force and self._lastStatus == self._task.status
+                and self._task.status != TaskStatus.RUNNING and not self._task.isSeeding):
             return
 
         task = self._task
@@ -316,7 +319,11 @@ class TaskCard(CardWidget):
             button.setEnabled(state.enabled)
 
     def _onToggleClicked(self) -> None:
-        if self._task.status == TaskStatus.RUNNING:
+        if self._task.isSeeding:
+            self._taskService.stopSeeding(self._task)
+        elif self._task.status == TaskStatus.COMPLETED:
+            self._taskService.startSeeding(self._task)
+        elif self._task.status == TaskStatus.RUNNING:
             self._taskService.pause(self._task)
         else:
             self._taskService.start(self._task)

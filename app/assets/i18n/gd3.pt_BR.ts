@@ -267,9 +267,8 @@
             <translation>Aguardando verificação</translation>
         </message>
         <message>
-            <location filename="../../../features/bittorrent_pack/cards.py" line="62" />
             <source>已暂停做种</source>
-            <translation>Seeding pausado</translation>
+            <translation type="vanished">Seeding pausado</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/cards.py" line="63" />
@@ -622,23 +621,23 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="75" />
-            <source>自动暂停做种分享率</source>
-            <translation>Taxa de compartilhamento para pausa automática de seeding</translation>
+            <source>自动停止做种分享率</source>
+            <translation>Taxa de compartilhamento para parada automática de seeding</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="76" />
-            <source>0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
-            <translation>0 desativa a pausa automática por taxa de compartilhamento; 100% significa taxa 1,0</translation>
+            <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
+            <translation>0 desativa a parada automática por taxa de compartilhamento; 100% significa taxa 1,0</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="78" />
-            <source>自动暂停做种时长</source>
-            <translation>Duração de seeding para pausa automática</translation>
+            <source>自动停止做种时长</source>
+            <translation>Duração de seeding para parada automática</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="79" />
-            <source>0 表示不按做种时长自动暂停</source>
-            <translation>0 desativa a pausa automática por duração de seeding</translation>
+            <source>0 表示不按做种时长自动停止</source>
+            <translation>0 desativa a parada automática por duração de seeding</translation>
         </message>
         <message>
             <location filename="../../../features/bittorrent_pack/config.py" line="81" />
@@ -1240,13 +1239,13 @@ Você pode ajustar todas as opções nas configurações a qualquer momento.</tr
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="76" />
-            <source>自动暂停共享时长</source>
-            <translation>Duração de compartilhamento para pausa automática</translation>
+            <source>自动停止共享时长</source>
+            <translation>Duração de compartilhamento para parada automática</translation>
         </message>
         <message>
             <location filename="../../../features/ed2k_pack/config.py" line="77" />
-            <source>0 表示不按共享时长自动暂停</source>
-            <translation>0 desativa a pausa automática por duração de compartilhamento</translation>
+            <source>0 表示不按共享时长自动停止</source>
+            <translation>0 desativa a parada automática por duração de compartilhamento</translation>
         </message>
     </context>
     <context>
