@@ -4,7 +4,9 @@ import hashlib
 import re
 import shutil
 import sys
+from os import PathLike
 from pathlib import Path
+from stat import S_ISDIR
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
@@ -14,6 +16,21 @@ WINDOWS_RESERVED_FILENAMES = {
     *(f"COM{i}" for i in range(1, 10)),
     *(f"LPT{i}" for i in range(1, 10)),
 }
+
+
+def probe(path: str | PathLike[str]) -> bool:
+    try:
+        Path(path).stat()
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def probeDirectory(path: str | PathLike[str]) -> bool:
+    try:
+        return S_ISDIR(Path(path).stat().st_mode)
+    except (OSError, ValueError):
+        return False
 
 
 def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:

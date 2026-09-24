@@ -9,6 +9,8 @@ from PySide6.QtGui import QDesktopServices, QDrag
 from PySide6.QtWidgets import QApplication, QWidget
 from loguru import logger
 
+from app.platform.filesystem import probe
+
 
 def buildFontFamilies(locale: QLocale, defaultFamily: str) -> list[str]:
     locale = locale if locale.script() != QLocale.Script.AnyScript else QLocale.system()
@@ -118,7 +120,7 @@ def openFolder(path: str | PathLike[str]) -> None:
 
 def revealInFolder(path: str | PathLike[str]) -> None:
     path = Path(path)
-    if path.exists():
+    if probe(path):
         match sys.platform:
             case "win32":
                 if not _revealInFolderShell(path):
@@ -127,7 +129,7 @@ def revealInFolder(path: str | PathLike[str]) -> None:
                 QProcess.startDetached("open", ["-R", str(path)])
             case _:
                 QProcess.startDetached("xdg-open", [str(path.parent)])
-    elif path.parent.exists():
+    elif probe(path.parent):
         openFolder(path.parent)
 
 
