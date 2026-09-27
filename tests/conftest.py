@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import sys
+
 import pytest
 from aiohttp import web
 
@@ -31,3 +34,14 @@ async def server():
 
     for runner in runners:
         await runner.cleanup()
+
+
+def pytest_asyncio_loop_factories(config, item):
+    marker = item.get_closest_marker("asyncio")
+    if marker is None or "loop_factories" not in marker.kwargs:
+        return {"asyncio": asyncio.new_event_loop}
+    if sys.platform == "win32":
+        from winloop import new_event_loop
+    else:
+        from uvloop import new_event_loop
+    return {"asyncio": asyncio.new_event_loop, "uvloop": new_event_loop}
