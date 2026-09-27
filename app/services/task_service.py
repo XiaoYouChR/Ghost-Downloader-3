@@ -241,6 +241,7 @@ class TaskService:
         task.shouldSeed = False
         self._flushSoon()
         self._cancelWork(task)
+        self._refreshSpeedMeter()
 
     def pause(self, task: Task) -> None:
         from app.models.task import TaskStatus
@@ -397,6 +398,7 @@ class TaskService:
             failed=lambda _: self._onSeedingEnded(task),
         )
         self.seedingStarted.emit(task)
+        self._refreshSpeedMeter()
 
     def _onSeedingDone(self, task: Task) -> None:
         task.shouldSeed = False
@@ -407,6 +409,7 @@ class TaskService:
         task.isSeeding = False
         self._flushSoon()
         self.seedingStopped.emit(task)
+        self._refreshSpeedMeter()
 
     def _canDeleteIn(self, folder: Path) -> bool:
         if sys.platform != "darwin":
@@ -448,6 +451,13 @@ class TaskService:
             task = self._store.taskById(taskId)
             if task is not None:
                 self._dispatch(task)
+        self._refreshSpeedMeter()
+
+    def _refreshSpeedMeter(self) -> None:
+        if self._queue.runningCount() or self._seeding:
+            self._speedMeter.start()
+        else:
+            self._speedMeter.stop()
 
     def _onRunDone(self, task: Task) -> None:
         from app.models.task import TaskStatus

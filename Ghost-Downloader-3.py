@@ -92,8 +92,6 @@ def startApp(application, isSilent=False):
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
-    taskService.taskStarted.connect(lambda _: speedMeter.start())
-    taskService.tasksAllCompleted.connect(speedMeter.stop)
 
     application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
