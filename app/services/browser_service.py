@@ -192,7 +192,7 @@ class BrowserService:
     taskDraftRequested = Signal(list)
     extensionUpdated = Signal(str)
 
-    def __init__(self, coroutineRunner, taskService, parse, loadCrx):
+    def __init__(self, coroutineRunner, taskService, speedChanged, parse, loadCrx):
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService
         self._parse = parse
@@ -200,10 +200,15 @@ class BrowserService:
         self._sessions: dict[WebSocketStream, BrowserClientSession] = {}
         self._pairRequest: PairRequest | None = None
         self._pairSession: BrowserClientSession | None = None
-        self._snapshotWorkId: str | None = None
+        self._isSnapshotPending = False
         self._isUpdatingExtension = False
         if not cfg.browserExtensionPairToken.value:
             cfg.set(cfg.browserExtensionPairToken, token_urlsafe(16))
+        for signal in (taskService.taskAdded, taskService.taskRemoved, taskService.taskStarted,
+                       taskService.taskPaused, taskService.taskCompleted, taskService.taskFailed,
+                       taskService.seedingStarted, taskService.seedingStopped,
+                       taskService.queueChanged, taskService.fileDisappeared, speedChanged):
+            signal.connect(self._onTasksChanged)
 
     @property
     def connectionSummary(self) -> tuple[str, str]:
@@ -275,11 +280,6 @@ class BrowserService:
         finally:
             self._coroutineRunner.post(self._onDisconnected, stream)
 
-    async def _broadcastLoop(self) -> None:
-        while True:
-            await asyncio.sleep(1)
-            self._coroutineRunner.post(self._broadcastSnapshots)
-
     def _send(self, session: BrowserClientSession, payload: dict) -> None:
         self._coroutineRunner.submit(session.stream.send(json.dumps(payload, ensure_ascii=False)))
 
@@ -318,21 +318,24 @@ class BrowserService:
 
     def _onConnected(self, stream: WebSocketStream, peerAddress: str) -> None:
         self._sessions[stream] = BrowserClientSession(stream=stream, peerAddress=peerAddress)
-        if self._snapshotWorkId is None:
-            self._snapshotWorkId = self._coroutineRunner.submit(self._broadcastLoop())
 
     def _onDisconnected(self, stream: WebSocketStream) -> None:
         session = self._sessions.pop(stream)
         if session is self._pairSession:
             self._setPairRequest(None, None)
-        if not self._sessions:
-            self._coroutineRunner.cancel(self._snapshotWorkId)
-            self._snapshotWorkId = None
         if session.isAuthenticated:
             self.connectionChanged.emit()
 
-    def _broadcastSnapshots(self) -> None:
-        if not self._sessions:
+    def _onTasksChanged(self, *_args) -> None:
+        if self._isSnapshotPending:
+            return
+        self._isSnapshotPending = True
+        self._coroutineRunner.post(self._sendSnapshots)
+
+    def _sendSnapshots(self) -> None:
+        self._isSnapshotPending = False
+        subscribers = [s for s in self._sessions.values() if s.isAuthenticated and s.isSubscribedToTasks]
+        if not subscribers:
             return
         tasks = sorted(self._taskService.tasks, key=lambda t: t.createdAt, reverse=True)
         snapshot = json.dumps({
@@ -340,9 +343,7 @@ class BrowserService:
             "tasks": [toTaskSummary(t) for t in tasks],
         }, ensure_ascii=False)
 
-        for session in self._sessions.values():
-            if not session.isAuthenticated or not session.isSubscribedToTasks:
-                continue
+        for session in subscribers:
             if session.lastSnapshot == snapshot:
                 continue
             session.lastSnapshot = snapshot
@@ -386,7 +387,7 @@ class BrowserService:
         if msgType == MessageType.SUBSCRIBE_TASKS:
             session.isSubscribedToTasks = True
             session.lastSnapshot = None
-            self._broadcastSnapshots()
+            self._sendSnapshots()
         elif msgType == MessageType.CREATE_TASK:
             self._onCreateTask(session, data)
         elif msgType == MessageType.TASK_ACTION:
@@ -515,7 +516,6 @@ class BrowserService:
 
         self._taskService.add(task)
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.CREATED, taskId=task.taskId)
-        self._broadcastSnapshots()
 
     def _onTaskParseFailed(self, error, session: BrowserClientSession, requestId: str, **_) -> None:
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.REJECTED, message=str(error))
@@ -584,7 +584,6 @@ class BrowserService:
                 revealInFolder(path)
 
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=True)
-            self._broadcastSnapshots()
 
         except Exception as e:
             logger.opt(exception=e).error("Browser task action failed")
