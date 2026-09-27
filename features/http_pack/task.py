@@ -261,15 +261,9 @@ class HttpTaskStep(TaskStep):
 
     async def _runSubworker(self, subworker: HttpSubworker, fd: int, delay: float = 0) -> None:
         await asyncio.sleep(delay)
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
-        try:
-            await self._runSubworkerWith(subworker, fd, client)
-        finally:
-            client.close()
-
-    async def _runSubworkerWith(self, subworker: HttpSubworker, fd: int, client) -> None:
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
+                client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
                     httpPos = self.httpByteOffset + subworker.position
                     headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-", "accept-encoding": "identity"}
@@ -301,9 +295,12 @@ class HttpTaskStep(TaskStep):
                         raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
+                finally:
+                    client.close()
 
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
             while True:
+                client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
                     ftruncate(fd, 0)
                     subworker.receivedBytes = 0
@@ -334,9 +331,12 @@ class HttpTaskStep(TaskStep):
                         raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
+                finally:
+                    client.close()
 
         else:
             while subworker.position <= subworker.end:
+                client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
                     httpPos = self.httpByteOffset + subworker.position
                     httpEnd = self.httpByteOffset + subworker.end
@@ -381,6 +381,8 @@ class HttpTaskStep(TaskStep):
                         raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
+                finally:
+                    client.close()
 
             self._reassignSubworker()
 
