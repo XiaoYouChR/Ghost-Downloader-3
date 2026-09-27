@@ -107,7 +107,7 @@ class CategoryRulesCard(CollapsibleSettingCard):
     def _bind(self) -> None:
         self.addButton.clicked.connect(self._onAddClicked)
         self.resetButton.clicked.connect(self._onResetClicked)
-        self._categoryService.categoriesChanged.connect(self._reload)
+        self._categoryService.categoriesChanged.connect(self._reload, owner=self)
 
     def _reload(self) -> None:
         for row in self._rowWidgets:

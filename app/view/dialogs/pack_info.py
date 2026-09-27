@@ -98,7 +98,7 @@ class PackInfoDialog(MessageBoxBase):
             self.viewLayout.addWidget(row)
 
     def _bind(self) -> None:
-        self._updateService.changed.connect(self._onUpdateChanged)
+        self._updateService.changed.connect(self._onUpdateChanged, owner=self)
 
     def _onUpdateChanged(self, info) -> None:
         row = self._rows.get(info.targetId)

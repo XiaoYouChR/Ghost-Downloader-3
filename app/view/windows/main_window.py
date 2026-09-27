@@ -239,15 +239,10 @@ class MainWindow(MSFluentWindow):
         QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
 
         if self._updateService is not None:
-            self._updateService.changed.connect(self._onUpdateChanged)
+            self._updateService.changed.connect(self._onUpdateChanged, owner=self)
 
-        subscriptions = [
-            (self._browserServer.stateChanged, self._onBrowserListenStateChanged),
-            (self._aria2Server.stateChanged, self._onAria2ListenStateChanged),
-        ]
-        for signal, slot in subscriptions:
-            signal.connect(slot)
-        self.destroyed.connect(lambda: [signal.disconnect(slot) for signal, slot in subscriptions])
+        self._browserServer.stateChanged.connect(self._onBrowserListenStateChanged, owner=self)
+        self._aria2Server.stateChanged.connect(self._onAria2ListenStateChanged, owner=self)
 
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectWin)

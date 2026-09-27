@@ -396,15 +396,9 @@ class SettingPage(ScrollArea):
     def _bind(self) -> None:
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
-        subscriptions = [
-            (self._browserService.connectionChanged, self._refreshBrowserStatus),
-            (self._browserServer.stateChanged, self._refreshBrowserStatus),
-            (self._aria2Server.stateChanged, self._refreshAria2Status),
-        ]
-        for signal, slot in subscriptions:
-            signal.connect(slot)
-        # 服务比页面长寿：页面销毁后 Python 包装对象可能还活着，不断开的话信号会打到已删除的控件上
-        self.destroyed.connect(lambda: [signal.disconnect(slot) for signal, slot in subscriptions])
+        self._browserService.connectionChanged.connect(self._refreshBrowserStatus, owner=self)
+        self._browserServer.stateChanged.connect(self._refreshBrowserStatus, owner=self)
+        self._aria2Server.stateChanged.connect(self._refreshAria2Status, owner=self)
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
@@ -557,7 +551,7 @@ class SettingPage(ScrollArea):
                     InfoBar.success(self.tr("当前已是最新版本"), "",
                                     duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
-        self._updateService.changed.connect(onChecked)
+        self._updateService.changed.connect(onChecked, owner=self)
         self._updateService.check()
 
     def _onOpenLogClicked(self) -> None:

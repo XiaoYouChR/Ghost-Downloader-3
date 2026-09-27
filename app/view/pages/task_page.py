@@ -278,18 +278,18 @@ class TaskPage(QWidget):
         layout.addWidget(self.scrollArea)
 
     def _bind(self) -> None:
-        self._taskService.taskAdded.connect(self._onTaskAdded)
-        self._taskService.taskRemoved.connect(self._onTaskRemoved)
-        self._taskService.taskStarted.connect(self._onTaskStarted)
-        self._taskService.taskPaused.connect(self._onTaskStopped)
-        self._taskService.taskCompleted.connect(self._onTaskStopped)
-        self._taskService.taskFailed.connect(self._onTaskStopped)
-        self._taskService.seedingStarted.connect(self._onSeedingStarted)
-        self._taskService.seedingStopped.connect(self._onSeedingStopped)
-        self._taskService.queueChanged.connect(self._onQueueChanged)
-        self._taskService.fileDisappeared.connect(self._onFileDisappeared)
-        self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied)
-        self._speedMeter.speedChanged.connect(self._onSpeedChanged)
+        self._taskService.taskAdded.connect(self._onTaskAdded, owner=self)
+        self._taskService.taskRemoved.connect(self._onTaskRemoved, owner=self)
+        self._taskService.taskStarted.connect(self._onTaskStarted, owner=self)
+        self._taskService.taskPaused.connect(self._onTaskStopped, owner=self)
+        self._taskService.taskCompleted.connect(self._onTaskStopped, owner=self)
+        self._taskService.taskFailed.connect(self._onTaskStopped, owner=self)
+        self._taskService.seedingStarted.connect(self._onSeedingStarted, owner=self)
+        self._taskService.seedingStopped.connect(self._onSeedingStopped, owner=self)
+        self._taskService.queueChanged.connect(self._onQueueChanged, owner=self)
+        self._taskService.fileDisappeared.connect(self._onFileDisappeared, owner=self)
+        self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied, owner=self)
+        self._speedMeter.speedChanged.connect(self._onSpeedChanged, owner=self)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
         self.startAllButton.clicked.connect(self.startAll)
@@ -322,7 +322,7 @@ class TaskPage(QWidget):
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
 
         cfg.isCategoryEnabled.valueChanged.connect(self._onCategoryEnabledChanged)
-        self._categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
+        self._categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu, owner=self)
 
         self._bandSelector = BandSelector(
             self.scrollArea, self.scrollWidget,
