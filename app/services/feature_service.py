@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 from app.config.paths import FEATURES_DIR
 from app.models.task import TaskOptions
 from app.platform import file_association
-from app.platform import url_scheme
 from app.loader import loadPacks
 
 if TYPE_CHECKING:
@@ -213,9 +212,9 @@ class FeatureService:
                 disabledSchemes.extend(pack.uriSchemes())
         file_association.register(types)
         for s in disabledSchemes:
-            url_scheme.unregisterUrlScheme(s.scheme)
+            file_association.unregisterUrlScheme(s.scheme)
         for s in enabledSchemes:
-            url_scheme.registerUrlScheme(s.scheme)
+            file_association.registerUrlScheme(s.scheme)
 
     def deactivate(self) -> None:
         event = Event()

@@ -24,8 +24,8 @@ from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.platform.desktop import loadCrx, openChromiumUrl, revealInFolder
+from app.platform.file_association import registerUrlScheme, unregisterUrlScheme
 from app.platform.run_at_login import setRunAtLogin
-from app.platform.url_scheme import registerUrlScheme, unregisterUrlScheme
 from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
 from app.services.loopback_server import ListenStatus
 from app.config.constants import (

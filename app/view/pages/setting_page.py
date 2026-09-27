@@ -500,7 +500,7 @@ class SettingPage(ScrollArea):
                 f.close()
 
     def _onUrlSchemeChanged(self, enabled: bool) -> None:
-        from app.platform.url_scheme import registerUrlScheme, unregisterUrlScheme
+        from app.platform.file_association import registerUrlScheme, unregisterUrlScheme
         if enabled:
             registerUrlScheme()
         else:
