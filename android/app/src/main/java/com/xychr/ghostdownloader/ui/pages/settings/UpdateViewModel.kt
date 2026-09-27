@@ -2,7 +2,7 @@ package com.xychr.ghostdownloader.ui.pages.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,13 +43,13 @@ class UpdateViewModel(
     val checkState: StateFlow<CheckState?> = _checkState.asStateFlow()
 
     val downloadState: StateFlow<UpdateDownloadState> =
-        engineRepository.observe<UpdateDownloadState>("updateState")
+        bridge.observe<UpdateDownloadState>("updateState")
             .stateIn(viewModelScope, SharingStarted.Eagerly, UpdateDownloadState())
 
     private val _ignoredVersion = MutableStateFlow(loadIgnoredVersion())
 
     val available: StateFlow<UpdateAvailable?> =
-        engineRepository.observe<UpdateAvailable?>("updateAvailable")
+        bridge.observe<UpdateAvailable?>("updateAvailable")
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val updateNotice: StateFlow<UpdateAvailable?> =
@@ -62,7 +62,7 @@ class UpdateViewModel(
         _checkState.value = CheckState.CHECKING
         viewModelScope.launch {
             _checkState.value = try {
-                when (engineRepository.query<UpdateCheck>("checkUpdate").status) {
+                when (bridge.query<UpdateCheck>("checkUpdate").status) {
                     "available" -> null
                     "no_asset" -> CheckState.NO_ASSET
                     else -> CheckState.LATEST
@@ -77,7 +77,7 @@ class UpdateViewModel(
 
     fun download() {
         viewModelScope.launch {
-            engineRepository.invoke("downloadUpdate", "app")
+            bridge.invoke("downloadUpdate", "app")
         }
     }
 

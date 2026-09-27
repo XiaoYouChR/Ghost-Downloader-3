@@ -1,4 +1,4 @@
-"""engine.py 何时让 SpeedMeter 走表：它驱动 taskProgress 推送，做种时也要走。"""
+"""bridge.py 何时让 SpeedMeter 走表：它驱动 taskProgress 推送，做种时也要走。"""
 from tests.test_task_service import finishRun, makeSeedTask, makeTask, service  # noqa: F401
 
 

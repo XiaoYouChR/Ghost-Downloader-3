@@ -30,7 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.ui.pages.settings.UpdateAvailable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +43,7 @@ fun ReleaseInfoSheet(
 ) {
     var body by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
-        body = engineRepository.query<String>("releaseBody")
+        body = bridge.query<String>("releaseBody")
     }
 
     ModalBottomSheet(

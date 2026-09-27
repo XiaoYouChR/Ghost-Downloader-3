@@ -5,7 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import kotlinx.coroutines.runBlocking
 
 private const val ACTION_RETRY = "com.xychr.ghostdownloader.RETRY_TASK"
@@ -26,7 +26,7 @@ class TaskNoticeActionReceiver : BroadcastReceiver() {
         if (intent.action != ACTION_RETRY) return
         val pending = goAsync()
         Thread {
-            runBlocking { engineRepository.invoke("redownload", taskId) }
+            runBlocking { bridge.invoke("redownload", taskId) }
             NotificationManagerCompat.from(context).cancel(taskNoticeId(taskId))
             pending.finish()
         }.start()

@@ -38,7 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.ui.components.ErrorText
 import com.xychr.ghostdownloader.ui.components.RenameDialog
 import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow

@@ -31,8 +31,8 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
-import com.xychr.ghostdownloader.engine.engineRepository
-import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.bridge.bridge
+import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.ui.platform.openUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -118,7 +118,7 @@ private data class ListenState(
 
 @Composable
 private fun Aria2RpcStatusRow(port: Int) {
-    val state by remember { engineRepository.observe<ListenState>("aria2Rpc") }
+    val state by remember { bridge.observe<ListenState>("aria2Rpc") }
         .collectAsStateWithLifecycle(ListenState())
     InfoSettingRow(
         title = stringResource(R.string.settings_aria2_rpc_status),
@@ -146,7 +146,7 @@ private fun BrowserExtensionRows(isEnabled: Boolean, port: Int, set: (String, An
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val state by remember { engineRepository.observe<BrowserExtension>("browserExtension") }
+    val state by remember { bridge.observe<BrowserExtension>("browserExtension") }
         .collectAsStateWithLifecycle(BrowserExtension())
     var exported by remember { mutableStateOf("") }
 
@@ -227,7 +227,7 @@ private fun RegenerateTokenRow() {
             title = stringResource(R.string.settings_browser_regenerate),
             message = stringResource(R.string.settings_browser_regenerate_confirm),
             onDismiss = { isConfirming = false },
-            onConfirm = { scope.launch { engineRepository.invoke("regenerateBrowserToken") } },
+            onConfirm = { scope.launch { bridge.invoke("regenerateBrowserToken") } },
         )
     }
 }
@@ -242,7 +242,7 @@ private suspend fun exportBrowserExtension(context: Context): String = withConte
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             "GhostDownloaderExtension",
         )
-        engineRepository.invoke("extractBrowserExtension", crx.absolutePath, folder.absolutePath)
+        bridge.invoke("extractBrowserExtension", crx.absolutePath, folder.absolutePath)
         folder.absolutePath
     }.getOrElse { it.message ?: "" }
 }

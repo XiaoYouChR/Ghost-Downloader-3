@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.model.Settings
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow

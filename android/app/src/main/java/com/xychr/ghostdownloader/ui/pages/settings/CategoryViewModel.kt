@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.model.TaskError
@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 class CategoryViewModel : ViewModel() {
 
     val state: StateFlow<CategoryState?> =
-        engineRepository.observe<CategoryState>("categoryState")
+        bridge.observe<CategoryState>("categoryState")
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _isSaving = MutableStateFlow(false)
@@ -28,27 +28,27 @@ class CategoryViewModel : ViewModel() {
     val error = _error.asStateFlow()
 
     fun setEnabled(isEnabled: Boolean) = write {
-        engineRepository.invoke("setSetting", "isCategoryEnabled", isEnabled)
+        bridge.invoke("setSetting", "isCategoryEnabled", isEnabled)
     }
 
     suspend fun add(category: Category) {
-        engineRepository.invoke("addCategory", engineRepository.encode(category))
+        bridge.invoke("addCategory", bridge.encode(category))
     }
 
     suspend fun update(category: Category) {
-        engineRepository.invoke("updateCategory", engineRepository.encode(category))
+        bridge.invoke("updateCategory", bridge.encode(category))
     }
 
     fun remove(categoryId: String) = write {
-        engineRepository.invoke("removeCategory", categoryId)
+        bridge.invoke("removeCategory", categoryId)
     }
 
     fun reset() = write {
-        engineRepository.invoke("resetCategories")
+        bridge.invoke("resetCategories")
     }
 
     fun setOrder(ids: List<String>) = write {
-        engineRepository.invoke("reorderCategories", engineRepository.encode(ids))
+        bridge.invoke("reorderCategories", bridge.encode(ids))
     }
 
     private fun write(block: suspend () -> Unit) {

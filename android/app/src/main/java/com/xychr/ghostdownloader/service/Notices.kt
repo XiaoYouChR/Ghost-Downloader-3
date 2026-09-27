@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.Notice
 import com.xychr.ghostdownloader.model.PairRequest
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
@@ -28,10 +28,10 @@ class Notices(app: Application) {
     fun start() {
         context.createNoticeChannels()
         scope.launch {
-            engineRepository.observeEvent<Notice>("notice").collect { show(it, isForeground()) }
+            bridge.observeEvent<Notice>("notice").collect { show(it, isForeground()) }
         }
         scope.launch {
-            engineRepository.observe<PairRequest?>("pairRequest").collect { pair ->
+            bridge.observe<PairRequest?>("pairRequest").collect { pair ->
                 context.sendPair(pair.takeIf { !isForeground() })
             }
         }

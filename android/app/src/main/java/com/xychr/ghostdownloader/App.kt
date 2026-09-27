@@ -7,10 +7,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.xychr.ghostdownloader.engine.EngineFlows
-import com.xychr.ghostdownloader.engine.SettingRanges
-import com.xychr.ghostdownloader.engine.createEngineRepository
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.BridgeFlows
+import com.xychr.ghostdownloader.bridge.SettingRanges
+import com.xychr.ghostdownloader.bridge.createBridge
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.packs.PackRegistry
 import com.xychr.ghostdownloader.service.KeepAlive
 import com.xychr.ghostdownloader.service.Notices
@@ -33,26 +33,26 @@ class App : Application() {
         super.onCreate()
         setupNativeLibraryPath()
 
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
 
         Python.start(AndroidPlatform(this))
-        val module = Python.getInstance().getModule("engine")
+        val module = Python.getInstance().getModule("bridge")
         val packUiJson = module.callAttr("start", flows).toString()
         PackRegistry.load(packUiJson)
-        val engine = module.get("_engine")!!
-        SettingRanges.load(engine.callAttr("request", "settingRanges").toString())
-        createEngineRepository(engine, flows)
+        val python = module.get("_bridge")!!
+        SettingRanges.load(python.callAttr("request", "settingRanges").toString())
+        createBridge(python, flows)
 
         notices.start()
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStop(owner: LifecycleOwner) {
-                scope.launch(Dispatchers.IO) { engineRepository.invoke("flush") }
+                scope.launch(Dispatchers.IO) { bridge.invoke("flush") }
             }
         })
 
         scope.launch {
-            engineRepository.observe<KeepAlive>("keepAlive")
+            bridge.observe<KeepAlive>("keepAlive")
                 .distinctUntilChangedBy { it.reason.isNotEmpty() }
                 .filter { it.reason.isNotEmpty() }
                 .collect { startKeepAlive(this@App) }

@@ -29,7 +29,7 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.model.TaskError
@@ -198,17 +198,17 @@ fun BilibiliLoginRows(
         val packId = BilibiliUi.packId
         BilibiliAccountViewModel(
             send = { action, args ->
-                engineRepository.invoke("requestPack", packId, action, *args.toTypedArray())
+                bridge.invoke("requestPack", packId, action, *args.toTypedArray())
             },
-            fetchCaptcha = { engineRepository.query("requestPack", packId, "fetchCaptcha") },
-            fetchCountries = { engineRepository.query("requestPack", packId, "fetchCountries") },
+            fetchCaptcha = { bridge.query("requestPack", packId, "fetchCaptcha") },
+            fetchCountries = { bridge.query("requestPack", packId, "fetchCountries") },
             submitSmsCode = { cid, tel, captcha ->
-                engineRepository.invoke(
-                    "requestPack", packId, "sendSmsCode", cid, tel, engineRepository.encode(captcha),
+                bridge.invoke(
+                    "requestPack", packId, "sendSmsCode", cid, tel, bridge.encode(captcha),
                 )
             },
-            accountFlow = engineRepository.observe("pack:$packId:accountState"),
-            qrFlow = engineRepository.observe("pack:$packId:qrState"),
+            accountFlow = bridge.observe("pack:$packId:accountState"),
+            qrFlow = bridge.observe("pack:$packId:qrState"),
         )
     },
 ) {

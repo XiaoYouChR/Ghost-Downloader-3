@@ -69,7 +69,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.PairRequest
 import com.xychr.ghostdownloader.service.Notices
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
@@ -107,9 +107,9 @@ class MainActivity : ComponentActivity() {
     private val draft by viewModels<DraftViewModel> {
         viewModelFactory { initializer {
             DraftViewModel(
-                send = { name, args -> engineRepository.invoke(name, *args.toTypedArray()) },
-                draftFlow = engineRepository.observe("draftState"),
-                categoriesFlow = engineRepository.observe("categoryState"),
+                send = { name, args -> bridge.invoke(name, *args.toTypedArray()) },
+                draftFlow = bridge.observe("draftState"),
+                categoriesFlow = bridge.observe("categoryState"),
             )
         } }
     }
@@ -188,10 +188,10 @@ class MainActivity : ComponentActivity() {
                                     updateViewModel = updateViewModel,
                                     notices = (application as App).notices,
                                     destinations = destinations.receiveAsFlow(),
-                                    pairFlow = engineRepository.observe("pairRequest"),
+                                    pairFlow = bridge.observe("pairRequest"),
                                     onPairApproval = { requestId, isApproved ->
                                         lifecycleScope.launch {
-                                            engineRepository.invoke("setBrowserPairApproval", requestId, isApproved)
+                                            bridge.invoke("setBrowserPairApproval", requestId, isApproved)
                                         }
                                     },
                                 )

@@ -16,7 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.TaskError
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,21 +44,21 @@ data class RuntimeUiState(
 class RuntimesViewModel : ViewModel() {
 
     val runtimes: StateFlow<List<RuntimeUiState>> =
-        engineRepository.observe<List<RuntimeUiState>>("runtimes")
+        bridge.observe<List<RuntimeUiState>>("runtimes")
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init { refresh() }
 
     fun install(id: String) {
-        viewModelScope.launch { engineRepository.invoke("installRuntime", id) }
+        viewModelScope.launch { bridge.invoke("installRuntime", id) }
     }
 
     fun cancelInstall(id: String) {
-        viewModelScope.launch { engineRepository.invoke("cancelRuntimeInstall", id) }
+        viewModelScope.launch { bridge.invoke("cancelRuntimeInstall", id) }
     }
 
     fun refresh() {
-        viewModelScope.launch { engineRepository.invoke("refreshRuntimes") }
+        viewModelScope.launch { bridge.invoke("refreshRuntimes") }
     }
 }
 

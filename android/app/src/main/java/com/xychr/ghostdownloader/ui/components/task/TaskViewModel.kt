@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.components.task
 
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.*
 
 import androidx.lifecycle.ViewModel
@@ -12,11 +12,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 class TaskViewModel : ViewModel() {
-    val categories = engineRepository.observe<CategoryState>("categoryState")
+    val categories = bridge.observe<CategoryState>("categoryState")
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CategoryState())
 
-    val state: StateFlow<TaskListState> = engineRepository.observe<List<TaskUiState>>("tasks")
-        .combine(engineRepository.observe<Map<String, TaskUiState>>("taskProgress")) { tasks, activeTasks ->
+    val state: StateFlow<TaskListState> = bridge.observe<List<TaskUiState>>("tasks")
+        .combine(bridge.observe<Map<String, TaskUiState>>("taskProgress")) { tasks, activeTasks ->
             TaskListState(tasks.map { it.update(activeTasks) }, true)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskListState())
@@ -33,7 +33,7 @@ class TaskViewModel : ViewModel() {
         request("resume", taskId)
     }
 
-    fun moveToFront(taskIds: List<String>) = request("moveToFront", engineRepository.encode(taskIds))
+    fun moveToFront(taskIds: List<String>) = request("moveToFront", bridge.encode(taskIds))
 
     fun startAll() = request("resumeAll")
 
@@ -42,7 +42,7 @@ class TaskViewModel : ViewModel() {
     suspend fun pauseEach(taskIds: List<String>) {
         for (id in taskIds) {
             try {
-                engineRepository.invoke("pause", id)
+                bridge.invoke("pause", id)
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) { }
@@ -57,10 +57,10 @@ class TaskViewModel : ViewModel() {
     }
 
     suspend fun setCategory(taskIds: List<String>, categoryId: String) {
-        engineRepository.invoke("setTaskCategory", engineRepository.encode(taskIds), categoryId)
+        bridge.invoke("setTaskCategory", bridge.encode(taskIds), categoryId)
     }
 
     private fun request(name: String, vararg args: Any?) {
-        viewModelScope.launch { engineRepository.invoke(name, *args) }
+        viewModelScope.launch { bridge.invoke(name, *args) }
     }
 }

@@ -1,4 +1,4 @@
-package com.xychr.ghostdownloader.engine
+package com.xychr.ghostdownloader.bridge
 
 import com.xychr.ghostdownloader.model.Notice
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,10 +15,10 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class EngineFlowsTest {
+class BridgeFlowsTest {
 
     @Test fun burstOnStateChannelStopsAtNewestFrame() = runTest {
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
         val seen = mutableListOf<String>()
         val subscriber = launch {
             flows.observe("tasks").collect {
@@ -38,7 +38,7 @@ class EngineFlowsTest {
     }
 
     @Test fun lateSubscriberSeesCurrentStateNotFirstFrame() = runTest {
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
         flows.setState("tasks", "[t1]")
         flows.setState("tasks", "[t1,t2,t3]")
 
@@ -46,7 +46,7 @@ class EngineFlowsTest {
     }
 
     @Test fun lateSubscriberSeesNoEvent() = runTest {
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
         flows.sendEvent("notice", "n1")
 
         val seen = mutableListOf<String>()
@@ -58,7 +58,7 @@ class EngineFlowsTest {
     }
 
     @Test fun laggingSubscriberKeepsEveryEvent() = runTest {
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
         val seen = mutableListOf<String>()
         val subscriber = launch {
             flows.observeEvent("notice").collect {
@@ -78,14 +78,14 @@ class EngineFlowsTest {
     }
 
     @Test fun keyCannotSwitchBetweenStateAndEvent() {
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
         flows.setState("tasks", "[]")
 
         assertThrows(IllegalStateException::class.java) { flows.sendEvent("tasks", "[]") }
     }
 
     @Test fun typedEventDecodingProducesCorrectSealedInstance() = runTest {
-        val flows = EngineFlows()
+        val flows = BridgeFlows()
         val json = Json { ignoreUnknownKeys = true }
         val seen = mutableListOf<Notice>()
         val subscriber = launch {

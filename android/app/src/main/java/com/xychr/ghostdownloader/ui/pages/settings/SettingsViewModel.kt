@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,7 +18,7 @@ private val settingsJson = Json { ignoreUnknownKeys = true }
 class SettingsViewModel : ViewModel() {
 
     val config: StateFlow<JsonObject?> =
-        engineRepository.observe<JsonObject>("settings")
+        bridge.observe<JsonObject>("settings")
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val settings: StateFlow<Settings?> = config
@@ -27,7 +27,7 @@ class SettingsViewModel : ViewModel() {
 
     fun set(name: String, value: Any) {
         viewModelScope.launch {
-            engineRepository.invoke("setSetting", name, value)
+            bridge.invoke("setSetting", name, value)
         }
     }
 }

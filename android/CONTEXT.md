@@ -13,7 +13,7 @@ _Avoid_: snapshot、state sync、increment
 _Avoid_: notification、message
 
 **View Projection**:
-engine.py 为 Kotlin View 构建的 JSON 输出，形状由 Engine 决定。
+bridge.py 为 Kotlin View 构建的 JSON 输出，形状由 Engine 决定。
 _Avoid_: DTO、response、payload
 
 ## Pack UI

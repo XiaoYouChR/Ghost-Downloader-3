@@ -14,7 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.DraftPreview
 import com.xychr.ghostdownloader.packs.PackSettingsContent
 import com.xychr.ghostdownloader.packs.PackUi
@@ -70,6 +70,6 @@ object BilibiliUi : PackUi {
             if (duration > 0) DraftTrim(url, duration, packFields.bool("hasPreview"),
                 packFields.int("startTime"), packFields.int("endTime"),
                 onChange = { start, end -> scope.launch { send("setTrim", listOf(start, end)) } },
-                fetchPreview = { engineRepository.query<DraftPreview>("draftPreview", it) })
+                fetchPreview = { bridge.query<DraftPreview>("draftPreview", it) })
         }
 }

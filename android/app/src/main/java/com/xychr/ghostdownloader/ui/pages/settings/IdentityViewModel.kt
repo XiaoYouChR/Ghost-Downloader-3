@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -51,7 +51,7 @@ class IdentityViewModel : ViewModel() {
     private val _defaults = MutableStateFlow<Map<String, String>?>(null)
 
     val state: StateFlow<IdentityUiState?> = combine(
-        engineRepository.observe<IdentityState>("settings"),
+        bridge.observe<IdentityState>("settings"),
         _profiles,
         _defaults,
     ) { identity, profiles, defaults ->
@@ -64,25 +64,25 @@ class IdentityViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            _profiles.value = engineRepository.query("clientProfiles")
-            _defaults.value = engineRepository.query("defaultHeaders")
+            _profiles.value = bridge.query("clientProfiles")
+            _defaults.value = bridge.query("defaultHeaders")
         }
     }
 
     suspend fun setClientProfile(profile: String) {
-        engineRepository.invoke("setSetting", "clientProfile", profile)
+        bridge.invoke("setSetting", "clientProfile", profile)
     }
 
     fun setActiveHeadersPreset(index: Int) = write {
-        engineRepository.invoke("setSetting", "currentHeadersPreset", index)
+        bridge.invoke("setSetting", "currentHeadersPreset", index)
     }
 
     suspend fun addIdentityPreset(preset: IdentityPreset) {
-        engineRepository.invoke("addIdentityPreset", engineRepository.encode(preset))
+        bridge.invoke("addIdentityPreset", bridge.encode(preset))
     }
 
     suspend fun updateIdentityPreset(index: Int, preset: IdentityPreset) {
-        engineRepository.invoke("updateIdentityPreset", index, engineRepository.encode(preset))
+        bridge.invoke("updateIdentityPreset", index, bridge.encode(preset))
     }
 
     fun setIdentityEnabled(index: Int, isEnabled: Boolean) = write {
@@ -91,27 +91,27 @@ class IdentityViewModel : ViewModel() {
     }
 
     fun setIdentityOrder(index: Int, target: Int) = write {
-        engineRepository.invoke("setIdentityOrder", index, target)
+        bridge.invoke("setIdentityOrder", index, target)
     }
 
     fun removeIdentityPreset(index: Int) = write {
-        engineRepository.invoke("removeIdentityPreset", index)
+        bridge.invoke("removeIdentityPreset", index)
     }
 
     suspend fun addHeadersPreset(preset: HeadersPreset) {
-        engineRepository.invoke("addHeadersPreset", engineRepository.encode(preset))
+        bridge.invoke("addHeadersPreset", bridge.encode(preset))
     }
 
     suspend fun updateHeadersPreset(index: Int, preset: HeadersPreset) {
-        engineRepository.invoke("updateHeadersPreset", index, engineRepository.encode(preset))
+        bridge.invoke("updateHeadersPreset", index, bridge.encode(preset))
     }
 
     fun removeHeadersPreset(index: Int) = write {
         val identity = state.value?.identity ?: return@write
         val current = identity.currentHeadersPreset
         if (identity.headersPresets.size <= 1) return@write
-        engineRepository.invoke("removeHeadersPreset", index)
-        engineRepository.invoke("setSetting", "currentHeadersPreset", when {
+        bridge.invoke("removeHeadersPreset", index)
+        bridge.invoke("setSetting", "currentHeadersPreset", when {
             index < current -> current - 1
             index == current -> 0
             else -> current

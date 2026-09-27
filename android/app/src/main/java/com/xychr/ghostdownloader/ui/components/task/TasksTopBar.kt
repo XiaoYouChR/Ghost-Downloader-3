@@ -26,7 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 
 private val SortField.labelRes: Int

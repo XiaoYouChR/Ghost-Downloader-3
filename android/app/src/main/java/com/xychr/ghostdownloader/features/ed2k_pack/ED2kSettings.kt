@@ -7,7 +7,7 @@ import com.xychr.ghostdownloader.packs.PackKeys
 import com.xychr.ghostdownloader.packs.bool
 import com.xychr.ghostdownloader.packs.int
 import com.xychr.ghostdownloader.packs.str
-import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow

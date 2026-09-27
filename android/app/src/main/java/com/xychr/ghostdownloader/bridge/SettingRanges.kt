@@ -1,4 +1,4 @@
-package com.xychr.ghostdownloader.engine
+package com.xychr.ghostdownloader.bridge
 
 import com.xychr.ghostdownloader.model.SettingRange
 import kotlinx.serialization.json.Json

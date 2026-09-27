@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages
 
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.model.*
 import com.xychr.ghostdownloader.ui.navigation.*
 import com.xychr.ghostdownloader.ui.components.*
@@ -96,8 +96,8 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     init {
         viewModelScope.launch { refresh() }
         viewModelScope.launch {
-            val tasks = engineRepository.observe<List<TaskUiState>>("tasks")
-            val activeTasks = engineRepository.observe<Map<String, TaskUiState>>("taskProgress")
+            val tasks = bridge.observe<List<TaskUiState>>("tasks")
+            val activeTasks = bridge.observe<Map<String, TaskUiState>>("taskProgress")
             tasks.combine(activeTasks) { list, active ->
                 list.find { it.id == taskId }?.update(active)
             }.collect { task ->
@@ -124,17 +124,17 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     }
 
     fun remove(shouldDeleteFiles: Boolean) {
-        viewModelScope.launch { engineRepository.invoke("remove", taskId, shouldDeleteFiles) }
+        viewModelScope.launch { bridge.invoke("remove", taskId, shouldDeleteFiles) }
     }
 
     suspend fun setName(name: String) {
-        engineRepository.invoke("setTaskName", taskId, name)
+        bridge.invoke("setTaskName", taskId, name)
         refresh()
     }
 
     fun moveToFront() {
         viewModelScope.launch {
-            engineRepository.invoke("moveToFront", engineRepository.encode(listOf(taskId)))
+            bridge.invoke("moveToFront", bridge.encode(listOf(taskId)))
             refresh()
         }
     }
@@ -144,19 +144,19 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     }
 
     suspend fun setCategory(categoryId: String) {
-        engineRepository.invoke("setTaskCategory", engineRepository.encode(listOf(taskId)), categoryId)
+        bridge.invoke("setTaskCategory", bridge.encode(listOf(taskId)), categoryId)
         refresh()
     }
 
     private fun push(name: String, vararg args: Any?) {
         viewModelScope.launch {
-            engineRepository.invoke(name, taskId, *args)
+            bridge.invoke(name, taskId, *args)
             refresh()
         }
     }
 
     private suspend fun refresh() {
-        runCatching { _detail.value = engineRepository.query("taskDetail", taskId) }
+        runCatching { _detail.value = bridge.query("taskDetail", taskId) }
     }
 }
 

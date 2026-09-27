@@ -32,7 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.bridge.bridge
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.HashState
 import kotlinx.coroutines.launch
@@ -47,19 +47,19 @@ fun HashSheet(taskId: String, name: String, onDismiss: () -> Unit, modifier: Mod
     var isMenuOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(taskId) {
-        engineRepository.observe<HashState>("hashState").collect {
+        bridge.observe<HashState>("hashState").collect {
             state = if (it.taskId == taskId) it else HashState()
         }
     }
     LaunchedEffect(Unit) {
-        val available = runCatching { engineRepository.query<List<String>>("hashAlgorithms") }
+        val available = runCatching { bridge.query<List<String>>("hashAlgorithms") }
             .getOrDefault(emptyList())
         algorithms = available
         if (algorithm !in available) algorithm = available.lastOrNull { it == "sha256" } ?: available.lastOrNull().orEmpty()
     }
 
     fun cancel() {
-        scope.launch { engineRepository.invoke("cancelFileHash") }
+        scope.launch { bridge.invoke("cancelFileHash") }
     }
 
     ModalBottomSheet(onDismissRequest = { cancel(); onDismiss() }, modifier = modifier) {
@@ -132,7 +132,7 @@ fun HashSheet(taskId: String, name: String, onDismiss: () -> Unit, modifier: Mod
                 } else {
                     Button(
                         onClick = {
-                            scope.launch { engineRepository.invoke("startFileHash", taskId, algorithm) }
+                            scope.launch { bridge.invoke("startFileHash", taskId, algorithm) }
                         },
                         enabled = algorithm.isNotEmpty(),
                     ) {

@@ -13,7 +13,7 @@ import com.xychr.ghostdownloader.packs.int
 import com.xychr.ghostdownloader.packs.sizes
 import com.xychr.ghostdownloader.packs.str
 import com.xychr.ghostdownloader.packs.strings
-import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow

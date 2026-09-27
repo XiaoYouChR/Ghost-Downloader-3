@@ -1,4 +1,4 @@
-package com.xychr.ghostdownloader.engine
+package com.xychr.ghostdownloader.bridge
 
 import com.chaquo.python.PyObject
 import kotlinx.coroutines.Dispatchers
@@ -10,30 +10,30 @@ import kotlinx.serialization.json.Json
 @JvmInline
 value class Encoded(@PublishedApi internal val value: String)
 
-lateinit var engineRepository: EngineRepository
+lateinit var bridge: Bridge
     private set
 
-fun createEngineRepository(engine: PyObject, flows: EngineFlows): EngineRepository {
-    engineRepository = EngineRepository(engine, flows)
-    return engineRepository
+fun createBridge(python: PyObject, flows: BridgeFlows): Bridge {
+    bridge = Bridge(python, flows)
+    return bridge
 }
 
-class EngineRepository(
-    private val engine: PyObject,
-    @PublishedApi internal val flows: EngineFlows,
+class Bridge(
+    private val python: PyObject,
+    @PublishedApi internal val flows: BridgeFlows,
 ) {
     @PublishedApi internal val json = Json { ignoreUnknownKeys = true }
 
-    @PublishedApi internal suspend fun callEngine(name: String, vararg args: Any?): PyObject? {
+    @PublishedApi internal suspend fun request(name: String, vararg args: Any?): PyObject? {
         val unwrapped = Array(args.size) { i -> val a = args[i]; if (a is Encoded) a.value else a }
-        return withContext(Dispatchers.IO) { engine.callAttr("request", name, *unwrapped) }
+        return withContext(Dispatchers.IO) { python.callAttr("request", name, *unwrapped) }
     }
 
     suspend inline fun <reified T> query(name: String, vararg args: Any?): T =
-        json.decodeFromString(callEngine(name, *args)?.toString() ?: "null")
+        json.decodeFromString(request(name, *args)?.toString() ?: "null")
 
     suspend fun invoke(name: String, vararg args: Any?) {
-        callEngine(name, *args)
+        request(name, *args)
     }
 
     inline fun <reified T> observe(key: String): Flow<T> =

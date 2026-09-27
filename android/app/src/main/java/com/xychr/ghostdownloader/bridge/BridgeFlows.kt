@@ -1,11 +1,11 @@
-package com.xychr.ghostdownloader.engine
+package com.xychr.ghostdownloader.bridge
 
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import java.util.concurrent.ConcurrentHashMap
 
-class EngineFlows {
+class BridgeFlows {
 
     private enum class Kind { STATE, EVENT }
 

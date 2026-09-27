@@ -5,36 +5,36 @@
 ## 思想
 
 - **View adapts Engine.** — Engine 是 source of truth，Compose 是投影。Engine 接口不为 Compose 改结构
-- **Signal-driven across runtimes.** — Python 信号通过 EngineFlows 跨运行时推送到 Kotlin Flow。常态零 callAttr
-- **engine.py 是 Android View Adapter.** — 和 Desktop `app/view/` 同构：投影 model 状态、处理用户命令。投影是纯读（`task.x`、`service.compute(task)`），不内联业务逻辑
+- **Signal-driven across runtimes.** — Python 信号通过 BridgeFlows 跨运行时推送到 Kotlin Flow。常态零 callAttr
+- **bridge.py 是 Android View Adapter.** — 和 Desktop `app/view/` 同构：投影 model 状态、处理用户命令。投影是纯读（`task.x`、`service.compute(task)`），不内联业务逻辑
 - **Kotlin→Python 是内部调用.** — 根目录「View 是校验边界」的具体应用。SettingRanges 提供范围约束，格式检查在 Kotlin
-- **Model 不为 Android 改.** — 现有 model 跑通了 Desktop，Android 通过 engine.py 投影适配，不往基类加接口
+- **Model 不为 Android 改.** — 现有 model 跑通了 Desktop，Android 通过 bridge.py 投影适配，不往基类加接口
 - **Config 按消费者分路.** — Python 需要的设置走 `cfg.py`（GIL → signal → Flow）；只有 Kotlin 消费的设置（ThemeMode、Language）走 SharedPreferences + Compose 本地状态，不过 Engine
 
-## EngineRepository
+## Bridge（Kotlin 侧）
 
-纯通信桥，零生命周期。构造时注入 `PyObject` 和 `EngineFlows`，`createEngineRepository()` 创建全局实例。
+Python `Bridge` 在 Kotlin 这一端的句柄。纯通信，零生命周期。构造时注入 `PyObject` 和 `BridgeFlows`，`createBridge()` 创建全局实例 `bridge`。
 
 | 方法 | 语义 |
 |---|---|
-| `query<T>(name, args)` | 问，调用 Engine 方法，取返回值 |
-| `invoke(name, args)` | 做，调用 Engine 方法，不取返回值 |
-| `observe<T>(key)` | 看，订阅 Engine 推送的状态 |
-| `observeEvent<T>(key)` | 看，订阅 Engine 推送的事件 |
+| `query<T>(name, args)` | 问，调用 Bridge 方法，取返回值 |
+| `invoke(name, args)` | 做，调用 Bridge 方法，不取返回值 |
+| `observe<T>(key)` | 看，订阅 Bridge 推送的状态 |
+| `observeEvent<T>(key)` | 看，订阅 Bridge 推送的事件 |
 | `encode<T>(value)` | 编码，复杂参数包装为不透明 Encoded |
 
-Python 通过 `EngineFlows` 实例写入（`setState`/`sendEvent`），不经 EngineRepository 中转。
+Python 通过 `BridgeFlows` 实例写入（`setState`/`sendEvent`），不经 Kotlin `Bridge` 中转。
 
 ## Chaquopy
 
-- Chaquopy 知识不出 App.kt——EngineRepository 只接收 PyObject 句柄，不 import Chaquopy
+- Chaquopy 知识不出 App.kt——Kotlin `Bridge` 只接收 PyObject 句柄，不 import Chaquopy
 - JSON 是统一性选择——`Flow<String>` + `@Serializable` 给所有数据一条路径。不在个案上换 native PyObject
 - dict/list 不自动转，批量数据走 JSON（1 次 GIL crossing vs 逐字段 N 次）
 - callAttr 获取 GIL，多协程串行，始终 `Dispatchers.IO`
 
 ## Pack UI
 
-android.py 声明 `UI_CLASS`，engine.start() 返回发现结果，PackRegistry 反射加载。
+android.py 声明 `UI_CLASS`，bridge.start() 返回发现结果，PackRegistry 反射加载。
 PackUi 的 slot 是属性不是函数（ComposeProxy 约束）。
 
 ## 目录
