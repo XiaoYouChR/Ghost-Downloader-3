@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import shutil
+from collections import Counter
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -115,11 +116,8 @@ def setEpisodeTitle(pages: list[BiliPage], name: str) -> None:
     name = name.strip()
     if not pages or not name:
         return
-    multi = len(pages) > 1
-    safeName = toSafeFilename(name, fallback="video")
     for page in pages:
         page.episodeTitle = name
-        page.relativePath = f"{safeName} - P{page.pageNumber}" if multi else safeName
 
 
 def setTimeRanges(pages: list[BiliPage], ranges: dict[int, tuple[int, int]]) -> None:
@@ -129,22 +127,16 @@ def setTimeRanges(pages: list[BiliPage], ranges: dict[int, tuple[int, int]]) -> 
 
 
 def setPagePart(page: BiliPage, name: str) -> None:
-    name = name.strip()
-    page.pagePart = name
-    if page.episodeTitle:
-        safeTitle = toSafeFilename(page.episodeTitle, fallback=f"P{page.pageNumber}")
-        page.relativePath = f"{safeTitle} - P{page.pageNumber}"
-    else:
-        safeName = toSafeFilename(name, fallback="") if name else ""
-        page.relativePath = safeName or f"P{page.pageNumber}"
+    page.pagePart = name.strip()
 
 
 def setFileName(task: BilibiliTask, index: int, name: str) -> None:
     page = pageByIndex(task, index)
     if page is None:
         return
-    if page.episodeTitle:
-        setEpisodeTitle([p for p in task.files or [] if p.bvid == page.bvid], name)
+    episode = [p for p in task.files or [] if p.bvid == page.bvid]
+    if page.episodeTitle and len(episode) == 1:
+        setEpisodeTitle(episode, name)
     else:
         setPagePart(page, name)
     task.update()
@@ -238,10 +230,17 @@ class BilibiliTask(Task):
             if file.selected and file.index not in have:
                 stepIndex = self._addFileSteps(file, stepIndex)
         self._addCoverSteps(stepIndex)
-        self.updateSuffixes()
+        self.updateNames()
         self.updateStatus()
 
-    def updateSuffixes(self) -> None:
+    def updateNames(self) -> None:
+        pageCounts = Counter(p.bvid for p in self.files or [])
+        for page in self.files or []:
+            isEpisode = page.episodeTitle and pageCounts[page.bvid] == 1
+            page.relativePath = toSafeFilename(
+                page.episodeTitle if isEpisode else page.pagePart,
+                fallback=f"P{page.pageNumber}",
+            )
         for step in self.steps:
             fileIndex = getattr(step, "fileIndex", None)
             if fileIndex is None or not hasattr(step, "pageSuffix"):
@@ -293,6 +292,7 @@ class BilibiliTask(Task):
 
     def update(self) -> None:
         self.steps.clear()
+        self.updateNames()
         files: list[BiliPage] = self.files or []
 
         timeSuffix = ""
