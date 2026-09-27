@@ -64,6 +64,9 @@ class CoroutineRunner:
                 self.post(failed, error, *args, **kwargs)
 
         def schedule():
+            if workId not in self._pending:
+                work.close()
+                return
             self._running[workId] = self._loop.create_task(execute())
 
         self._loop.call_soon_threadsafe(schedule)
