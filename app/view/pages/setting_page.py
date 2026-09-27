@@ -14,9 +14,10 @@ from qfluentwidgets import (
 from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.i18n import toLocalizedError
+from app.i18n import toListenFailureText, toLocalizedError
 from app.models.task import toTaskError
 from app.platform.android import IS_ANDROID
+from app.services.loopback_server import ListenStatus
 from app.config.constants import (
     AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
     FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
@@ -66,6 +67,8 @@ class SettingPage(ScrollArea):
         self._initCards()
         self._initLayout()
         self._bind()
+        self._refreshBrowserStatus()
+        self._refreshAria2Status()
 
     def addSettingGroup(self, group: CollapsibleSettingCardGroup) -> None:
         self.vBoxLayout.insertWidget(self.vBoxLayout.count() - 1, group)
@@ -186,9 +189,7 @@ class SettingPage(ScrollArea):
         )
 
         self.browserEnableCard = SwitchSettingCard(
-            FluentIcon.CONNECT, self.tr("启用浏览器扩展"),
-            self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用"),
-            cfg.isBrowserExtensionEnabled,
+            FluentIcon.CONNECT, self.tr("启用浏览器扩展"), "", cfg.isBrowserExtensionEnabled,
         )
 
         browserCards = [
@@ -231,12 +232,11 @@ class SettingPage(ScrollArea):
                     ))
             self.associationGroup.addSettingCards(associationCards)
 
+        self.aria2EnableCard = SwitchSettingCard(
+            FluentIcon.LINK, self.tr("启用 Aria2 RPC 兼容"), "", cfg.isAria2RpcEnabled,
+        )
         self.aria2RpcGroup.addSettingCards([
-            SwitchSettingCard(
-                FluentIcon.LINK, self.tr("启用 Aria2 RPC 兼容"),
-                self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接"),
-                cfg.isAria2RpcEnabled,
-            ),
+            self.aria2EnableCard,
             SpinBoxSettingCard(
                 FluentIcon.GLOBE, self.tr("监听端口"),
                 self.tr("Aria2 RPC 默认端口为 16800"),
@@ -396,7 +396,15 @@ class SettingPage(ScrollArea):
     def _bind(self) -> None:
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
-        self._browserService.connectionChanged.connect(self._refreshBrowserStatus)
+        subscriptions = [
+            (self._browserService.connectionChanged, self._refreshBrowserStatus),
+            (self._browserServer.stateChanged, self._refreshBrowserStatus),
+            (self._aria2Server.stateChanged, self._refreshAria2Status),
+        ]
+        for signal, slot in subscriptions:
+            signal.connect(slot)
+        # 服务比页面长寿：页面销毁后 Python 包装对象可能还活着，不断开的话信号会打到已删除的控件上
+        self.destroyed.connect(lambda: [signal.disconnect(slot) for signal, slot in subscriptions])
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
@@ -463,15 +471,30 @@ class SettingPage(ScrollArea):
         InfoBar.error(self.tr("解包失败"), toLocalizedError(toTaskError(error)),
                       duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
-    def _refreshBrowserStatus(self) -> None:
+    def _refreshBrowserStatus(self, *_) -> None:
+        state = self._browserServer.state
         installType, version = self._browserService.connectionSummary
-        if not installType:
+        if state.status == ListenStatus.OFF:
+            text = self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用")
+        elif state.status == ListenStatus.FAILED:
+            text = toListenFailureText(state)
+        elif not installType:
             text = self.tr("未连接")
         elif installType == "development":
             text = self.tr("已连接 v{} (桌面端自管理)").format(version)
         else:
             text = self.tr("已连接 v{} (商店安装)").format(version)
         self.browserEnableCard.setContent(text)
+
+    def _refreshAria2Status(self, *_) -> None:
+        state = self._aria2Server.state
+        if state.status == ListenStatus.OFF:
+            text = self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接")
+        elif state.status == ListenStatus.FAILED:
+            text = toListenFailureText(state)
+        else:
+            text = self.tr("正在端口 {} 上监听").format(state.port)
+        self.aria2EnableCard.setContent(text)
 
     def _onExportExtensionClicked(self) -> None:
         from PySide6.QtCore import QFile, QIODevice, QResource
