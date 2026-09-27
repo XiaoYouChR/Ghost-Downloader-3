@@ -10,6 +10,7 @@ from enum import StrEnum
 
 from loguru import logger
 
+from app.models.task import TaskError
 from app.signal import Signal
 
 Handle = Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
@@ -22,25 +23,19 @@ class ListenStatus(StrEnum):
     FAILED = "failed"
 
 
-class ListenFailure(StrEnum):
-    OCCUPIED = "occupied"
-    DENIED = "denied"
-    OTHER = "other"
-
-
 @dataclass(frozen=True)
 class ListenState:
     status: ListenStatus = ListenStatus.OFF
     port: int = 0
-    failure: ListenFailure | None = None
+    error: TaskError | None = None
 
 
-def toListenFailure(error: OSError) -> ListenFailure:
+def toListenError(error: OSError, port: int) -> TaskError:
     if error.errno in (errno.EADDRINUSE, getattr(errno, "WSAEADDRINUSE", None)):
-        return ListenFailure.OCCUPIED
+        return TaskError("端口 {port} 被占用，请更换端口", port=port)
     if error.errno in (errno.EACCES, getattr(errno, "WSAEACCES", None)):
-        return ListenFailure.DENIED
-    return ListenFailure.OTHER
+        return TaskError("没有权限监听端口 {port}，请更换端口", port=port)
+    return TaskError("无法监听端口 {port}，详情见日志", port=port)
 
 
 def createSocket(host: str, port: int) -> socket.socket:
@@ -121,7 +116,7 @@ class LoopbackServer:
             sockets = [createSocket("127.0.0.1", port)]
         except OSError as e:
             logger.error("Loopback server failed to bind 127.0.0.1:{}: {}", port, e)
-            return ListenState(ListenStatus.FAILED, port, failure=toListenFailure(e))
+            return ListenState(ListenStatus.FAILED, port, error=toListenError(e, port))
         try:
             sockets.append(createSocket("::1", port))
         except OSError as e:

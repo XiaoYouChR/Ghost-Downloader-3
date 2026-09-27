@@ -336,8 +336,6 @@
     <string name="settings_aria2_rpc_emulate_desc">若站点拒绝经 RPC 添加的链接，打开此项</string>
     <string name="settings_aria2_rpc_status">服务状态</string>
     <string name="settings_aria2_rpc_listening">正在端口 %1$d 上监听</string>
-    <string name="settings_listen_denied">没有权限监听端口 %1$d，请更换端口</string>
-    <string name="settings_listen_failed">无法监听端口 %1$d，详情见日志</string>
     <string name="notification_channel_confirm">需要确认</string>
     <string name="pair_title">浏览器扩展请求配对</string>
     <string name="pair_message">%1$s（v%2$s）请求连接，来自 %3$s</string>
@@ -357,7 +355,6 @@
     <string name="settings_browser_export">导出扩展</string>
     <string name="settings_browser_export_desc">解包到 Download，再用浏览器的\"加载已解压的扩展\"指过去</string>
     <string name="settings_browser_listening">正在端口 %1$d 上等待扩展连接</string>
-    <string name="settings_browser_port_unavailable">端口 %1$d 被占用，请更换端口</string>
     <string name="settings_browser_token_copied">配对令牌已复制</string>
     <string name="settings_browser_regenerate_confirm">已配对的扩展会断开，需要重新配对。确定重新生成吗？</string>
     <string name="settings_browser_store_chrome">Chrome 应用商店</string>

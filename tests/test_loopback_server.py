@@ -6,7 +6,7 @@ import socket
 import pytest
 
 from app.services.coroutine_runner import CoroutineRunner
-from app.services.loopback_server import ListenFailure, ListenState, ListenStatus, LoopbackServer
+from app.services.loopback_server import ListenState, ListenStatus, LoopbackServer
 from app.signal import Signal
 
 pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
@@ -107,7 +107,7 @@ async def test_occupied_port_fails_and_recovers_after_port_change(build):
     server.start()
     await waitFor(lambda: server.state.status == ListenStatus.FAILED)
 
-    assert server.state.failure == ListenFailure.OCCUPIED
+    assert str(server.state.error) == f"端口 {port} 被占用，请更换端口"
     assert server.state.port == port
 
     portItem.set(findFreePort())

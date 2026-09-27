@@ -259,7 +259,6 @@
     <string name="settings_browser_extension_desc">Recibe descargas de la extensión del navegador en este equipo</string>
     <string name="settings_browser_listening">Esperando conexión de la extensión en el puerto %1$d</string>
     <string name="settings_browser_port">Puerto de escucha</string>
-    <string name="settings_browser_port_unavailable">El puerto %1$d está ocupado; cambia el puerto</string>
     <string name="settings_browser_regenerate">Regenerar token</string>
     <string name="settings_browser_regenerate_confirm">Las extensiones emparejadas se desconectarán y deberán emparejarse de nuevo. ¿Seguro que quieres regenerar?</string>
     <string name="settings_browser_regenerate_desc">Las extensiones conectadas deberán emparejarse de nuevo</string>

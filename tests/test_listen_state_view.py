@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.loopback_server import ListenFailure, ListenState, ListenStatus
+from app.models.task import TaskError
+from app.services.loopback_server import ListenState, ListenStatus
 from app.signal import Signal
 
-OCCUPIED = ListenState(ListenStatus.FAILED, 16800, failure=ListenFailure.OCCUPIED)
+OCCUPIED = ListenState(ListenStatus.FAILED, 16800, error=TaskError("端口 {port} 被占用，请更换端口", port=16800))
 LISTENING = ListenState(ListenStatus.LISTENING, 16800)
 
 
@@ -75,7 +76,7 @@ def test_aria2_card_shows_occupied_port(page):
 
 
 def test_browser_card_shows_failure_instead_of_connection(page):
-    page.browserServer.setState(ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.DENIED))
+    page.browserServer.setState(ListenState(ListenStatus.FAILED, 14370, error=TaskError("没有权限监听端口 {port}，请更换端口", port=14370)))
 
     assert page.browserEnableCard.contentLabel.text() == "没有权限监听端口 14370，请更换端口"
 

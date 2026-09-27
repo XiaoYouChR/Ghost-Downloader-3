@@ -20,7 +20,7 @@ from qfluentwidgets import (
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.i18n import toListenFailureText, toLocalizedError
+from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.services.loopback_server import ListenStatus
 from app.config.constants import (
@@ -509,7 +509,7 @@ class BrowserExtensionPage(QWidget):
                 self.tr("浏览器扩展未启用，可稍后在设置中开启"),
             )
         elif state.status == ListenStatus.FAILED:
-            self._setBanner(InfoBarIcon.WARNING, toListenFailureText(state))
+            self._setBanner(InfoBarIcon.WARNING, toLocalizedError(state.error))
         else:
             self._setBanner(
                 InfoBarIcon.INFORMATION,

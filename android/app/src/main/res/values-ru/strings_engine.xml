@@ -10,9 +10,11 @@
     <string name="engine_binaryruntime_d4027299" formatted="false">Поддерживает протоколы HLS, DASH, может записывать прямые эфиры</string>
     <string name="engine_taskerrors_003f09ce" formatted="false">В DMG не найден .app</string>
     <string name="engine_taskerrors_00a03c90" formatted="false">Одноклавишная установка N_m3u8DL-RE пока не поддерживается на текущей платформе: {platform}</string>
+    <string name="engine_taskerrors_00df75dc" formatted="false">Неподдерживаемый формат eD2k-ссылки</string>
     <string name="engine_taskerrors_0d6855ac" formatted="false">Необходимо выбрать хотя бы один файл</string>
     <string name="engine_taskerrors_0f898cca" formatted="false">Соединение отклонено, проверьте сетевое подключение ({detail})</string>
     <string name="engine_taskerrors_11e7e853" formatted="false">Не удалось запустить сессию BitTorrent: {detail}</string>
+    <string name="engine_taskerrors_153f8ca7" formatted="false">Не удалось загрузить субтитры</string>
     <string name="engine_taskerrors_171b762f" formatted="false">Приватное видео, требуется Cookie авторизованного аккаунта. Загружайте через расширение браузера или импортируйте Cookie в настройках ({detail})</string>
     <string name="engine_taskerrors_17b08d05" formatted="false">Ресурс не существует (404), ссылка, возможно, недействительна ({detail})</string>
     <string name="engine_taskerrors_1fa9db62" formatted="false">Отсутствует зависимая программа ({detail})</string>
@@ -34,11 +36,15 @@
     <string name="engine_taskerrors_458e1c97" formatted="false">Ошибка eD2k: {detail}</string>
     <string name="engine_taskerrors_4d37344b" formatted="false">Интерфейс QR-кода вернул неполные данные</string>
     <string name="engine_taskerrors_4d8481e4" formatted="false">Не найден установочный пакет N_m3u8DL-RE, подходящий для {target}</string>
+    <string name="engine_taskerrors_4ea1d8f6" formatted="false">Выходной файл не найден: {detail}</string>
     <string name="engine_taskerrors_5801d9fb" formatted="false">Этот торрент уже загружается</string>
     <string name="engine_taskerrors_59842ef7" formatted="false">Произошла непредвиденная ошибка: {detail}</string>
+    <string name="engine_taskerrors_5d4ca5b8" formatted="false">Недействительная eD2k-ссылка</string>
     <string name="engine_taskerrors_65100cb6" formatted="false">Тайм-аут соединения, проверьте сетевое подключение ({detail})</string>
+    <string name="engine_taskerrors_65a55fae" formatted="false">Нет доступа к папке загрузки: {folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">Не удалось получить {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_68a16484" formatted="false">Одноклавишная установка FFmpeg пока не поддерживается на текущей платформе: {platform}</string>
+    <string name="engine_taskerrors_705c6f86" formatted="false">Порт {port} занят, выберите другой</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">Запрошенный формат недоступен, попробуйте позже ({detail})</string>
     <string name="engine_taskerrors_7c094a81" formatted="false">Архив содержит небезопасный путь: {path}</string>
     <string name="engine_taskerrors_7f009b78" formatted="false">Недостаточно места на диске</string>
@@ -49,7 +55,9 @@
     <string name="engine_taskerrors_a696d98b" formatted="false">Файл не является корректным медиаформатом, возможно, защищён DRM или загружен не полностью: {name}</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">Неподдерживаемый формат архива: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">Не удалось загрузить {name}/{branch}/{path}</string>
+    <string name="engine_taskerrors_b939736c" formatted="false">Не удалось получить адрес видеопотока</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">Сервер вернул ошибку ({detail})</string>
+    <string name="engine_taskerrors_bfd33a73" formatted="false">Ошибка записи метаданных FFmpeg ({code}): {detail}</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">Загруженный файл не найден: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">Не удалось разрешить домен, проверьте сетевое подключение ({detail})</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">Ошибка проверки SHA256: ожидалось {expected}, получено {actual}</string>
@@ -62,6 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">Для текущей платформы нет доступных обновлений</string>
     <string name="engine_taskerrors_e365462d" formatted="false">Это видео недоступно в вашем регионе, попробуйте настроить прокси ({detail})</string>
     <string name="engine_taskerrors_f5662126" formatted="false">Видео с возрастным ограничением, требуется вход. Загружайте через расширение браузера или импортируйте Cookie в настройках ({detail})</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS заблокировал доступ к папке загрузки, добавьте Ghost Downloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">Не удалось получить QR-код</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">Эта eD2k-ссылка уже загружается</string>
 </resources>

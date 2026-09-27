@@ -265,7 +265,6 @@ Permita somente se você acabou de clicar em \"Emparelhar automaticamente\" na e
     <string name="settings_browser_extension_desc">Receber downloads enviados pela extensão do navegador local</string>
     <string name="settings_browser_listening">Aguardando conexão da extensão na porta %1$d</string>
     <string name="settings_browser_port">Porta de escuta</string>
-    <string name="settings_browser_port_unavailable">Porta %1$d em uso, escolha outra</string>
     <string name="settings_browser_regenerate">Regenerar token</string>
     <string name="settings_browser_regenerate_confirm">Extensões emparelhadas serão desconectadas e precisarão emparelhar novamente. Tem certeza de que deseja regenerar?</string>
     <string name="settings_browser_regenerate_desc">Extensões conectadas precisarão emparelhar novamente</string>

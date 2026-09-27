@@ -252,8 +252,6 @@ Allow only if you just clicked \"Auto pair\" in the extension.</string>
     <string name="settings_aria2_rpc_emulate_desc">Enable if sites reject links added via RPC</string>
     <string name="settings_aria2_rpc_status">Service status</string>
     <string name="settings_aria2_rpc_listening">Listening on port %1$d</string>
-    <string name="settings_listen_denied">No permission to listen on port %1$d, please change port</string>
-    <string name="settings_listen_failed">Cannot listen on port %1$d, see log for details</string>
     <string name="settings_aria2_rpc_port">Listening port</string>
     <string name="settings_aria2_rpc_token">Token</string>
     <string name="settings_aria2_rpc_token_desc">Optional; client must provide if set</string>
@@ -269,7 +267,6 @@ Allow only if you just clicked \"Auto pair\" in the extension.</string>
     <string name="settings_browser_extension_desc">Receive downloads from browser extensions on this device</string>
     <string name="settings_browser_listening">Waiting for extension connection on port %1$d</string>
     <string name="settings_browser_port">Listening port</string>
-    <string name="settings_browser_port_unavailable">Port %1$d is occupied, please change port</string>
     <string name="settings_browser_regenerate">Regenerate token</string>
     <string name="settings_browser_regenerate_confirm">Paired extensions will disconnect and need re-pairing. Regenerate?</string>
     <string name="settings_browser_regenerate_desc">Connected extensions will need to re-pair</string>

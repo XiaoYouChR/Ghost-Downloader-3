@@ -14,7 +14,7 @@ from qfluentwidgets import (
 from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.i18n import toListenFailureText, toLocalizedError
+from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.platform.android import IS_ANDROID
 from app.services.loopback_server import ListenStatus
@@ -468,7 +468,7 @@ class SettingPage(ScrollArea):
         if state.status == ListenStatus.OFF:
             text = self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用")
         elif state.status == ListenStatus.FAILED:
-            text = toListenFailureText(state)
+            text = toLocalizedError(state.error)
         elif not installType:
             text = self.tr("未连接")
         elif installType == "development":
@@ -482,7 +482,7 @@ class SettingPage(ScrollArea):
         if state.status == ListenStatus.OFF:
             text = self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接")
         elif state.status == ListenStatus.FAILED:
-            text = toListenFailureText(state)
+            text = toLocalizedError(state.error)
         else:
             text = self.tr("正在端口 {} 上监听").format(state.port)
         self.aria2EnableCard.setContent(text)

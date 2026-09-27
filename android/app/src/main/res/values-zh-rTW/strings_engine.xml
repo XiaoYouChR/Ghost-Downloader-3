@@ -10,9 +10,11 @@
     <string name="engine_binaryruntime_d4027299" formatted="false">支援 HLS、DASH 等串流協定，可錄製直播串流</string>
     <string name="engine_taskerrors_003f09ce" formatted="false">DMG 中找不到 .app</string>
     <string name="engine_taskerrors_00a03c90" formatted="false">目前平台暫不支援一鍵安裝 N_m3u8DL-RE: {platform}</string>
+    <string name="engine_taskerrors_00df75dc" formatted="false">不支援的 eD2k 連結格式</string>
     <string name="engine_taskerrors_0d6855ac" formatted="false">至少需要選擇一個檔案</string>
     <string name="engine_taskerrors_0f898cca" formatted="false">連線被拒絕，請檢查網路連線（{detail}）</string>
     <string name="engine_taskerrors_11e7e853" formatted="false">BitTorrent 工作階段啟動失敗：{detail}</string>
+    <string name="engine_taskerrors_153f8ca7" formatted="false">字幕下載失敗</string>
     <string name="engine_taskerrors_171b762f" formatted="false">私密影片，需要已授權帳號的 Cookie。請透過瀏覽器擴充功能下載，或在設定中手動匯入 Cookie（{detail}）</string>
     <string name="engine_taskerrors_17b08d05" formatted="false">資源不存在（404），連結可能已失效（{detail}）</string>
     <string name="engine_taskerrors_1fa9db62" formatted="false">缺少相依程式（{detail}）</string>
@@ -34,11 +36,15 @@
     <string name="engine_taskerrors_458e1c97" formatted="false">ED2k 錯誤：{detail}</string>
     <string name="engine_taskerrors_4d37344b" formatted="false">二維碼介面回傳了不完整的資料</string>
     <string name="engine_taskerrors_4d8481e4" formatted="false">找不到適用於 {target} 的 N_m3u8DL-RE 安裝套件</string>
+    <string name="engine_taskerrors_4ea1d8f6" formatted="false">找不到輸出檔案：{detail}</string>
     <string name="engine_taskerrors_5801d9fb" formatted="false">該種子已在下載中</string>
     <string name="engine_taskerrors_59842ef7" formatted="false">發生意外的錯誤：{detail}</string>
+    <string name="engine_taskerrors_5d4ca5b8" formatted="false">不是有效的 eD2k 連結</string>
     <string name="engine_taskerrors_65100cb6" formatted="false">連線逾時，請檢查網路連線（{detail}）</string>
+    <string name="engine_taskerrors_65a55fae" formatted="false">無權限存取下載目錄：{folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">無法取得 {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_68a16484" formatted="false">目前平台暫不支援一鍵安裝 FFmpeg: {platform}</string>
+    <string name="engine_taskerrors_705c6f86" formatted="false">連接埠 {port} 被佔用，請更換連接埠</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">要求的格式無法使用，請稍後重試（{detail}）</string>
     <string name="engine_taskerrors_7c094a81" formatted="false">壓縮檔包含不安全的路徑：{path}</string>
     <string name="engine_taskerrors_7f009b78" formatted="false">磁碟空間不足</string>
@@ -49,7 +55,9 @@
     <string name="engine_taskerrors_a696d98b" formatted="false">檔案不是有效的媒體格式，可能受 DRM 保護或下載不完整：{name}</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">不支援的壓縮格式：{name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">無法下載 {name}/{branch}/{path}</string>
+    <string name="engine_taskerrors_b939736c" formatted="false">未取得影片串流位址</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">伺服器傳回了錯誤（{detail}）</string>
+    <string name="engine_taskerrors_bfd33a73" formatted="false">FFmpeg 寫入中繼資料失敗（{code}）：{detail}</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">下載的檔案找不到：{path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">無法解析網域名稱，請檢查網路連線（{detail}）</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">SHA256 校驗失敗：應為 {expected}，實際為 {actual}</string>
@@ -62,6 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">目前平台無可用更新</string>
     <string name="engine_taskerrors_e365462d" formatted="false">此影片在您所在地區無法使用，請嘗試設定代理（{detail}）</string>
     <string name="engine_taskerrors_f5662126" formatted="false">年齡限制影片，需要登入。請透過瀏覽器擴充功能下載，或在設定中手動匯入 Cookie（{detail}）</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了存取下載目錄，請在 系統設定 &gt; 隱私與安全性 &gt; 完整磁碟存取權限 中新增 Ghost Downloader</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">取得二維碼失敗</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">該 eD2k 連結已在下載中</string>
 </resources>

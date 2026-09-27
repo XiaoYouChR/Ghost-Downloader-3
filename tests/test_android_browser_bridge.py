@@ -5,7 +5,8 @@ import json
 import pytest
 
 from app.config.cfg import cfg
-from app.services.loopback_server import ListenFailure, ListenState, ListenStatus
+from app.models.task import TaskError
+from app.services.loopback_server import ListenState, ListenStatus
 from tests.helpers import StubFlows
 
 
@@ -36,7 +37,7 @@ def engine(bridge, monkeypatch):
     "state, summary, expected",
     [
         (ListenState(), ("", ""), "idle"),
-        (ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.OCCUPIED), ("", ""), "failed"),
+        (ListenState(ListenStatus.FAILED, 14370, error=TaskError("端口 {port} 被占用，请更换端口", port=14370)), ("", ""), "failed"),
         (ListenState(ListenStatus.LISTENING, 14370), ("", ""), "listening"),
         (ListenState(ListenStatus.LISTENING, 14370), ("development", "2.2.0"), "connected"),
     ],
@@ -48,7 +49,7 @@ def test_status_tells_the_view_why_the_extension_cannot_connect(engine, state, s
     payload = json.loads(engine.browserExtension())
 
     assert payload["status"] == expected
-    assert payload["failure"] == state.failure
+    assert payload["error"] == (state.error.toDict() if state.error else None)
 
 
 def test_connected_status_carries_the_extension_version(engine):

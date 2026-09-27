@@ -10,9 +10,11 @@
     <string name="engine_binaryruntime_d4027299" formatted="false">Suporta protocolos de streaming como HLS, DASH, pode gravar transmissões ao vivo</string>
     <string name="engine_taskerrors_003f09ce" formatted="false">Não foi encontrado .app no DMG</string>
     <string name="engine_taskerrors_00a03c90" formatted="false">A instalação com um clique do N_m3u8DL-RE não é suportada atualmente nesta plataforma: {platform}</string>
+    <string name="engine_taskerrors_00df75dc" formatted="false">Formato de link eD2k não suportado</string>
     <string name="engine_taskerrors_0d6855ac" formatted="false">É necessário selecionar pelo menos um arquivo</string>
     <string name="engine_taskerrors_0f898cca" formatted="false">Conexão recusada, verifique a conexão de rede ({detail})</string>
     <string name="engine_taskerrors_11e7e853" formatted="false">Falha ao iniciar sessão BitTorrent: {detail}</string>
+    <string name="engine_taskerrors_153f8ca7" formatted="false">Falha ao baixar legendas</string>
     <string name="engine_taskerrors_171b762f" formatted="false">Vídeo privado, é necessário o Cookie de uma conta autorizada. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</string>
     <string name="engine_taskerrors_17b08d05" formatted="false">O recurso não existe (404), o link pode ter expirado ({detail})</string>
     <string name="engine_taskerrors_1fa9db62" formatted="false">Programa de dependência ausente ({detail})</string>
@@ -34,11 +36,15 @@
     <string name="engine_taskerrors_458e1c97" formatted="false">Erro ED2k: {detail}</string>
     <string name="engine_taskerrors_4d37344b" formatted="false">A interface do código QR retornou dados incompletos</string>
     <string name="engine_taskerrors_4d8481e4" formatted="false">Não foi encontrado um pacote de instalação do N_m3u8DL-RE adequado para {target}</string>
+    <string name="engine_taskerrors_4ea1d8f6" formatted="false">Arquivo de saída não encontrado: {detail}</string>
     <string name="engine_taskerrors_5801d9fb" formatted="false">Este torrent já está em download</string>
     <string name="engine_taskerrors_59842ef7" formatted="false">Ocorreu um erro inesperado: {detail}</string>
+    <string name="engine_taskerrors_5d4ca5b8" formatted="false">Não é um link eD2k válido</string>
     <string name="engine_taskerrors_65100cb6" formatted="false">Tempo de conexão esgotado, verifique a conexão de rede ({detail})</string>
+    <string name="engine_taskerrors_65a55fae" formatted="false">Sem permissão para acessar o diretório de download: {folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">Não foi possível obter {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_68a16484" formatted="false">A instalação com um clique do FFmpeg não é suportada atualmente nesta plataforma: {platform}</string>
+    <string name="engine_taskerrors_705c6f86" formatted="false">Porta {port} em uso, escolha outra</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">O formato solicitado não está disponível, tente novamente mais tarde ({detail})</string>
     <string name="engine_taskerrors_7c094a81" formatted="false">O arquivo compactado contém um caminho inseguro: {path}</string>
     <string name="engine_taskerrors_7f009b78" formatted="false">Espaço em disco insuficiente</string>
@@ -49,7 +55,9 @@
     <string name="engine_taskerrors_a696d98b" formatted="false">O arquivo não é um formato de mídia válido, pode estar protegido por DRM ou estar incompleto: {name}</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">Formato de compactação não suportado: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">Não foi possível baixar {name}/{branch}/{path}</string>
+    <string name="engine_taskerrors_b939736c" formatted="false">Não foi possível obter o endereço do stream de vídeo</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">O servidor retornou um erro ({detail})</string>
+    <string name="engine_taskerrors_bfd33a73" formatted="false">Falha ao gravar metadados com FFmpeg ({code}): {detail}</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">Arquivo baixado não encontrado: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">Não foi possível resolver o domínio, verifique a conexão de rede ({detail})</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">Falha na verificação SHA256: esperado {expected}, obtido {actual}</string>
@@ -62,6 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">Nenhuma atualização disponível para a plataforma atual</string>
     <string name="engine_taskerrors_e365462d" formatted="false">Este vídeo não está disponível na sua região, tente configurar um proxy ({detail})</string>
     <string name="engine_taskerrors_f5662126" formatted="false">Vídeo com restrição de idade, é necessário fazer login. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">O macOS impediu o acesso ao diretório de download, adicione o Ghost Downloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">Falha ao obter o código QR</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">Este link eD2k já está em download</string>
 </resources>

@@ -10,9 +10,11 @@
     <string name="engine_binaryruntime_d4027299" formatted="false">HLS、DASHなどのストリーミングプロトコルをサポート、ライブストリーム録画可能</string>
     <string name="engine_taskerrors_003f09ce" formatted="false">DMG 内に .app が見つかりません</string>
     <string name="engine_taskerrors_00a03c90" formatted="false">現在のプラットフォームでは N_m3u8DL-RE のワンクリックインストールをサポートしていません: {platform}</string>
+    <string name="engine_taskerrors_00df75dc" formatted="false">サポートされていない eD2k リンク形式</string>
     <string name="engine_taskerrors_0d6855ac" formatted="false">少なくとも1つのファイルを選択する必要があります</string>
     <string name="engine_taskerrors_0f898cca" formatted="false">接続が拒否されました。ネットワーク接続を確認してください（{detail}）</string>
     <string name="engine_taskerrors_11e7e853" formatted="false">BitTorrent セッション起動失敗: {detail}</string>
+    <string name="engine_taskerrors_153f8ca7" formatted="false">字幕のダウンロードに失敗しました</string>
     <string name="engine_taskerrors_171b762f" formatted="false">非公開動画、認証済みアカウントのCookieが必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</string>
     <string name="engine_taskerrors_17b08d05" formatted="false">リソースが存在しません（404）、リンクが無効になっている可能性があります（{detail}）</string>
     <string name="engine_taskerrors_1fa9db62" formatted="false">依存プログラムが不足しています（{detail}）</string>
@@ -34,11 +36,15 @@
     <string name="engine_taskerrors_458e1c97" formatted="false">ED2k エラー: {detail}</string>
     <string name="engine_taskerrors_4d37344b" formatted="false">QRコードAPIが不完全なデータを返しました</string>
     <string name="engine_taskerrors_4d8481e4" formatted="false">{target} に適合する N_m3u8DL-RE のインストールパッケージが見つかりません</string>
+    <string name="engine_taskerrors_4ea1d8f6" formatted="false">出力ファイルが見つかりません: {detail}</string>
     <string name="engine_taskerrors_5801d9fb" formatted="false">このトレントは既にダウンロード中です</string>
     <string name="engine_taskerrors_59842ef7" formatted="false">予期せぬエラーが発生しました: {detail}</string>
+    <string name="engine_taskerrors_5d4ca5b8" formatted="false">有効な eD2k リンクではありません</string>
     <string name="engine_taskerrors_65100cb6" formatted="false">接続がタイムアウトしました。ネットワーク接続を確認してください（{detail}）</string>
+    <string name="engine_taskerrors_65a55fae" formatted="false">ダウンロードディレクトリへのアクセス権限がありません: {folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">{name}/{branch}/{path} を取得できません</string>
     <string name="engine_taskerrors_68a16484" formatted="false">現在のプラットフォームでは FFmpeg のワンクリックインストールをサポートしていません: {platform}</string>
+    <string name="engine_taskerrors_705c6f86" formatted="false">ポート {port} は使用中です。ポートを変更してください</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">リクエストされた形式は利用できません。後でもう一度お試しください（{detail}）</string>
     <string name="engine_taskerrors_7c094a81" formatted="false">アーカイブに安全でないパスが含まれています: {path}</string>
     <string name="engine_taskerrors_7f009b78" formatted="false">ディスク空き容量不足</string>
@@ -49,7 +55,9 @@
     <string name="engine_taskerrors_a696d98b" formatted="false">ファイルは有効なメディア形式ではありません。DRM保護またはダウンロード不完全の可能性: {name}</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">サポートされていない圧縮形式: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">{name}/{branch}/{path} をダウンロードできません</string>
+    <string name="engine_taskerrors_b939736c" formatted="false">動画ストリームのアドレスを取得できませんでした</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">サーバーがエラーを返しました（{detail}）</string>
+    <string name="engine_taskerrors_bfd33a73" formatted="false">FFmpeg メタデータ書き込み失敗（{code}）: {detail}</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">ダウンロードされたファイルが見つかりません: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">ドメインを解決できません。ネットワーク接続を確認してください（{detail}）</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">SHA256 検証失敗: 期待値 {expected}, 実際 {actual}</string>
@@ -62,6 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">現在のプラットフォームに利用可能な更新はありません</string>
     <string name="engine_taskerrors_e365462d" formatted="false">この動画はあなたの地域では利用できません。プロキシを設定してください（{detail}）</string>
     <string name="engine_taskerrors_f5662126" formatted="false">年齢制限動画、ログインが必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS がダウンロードディレクトリへのアクセスをブロックしました。システム設定 &gt; プライバシーとセキュリティ &gt; フルディスクアクセス で Ghost Downloader を追加してください</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">QRコードの取得に失敗</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">この eD2k リンクは既にダウンロード中です</string>
 </resources>

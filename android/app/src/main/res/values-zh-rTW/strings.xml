@@ -265,7 +265,6 @@
     <string name="settings_browser_extension_desc">接收本機瀏覽器裡擴充功能傳來的下載</string>
     <string name="settings_browser_listening">正在連接埠 %1$d 上等待擴充功能連線</string>
     <string name="settings_browser_port">監聽連接埠</string>
-    <string name="settings_browser_port_unavailable">連接埠 %1$d 被佔用，請更換連接埠</string>
     <string name="settings_browser_regenerate">重新產生權杖</string>
     <string name="settings_browser_regenerate_confirm">已配對的擴充功能會中斷，需要重新配對。確定重新產生嗎？</string>
     <string name="settings_browser_regenerate_desc">已連線的擴充功能需要重新配對</string>

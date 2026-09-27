@@ -11,7 +11,7 @@ REPO = Path(__file__).resolve().parent.parent
 I18N_DIR = REPO / "app" / "assets" / "i18n"
 BROWSER_I18N_DIR = REPO / "browser_extension" / "app" / "public" / "_locales"
 
-COMPOSE_RES_DIR = REPO / "compose" / "app" / "src" / "main" / "res"
+ANDROID_RES_DIR = REPO / "android" / "app" / "src" / "main" / "res"
 ANDROID_SOURCE_FILES = [
     "strings.xml",
     "strings_identity.xml",
@@ -422,8 +422,8 @@ def translateAndroidLocale(locale: str, localeName: str) -> None:
         print(f"[android:{locale}] No folder mapping")
         return
 
-    sourceDir = COMPOSE_RES_DIR / "values"
-    localeDir = COMPOSE_RES_DIR / folder
+    sourceDir = ANDROID_RES_DIR / "values"
+    localeDir = ANDROID_RES_DIR / folder
 
     allSource: dict[str, tuple[str, str]] = {}
     allExisting: dict[str, tuple[str, str]] = {}
@@ -484,12 +484,12 @@ def translateAndroidLocale(locale: str, localeName: str) -> None:
 
 def checkAndroidLocales(locales: dict[str, str]) -> int:
     total = 0
-    sourceDir = COMPOSE_RES_DIR / "values"
+    sourceDir = ANDROID_RES_DIR / "values"
     for locale in locales:
         folder = ANDROID_LOCALE_FOLDERS.get(locale)
         if not folder:
             continue
-        localeDir = COMPOSE_RES_DIR / folder
+        localeDir = ANDROID_RES_DIR / folder
         missing = 0
         for fname in ANDROID_SOURCE_FILES:
             source = parseAndroidStrings(sourceDir / fname)

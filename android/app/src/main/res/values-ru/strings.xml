@@ -265,7 +265,6 @@
     <string name="settings_browser_extension_desc">Принимать загрузки от расширения в этом браузере</string>
     <string name="settings_browser_listening">Ожидание расширения на порту %1$d</string>
     <string name="settings_browser_port">Порт прослушивания</string>
-    <string name="settings_browser_port_unavailable">Порт %1$d занят, выберите другой</string>
     <string name="settings_browser_regenerate">Пересоздать токен</string>
     <string name="settings_browser_regenerate_confirm">Подключённое расширение будет отключено и потребует нового сопряжения. Пересоздать?</string>
     <string name="settings_browser_regenerate_desc">Подключённому расширению потребуется новое сопряжение</string>

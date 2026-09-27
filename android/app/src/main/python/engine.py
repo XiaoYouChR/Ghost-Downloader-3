@@ -815,7 +815,7 @@ class Bridge:
             status = "listening"
         return json.dumps({
             "status": status,
-            "failure": state.failure,
+            "error": state.error.toDict() if state.error else None,
             "token": cfg.browserExtensionPairToken.value,
             "extensionVersion": version,
             "chromeWebstore": CHROME_WEBSTORE_URL,
@@ -826,7 +826,8 @@ class Bridge:
     def _emitAria2Rpc(self, *_args):
         state = self._aria2Server.state
         self._flows.setState("aria2Rpc", json.dumps(
-            {"status": state.status, "port": state.port, "failure": state.failure}))
+            {"status": state.status, "port": state.port,
+             "error": state.error.toDict() if state.error else None}))
 
     def _emitBrowserExtension(self, *_args):
         self._flows.setState("browserExtension", self.browserExtension())

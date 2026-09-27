@@ -18,7 +18,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.Settings
+import com.xychr.ghostdownloader.model.TaskError
 import com.xychr.ghostdownloader.ui.components.notice.LocalSnackbar
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.ConfirmDialog
@@ -111,15 +113,8 @@ private fun ColumnScope.ServiceRows(settings: Settings, set: (String, Any) -> Un
 private data class ListenState(
     val status: String = "",
     val port: Int = 0,
-    val failure: String? = null,
+    val error: TaskError? = null,
 )
-
-@Composable
-private fun listenFailureText(failure: String?, port: Int): String = when (failure) {
-    "occupied" -> stringResource(R.string.settings_browser_port_unavailable, port)
-    "denied" -> stringResource(R.string.settings_listen_denied, port)
-    else -> stringResource(R.string.settings_listen_failed, port)
-}
 
 @Composable
 private fun Aria2RpcStatusRow(port: Int) {
@@ -128,7 +123,7 @@ private fun Aria2RpcStatusRow(port: Int) {
     InfoSettingRow(
         title = stringResource(R.string.settings_aria2_rpc_status),
         subtitle = when (state.status) {
-            "failed" -> listenFailureText(state.failure, port)
+            "failed" -> state.error?.let { engineText(it) }.orEmpty()
             else -> stringResource(R.string.settings_aria2_rpc_listening, port)
         },
     )
@@ -137,7 +132,7 @@ private fun Aria2RpcStatusRow(port: Int) {
 @Serializable
 private data class BrowserExtension(
     val status: String = "",
-    val failure: String? = null,
+    val error: TaskError? = null,
     val token: String = "",
     val extensionVersion: String = "",
     val chromeWebstore: String = "",
@@ -166,7 +161,7 @@ private fun BrowserExtensionRows(isEnabled: Boolean, port: Int, set: (String, An
         subtitle = when (state.status) {
             "connected" -> stringResource(R.string.settings_browser_connected, state.extensionVersion)
             "listening" -> stringResource(R.string.settings_browser_listening, port)
-            "failed" -> listenFailureText(state.failure, port)
+            "failed" -> state.error?.let { engineText(it) }.orEmpty()
             else -> stringResource(R.string.settings_browser_disconnected)
         },
     )

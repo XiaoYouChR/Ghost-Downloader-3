@@ -265,7 +265,6 @@
     <string name="settings_browser_extension_desc">ローカルブラウザの拡張機能から送信されるダウンロードを受信します</string>
     <string name="settings_browser_listening">ポート %1$d で拡張機能の接続を待機中</string>
     <string name="settings_browser_port">リスニングポート</string>
-    <string name="settings_browser_port_unavailable">ポート %1$d は使用中です。ポートを変更してください</string>
     <string name="settings_browser_regenerate">トークンを再生成</string>
     <string name="settings_browser_regenerate_confirm">ペアリング済みの拡張機能は切断され、再ペアリングが必要になります。トークンを再生成しますか？</string>
     <string name="settings_browser_regenerate_desc">接続済みの拡張機能は再ペアリングが必要です</string>

@@ -8,10 +8,6 @@
     <string name="engine_binaryruntime_8cb8cdce" formatted="false">哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</string>
     <string name="engine_binaryruntime_a2378d7b" formatted="false">支持电驴协议，适合下载经典资源</string>
     <string name="engine_binaryruntime_d4027299" formatted="false">支持 HLS、DASH 等流媒体协议，可录制直播流</string>
-    <string name="engine_draft_461189f1" formatted="false">音频</string>
-    <string name="engine_draft_5c3c22fa" formatted="false">默认（最佳）</string>
-    <string name="engine_draft_cd99b225" formatted="false">语言</string>
-    <string name="engine_draft_fa4e33b6" formatted="false">视频</string>
     <string name="engine_taskerrors_003f09ce" formatted="false">DMG 中未找到 .app</string>
     <string name="engine_taskerrors_00a03c90" formatted="false">当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}</string>
     <string name="engine_taskerrors_00df75dc" formatted="false">不支持的 eD2k 链接格式</string>
@@ -50,14 +46,17 @@
     <string name="engine_taskerrors_65a55fae" formatted="false">无权限访问下载目录：{folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">无法获取 {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_68a16484" formatted="false">当前平台暂不支持一键安装 FFmpeg: {platform}</string>
+    <string name="engine_taskerrors_705c6f86" formatted="false">端口 {port} 被占用，请更换端口</string>
     <string name="engine_taskerrors_71562d81" formatted="false">获取验证码失败</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">请求的格式不可用，请稍后重试（{detail}）</string>
     <string name="engine_taskerrors_7c094a81" formatted="false">压缩包包含不安全路径：{path}</string>
     <string name="engine_taskerrors_7f009b78" formatted="false">磁盘空间不足</string>
     <string name="engine_taskerrors_7fc757ff" formatted="false">{name} 未安装，请在设置中安装</string>
     <string name="engine_taskerrors_87a20bae" formatted="false">BitTorrent 错误：{detail}</string>
+    <string name="engine_taskerrors_9a141688" formatted="false">没有权限监听端口 {port}，请更换端口</string>
     <string name="engine_taskerrors_9d9faea0" formatted="false">服务器拒绝了请求（403），链接可能已失效（{detail}）</string>
     <string name="engine_taskerrors_9de6fcba" formatted="false">视频不可用，可能已被删除或设为私密（{detail}）</string>
+    <string name="engine_taskerrors_a279a5e4" formatted="false">无法监听端口 {port}，详情见日志</string>
     <string name="engine_taskerrors_a696d98b" formatted="false">文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</string>
     <string name="engine_taskerrors_aeb6c8a8" formatted="false">登录失败</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">不支持的压缩格式：{name}</string>
