@@ -30,7 +30,7 @@ class StubTaskService:
 
 @pytest.fixture
 def engine(bridge):
-    instance = bridge.Engine.__new__(bridge.Engine)
+    instance = bridge.Bridge.__new__(bridge.Bridge)
     instance._loop = asyncio.new_event_loop()
     thread = Thread(target=instance._loop.run_forever, daemon=True)
     thread.start()

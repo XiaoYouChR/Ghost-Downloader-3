@@ -25,7 +25,7 @@ class StubServer:
 @pytest.fixture
 def engine(bridge, monkeypatch):
     monkeypatch.setattr(cfg.browserExtensionPairToken, "value", "tok")
-    instance = bridge.Engine.__new__(bridge.Engine)
+    instance = bridge.Bridge.__new__(bridge.Bridge)
     instance._flows = StubFlows()
     instance._browserService = StubBrowserService()
     instance._browserServer = StubServer()

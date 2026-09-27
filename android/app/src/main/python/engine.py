@@ -38,16 +38,15 @@ class HashState:
 PendingEdit = namedtuple("PendingEdit", ["taskId", "task", "newTask", "options"])
 
 
-class Engine:
+class Bridge:
     def __init__(self, flows):
         from app.config.paths import APP_DATA_DIR
 
         logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=3)
         cfg.load(f"{APP_DATA_DIR}/UserConfig.json")
 
+        from app.engine import Engine
         from app.services.coroutine_runner import CoroutineRunner
-        from app.services.category_service import CategoryService
-        from app.services.speed_meter import SpeedMeter
 
         loop = asyncio.new_event_loop()
         self._loop = loop
@@ -56,22 +55,18 @@ class Engine:
             isAlive=None,
             loop=loop,
         )
-        self._categoryService = CategoryService()
-        self._speedMeter = SpeedMeter(self._coroutineRunner)
-
-        from app.services.task_service import TaskService
-        from app.services.feature_service import FeatureService
-        from app.services.runtime_status import RuntimeStatusService
-
-        self._taskService = TaskService(
-            self._coroutineRunner, self._categoryService, self._speedMeter,
-            fileWatcher=InotifyFileWatcher(loop, self._coroutineRunner.post),
+        self._engine = Engine(
+            self._coroutineRunner, InotifyFileWatcher(loop, self._coroutineRunner.post), loadCrx=None,
         )
-        self._runtimeStatusService = RuntimeStatusService(self._coroutineRunner)
-        self._featureService = FeatureService(
-            self._taskService, self._categoryService, self._coroutineRunner,
-            self._runtimeStatusService,
-        )
+        self._categoryService = self._engine.categoryService
+        self._speedMeter = self._engine.speedMeter
+        self._taskService = self._engine.taskService
+        self._runtimeStatusService = self._engine.runtimeStatusService
+        self._featureService = self._engine.featureService
+        self._browserService = self._engine.browserService
+        self._browserServer = self._engine.browserServer
+        self._aria2RpcServer = self._engine.aria2RpcServer
+        self._aria2Server = self._engine.aria2Server
 
         from app.models.pack import PackServices
 
@@ -99,27 +94,6 @@ class Engine:
         self._taskDraft = TaskDraft(self._coroutineRunner, self._featureService)
         self._taskDraft.taskConfirmed.connect(self._taskService.add)
 
-        from app.services.aria2_rpc import Aria2RpcServer
-        from app.services.loopback_server import LoopbackServer
-        from app.services.browser_service import BrowserService
-
-        self._aria2RpcServer = Aria2RpcServer(
-            self._coroutineRunner, parse=self._featureService.parse,
-            addTask=self._taskService.add,
-        )
-        self._aria2Server = LoopbackServer(
-            self._coroutineRunner, self._aria2RpcServer.handle,
-            isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort,
-        )
-
-        self._browserService = BrowserService(
-            self._coroutineRunner, self._taskService,
-            parse=self._featureService.parse, loadCrx=None,
-        )
-        self._browserServer = LoopbackServer(
-            self._coroutineRunner, self._browserService.handle,
-            isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort,
-        )
         self._browserService.pairRequestChanged.connect(self._emitPairRequest)
         self._browserService.connectionChanged.connect(self._emitBrowserExtension)
         self._browserServer.stateChanged.connect(self._emitBrowserExtension)
@@ -144,11 +118,8 @@ class Engine:
 
     def _activate(self):
         self._bindSpeedMeter()
-        self._taskService.resumeSaved()
-        self._featureService.activate()
+        self._engine.start()
         self._setupFlows()
-        self._aria2Server.start()
-        self._browserServer.start()
         self._emitKeepAlive()
         self._emitBrowserExtension()
         self._emitAria2Rpc()
@@ -1097,10 +1068,10 @@ def toTaskOptionPayload(payload: dict) -> dict:
     return options
 
 
-_engine: Engine | None = None
+_bridge: Bridge | None = None
 
 
 def start(flows):
-    global _engine
-    _engine = Engine(flows)
-    return _engine.request("packUis")
+    global _bridge
+    _bridge = Bridge(flows)
+    return _bridge.request("packUis")
