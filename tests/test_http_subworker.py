@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
+from app.client import buildClient as realBuildClient
 from features.http_pack.task import HttpTask, HttpTaskStep, HttpSubworker, PermanentDownloadError, RangeNotSupportedError
 from app.models.task import TaskStatus, TaskError
 from tests.helpers import buildFileContent, buildRangeHandler, runStep
@@ -638,6 +639,47 @@ class TestStallRecovery:
         assert (tmp_path / "test.bin").read_bytes() == content
         assert hasStalled
         releaseHang.set()
+
+    async def test_dead_client_retries_on_a_new_one(self, server, tmp_path, monkeypatch):
+        """A client that cannot fetch is closed, and the next attempt finishes the file on a new one."""
+        content = buildFileContent(500)
+        firstAttempt = True
+
+        class DeadClient:
+            isClosed = False
+
+            async def get(self, *args, **kwargs):
+                raise ConnectionError("dead connection")
+
+            def close(self):
+                self.isClosed = True
+
+        deadClient = DeadClient()
+
+        def buildClient(**kwargs):
+            nonlocal firstAttempt
+            if kwargs.get("readTimeout") is not None and firstAttempt:
+                firstAttempt = False
+                return deadClient
+            return realBuildClient(**kwargs)
+
+        monkeypatch.setattr("features.http_pack.task.buildClient", buildClient)
+
+        _real_sleep = asyncio.sleep
+
+        async def fast_sleep(n):
+            await _real_sleep(0 if n >= 5 else min(n, 0.01))
+
+        monkeypatch.setattr(asyncio, "sleep", fast_sleep)
+
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await asyncio.wait_for(runStep(step), timeout=10)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        assert deadClient.isClosed
 
 
 class TestInitialStart:
