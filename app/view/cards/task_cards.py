@@ -213,7 +213,7 @@ class TaskCard(CardWidget):
         self.checkBox.clicked.connect(lambda checked: self.selectionChanged.emit(checked, False))
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
         cfg.isCategoryEnabled.valueChanged.connect(self._refreshCategoryIcon)
-        self._categoryService.categoriesChanged.connect(self._refreshCategoryIcon)
+        self._categoryService.categoriesChanged.connect(self._refreshCategoryIcon, owner=self)
 
     def refresh(self, force: bool = False) -> None:
         if (not force and self._lastStatus == self._task.status

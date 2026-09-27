@@ -94,7 +94,7 @@ class ScanLoginDialog(MessageBoxBase):
     def _bind(self):
         self.refreshButton.clicked.connect(self.reloadQrCode)
         self.openBrowserButton.clicked.connect(self._onOpenBrowser)
-        self._account.qrStateChanged.connect(self._onQrState)
+        self._account.qrStateChanged.connect(self._onQrState, owner=self)
 
     def reloadQrCode(self):
         self.qrLabel.setPixmap(QPixmap())
@@ -183,7 +183,7 @@ class BilibiliLoginSettingCard(SettingCard):
         self.scanButton.clicked.connect(self._onScanLogin)
         self.editButton.clicked.connect(self._onEditCookie)
         self.logoutButton.clicked.connect(self._onLogout)
-        self._account.accountChanged.connect(self.refreshLoginInfo)
+        self._account.accountChanged.connect(self.refreshLoginInfo, owner=self)
 
     def refreshLoginInfo(self):
         if self._account.isLoggedIn:

@@ -28,14 +28,17 @@ class BoundSignal:
     def __init__(self) -> None:
         self._slots: list[Callable | weakref.WeakMethod] = []
 
-    def connect(self, slot: Callable) -> None:
+    def connect(self, slot: Callable, owner=None) -> None:
+        """owner 是比信号源短命的 QObject：它销毁时自动断开，否则被引用环拖住的包装对象会让槽打到已删除的控件上。"""
+        entry: Callable | weakref.WeakMethod = slot
         if hasattr(slot, "__self__") and hasattr(slot, "__func__"):
             try:
-                self._slots.append(weakref.WeakMethod(slot, self._remove))
-                return
+                entry = weakref.WeakMethod(slot, self._remove)
             except TypeError:
                 pass
-        self._slots.append(slot)
+        self._slots.append(entry)
+        if owner is not None:
+            owner.destroyed.connect(lambda *_: self._remove(entry))
 
     def disconnect(self, slot: Callable | None = None) -> None:
         if slot is None:

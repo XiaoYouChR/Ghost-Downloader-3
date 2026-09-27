@@ -483,14 +483,9 @@ class BrowserExtensionPage(QWidget):
         self.manualCard.clicked.connect(self._onManualInstallClicked)
         for card, url in self.storeCards:
             card.clicked.connect(lambda u=url: QDesktopServices.openUrl(QUrl(u)))
-        subscriptions = [
-            (self._browserService.connectionChanged, self._onConnectionChanged),
-            (self._browserService.protocolMismatched, self._onProtocolMismatched),
-            (self._browserServer.stateChanged, self._onListenStateChanged),
-        ]
-        for signal, slot in subscriptions:
-            signal.connect(slot)
-        self.destroyed.connect(lambda: [signal.disconnect(slot) for signal, slot in subscriptions])
+        self._browserService.connectionChanged.connect(self._onConnectionChanged, owner=self)
+        self._browserService.protocolMismatched.connect(self._onProtocolMismatched, owner=self)
+        self._browserServer.stateChanged.connect(self._onListenStateChanged, owner=self)
 
     def _setBanner(self, icon: InfoBarIcon, title: str) -> None:
         if self._banner is not None:

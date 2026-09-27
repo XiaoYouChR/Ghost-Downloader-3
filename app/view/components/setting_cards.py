@@ -843,7 +843,7 @@ class RuntimeCard(SettingCard):
         self.hBoxLayout.addSpacing(16)
 
     def _bind(self) -> None:
-        self._runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
+        self._runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged, owner=self)
         self.installButton.clicked.connect(self._onInstallClicked)
         self.cancelButton.clicked.connect(self._onCancelClicked)
         self.deleteButton.clicked.connect(self._onDeleteClicked)
