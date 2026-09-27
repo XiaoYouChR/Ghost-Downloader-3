@@ -46,6 +46,8 @@ class SpeedMeter:
             self._coroutineRunner.post(self._tick)
 
     def _tick(self) -> None:
+        if self._tickWorkId is None:
+            return
         self._currentSpeed = self._bytes
         self._bytes = 0
         self.speedChanged.emit(self._currentSpeed)
