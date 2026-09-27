@@ -4,12 +4,12 @@ from urllib.parse import urlparse
 
 from loguru import logger
 
-from app.client import buildClient
 from app.models.pack import FeaturePack, TaskParser
-from app.models.task import Task, TaskError, TaskOptions, ResourceTaskOptions
+from app.models.task import Task, TaskOptions
 from http_pack.pack import HttpParser
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
+from .probe import probeUrls, toProxyHeaders
 
 GITHUB_HOSTS = {
     "api.github.com",
@@ -70,6 +70,7 @@ class GitHubHttpTaskStep(HttpTaskStep):
                 nextUrl = self.fallbackUrls.pop(0)
                 logger.warning("GitHub 下载 fallback: {} → {}", self.url, nextUrl)
                 self.url = nextUrl
+                self.headers = toProxyHeaders(self.headers)
                 self.subworkers = []
                 self.receivedBytes = 0
                 self.progress = 0
@@ -84,63 +85,37 @@ class GitHubParser(TaskParser):
     priority = 90
 
     def match(self, options: TaskOptions) -> bool:
-        return (
-            githubConfig.enabled.value
-            and bool(selectedProxySite())
-            and isGitHubFileUrl(options.url)
-        )
+        return githubConfig.enabled.value and isGitHubFileUrl(options.url)
 
     async def parse(self, options: TaskOptions) -> Task:
-        fallbackUrls = self._buildFallbackUrls(options.url)
-        isResourceWithName = isinstance(options, ResourceTaskOptions) and options.name
-
-        lastError = None
-        for i, url in enumerate(fallbackUrls):
-            isDirectUrl = (url == options.url)
-            try:
-                if isResourceWithName and not isDirectUrl:
-                    await self._probeProxy(url, options.headers)
-
-                if isDirectUrl:
-                    task = await HttpParser().parse(options)
-                else:
-                    task = await self.delegate(replace(options, url=url))
-
-                remaining = fallbackUrls[i + 1:]
-                if remaining:
-                    step = task.steps[0]
-                    if isinstance(step, HttpTaskStep):
-                        githubStep = GitHubHttpTaskStep.build(step, remaining)
-                        task.steps[0] = githubStep
-                        githubStep._bindTask(task)
-
-                task.url = options.url
-                task.packId = "github"
-                return task
-            except Exception as e:
-                lastError = e
-                logger.warning("GitHub proxy 不可用 {}: {}", url, e)
-
-        raise lastError
-
-    def _buildFallbackUrls(self, originalUrl: str) -> list[str]:
+        originalUrl = options.url
         selected = selectedProxySite()
-        urls = [f"{selected.rstrip('/')}/{originalUrl}"]
-        for site in GITHUB_PROXY_SITES:
-            if site != selected:
-                urls.append(f"{site.rstrip('/')}/{originalUrl}")
-        urls.append(originalUrl)
-        return urls
+        urls = [f"{site}/{originalUrl}" for site in GITHUB_PROXY_SITES if site != selected] + [originalUrl]
 
-    async def _probeProxy(self, url: str, headers: dict) -> None:
-        client = buildClient(timeout=10)
-        try:
-            response = await client.get(
-                url, headers={**headers, "range": "bytes=0-0", "accept-encoding": "identity"},
-            )
-            response.close()
-        finally:
-            client.close()
+        winner = ""
+        if selected:
+            try:
+                await probeUrls([f"{selected}/{originalUrl}"], originalUrl, options.headers)
+                winner, fallbackUrls = f"{selected}/{originalUrl}", urls
+            except Exception as e:
+                logger.warning("所选代理站不可用 {}: {}", selected, e)
+        if not winner:
+            winner, fallbackUrls = await probeUrls(urls, originalUrl, options.headers)
+
+        if winner == originalUrl:
+            task = await HttpParser().parse(options)
+        else:
+            task = await self.delegate(replace(options, url=winner, headers=toProxyHeaders(options.headers)))
+
+        step = task.steps[0]
+        if fallbackUrls and isinstance(step, HttpTaskStep):
+            githubStep = GitHubHttpTaskStep.build(step, fallbackUrls)
+            task.steps[0] = githubStep
+            githubStep._bindTask(task)
+
+        task.url = originalUrl
+        task.packId = "github"
+        return task
 
 
 class GitHubPack(FeaturePack):

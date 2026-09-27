@@ -5,14 +5,10 @@ from urllib.parse import urlparse
 
 from qfluentwidgets import ComboBox, FluentIcon, LineEdit, SettingCard, ToolButton, ToolTipFilter
 
-from .config import (
-    CUSTOM_SITE_KEY,
-    GITHUB_PROXY_SITES,
-    PROBE_TIMEOUT,
-    PROBE_UNAVAILABLE,
-    githubConfig,
-    probeProxyLatencies,
-)
+from .config import AUTO_SITE_KEY, CUSTOM_SITE_KEY, GITHUB_PROXY_SITES, githubConfig
+from .probe import PROBE_TIMEOUT, PROBE_UNAVAILABLE, probeProxyLatencies
+
+SITE_OPTIONS = [AUTO_SITE_KEY, *GITHUB_PROXY_SITES, CUSTOM_SITE_KEY]
 
 
 class GitHubProxySiteCard(SettingCard):
@@ -40,17 +36,13 @@ class GitHubProxySiteCard(SettingCard):
         self.refreshButton.setToolTip(self.tr("刷新延迟"))
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
 
+        self.comboBox.addItem(self.tr("自动"))
         for site in GITHUB_PROXY_SITES:
             self.comboBox.addItem(urlparse(site).netloc or site.rstrip("/"))
         self.comboBox.addItem(self.tr("自定义"))
 
         currentSite = githubConfig.selectedSite.value
-        if currentSite == CUSTOM_SITE_KEY:
-            self.comboBox.setCurrentIndex(len(GITHUB_PROXY_SITES))
-        elif currentSite in GITHUB_PROXY_SITES:
-            self.comboBox.setCurrentIndex(GITHUB_PROXY_SITES.index(currentSite))
-        else:
-            self.comboBox.setCurrentIndex(0)
+        self.comboBox.setCurrentIndex(SITE_OPTIONS.index(currentSite))
         self.customSiteEdit.setText(githubConfig.customSite.value)
         self.customSiteEdit.setVisible(currentSite == CUSTOM_SITE_KEY)
 
@@ -77,7 +69,7 @@ class GitHubProxySiteCard(SettingCard):
         return f"{latency} ms"
 
     def _refreshLatencyLabels(self):
-        for i, site in enumerate(GITHUB_PROXY_SITES):
+        for i, site in enumerate(GITHUB_PROXY_SITES, start=1):
             displayName = urlparse(site).netloc or site.rstrip("/")
             tag = self._latencyTag(self._latencies.get(site))
             label = f"{displayName} ({tag})" if tag else displayName
@@ -87,17 +79,14 @@ class GitHubProxySiteCard(SettingCard):
         customLatency = self._latencies.get(customSite) if customSite else None
         tag = self._latencyTag(customLatency)
         customLabel = f"{self.tr('自定义')} ({tag})" if tag else self.tr("自定义")
-        self.comboBox.setItemText(len(GITHUB_PROXY_SITES), customLabel)
+        self.comboBox.setItemText(SITE_OPTIONS.index(CUSTOM_SITE_KEY), customLabel)
 
     def _onCurrentIndexChanged(self, index: int):
         from app.config.cfg import cfg
         if index < 0:
             return
-        if index < len(GITHUB_PROXY_SITES):
-            cfg.set(githubConfig.selectedSite, GITHUB_PROXY_SITES[index])
-        else:
-            cfg.set(githubConfig.selectedSite, CUSTOM_SITE_KEY)
-        self.customSiteEdit.setVisible(index >= len(GITHUB_PROXY_SITES))
+        cfg.set(githubConfig.selectedSite, SITE_OPTIONS[index])
+        self.customSiteEdit.setVisible(SITE_OPTIONS[index] == CUSTOM_SITE_KEY)
 
     def _onCustomSiteEditingFinished(self):
         from app.config.cfg import cfg

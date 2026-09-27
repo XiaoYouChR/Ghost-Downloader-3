@@ -21,6 +21,7 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 
+private const val AUTO_SITE_KEY = "__auto__"
 private const val CUSTOM_SITE_KEY = "__custom__"
 
 @Composable
@@ -47,7 +48,8 @@ fun GitHubSettings(
         OptionsSettingRow(
             title = stringResource(R.string.proxy_site),
             value = config.str(k("selectedSite")),
-            options = proxySites.map { it to proxySiteLabel(it, latencies[it]) } + listOf(
+            options = listOf(AUTO_SITE_KEY to stringResource(R.string.value_auto)) +
+                proxySites.map { it to proxySiteLabel(it, latencies[it]) } + listOf(
                 CUSTOM_SITE_KEY to stringResource(R.string.proxy_site_custom),
             ),
             onSelect = { set(k("selectedSite"), it) },

@@ -205,3 +205,13 @@ _Avoid_: Mirror、CDN、channel
 
 > **Dev:** "用户按重新下载时，我们创建新 Task 吗？"
 > **Domain expert:** "不。Redownload 停止 Task Run、删除 Task Files、重置同一个 Task、启动新的 Task Run。"
+### GitHub 加速
+
+**Proxy Site**:
+把 GitHub 文件 URL 作为路径前缀转发下载的第三方反向代理。
+_Avoid_: Mirror、Source、CDN
+
+**Auto Site**:
+选站方式之一：每个任务解析时让直连与全部 Proxy Site 竞速，取第一个合格响应。不跨任务记忆胜出者。
+_Avoid_: 测速、最快站（不比较全部结果）
+

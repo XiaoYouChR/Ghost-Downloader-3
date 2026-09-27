@@ -192,7 +192,7 @@
     <string name="ytdlp_cookie_import">导入 Cookie</string>
     <string name="ytdlp_cookie_hint">打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签里找到任意请求，复制其 Cookie 请求头的值粘贴到下方。</string>
     <string name="github_enabled">启用 GitHub 加速</string>
-    <string name="github_enabled_desc">优先使用所选代理站，不可用时自动切换其他站点或直连</string>
+    <string name="github_enabled_desc">经代理站下载 GitHub 文件，不可用时自动切换其他站点或直连</string>
     <string name="huggingface_enabled">启用 HuggingFace 加速</string>
     <string name="huggingface_enabled_desc">命中 HuggingFace 链接时，自动改写为所选镜像站</string>
     <string name="huggingface_access_token">访问令牌</string>

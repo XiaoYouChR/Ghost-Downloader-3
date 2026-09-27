@@ -2,18 +2,34 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from app.client import buildClient
-from app.config.cfg import BoolValidator, ConfigItem, ConfigValidator
+from app.config.cfg import BoolValidator, ConfigItem, ConfigValidator, OptionsValidator
 from app.models.pack import PackConfig
 
 GITHUB_PROXY_SITES = (
     "https://gh-proxy.com",
     "https://gh-proxy.org",
-    "https://gh.ddlc.top",
+    "https://cdn.gh-proxy.org",
+    "https://edgeone.gh-proxy.org",
+    "https://hk.gh-proxy.org",
     "https://ghfast.top",
+    "https://ghfile.geekertao.top",
+    "https://gh.chjina.com",
+    "https://gh.monlor.com",
+    "https://gh.jasonzeng.dev",
+    "https://ghproxy.monkeyray.net",
+    "https://github.ednovas.xyz",
+    "https://gh.nxnow.top",
+    "https://ghproxy.cxkpro.top",
+    "https://fastgit.cc",
+    "https://gh.zwy.one",
+    "https://gitproxy.mrhjx.cn",
+    "https://github.boki.moe",
+    "https://gh.xxooo.cf",
+    "https://gh.llkk.cc",
+    "https://wget.la",
 )
+AUTO_SITE_KEY = "__auto__"
 CUSTOM_SITE_KEY = "__custom__"
-PROBE_TARGET = "https://github.com/cli/cli/releases/download/v2.62.0/gh_2.62.0_linux_amd64.tar.gz"
 
 
 def toProxySite(site: str) -> str:
@@ -26,41 +42,11 @@ def toProxySite(site: str) -> str:
 
 
 def selectedProxySite() -> str:
+    if githubConfig.selectedSite.value == AUTO_SITE_KEY:
+        return ""
     if githubConfig.selectedSite.value == CUSTOM_SITE_KEY:
         return githubConfig.customSite.value
     return githubConfig.selectedSite.value
-
-
-PROBE_UNAVAILABLE = -1
-PROBE_TIMEOUT = -2
-
-
-async def probeProxyLatencies() -> dict[str, int]:
-    import asyncio
-    from time import perf_counter
-
-    sites = list(GITHUB_PROXY_SITES)
-    custom = githubConfig.customSite.value
-    if custom:
-        sites.append(custom)
-
-    async def probeOne(site: str) -> tuple[str, int]:
-        url = f"{site.rstrip('/')}/{PROBE_TARGET}"
-        client = buildClient()
-        try:
-            start = perf_counter()
-            response = await asyncio.wait_for(client.head(url), timeout=10)
-            elapsed = int((perf_counter() - start) * 1000)
-            return site, elapsed if response.status.as_int() < 400 else PROBE_UNAVAILABLE
-        except (asyncio.TimeoutError, TimeoutError):
-            return site, PROBE_TIMEOUT
-        except Exception:
-            return site, PROBE_TIMEOUT
-        finally:
-            client.close()
-
-    results = await asyncio.gather(*(probeOne(s) for s in sites))
-    return dict(results)
 
 
 class GitHubProxySiteValidator(ConfigValidator):
@@ -84,7 +70,10 @@ class GitHubProxySiteValidator(ConfigValidator):
 
 class GitHubConfig(PackConfig):
     enabled = ConfigItem("GitHub", "Enabled", False, BoolValidator())
-    selectedSite = ConfigItem("GitHub", "SelectedSite", GITHUB_PROXY_SITES[0], GitHubProxySiteValidator())
+    selectedSite = ConfigItem(
+        "GitHub", "SelectedSite", AUTO_SITE_KEY,
+        OptionsValidator([AUTO_SITE_KEY, *GITHUB_PROXY_SITES, CUSTOM_SITE_KEY]),
+    )
     customSite = ConfigItem("GitHub", "CustomSite", "", GitHubProxySiteValidator())
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
@@ -95,7 +84,7 @@ class GitHubConfig(PackConfig):
         githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", parent)
         enableCard = SwitchSettingCard(
             FluentIcon.LINK, self.tr("启用 GitHub 加速"),
-            self.tr("优先使用所选代理站，不可用时自动切换其他站点或直连"),
+            self.tr("经代理站下载 GitHub 文件，不可用时自动切换其他站点或直连"),
             self.enabled, githubGroup,
         )
         proxySiteCard = GitHubProxySiteCard(self.submit, githubGroup)
