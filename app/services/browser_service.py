@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import socket
 import struct
 import zipfile
 from dataclasses import dataclass, replace
@@ -12,13 +11,13 @@ from pathlib import Path
 from secrets import token_urlsafe
 from typing import Any, TYPE_CHECKING
 
-import websockets
 from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.config.paths import APP_DATA_DIR
 from app.platform.filesystem import isExisting
+from app.services.websocket_stream import WebSocketStream, acceptWebSocket, readHead
 from app.signal import Signal
 from app.update import isNewer
 
@@ -48,12 +47,21 @@ async def extractBrowserExtension(loadCrx) -> Path:
 
 @dataclass
 class BrowserClientSession:
-    ws: object
+    stream: WebSocketStream
+    peerAddress: str
     isAuthenticated: bool = False
     isSubscribedToTasks: bool = False
     lastSnapshot: str | None = None
     extensionVersion: str = ""
     installType: str = ""
+
+
+@dataclass(frozen=True)
+class PairRequest:
+    requestId: str
+    peerAddress: str
+    extensionVersion: str
+    clientKind: str
 
 
 class MessageType(StrEnum):
@@ -181,36 +189,26 @@ def toTaskSummary(task: Task) -> dict:
 
 
 class BrowserService:
-    pairRequested = Signal(object)
-    taskDraftRequested = Signal(list)
-    extensionUpdated = Signal(str)
+    """浏览器扩展的协议适配器。handle 在 loop 线程收发帧；会话与 Pair Request 只在 dispatcher 线程读写。"""
+
+    pairRequestChanged = Signal(object)
     connectionChanged = Signal()
     protocolMismatched = Signal()
 
-    def __init__(self, coroutineRunner, taskService, parse, loadCrx):
+    def __init__(self, coroutineRunner, taskService, parse, loadCrx, requestDraft, onExtensionUpdated):
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService
         self._parse = parse
         self._loadCrx = loadCrx
-        self._serveWorkId: str | None = None
-        self._boundPort = 0
-        self._sessions: dict[object, BrowserClientSession] = {}
+        self._requestDraft = requestDraft
+        self._onExtensionUpdated = onExtensionUpdated
+        self._sessions: dict[WebSocketStream, BrowserClientSession] = {}
+        self._pairRequest: PairRequest | None = None
+        self._pairSession: BrowserClientSession | None = None
         self._snapshotWorkId: str | None = None
         self._isUpdatingExtension = False
-
-    @property
-    def token(self) -> str:
         if not cfg.browserExtensionPairToken.value:
             cfg.set(cfg.browserExtensionPairToken, token_urlsafe(16))
-        return str(cfg.browserExtensionPairToken.value)
-
-    @property
-    def isRunning(self) -> bool:
-        return self._serveWorkId is not None
-
-    @property
-    def boundPort(self) -> int:
-        return self._boundPort
 
     @property
     def connectionSummary(self) -> tuple[str, str]:
@@ -219,72 +217,37 @@ class BrowserService:
                 return session.installType, session.extensionVersion
         return "", ""
 
+    @property
+    def pairRequest(self) -> PairRequest | None:
+        return self._pairRequest
+
     def regenerateToken(self) -> str:
         token = token_urlsafe(16)
         cfg.set(cfg.browserExtensionPairToken, token)
-        self._closeAll()
+        hadAuthenticated = any(s.isAuthenticated for s in self._sessions.values())
+        for session in self._sessions.values():
+            self._close(session)
+            session.isAuthenticated = False
+        if hadAuthenticated:
+            self.connectionChanged.emit()
         return token
 
-    def start(self) -> None:
-        if self._serveWorkId is not None:
+    def approvePair(self, requestId: str) -> None:
+        session = self._takePairSession(requestId)
+        if session is None:
             return
-        port = cfg.browserExtensionPort.value
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            sock.bind(('127.0.0.1', port))
-            sock.listen()
-        except OSError as e:
-            logger.error("Failed to start browser extension server on port {}: {}",
-                         port, e)
-            sock.close()
-            return
-        sock.setblocking(False)
-        self._boundPort = sock.getsockname()[1]
-        self._serveWorkId = self._coroutineRunner.submit(
-            self._run(sock), failed=self._onServeFailed)
-        logger.info("Browser extension server started on port {}", self._boundPort)
-        self._snapshotWorkId = self._coroutineRunner.submit(
-            self._broadcastLoop(), failed=self._onBroadcastFailed)
-
-    def stop(self) -> None:
-        if self._snapshotWorkId is not None:
-            self._coroutineRunner.cancel(self._snapshotWorkId)
-            self._snapshotWorkId = None
-        self._closeAll()
-        if self._serveWorkId is not None:
-            self._coroutineRunner.cancel(self._serveWorkId)
-            self._serveWorkId = None
-        self._boundPort = 0
-
-    def _onServeFailed(self, error) -> None:
-        self._serveWorkId = None
-        self._boundPort = 0
-        if self._snapshotWorkId is not None:
-            self._coroutineRunner.cancel(self._snapshotWorkId)
-            self._snapshotWorkId = None
-        logger.error("Browser extension server crashed: {}", error)
-
-    def _onBroadcastFailed(self, error) -> None:
-        self._snapshotWorkId = None
-        logger.error("Snapshot broadcast loop crashed: {}", error)
-
-    def setEnabled(self, enabled: bool) -> None:
-        if enabled:
-            self.start()
-        else:
-            self.stop()
-
-    def approvePair(self, session: BrowserClientSession, requestId: str) -> None:
         self._send(session, {
             "type": MessageType.PAIR_RESULT,
             "requestId": requestId,
             "ok": True,
-            "token": self.token,
+            "token": cfg.browserExtensionPairToken.value,
             "message": "配对成功",
         })
 
-    def rejectPair(self, session: BrowserClientSession, requestId: str) -> None:
+    def rejectPair(self, requestId: str) -> None:
+        session = self._takePairSession(requestId)
+        if session is None:
+            return
         self._send(session, {
             "type": MessageType.PAIR_RESULT,
             "requestId": requestId,
@@ -292,42 +255,41 @@ class BrowserService:
             "message": "已拒绝配对请求",
         })
 
+    def _takePairSession(self, requestId: str) -> BrowserClientSession | None:
+        if self._pairRequest is None or self._pairRequest.requestId != requestId:
+            return None
+        session = self._pairSession
+        self._setPairRequest(None, None)
+        return session
+
+    def _setPairRequest(self, request: PairRequest | None, session: BrowserClientSession | None) -> None:
+        self._pairRequest = request
+        self._pairSession = session
+        self.pairRequestChanged.emit(request)
+
+    async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        head = await readHead(reader)
+        stream = await acceptWebSocket(reader, writer, head, maxSize=2**20) if head else None
+        if stream is None:
+            return
+        host, port = writer.get_extra_info("peername")[:2]
+        self._coroutineRunner.post(self._onConnected, stream, f"{host}:{port}")
+        try:
+            async for message in stream.messages():
+                self._coroutineRunner.post(self._onMessageReceived, stream, message)
+        finally:
+            self._coroutineRunner.post(self._onDisconnected, stream)
+
     async def _broadcastLoop(self) -> None:
         while True:
             await asyncio.sleep(1)
             self._coroutineRunner.post(self._broadcastSnapshots)
 
-    async def _run(self, sock: socket.socket) -> None:
-        try:
-            server = await websockets.serve(self._onConnection, sock=sock)
-        except Exception:
-            sock.close()
-            raise
-        async with server:
-            await server.serve_forever()
-
-    async def _onConnection(self, ws) -> None:
-        self._coroutineRunner.post(self._onConnected, ws)
-        try:
-            async for message in ws:
-                self._coroutineRunner.post(self._onMessageReceived, ws, message)
-        finally:
-            self._coroutineRunner.post(self._onDisconnected, ws)
-
-    def _closeAll(self) -> None:
-        hadAuthenticated = any(s.isAuthenticated for s in self._sessions.values())
-        for session in list(self._sessions.values()):
-            self._coroutineRunner.submit(session.ws.close())
-        self._sessions.clear()
-        if hadAuthenticated:
-            self.connectionChanged.emit()
-
     def _send(self, session: BrowserClientSession, payload: dict) -> None:
-        try:
-            data = json.dumps(payload, ensure_ascii=False)
-            self._coroutineRunner.submit(session.ws.send(data))
-        except Exception as e:
-            logger.opt(exception=e).warning("Failed to send browser payload")
+        self._coroutineRunner.submit(session.stream.send(json.dumps(payload, ensure_ascii=False)))
+
+    def _close(self, session: BrowserClientSession) -> None:
+        self._coroutineRunner.submit(session.stream.close())
 
     def _sendError(self, session: BrowserClientSession, message: str, *,
                    requestId: str | None = None, code: ErrorCode = ErrorCode.BAD_REQUEST) -> None:
@@ -359,13 +321,18 @@ class BrowserService:
             payload["message"] = message
         self._send(session, payload)
 
-    def _onConnected(self, ws) -> None:
-        self._sessions[ws] = BrowserClientSession(ws=ws)
+    def _onConnected(self, stream: WebSocketStream, peerAddress: str) -> None:
+        self._sessions[stream] = BrowserClientSession(stream=stream, peerAddress=peerAddress)
+        if self._snapshotWorkId is None:
+            self._snapshotWorkId = self._coroutineRunner.submit(self._broadcastLoop())
 
-    def _onDisconnected(self, ws) -> None:
-        session = self._sessions.pop(ws, None)
-        if session is None:
-            return
+    def _onDisconnected(self, stream: WebSocketStream) -> None:
+        session = self._sessions.pop(stream)
+        if session is self._pairSession:
+            self._setPairRequest(None, None)
+        if not self._sessions:
+            self._coroutineRunner.cancel(self._snapshotWorkId)
+            self._snapshotWorkId = None
         if session.isAuthenticated:
             self.connectionChanged.emit()
 
@@ -378,25 +345,22 @@ class BrowserService:
             "tasks": [toTaskSummary(t) for t in tasks],
         }, ensure_ascii=False)
 
-        for session in list(self._sessions.values()):
+        for session in self._sessions.values():
             if not session.isAuthenticated or not session.isSubscribedToTasks:
                 continue
             if session.lastSnapshot == snapshot:
                 continue
             session.lastSnapshot = snapshot
-            try:
-                self._coroutineRunner.submit(session.ws.send(snapshot))
-            except Exception as e:
-                logger.opt(exception=e).warning("Failed to push task snapshot")
+            self._coroutineRunner.submit(session.stream.send(snapshot))
 
-    def _onMessageReceived(self, ws, message: str) -> None:
-        session = self._sessions.get(ws)
+    def _onMessageReceived(self, stream: WebSocketStream, message: bytes) -> None:
+        session = self._sessions.get(stream)
         if session is None:
             return
 
         try:
             data = json.loads(message)
-        except Exception:
+        except ValueError:
             self._sendError(session, "无效的消息格式")
             return
 
@@ -412,15 +376,7 @@ class BrowserService:
             return
 
         if msgType == MessageType.PAIR_REQUEST:
-            peerAddress = f"{session.ws.remote_address[0]}:{session.ws.remote_address[1]}"
-            self.pairRequested.emit({
-                "session": session,
-                "requestId": toStr(data, "requestId"),
-                "protocolVersion": data.get("protocolVersion"),
-                "peerAddress": peerAddress,
-                "extensionVersion": toStr(data, "extensionVersion"),
-                "clientKind": toStr(data, "clientKind"),
-            })
+            self._onPairRequested(session, data)
             return
 
         if msgType == MessageType.HELLO:
@@ -429,7 +385,7 @@ class BrowserService:
 
         if not session.isAuthenticated:
             self._sendError(session, "请先完成握手认证", code=ErrorCode.UNAUTHORIZED)
-            self._coroutineRunner.submit(session.ws.close())
+            self._close(session)
             return
 
         if msgType == MessageType.SUBSCRIBE_TASKS:
@@ -441,18 +397,35 @@ class BrowserService:
         elif msgType == MessageType.TASK_ACTION:
             self._onTaskAction(session, data)
 
+    def _onPairRequested(self, session: BrowserClientSession, data: dict) -> None:
+        requestId = toStr(data, "requestId")
+        if self._pairRequest is not None and session is not self._pairSession:
+            self._send(session, {
+                "type": MessageType.PAIR_RESULT,
+                "requestId": requestId,
+                "ok": False,
+                "message": "已有配对请求待处理",
+            })
+            return
+        self._setPairRequest(PairRequest(
+            requestId=requestId,
+            peerAddress=session.peerAddress,
+            extensionVersion=toStr(data, "extensionVersion"),
+            clientKind=toStr(data, "clientKind"),
+        ), session)
+
     def _onHello(self, session: BrowserClientSession, data: dict) -> None:
         requestId = toStr(data, "requestId") or None
 
         if toInt(data, "protocolVersion", 0) != PROTOCOL_VERSION:
             self._sendError(session, "协议版本不匹配", requestId=requestId, code=ErrorCode.PROTOCOL_MISMATCH)
-            self._coroutineRunner.submit(session.ws.close())
+            self._close(session)
             self.protocolMismatched.emit()
             return
 
-        if toStr(data, "token") != self.token:
+        if toStr(data, "token") != cfg.browserExtensionPairToken.value:
             self._sendError(session, "配对令牌无效", requestId=requestId, code=ErrorCode.UNAUTHORIZED)
-            self._coroutineRunner.submit(session.ws.close())
+            self._close(session)
             return
 
         session.isAuthenticated = True
@@ -482,10 +455,10 @@ class BrowserService:
             )
 
     def _onExtensionExtracted(self, _path: Path, session: BrowserClientSession) -> None:
-        if session.ws not in self._sessions:
+        if session.stream not in self._sessions:
             return
         self._send(session, {"type": MessageType.RELOAD})
-        self.extensionUpdated.emit(LATEST_EXTENSION_VERSION)
+        self._onExtensionUpdated(LATEST_EXTENSION_VERSION)
 
     def _onExtensionExtractFailed(self, error: str, **_) -> None:
         self._isUpdatingExtension = False
@@ -541,7 +514,7 @@ class BrowserService:
         shouldDraft = draft if draft is not None else cfg.shouldDraftTakenDownload.value
         if shouldDraft:
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
-            self.taskDraftRequested.emit([task])
+            self._requestDraft([task])
             return
 
         self._taskService.add(task)

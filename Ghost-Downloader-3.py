@@ -86,12 +86,13 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
 
-    featureService, taskService, browserService, updateService, runtimeStatusService = createServices(
+    featureService, taskService, updateService, runtimeStatusService = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
     loadPacks(featureService, coroutineRunner, speedMeter)
 
     from app.services.aria2_rpc import Aria2RpcServer
+    from app.services.browser_service import BrowserService
     from app.services.loopback_server import LoopbackServer
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
@@ -100,6 +101,58 @@ def startApp(application, isSilent=False):
     application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
     application.clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
+
+    from app.platform.windows import emptyWorkingSet
+
+    window = None
+
+    def emptyWorkingSetIfIdle():
+        if window is None and taskService.runningCount() == 0:
+            emptyWorkingSet()
+
+    def onWindowDestroyed():
+        nonlocal window
+        window = None
+        emptyWorkingSetIfIdle()
+
+    def show() -> MainWindow:
+        nonlocal window
+        if window is None:
+            window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
+            window.setupPacks()
+            window.destroyed.connect(onWindowDestroyed)
+        window.show()
+        from app.platform.desktop import raiseWindow
+        raiseWindow(window)
+        return window
+
+    def onBrowserDraft(tasks):
+        nonlocal window
+        if window is None:
+            window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
+            window.setupPacks()
+            window.destroyed.connect(onWindowDestroyed)
+        window.addTasks(tasks)
+
+    def onExtensionUpdated(version):
+        from qfluentwidgets import InfoBar, InfoBarPosition
+        w = show()
+        InfoBar.success(w.tr("浏览器扩展已更新"), f"v{version}",
+                        duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=w)
+
+    def loadCrx():
+        from PySide6.QtCore import QResource
+        return bytes(QResource(":/res/chrome_extension.crx").data())
+
+    browserService = BrowserService(coroutineRunner, taskService, featureService.parse, loadCrx,
+                                    requestDraft=onBrowserDraft, onExtensionUpdated=onExtensionUpdated)
+    browserServer = LoopbackServer(coroutineRunner, browserService.handle,
+                                   isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
+    aria2RpcServer = Aria2RpcServer(coroutineRunner, featureService.parse, taskService.add, requestDraft=onBrowserDraft)
+    aria2Server = LoopbackServer(coroutineRunner, aria2RpcServer.handle,
+                                 isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
+    browserServer.start()  # OOBE 之前启动，OOBE 期间可完成扩展配对
+    aria2Server.start()
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
@@ -110,11 +163,8 @@ def startApp(application, isSilent=False):
 
         startEngine(taskService, speedMeter, featureService, coroutineRunner)
 
-        if cfg.isBrowserExtensionEnabled.value:
-            browserService.start()  # 提前启动，OOBE 期间可完成扩展配对
-
-        oobe = OobeWindow(browserService, coroutineRunner, featureService, runtimeStatusService)
-        browserService.pairRequested.connect(oobe.onPairRequested)
+        oobe = OobeWindow(browserService, browserServer, coroutineRunner, featureService, runtimeStatusService)
+        browserService.pairRequestChanged.connect(oobe.onPairRequestChanged)
         oobe.show()
 
         loop = QEventLoop()
@@ -122,16 +172,15 @@ def startApp(application, isSilent=False):
         oobe.destroyed.connect(loop.quit)
         loop.exec()
 
-        browserService.pairRequested.disconnect(oobe.onPairRequested)
+        browserService.pairRequestChanged.disconnect(oobe.onPairRequestChanged)
         # 必须在主线程显式销毁：闭包连接使窗口陷入循环引用，若留给
         # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
         oobe.deleteLater()
 
-        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
-        window.setupPacks()
-        window.show()
+        show()
     else:
-        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
+        window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
+        window.destroyed.connect(onWindowDestroyed)
 
         if not isSilent and sys.platform != "darwin":
             from qfluentwidgets import SplashScreen
@@ -146,67 +195,11 @@ def startApp(application, isSilent=False):
         if not isSilent and sys.platform != "darwin":
             splash.finish()
 
-    from app.platform.windows import emptyWorkingSet
-
-    def emptyWorkingSetIfIdle():
-        if window is None and taskService.runningCount() == 0:
-            emptyWorkingSet()
-
-    def onWindowDestroyed():
-        nonlocal window
-        window = None
-        emptyWorkingSetIfIdle()
-
-    window.destroyed.connect(onWindowDestroyed)
-
-    def show() -> MainWindow:
-        nonlocal window
-        if window is None:
-            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
-            window.setupPacks()
-            window.destroyed.connect(onWindowDestroyed)
-        window.show()
-        from app.platform.desktop import raiseWindow
-        raiseWindow(window)
-        return window
-
-    def onBrowserDraft(tasks):
-        nonlocal window
-        if window is None:
-            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
-            window.setupPacks()
-            window.destroyed.connect(onWindowDestroyed)
-        window.addTasks(tasks)
-
     if sys.platform != "darwin":
         signalBus.activationRequested.connect(show)
     signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().alertException(msg))
-    browserService.taskDraftRequested.connect(onBrowserDraft)
-    browserService.pairRequested.connect(lambda req: show().confirmPair(req))
-
-    def onExtensionUpdated(version):
-        from qfluentwidgets import InfoBar, InfoBarPosition
-        w = show()
-        InfoBar.success(w.tr("浏览器扩展已更新"), f"v{version}",
-                        duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=w)
-
-    browserService.extensionUpdated.connect(onExtensionUpdated)
-    if cfg.isBrowserExtensionEnabled.value:
-        browserService.start()
-    cfg.isBrowserExtensionEnabled.valueChanged.connect(browserService.setEnabled)
-
-    def onBrowserPortChanged(_port):
-        if cfg.isBrowserExtensionEnabled.value:
-            browserService.stop()
-            browserService.start()
-
-    cfg.browserExtensionPort.valueChanged.connect(onBrowserPortChanged)
-
-    aria2RpcServer = Aria2RpcServer(coroutineRunner, featureService.parse, taskService.add, requestDraft=onBrowserDraft)
-    aria2Server = LoopbackServer(coroutineRunner, aria2RpcServer.handle,
-                                 isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
-    aria2Server.start()
+    browserService.pairRequestChanged.connect(lambda request: request and show().confirmPair(request))
 
     application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 
@@ -258,7 +251,7 @@ def startApp(application, isSilent=False):
     updateService.changed.connect(onUpdateChanged)
     checkUpdateAtStartup(updateService)
 
-    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2Server, featureService, coroutineRunner, speedMeter, updateService))
+    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserServer, aria2Server, featureService, coroutineRunner, speedMeter, updateService))
 
 
 if __name__ == "__main__":

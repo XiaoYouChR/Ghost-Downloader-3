@@ -22,6 +22,7 @@ from qfluentwidgets.common.style_sheet import updateStyleSheet
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
+from app.services.loopback_server import ListenStatus
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
     LATEST_EXTENSION_VERSION,
@@ -35,6 +36,7 @@ if sys.platform == "win32":
     from qframelesswindow.windows.c_structures import PWINDOWPOS
 
 if TYPE_CHECKING:
+    from app.services.browser_service import PairRequest
     from app.models.pack import BinaryRuntime
 
 WINDOW_SIZE = QSize(960, 600)
@@ -392,9 +394,10 @@ class BasicSettingsPage(QWidget):
 
 class BrowserExtensionPage(QWidget):
 
-    def __init__(self, browserService, coroutineRunner, parent=None):
+    def __init__(self, browserService, browserServer, coroutineRunner, parent=None):
         super().__init__(parent)
         self._browserService = browserService
+        self._browserServer = browserServer
         self._coroutineRunner = coroutineRunner
         self._isPaired = False
         self._banner: InfoBar | None = None
@@ -498,10 +501,11 @@ class BrowserExtensionPage(QWidget):
     def refreshPortStatus(self) -> None:
         if self._isPaired:
             return
-        if self._browserService.boundPort:
+        state = self._browserServer.state
+        if state.status == ListenStatus.LISTENING:
             self._setBanner(
                 InfoBarIcon.INFORMATION,
-                self.tr("正在端口 {} 上等待扩展连接").format(self._browserService.boundPort),
+                self.tr("正在端口 {} 上等待扩展连接").format(state.port),
             )
         elif not cfg.isBrowserExtensionEnabled.value:
             self._setBanner(
@@ -565,10 +569,12 @@ class BrowserExtensionPage(QWidget):
             duration=5000, position=InfoBarPosition.TOP, parent=self,
         )
 
-    def onPairRequested(self, request: dict) -> None:
-        self._browserService.approvePair(request["session"], request["requestId"])
+    def onPairRequestChanged(self, request: PairRequest | None) -> None:
+        if request is None:
+            return
+        self._browserService.approvePair(request.requestId)
         self._isPaired = True
-        self._setConnectedBanner(request.get("extensionVersion", ""))
+        self._setConnectedBanner(request.extensionVersion)
 
     def _onProtocolMismatched(self) -> None:
         self._setBanner(
@@ -789,10 +795,11 @@ class OobeWindow(FluentWidget):
 
     PAGE_COUNT = 6
 
-    def __init__(self, browserService, coroutineRunner, featureService,
+    def __init__(self, browserService, browserServer, coroutineRunner, featureService,
                  runtimeStatusService, parent=None):
         super().__init__(parent=parent)
         self._browserService = browserService
+        self._browserServer = browserServer
         self._coroutineRunner = coroutineRunner
         self._featureService = featureService
         self._runtimeStatusService = runtimeStatusService
@@ -825,7 +832,7 @@ class OobeWindow(FluentWidget):
         self.welcomePage = WelcomePage(self)
         self.basicSettingsPage = BasicSettingsPage(self)
         self.browserExtensionPage = BrowserExtensionPage(
-            self._browserService, self._coroutineRunner, self)
+            self._browserService, self._browserServer, self._coroutineRunner, self)
         self.runtimeInstallPage = RuntimeInstallPage(self._featureService, self)
         self.advancedOptionsPage = AdvancedOptionsPage(self._featureService, self)
         self.completePage = CompletePage(self)
@@ -879,8 +886,8 @@ class OobeWindow(FluentWidget):
         self.nextButton.clicked.connect(self._onNextClicked)
         self.skipButton.clicked.connect(self._finish)
 
-    def onPairRequested(self, request: dict) -> None:
-        self.browserExtensionPage.onPairRequested(request)
+    def onPairRequestChanged(self, request: PairRequest | None) -> None:
+        self.browserExtensionPage.onPairRequestChanged(request)
 
     def _rebuildContent(self) -> None:
         index = self._currentIndex

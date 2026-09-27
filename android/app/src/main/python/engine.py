@@ -5,6 +5,7 @@ import inspect
 import json
 import struct
 import zipfile
+from dataclasses import asdict
 from collections import namedtuple
 from functools import partial
 from io import BytesIO
@@ -114,17 +115,19 @@ class Engine:
             isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort,
         )
 
-        self._pendingPair = None
         self._browserService = BrowserService(
             self._coroutineRunner, self._taskService,
             parse=self._featureService.parse, loadCrx=None,
+            requestDraft=self._onBrowserDraft, onExtensionUpdated=self._onExtensionUpdated,
         )
-        self._browserService.pairRequested.connect(self._onBrowserPairRequested)
-        self._browserService.taskDraftRequested.connect(self._onBrowserDraft)
-        self._browserService.extensionUpdated.connect(self._onExtensionUpdated)
+        self._browserServer = LoopbackServer(
+            self._coroutineRunner, self._browserService.handle,
+            isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort,
+        )
+        self._browserService.pairRequestChanged.connect(self._emitPairRequest)
         self._browserService.connectionChanged.connect(self._emitBrowserExtension)
-        cfg.isBrowserExtensionEnabled.valueChanged.connect(self._browserService.setEnabled)
-        cfg.browserExtensionPort.valueChanged.connect(self._onBrowserPortChanged)
+        self._browserServer.stateChanged.connect(self._emitBrowserExtension)
+        self._browserServer.stateChanged.connect(self._emitKeepAlive)
 
         self._coroutineRunner.start()
         self._bindSpeedMeter()
@@ -132,8 +135,7 @@ class Engine:
         self._featureService.activate()
         self._setupFlows()
         self._aria2Server.start()
-        if cfg.isBrowserExtensionEnabled.value:
-            self._browserService.start()
+        self._browserServer.start()
         self._emitKeepAlive()
         self._emitBrowserExtension()
         if cfg.shouldCheckUpdateAtStartup.value:
@@ -175,9 +177,6 @@ class Engine:
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
         self._aria2Server.stateChanged.connect(self._emitKeepAlive)
-        cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitKeepAlive)
-        cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitBrowserExtension)
-        cfg.browserExtensionPort.valueChanged.connect(self._emitBrowserExtension)
 
         self._runtimeStatusService.statusChanged.connect(lambda _: self._emitRuntimes())
 
@@ -497,7 +496,6 @@ class Engine:
             self._pendingEdit = None
 
     def categoryState(self) -> str:
-        from dataclasses import asdict
         return json.dumps({"isEnabled": cfg.isCategoryEnabled.value, "defaultFolder": cfg.downloadFolder.value,
                            "categories": [asdict(c) for c in self._categoryService.categories()]}, ensure_ascii=False)
 
@@ -858,9 +856,10 @@ class Engine:
 
     def browserExtension(self) -> str:
         installType, version = self._browserService.connectionSummary
-        if not cfg.isBrowserExtensionEnabled.value:
+        listenStatus = self._browserServer.state.status
+        if listenStatus == ListenStatus.OFF:
             status = "idle"
-        elif not self._browserService.boundPort:
+        elif listenStatus == ListenStatus.FAILED:
             status = "portUnavailable"
         elif installType or version:
             status = "connected"
@@ -868,7 +867,7 @@ class Engine:
             status = "listening"
         return json.dumps({
             "status": status,
-            "token": self._browserService.token,
+            "token": cfg.browserExtensionPairToken.value,
             "extensionVersion": version,
             "chromeWebstore": CHROME_WEBSTORE_URL,
             "edgeAddons": EDGE_ADDONS_URL,
@@ -883,14 +882,10 @@ class Engine:
         self._emitBrowserExtension()
 
     def setBrowserPairApproval(self, requestId: str, isApproved: bool):
-        pair = self._takePair(requestId)
-        if not pair:
-            return
         if isApproved:
-            self._browserService.approvePair(pair["session"], requestId)
+            self._browserService.approvePair(requestId)
         else:
-            self._browserService.rejectPair(pair["session"], requestId)
-        self._emitPairRequest()
+            self._browserService.rejectPair(requestId)
 
     def extractBrowserExtension(self, crxPath: str, folder: str) -> str:
         crxData = Path(crxPath).read_bytes()
@@ -903,29 +898,9 @@ class Engine:
             zf.extractall(dest)
         return str(dest)
 
-    def _takePair(self, requestId: str):
-        if self._pendingPair is None or self._pendingPair["requestId"] != requestId:
-            return None
-        pair, self._pendingPair = self._pendingPair, None
-        return pair
-
-    def _onBrowserPairRequested(self, request: dict):
-        self._pendingPair = request
-        self._emitPairRequest()
-
     def _emitPairRequest(self, *_args):
-        self._flows.setState("pairRequest", json.dumps(self._pairFields(), ensure_ascii=False))
-
-    def _pairFields(self):
-        if self._pendingPair is None:
-            return None
-        return {key: self._pendingPair[key] for key in
-                ("requestId", "clientKind", "extensionVersion", "peerAddress")}
-
-    def _onBrowserPortChanged(self, _port):
-        if cfg.isBrowserExtensionEnabled.value:
-            self._browserService.stop()
-            self._browserService.start()
+        request = self._browserService.pairRequest
+        self._flows.setState("pairRequest", json.dumps(request and asdict(request), ensure_ascii=False))
 
     def keepAlive(self) -> str:
         from app.models.task import TaskStatus
@@ -945,7 +920,7 @@ class Engine:
         if seeding:
             return json.dumps({"reason": "seeding", "count": seeding})
 
-        if self._aria2Server.state.status == ListenStatus.LISTENING or self._browserService.boundPort:
+        if any(s.state.status == ListenStatus.LISTENING for s in (self._aria2Server, self._browserServer)):
             return json.dumps({"reason": "serving"})
         return json.dumps({"reason": ""})
 

@@ -5,56 +5,52 @@ import json
 import pytest
 
 from app.config.cfg import cfg
+from app.services.loopback_server import ListenFailure, ListenState, ListenStatus
 from tests.helpers import StubFlows
 
 
 class StubBrowserService:
-    def __init__(self, boundPort=14370, summary=("", "")):
-        self.boundPort = boundPort
+    def __init__(self, summary=("", "")):
         self.connectionSummary = summary
-        self.token = "tok"
 
     def regenerateToken(self):
-        self.token = "regenerated"
+        cfg.browserExtensionPairToken.value = "regenerated"
+
+
+class StubServer:
+    def __init__(self, state=ListenState(ListenStatus.LISTENING, 14370, hasIpv6=True)):
+        self.state = state
 
 
 @pytest.fixture
-def engine(bridge):
+def engine(bridge, monkeypatch):
+    monkeypatch.setattr(cfg.browserExtensionPairToken, "value", "tok")
     instance = bridge.Engine.__new__(bridge.Engine)
     instance._flows = StubFlows()
     instance._browserService = StubBrowserService()
+    instance._browserServer = StubServer()
     return instance
 
 
-@pytest.fixture
-def setEnabled(monkeypatch):
-    def apply(value: bool):
-        monkeypatch.setattr(cfg.isBrowserExtensionEnabled, "value", value)
-    return apply
-
-
 @pytest.mark.parametrize(
-    "isEnabled, boundPort, summary, expected",
+    "state, summary, expected",
     [
-        (False, 14370, ("", ""), "idle"),
-        (True, 0, ("", ""), "portUnavailable"),
-        (True, 14370, ("", ""), "listening"),
-        (True, 14370, ("development", "2.2.0"), "connected"),
+        (ListenState(), ("", ""), "idle"),
+        (ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.PORT_OCCUPIED), ("", ""), "portUnavailable"),
+        (ListenState(ListenStatus.LISTENING, 14370), ("", ""), "listening"),
+        (ListenState(ListenStatus.LISTENING, 14370), ("development", "2.2.0"), "connected"),
     ],
 )
-def test_status_tells_the_view_why_the_extension_cannot_connect(
-    engine, setEnabled, isEnabled, boundPort, summary, expected,
-):
-    setEnabled(isEnabled)
-    engine._browserService = StubBrowserService(boundPort=boundPort, summary=summary)
+def test_status_tells_the_view_why_the_extension_cannot_connect(engine, state, summary, expected):
+    engine._browserServer = StubServer(state)
+    engine._browserService = StubBrowserService(summary=summary)
 
     payload = json.loads(engine.browserExtension())
 
     assert payload["status"] == expected
 
 
-def test_connected_status_carries_the_extension_version(engine, setEnabled):
-    setEnabled(True)
+def test_connected_status_carries_the_extension_version(engine):
     engine._browserService = StubBrowserService(summary=("development", "2.2.0"))
 
     payload = json.loads(engine.browserExtension())
@@ -62,24 +58,19 @@ def test_connected_status_carries_the_extension_version(engine, setEnabled):
     assert payload["extensionVersion"] == "2.2.0"
 
 
-def test_emit_pushes_under_the_key_the_view_observes(engine, setEnabled):
-    setEnabled(True)
-
+def test_emit_pushes_under_the_key_the_view_observes(engine):
     engine._emitBrowserExtension()
 
     assert json.loads(engine._flows.states["browserExtension"])["token"] == "tok"
 
 
-def test_regenerating_the_token_repushes_even_when_nobody_was_connected(engine, setEnabled):
-    setEnabled(True)
-
+def test_regenerating_the_token_repushes_even_when_nobody_was_connected(engine):
     engine.regenerateBrowserToken()
 
     assert json.loads(engine._flows.states["browserExtension"])["token"] == "regenerated"
 
 
-def test_store_links_follow_the_constants_rather_than_a_local_copy(engine, bridge, setEnabled, monkeypatch):
-    setEnabled(True)
+def test_store_links_follow_the_constants_rather_than_a_local_copy(engine, bridge, monkeypatch):
     monkeypatch.setattr(bridge, "CHROME_WEBSTORE_URL", "https://example.test/chrome")
     monkeypatch.setattr(bridge, "EDGE_ADDONS_URL", "https://example.test/edge")
     monkeypatch.setattr(bridge, "FIREFOX_ADDONS_URL", "https://example.test/firefox")
