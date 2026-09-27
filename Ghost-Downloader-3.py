@@ -151,7 +151,11 @@ def startApp(application, isSilent=False):
         engine.start()  # OOBE 期间可完成扩展配对
 
         oobe = OobeWindow(browserService, engine.browserServer, coroutineRunner, featureService, engine.runtimeStatusService)
-        browserService.pairRequestChanged.connect(oobe.onPairRequestChanged)
+        def onOobePairRequestChanged(request):
+            if request is not None:
+                oobe.onPairRequested(request)
+
+        browserService.pairRequestChanged.connect(onOobePairRequestChanged)
         oobe.show()
 
         loop = QEventLoop()
@@ -159,7 +163,7 @@ def startApp(application, isSilent=False):
         oobe.destroyed.connect(loop.quit)
         loop.exec()
 
-        browserService.pairRequestChanged.disconnect(oobe.onPairRequestChanged)
+        browserService.pairRequestChanged.disconnect(onOobePairRequestChanged)
         # 必须在主线程显式销毁：闭包连接使窗口陷入循环引用，若留给
         # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
         oobe.deleteLater()
@@ -184,12 +188,12 @@ def startApp(application, isSilent=False):
     if sys.platform != "darwin":
         signalBus.activationRequested.connect(show)
     signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
-    signalBus.exceptionCaught.connect(lambda msg: show().alertException(msg))
-    browserService.pairRequestChanged.connect(lambda request: request and show().confirmPair(request))
+    signalBus.exceptionCaught.connect(lambda msg: show().onExceptionCaught(msg))
+    browserService.pairRequestChanged.connect(lambda request: request and show().onPairRequested(request))
     engine.browserServer.stateChanged.connect(
-        lambda state: state.status == ListenStatus.FAILED and show().alertBrowserListenFailure(state.error))
+        lambda state: state.status == ListenStatus.FAILED and show().onBrowserListenFailed(state.error))
     engine.aria2RpcServer.stateChanged.connect(
-        lambda state: state.status == ListenStatus.FAILED and show().alertAria2ListenFailure(state.error))
+        lambda state: state.status == ListenStatus.FAILED and show().onAria2ListenFailed(state.error))
 
     application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 
@@ -226,7 +230,7 @@ def startApp(application, isSilent=False):
     from app.services.update_service import UpdateState
     def onUpdateChanged(info):
         if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
-            show()._onUpdateAvailable(info)
+            show().onUpdateAvailable(info)
         elif info.targetId != "app" and info.state == UpdateState.AVAILABLE:
             updateService.download(info.targetId)
         elif info.targetId != "app" and info.state == UpdateState.READY:

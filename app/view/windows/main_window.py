@@ -9,20 +9,36 @@ from PySide6.QtGui import QColor, QIcon, QDesktopServices, QKeySequence, QPainte
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarIcon, InfoBarPosition,
-    SearchLineEdit, setThemeColor, IconWidget, SubtitleLabel, isDarkTheme,
+    SearchLineEdit, setThemeColor, IconWidget, SubtitleLabel, isDarkTheme, CheckBox, PrimaryPushButton,
+    PushButton, ToolTipFilter, TransparentToolButton, qconfig,
 )
+from qfluentwidgets.common import qrouter
+from qfluentwidgets.common.style_sheet import updateStyleSheet
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.config.cfg import CloseMode, cfg
 from app.config.constants import DONATE_URL, FEEDBACK_URL
+from app.config.paths import APP_DATA_DIR
+from app.platform.desktop import raiseWindow, revealInFolder
 from app.services.task_draft import TaskDraft
 from app.i18n import toLocalizedError
-from app.models.task import TaskError
+from app.models.task import TaskError, TaskOptions
 from app.services.loopback_server import LoopbackServer
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
+from app.update import fetchAssetUrl, fetchBestAssetUrl, fetchRelease
+from app.view.components.labels import IconBodyLabel
+from app.view.components.progress_toast import ProgressToast
+from app.view.dialogs.release_info import ReleaseInfoDialog
+from app.view.dialogs.task_draft import TaskDraftDialog
+from app.view.qfw_patch import unregisterRouter
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
+
+if sys.platform == "darwin":
+    import Cocoa
+    from qframelesswindow.mac import MacFramelessWindowBase
+    from qframelesswindow.utils.mac_utils import getNSWindow
 
 if TYPE_CHECKING:
     from qfluentwidgets import FluentIconBase
@@ -33,7 +49,6 @@ if TYPE_CHECKING:
     from app.services.speed_meter import SpeedMeter
     from app.services.feature_service import FeatureService
     from app.services.task_service import TaskService
-    from app.view.dialogs.task_draft import TaskDraftDialog
 
 
 class DropOverlay(QWidget):
@@ -181,7 +196,6 @@ class MainWindow(MSFluentWindow):
             self.stackedWidget.addWidget(page)
             self._pages[routeKey] = page
             if self.stackedWidget.count() == 1:
-                from qfluentwidgets.common import qrouter
                 self.stackedWidget.currentChanged.connect(self._onCurrentInterfaceChanged)
                 qrouter.setDefaultRouteKey(self.stackedWidget, routeKey)
         self.switchTo(page)
@@ -263,7 +277,6 @@ class MainWindow(MSFluentWindow):
             return
         if sys.platform == "darwin":
             self.show()
-            from app.platform.desktop import raiseWindow
             raiseWindow(self)
             dialog.showMask()
         else:
@@ -271,13 +284,12 @@ class MainWindow(MSFluentWindow):
 
     @cached_property
     def _draftDialog(self) -> TaskDraftDialog:
-        from app.view.dialogs.task_draft import TaskDraftDialog
         return TaskDraftDialog(
             self._draft, self._featureService, self._categoryService,
             parent=self,
         )
 
-    def confirmPair(self, request: PairRequest) -> None:
+    def onPairRequested(self, request: PairRequest) -> None:
         content = self.tr(
             "浏览器扩展正在请求连接到 Ghost Downloader。\n\n"
             "来源: {0}\n客户端: {1}\n扩展版本: {2}\n\n"
@@ -295,15 +307,13 @@ class MainWindow(MSFluentWindow):
         else:
             self._browserService.rejectPair(request.requestId)
 
-    def alertBrowserListenFailure(self, error: TaskError) -> None:
-        self._alertListenFailure(self.tr("浏览器扩展服务无法启动"), error)
+    def onBrowserListenFailed(self, error: TaskError) -> None:
+        self._onListenFailed(self.tr("浏览器扩展服务无法启动"), error)
 
-    def alertAria2ListenFailure(self, error: TaskError) -> None:
-        self._alertListenFailure(self.tr("Aria2 RPC 兼容服务无法启动"), error)
+    def onAria2ListenFailed(self, error: TaskError) -> None:
+        self._onListenFailed(self.tr("Aria2 RPC 兼容服务无法启动"), error)
 
-    def _alertListenFailure(self, title: str, error: TaskError) -> None:
-        from qfluentwidgets import PushButton
-
+    def _onListenFailed(self, title: str, error: TaskError) -> None:
         infoBar = InfoBar(
             icon=InfoBarIcon.ERROR,
             title=title,
@@ -319,9 +329,7 @@ class MainWindow(MSFluentWindow):
         infoBar.addWidget(settingButton)
         infoBar.show()
 
-    def _onUpdateAvailable(self, info) -> None:
-        from qfluentwidgets import PrimaryPushButton, PushButton
-
+    def onUpdateAvailable(self, info) -> None:
         if self._progressToast is not None:
             self._progressToast.deleteLater()
             self._progressToast = None
@@ -351,9 +359,6 @@ class MainWindow(MSFluentWindow):
         infoBar.show()
 
     def _downloadBestAsset(self) -> None:
-        from app.models.task import TaskOptions
-        from app.update import fetchBestAssetUrl
-
         def onUrl(url):
             if url is None:
                 self._showReleaseDetails()
@@ -372,7 +377,6 @@ class MainWindow(MSFluentWindow):
         if info.state not in (UpdateState.DOWNLOADING, UpdateState.READY, UpdateState.FAILED):
             return
         if self._progressToast is None:
-            from app.view.components.progress_toast import ProgressToast
             self._progressToast = ProgressToast(
                 onRetry=lambda: self._updateService.download("app"),
                 parent=self,
@@ -380,10 +384,6 @@ class MainWindow(MSFluentWindow):
         self._progressToast.setInfo(info)
 
     def _showReleaseDetails(self) -> None:
-        from app.models.task import TaskOptions
-        from app.update import fetchAssetUrl, fetchRelease
-        from app.view.dialogs.release_info import ReleaseInfoDialog
-
         def onFetched(release):
             dialog = ReleaseInfoDialog(release, self)
 
@@ -409,9 +409,7 @@ class MainWindow(MSFluentWindow):
 
         self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)
 
-    def alertException(self, message: str) -> None:
-        from qfluentwidgets import TransparentToolButton, ToolTipFilter
-
+    def onExceptionCaught(self, message: str) -> None:
         dialog = MessageBox(
             self.tr("程序发生异常"),
             self.tr("点击\"确定\"后将复制错误信息并打开反馈页面。\n\n{0}").format(message),
@@ -436,12 +434,9 @@ class MainWindow(MSFluentWindow):
             QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
 
     def _openLogFolder(self) -> None:
-        from app.config.paths import APP_DATA_DIR
-        from app.platform.desktop import revealInFolder
         revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
 
     def _onCloseClicked(self) -> None:
-        from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
         for dialog in self.findChildren(MaskDialogBase):
             if dialog.isVisible():
                 dialog.reject()
@@ -461,7 +456,6 @@ class MainWindow(MSFluentWindow):
             return
 
         if mode == CloseMode.ASK:
-            from qfluentwidgets import CheckBox
             dialog = MessageBox(
                 self.tr("是否完全退出程序？"),
                 self.tr("后台运行时可通过系统托盘图标重新打开。"),
@@ -531,7 +525,6 @@ class MainWindow(MSFluentWindow):
         if not self.isMaximized():
             geo = self.geometry()
             cfg.set(cfg.geometry, (geo.x(), geo.y(), geo.width(), geo.height()))
-        from app.view.qfw_patch import unregisterRouter
         unregisterRouter(self.stackedWidget)
         event.accept()
 
@@ -573,15 +566,12 @@ class MainWindow(MSFluentWindow):
                 return
 
     def _setTheme(self, value, deferBackgroundRefresh: bool = False) -> None:
-        from qfluentwidgets import qconfig
-        from qfluentwidgets.common.style_sheet import updateStyleSheet
         prevTheme = qconfig.theme
         qconfig.theme = value
         if qconfig.theme != prevTheme:
             qconfig.themeChanged.emit(qconfig.theme)
         updateStyleSheet()
         qconfig.themeChangedFinished.emit()
-        from app.view.components.labels import IconBodyLabel
         IconBodyLabel.clearCache()
         if (
             deferBackgroundRefresh
@@ -647,7 +637,6 @@ class MainWindow(MSFluentWindow):
             painter = QPainter(self)
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
             painter.fillRect(self.rect(), self.backgroundColor)
-            # Source fill skips FluentWidget→MacFramelessWindow paint; re-apply traffic lights
             self._updateSystemTitleBar()
             return
         super().paintEvent(e)
@@ -669,8 +658,6 @@ class MainWindow(MSFluentWindow):
             self.setBackgroundColor(self._normalBackgroundColor())
             return
 
-        import Cocoa
-        from qframelesswindow.utils.mac_utils import getNSWindow
 
         nsWindow = getNSWindow(self.winId())
         contentView = nsWindow.contentView()
@@ -697,9 +684,6 @@ class MainWindow(MSFluentWindow):
 
     def _removeMacAcrylicEffect(self) -> None:
         if self._macVisualEffectView is not None:
-            import Cocoa
-            from qframelesswindow.utils.mac_utils import getNSWindow
-
             self._macVisualEffectView.removeFromSuperview()
             self._macVisualEffectView = None
             nsWindow = getNSWindow(self.winId())
@@ -713,14 +697,10 @@ class MainWindow(MSFluentWindow):
             self._updateSystemTitleBar()
 
     def _setMacAcrylicAppearance(self) -> None:
-        import Cocoa
         name = Cocoa.NSAppearanceNameDarkAqua if isDarkTheme() else Cocoa.NSAppearanceNameAqua
         self._macVisualEffectView.setAppearance_(Cocoa.NSAppearance.appearanceNamed_(name))
 
 if sys.platform == "darwin":
-    import Cocoa
-    from qframelesswindow.mac import MacFramelessWindowBase
-
     def _updateSystemTitleBar(self):
         self._extendTitleBarToClientArea()
         self.setSystemTitleBarButtonVisible(self.isSystemButtonVisible())
@@ -737,7 +717,8 @@ if sys.platform == "win32":
 
     if isWin10():
         from ctypes import pointer
-        from qframelesswindow import FramelessWindow, WindowEffect
+        from ctypes.wintypes import MSG
+        from qframelesswindow import AcrylicWindow, FramelessWindow, WindowEffect
         from qframelesswindow.windows.c_structures import ACCENT_STATE, WINDOWCOMPOSITIONATTRIB
 
         def _resetAcrylicEffect(self, hWnd):
@@ -748,7 +729,6 @@ if sys.platform == "win32":
 
         def _nativeEvent(self, eventType, message):
             if eventType == "windows_generic_MSG":
-                from ctypes.wintypes import MSG
                 msg = MSG.from_address(message.__int__())
 
                 if cfg.backgroundEffect.value != "Acrylic":
@@ -759,7 +739,6 @@ if sys.platform == "win32":
                 if msg.message == WM_ENTERSIZEMOVE:
                     self.windowEffect.resetAcrylicEffect(self.winId())
                 elif msg.message == WM_EXITSIZEMOVE:
-                    from qfluentwidgets import isDarkTheme
                     isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
                     self.windowEffect.setAcrylicEffect(
                         self.winId(), "00000030" if isDark else "FFFFFF30",
@@ -767,7 +746,6 @@ if sys.platform == "win32":
 
             return FramelessWindow.nativeEvent(self, eventType, message)
 
-        from qframelesswindow import AcrylicWindow
 
         WindowEffect.resetAcrylicEffect = _resetAcrylicEffect
         MainWindow.updateFrameless = AcrylicWindow.updateFrameless
