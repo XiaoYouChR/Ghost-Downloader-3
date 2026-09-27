@@ -1,4 +1,4 @@
-"""桌面端的启动阶段：构造引擎服务、加载 pack、启动与关闭。Android 由 engine.py 自己组装。"""
+"""桌面端独有的启动阶段：创建 Engine、加载翻译与 pack、启动时检查更新。"""
 from __future__ import annotations
 
 
@@ -20,15 +20,14 @@ def loadTranslators(application):
     cfg.language.valueChanged.connect(setLocale)
 
 
-def loadEngine(application):
+def createEngine(application):
     import sys
-    from app.services.category_service import CategoryService
-    from app.services.coroutine_runner import CoroutineRunner
-    from app.services.speed_meter import SpeedMeter
-
-    from PySide6.QtCore import QResource, QTimer
+    from PySide6.QtCore import QFileSystemWatcher, QResource, QTimer
     from shiboken6 import isValid
     from app.config.paths import EXECUTABLE_DIR
+    from app.engine import Engine
+    from app.platform.desktop import loadCrx
+    from app.services.coroutine_runner import CoroutineRunner
 
     QResource.registerResource(str(EXECUTABLE_DIR / "app" / "assets" / "resources.rcc"))
 
@@ -43,41 +42,8 @@ def loadEngine(application):
         lambda fn: QTimer.singleShot(0, application, fn), isAlive=isValid,
         loop=new_event_loop(),
     )
-    categoryService = CategoryService()
-    speedMeter = SpeedMeter(coroutineRunner)
-
     coroutineRunner.start()
-
-    return coroutineRunner, categoryService, speedMeter
-
-
-def createServices(coroutineRunner, categoryService, speedMeter):
-    from PySide6.QtCore import QFileSystemWatcher
-    from app.platform.desktop import loadCrx
-    from app.config.cfg import cfg
-    from app.services.aria2_rpc import Aria2RpcServer
-    from app.services.browser_service import BrowserService
-    from app.services.feature_service import FeatureService
-    from app.services.loopback_server import LoopbackServer
-    from app.services.runtime_status import RuntimeStatusService
-    from app.services.task_service import TaskService
-    from app.services.update_service import UpdateService
-
-    fileWatcher = QFileSystemWatcher()
-    taskService = TaskService(coroutineRunner, categoryService, speedMeter, fileWatcher)
-    runtimeStatusService = RuntimeStatusService(coroutineRunner)
-    featureService = FeatureService(taskService, categoryService, coroutineRunner, runtimeStatusService)
-    updateService = UpdateService(coroutineRunner)
-
-    browserService = BrowserService(coroutineRunner, taskService, featureService.parse, loadCrx)
-    browserServer = LoopbackServer(coroutineRunner, browserService.handle,
-                                   isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
-    aria2RpcServer = Aria2RpcServer(coroutineRunner, featureService.parse, taskService.add)
-    aria2Server = LoopbackServer(coroutineRunner, aria2RpcServer.handle,
-                                 isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
-
-    return (featureService, taskService, updateService, runtimeStatusService,
-            browserService, browserServer, aria2RpcServer, aria2Server)
+    return Engine(coroutineRunner, QFileSystemWatcher(), loadCrx)
 
 
 def loadPacks(featureService, coroutineRunner, speedMeter):
@@ -97,33 +63,8 @@ def loadPacks(featureService, coroutineRunner, speedMeter):
     PackConfig.load()
 
 
-def startEngine(taskService, speedMeter, featureService, coroutineRunner):
-    taskService.taskStarted.connect(lambda _: speedMeter.start())
-    taskService.tasksAllCompleted.connect(speedMeter.stop)
-    taskService.resumeSaved()
-    featureService.activate()
-
-
-def bindNotifications(taskService, notifyCompleted, notifyDiskSpace):
-    taskService.taskCompleted.connect(notifyCompleted)
-    taskService.diskSpaceInsufficient.connect(notifyDiskSpace)
-
-
 def checkUpdateAtStartup(updateService):
     from app.config.cfg import cfg
     if not cfg.shouldCheckUpdateAtStartup.value:
         return
     updateService.check()
-
-
-def stopEngine(taskService, browserServer, aria2Server, featureService, coroutineRunner, speedMeter, updateService=None):
-    taskService.stop()
-    taskService.flush()
-    speedMeter.stop()
-    browserServer.stop()
-    aria2Server.stop()
-    featureService.deactivate()
-    taskService.flush()
-    if updateService is not None:
-        updateService.apply()
-    coroutineRunner.stop()

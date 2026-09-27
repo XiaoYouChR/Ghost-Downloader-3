@@ -56,7 +56,8 @@ def startApp(application, isSilent=False):
     from app.config.paths import EXECUTABLE_DIR
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.services.update_service import UpdateService
+    from app.startup import createEngine, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -77,7 +78,9 @@ def startApp(application, isSilent=False):
         from app.view.shell.dock import setDockIconVisible
         setDockIconVisible(cfg.shouldShowDockIcon.value, activate=False)
 
-    coroutineRunner, categoryService, speedMeter = loadEngine(application)
+    engine = createEngine(application)
+    coroutineRunner, taskService, featureService = engine.coroutineRunner, engine.taskService, engine.featureService
+    browserService, speedMeter = engine.browserService, engine.speedMeter
 
     appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
     backupDir = appDir.parent / f"{appDir.name}_backup"
@@ -86,15 +89,14 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
 
-    (featureService, taskService, updateService, runtimeStatusService,
-     browserService, browserServer, aria2RpcServer, aria2Server) = createServices(
-        coroutineRunner, categoryService, speedMeter,
-    )
+    updateService = UpdateService(coroutineRunner)
     loadPacks(featureService, coroutineRunner, speedMeter)
 
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
+    taskService.taskStarted.connect(lambda _: speedMeter.start())
+    taskService.tasksAllCompleted.connect(speedMeter.stop)
 
     application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
@@ -115,7 +117,7 @@ def startApp(application, isSilent=False):
 
     def createWindow() -> MainWindow:
         nonlocal window
-        window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
+        window = MainWindow(taskService, featureService, browserService, engine.browserServer, engine.aria2Server, engine.categoryService, speedMeter, coroutineRunner, plan, updateService)
         window.destroyed.connect(onWindowDestroyed)
         return window
 
@@ -140,9 +142,7 @@ def startApp(application, isSilent=False):
 
     browserService.taskDraftRequested.connect(onBrowserDraft)
     browserService.extensionUpdated.connect(onExtensionUpdated)
-    aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
-    browserServer.start()  # OOBE 之前启动，OOBE 期间可完成扩展配对
-    aria2Server.start()
+    engine.aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
@@ -151,9 +151,9 @@ def startApp(application, isSilent=False):
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow
 
-        startEngine(taskService, speedMeter, featureService, coroutineRunner)
+        engine.start()  # OOBE 期间可完成扩展配对
 
-        oobe = OobeWindow(browserService, browserServer, coroutineRunner, featureService, runtimeStatusService)
+        oobe = OobeWindow(browserService, engine.browserServer, coroutineRunner, featureService, engine.runtimeStatusService)
         browserService.pairRequestChanged.connect(oobe.onPairRequestChanged)
         oobe.show()
 
@@ -179,7 +179,7 @@ def startApp(application, isSilent=False):
             application.processEvents()
 
         window.setupPacks()
-        startEngine(taskService, speedMeter, featureService, coroutineRunner)
+        engine.start()
 
         if not isSilent and sys.platform != "darwin":
             splash.finish()
@@ -211,7 +211,8 @@ def startApp(application, isSilent=False):
 
     from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
     coroutineRunner.submit(init(coroutineRunner.submit))
-    bindNotifications(taskService, notifyTaskCompleted, notifyDiskSpaceInsufficient)
+    taskService.taskCompleted.connect(notifyTaskCompleted)
+    taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
 
     taskService.tasksAllCompleted.connect(emptyWorkingSetIfIdle)
 
@@ -240,7 +241,12 @@ def startApp(application, isSilent=False):
     updateService.changed.connect(onUpdateChanged)
     checkUpdateAtStartup(updateService)
 
-    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserServer, aria2Server, featureService, coroutineRunner, speedMeter, updateService))
+    def onAboutToQuit():
+        engine.stop()
+        updateService.apply()
+        coroutineRunner.stop()
+
+    application.aboutToQuit.connect(onAboutToQuit)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ class SpyMeter:
 
 
 def bindEngine(bridge, taskService) -> SpyMeter:
-    engine = bridge.Engine.__new__(bridge.Engine)
+    engine = bridge.Bridge.__new__(bridge.Bridge)
     engine._taskService = taskService
     engine._speedMeter = SpyMeter()
     engine._bindSpeedMeter()
