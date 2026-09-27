@@ -138,8 +138,6 @@ class TestBuildPages:
         assert [p.episodeTitle for p in pages] == ["第一集", "第二集", "第二集", "第三集"]
         assert [p.selected for p in pages] == [False, True, True, False]
         assert all(p.sectionTitle == "" for p in pages)
-        assert pages[1].relativePath == "第二集 - P1"
-        assert pages[2].relativePath == "第二集 - P2"
         assert pages[0].coverUrl == "https://i0.hdslb.com/bfs/BV1aaa.jpg"
         assert pages[1].coverUrl == pages[2].coverUrl == "https://i0.hdslb.com/bfs/BV2bbb.jpg"
 
@@ -395,25 +393,28 @@ def test_cover_output_follows_outputFolder():
     assert covers[0].outputPath == str(Path("/tmp/Downloads/Video") / "新名字.jpg")
 
 
-def test_setEpisodeTitle_updates_relativePath():
-    from bili_pack.task import BiliPage, setEpisodeTitle, setPagePart
+def test_relativePath_follows_episode_and_page_names():
+    from pathlib import Path
+    from bili_pack.task import BiliPage, BilibiliTask, setFileName
 
-    pages = [
-        BiliPage(index=0, relativePath="旧 - P1", episodeTitle="旧",
-                 bvid="BV1", pageNumber=1, pagePart="上"),
-        BiliPage(index=1, relativePath="旧 - P2", episodeTitle="旧",
-                 bvid="BV1", pageNumber=2, pagePart="下"),
+    files = [
+        BiliPage(index=0, relativePath="", episodeTitle="AC/DC 现场", bvid="BV1", pageNumber=1),
+        BiliPage(index=1, relativePath="", episodeTitle="游戏王", bvid="BV2", pageNumber=1, pagePart="上"),
+        BiliPage(index=2, relativePath="", episodeTitle="游戏王", bvid="BV2", pageNumber=2),
     ]
-    setEpisodeTitle(pages, "游戏王")
-    assert [p.episodeTitle for p in pages] == ["游戏王", "游戏王"]
-    assert [p.relativePath for p in pages] == ["游戏王 - P1", "游戏王 - P2"]
+    task = BilibiliTask(name="合集.mp4", url="u", outputFolder=Path("."), files=files, _baseName="合集")
+    task.update()
+    assert [p.relativePath for p in files] == ["AC_DC 现场", "上", "P2"]
 
-    setPagePart(pages[0], "第1话")
-    assert pages[0].pagePart == "第1话"
-    assert pages[0].relativePath == "游戏王 - P1"
+    setFileName(task, 2, "下/集")
+    assert [p.episodeTitle for p in files[1:]] == ["游戏王", "游戏王"]
+    assert files[2].relativePath == "下_集"
+
+    setFileName(task, 0, "新名")
+    assert files[0].relativePath == "新名"
 
 
-def test_updateSuffixes_after_rename_and_trim():
+def test_updateNames_after_rename_and_trim():
     from pathlib import Path
     from bili_pack.task import BiliPage, BilibiliTask
 
@@ -432,7 +433,7 @@ def test_updateSuffixes_after_rename_and_trim():
     files[0].episodeTitle = "新名"
     files[0].startTime = 10
     files[0].endTime = 20
-    task.updateSuffixes()
+    task.updateNames()
     suffixes = {s.pageSuffix for s in task.steps if getattr(s, "pageSuffix", None)}
     assert suffixes == {" - 新名 [00m10s-00m20s]"}
 
