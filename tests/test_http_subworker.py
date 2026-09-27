@@ -246,7 +246,19 @@ class TestReassignment:
         step._effectiveHeaders = {}
         step._reportSpeed = lambda n: None
         step._waitForSpeedLimit = lambda: None
+        step._nextSplitStartAt = 0
         return step
+
+    def test_split_subworkers_start_one_interval_apart(self, monkeypatch):
+        monkeypatch.setattr("features.http_pack.task.SPLIT_START_INTERVAL", 0.2)
+        step = self._makeStepWithSubworkers(fileSize=8_000_000)
+        delays = []
+        step._runSubworker = lambda subworker, fd, delay: delays.append(delay) or asyncio.sleep(0)
+
+        for _ in range(3):
+            step._reassignSubworker()
+
+        assert delays == pytest.approx([0, 0.2, 0.4], abs=0.01)
 
     def test_splits_slowest_subworker(self):
         step = self._makeStepWithSubworkers(fileSize=4_000_000)
@@ -626,6 +638,30 @@ class TestStallRecovery:
         assert (tmp_path / "test.bin").read_bytes() == content
         assert hasStalled
         releaseHang.set()
+
+
+class TestInitialStart:
+
+    async def test_initial_subworkers_start_together(self, server, tmp_path, monkeypatch):
+        """Only split subworkers wait their turn. The initial ones send their requests at once."""
+        content = buildFileContent(800)
+        rangeHandler = buildRangeHandler(content)
+        requestTimes = []
+
+        async def recordTimes(request: web.Request) -> web.Response:
+            if request.headers.get("Range") != "bytes=0-0":
+                requestTimes.append(asyncio.get_running_loop().time())
+            return await rangeHandler(request)
+
+        monkeypatch.setattr("features.http_pack.task.SPLIT_START_INTERVAL", 1)
+        url = await server(recordTimes)
+        task, step = makeStep(url, tmp_path, fileSize=800, subworkerCount=4)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await asyncio.wait_for(runStep(step), timeout=10)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        assert requestTimes[3] - requestTimes[0] < 0.5
 
 
 if __name__ == "__main__":
