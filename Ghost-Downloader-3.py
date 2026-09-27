@@ -54,6 +54,7 @@ def startApp(application, isSilent=False):
     from app.config.cfg import cfg
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
+    from app.services.loopback_server import ListenStatus
     from app.services.update_service import UpdateService
     from app.startup import loadResources, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
@@ -185,6 +186,10 @@ def startApp(application, isSilent=False):
     signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().alertException(msg))
     browserService.pairRequestChanged.connect(lambda request: request and show().confirmPair(request))
+    engine.browserServer.stateChanged.connect(
+        lambda state: state.status == ListenStatus.FAILED and show().alertBrowserListenFailure(state.error))
+    engine.aria2RpcServer.stateChanged.connect(
+        lambda state: state.status == ListenStatus.FAILED and show().alertAria2ListenFailure(state.error))
 
     application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 
