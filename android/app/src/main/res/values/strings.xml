@@ -334,6 +334,10 @@
     <string name="settings_aria2_rpc_token_desc">可选；设置后客户端需要传入</string>
     <string name="settings_aria2_rpc_emulate">模拟浏览器指纹</string>
     <string name="settings_aria2_rpc_emulate_desc">若站点拒绝经 RPC 添加的链接，打开此项</string>
+    <string name="settings_aria2_rpc_status">服务状态</string>
+    <string name="settings_aria2_rpc_listening">正在端口 %1$d 上监听</string>
+    <string name="settings_listen_denied">没有权限监听端口 %1$d，请更换端口</string>
+    <string name="settings_listen_failed">无法监听端口 %1$d，详情见日志</string>
     <string name="notification_channel_confirm">需要确认</string>
     <string name="pair_title">浏览器扩展请求配对</string>
     <string name="pair_message">%1$s（v%2$s）请求连接，来自 %3$s</string>

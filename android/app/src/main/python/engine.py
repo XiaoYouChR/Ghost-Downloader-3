@@ -128,8 +128,21 @@ class Engine:
         self._browserService.connectionChanged.connect(self._emitBrowserExtension)
         self._browserServer.stateChanged.connect(self._emitBrowserExtension)
         self._browserServer.stateChanged.connect(self._emitKeepAlive)
+        self._aria2Server.stateChanged.connect(self._emitAria2Rpc)
 
         self._coroutineRunner.start()
+        self.request("_activate")
+        logger.info("Engine started, dataDir={}", APP_DATA_DIR)
+
+    def request(self, name: str, *args):
+        """JVM 线程调用 engine 的唯一入口：在 loop 线程执行并等待结果，见 ADR 0012。"""
+        return asyncio.run_coroutine_threadsafe(self._run(name, args), self._loop).result()
+
+    async def _run(self, name: str, args: tuple):
+        result = getattr(self, name)(*args)
+        return await result if inspect.isawaitable(result) else result
+
+    def _activate(self):
         self._bindSpeedMeter()
         self._taskService.resumeSaved()
         self._featureService.activate()
@@ -138,9 +151,9 @@ class Engine:
         self._browserServer.start()
         self._emitKeepAlive()
         self._emitBrowserExtension()
+        self._emitAria2Rpc()
         if cfg.shouldCheckUpdateAtStartup.value:
             self._coroutineRunner.submit(self._checkUpdateAtStartup())
-        logger.info("Engine started, dataDir={}", APP_DATA_DIR)
 
     def _bindSpeedMeter(self):
         self._taskService.taskStarted.connect(lambda _: self._speedMeter.start())
@@ -457,7 +470,7 @@ class Engine:
             raise ValueError("Task no longer exists")
         return json.dumps(self._options(task), ensure_ascii=False)
 
-    def applyTaskEdit(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
+    async def applyTaskEdit(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
         from app.models.task import TaskOptions
         parsed = toTaskOptionPayload(json.loads(values))
         task = self._taskService.taskById(taskId)
@@ -472,9 +485,8 @@ class Engine:
 
         newUrl = diff.pop("url", None)
         if newUrl and newUrl != task.url:
-            newTask = asyncio.run_coroutine_threadsafe(
-                self._featureService.parse(TaskOptions.fromOptions({**current, **parsed, "url": newUrl})),
-                self._loop).result(timeout=60)
+            newTask = await asyncio.wait_for(
+                self._featureService.parse(TaskOptions.fromOptions({**current, **parsed, "url": newUrl})), 60)
             if not task.canReuseProgress(newTask) and task.currentSnapshot()[2] > 0 and not shouldDiscard:
                 self._pendingEdit = PendingEdit(taskId, task, newTask, {**current, **parsed})
                 return json.dumps({"needsConfirmation": True})
@@ -516,14 +528,9 @@ class Engine:
     def parse(self, urls: str):
         from app.config.cfg import currentHeaders
 
-        nextUrls = [u.strip() for u in urls.splitlines() if u.strip()]
-
-        async def run():
-            self._draftOptions["headers"] = currentHeaders()
-            self._taskDraft.setBaseOptions(self._draftOptions)
-            self._taskDraft.setUrls(nextUrls)
-
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+        self._draftOptions["headers"] = currentHeaders()
+        self._taskDraft.setBaseOptions(self._draftOptions)
+        self._taskDraft.setUrls([u.strip() for u in urls.splitlines() if u.strip()])
 
     def draft(self) -> str:
         result = []
@@ -564,14 +571,10 @@ class Engine:
 
     def setDraftOutputFolder(self, folder):
         folder = Path(folder)
-
-        async def run():
-            if self._draftOptions.get("outputFolder") == folder:
-                return
-            self._draftOptions["outputFolder"] = folder
-            self._taskDraft.setBaseOptions(self._draftOptions)
-
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+        if self._draftOptions.get("outputFolder") == folder:
+            return
+        self._draftOptions["outputFolder"] = folder
+        self._taskDraft.setBaseOptions(self._draftOptions)
 
     def setDraft(self, url: str, action: str, *args):
         def mutate(task):
@@ -585,36 +588,28 @@ class Engine:
                 if fn:
                     fn(task, *args)
 
-        async def run():
-            if action == "setCategory":
-                self._taskDraft.setUrlCategory(url, args[0])
-            else:
-                self._taskDraft.update(url, mutate)
+        if action == "setCategory":
+            self._taskDraft.setUrlCategory(url, args[0])
+        else:
+            self._taskDraft.update(url, mutate)
 
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+    async def probeDraft(self, url: str, kind: str):
+        task = self._taskDraft.taskByUrl(url)
+        adapter = self._packAdapters.get(task.packId) if task else None
+        fn = getattr(adapter, "probe", None) if adapter else None
+        if fn is None:
+            return
+        await asyncio.to_thread(fn, task, url, kind)
+        self._taskDraft.update(url, lambda _: None)
 
-    def probeDraft(self, url: str, kind: str):
-        def probe(task):
-            adapter = self._packAdapters.get(task.packId)
-            fn = getattr(adapter, "probe", None) if adapter else None
-            if fn is None:
-                return
-
-            async def run():
-                await asyncio.to_thread(fn, task, url, kind)
-
-            asyncio.run_coroutine_threadsafe(run(), self._loop).result()
-
-        self._taskDraft.update(url, probe)
-
-    def draftPreview(self, url: str) -> str:
+    async def draftPreview(self, url: str) -> str:
         task = self._taskDraft.taskByUrl(url)
         if task is None:
             return '{"sheets": []}'
         adapter = self._packAdapters.get(task.packId)
         if adapter is None or not hasattr(adapter, "probePreview"):
             return '{"sheets": []}'
-        result = asyncio.run_coroutine_threadsafe(adapter.probePreview(task), self._loop).result()
+        result = await adapter.probePreview(task)
         return json.dumps(result, ensure_ascii=False)
 
     def draftOptions(self, url: str) -> str:
@@ -627,44 +622,27 @@ class Engine:
 
     def applyDraftEdit(self, url: str, values: str):
         options = toTaskOptionPayload(json.loads(values))
-
-        async def run():
-            self._taskDraft.update(url, lambda task: task.setOptions(options))
-
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+        self._taskDraft.update(url, lambda task: task.setOptions(options))
 
     def setDraftSubworkerCount(self, count):
         count = int(count)
-
-        async def run():
-            if self._draftOptions.get("subworkerCount") == count:
-                return
-            self._draftOptions["subworkerCount"] = count
-            self._taskDraft.setBaseOptions(self._draftOptions)
-
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+        if self._draftOptions.get("subworkerCount") == count:
+            return
+        self._draftOptions["subworkerCount"] = count
+        self._taskDraft.setBaseOptions(self._draftOptions)
 
     def confirmDraft(self, autoStart=True):
-        async def confirm():
-            if not self._taskDraft.canConfirm():
-                return
-            self._taskDraft.confirm(autoStart=autoStart)
-            self._draftOptions.clear()
-
-        asyncio.run_coroutine_threadsafe(confirm(), self._loop).result()
+        if not self._taskDraft.canConfirm():
+            return
+        self._taskDraft.confirm(autoStart=autoStart)
+        self._draftOptions.clear()
 
     def clearDraft(self):
-        async def clear():
-            self._taskDraft.clear()
-            self._draftOptions.clear()
-
-        asyncio.run_coroutine_threadsafe(clear(), self._loop).result()
+        self._taskDraft.clear()
+        self._draftOptions.clear()
 
     def refreshDraft(self, url: str):
-        async def run():
-            self._taskDraft.refresh(url)
-
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+        self._taskDraft.refresh(url)
 
     def settings(self) -> str:
         return json.dumps(
@@ -797,10 +775,10 @@ class Engine:
         return json.dumps(sorted(hashlib.algorithms_available))
 
     def startFileHash(self, taskId: str, algorithm: str):
-        asyncio.run_coroutine_threadsafe(self._startHash(taskId, algorithm), self._loop)
+        self._coroutineRunner.submit(self._startHash(taskId, algorithm))
 
     def cancelFileHash(self):
-        asyncio.run_coroutine_threadsafe(self._cancelHash(), self._loop)
+        self._coroutineRunner.submit(self._cancelHash())
 
     async def _startHash(self, taskId: str, algorithm: str):
         task = self._taskService.taskById(taskId)
@@ -856,23 +834,29 @@ class Engine:
 
     def browserExtension(self) -> str:
         installType, version = self._browserService.connectionSummary
-        listenStatus = self._browserServer.state.status
-        if listenStatus == ListenStatus.OFF:
+        state = self._browserServer.state
+        if state.status == ListenStatus.OFF:
             status = "idle"
-        elif listenStatus == ListenStatus.FAILED:
-            status = "portUnavailable"
+        elif state.status == ListenStatus.FAILED:
+            status = "failed"
         elif installType or version:
             status = "connected"
         else:
             status = "listening"
         return json.dumps({
             "status": status,
+            "failure": state.failure,
             "token": cfg.browserExtensionPairToken.value,
             "extensionVersion": version,
             "chromeWebstore": CHROME_WEBSTORE_URL,
             "edgeAddons": EDGE_ADDONS_URL,
             "firefoxAddons": FIREFOX_ADDONS_URL,
         }, ensure_ascii=False)
+
+    def _emitAria2Rpc(self, *_args):
+        state = self._aria2Server.state
+        self._flows.setState("aria2Rpc", json.dumps(
+            {"status": state.status, "port": state.port, "failure": state.failure}))
 
     def _emitBrowserExtension(self, *_args):
         self._flows.setState("browserExtension", self.browserExtension())
@@ -936,14 +920,14 @@ class Engine:
         fn = getattr(adapter, name, None) if adapter else None
         return json.dumps(fn(), ensure_ascii=False) if fn else "{}"
 
-    def requestPack(self, packId: str, action: str, *args) -> str:
+    async def requestPack(self, packId: str, action: str, *args) -> str:
         adapter = self._packAdapters.get(packId)
         fn = getattr(adapter, action, None) if adapter else None
         if fn is None:
             return "null"
         result = fn(*args)
         if inspect.iscoroutine(result):
-            result = asyncio.run_coroutine_threadsafe(result, self._loop).result()
+            result = await result
         self._emitPackStates(packId)
         return json.dumps(result, ensure_ascii=False)
 
@@ -987,11 +971,8 @@ class Engine:
         if info["status"] == "available":
             self._restoreDownloadedUpdate(info["version"])
 
-    def checkUpdate(self) -> str:
-        import asyncio
-
-        future = asyncio.run_coroutine_threadsafe(self._fetchUpdateVerdict(), self._loop)
-        info = future.result(timeout=10)
+    async def checkUpdate(self) -> str:
+        info = await asyncio.wait_for(self._fetchUpdateVerdict(), 10)
         self._setUpdateAvailable(info)
         return json.dumps(info, ensure_ascii=False)
 
@@ -1056,7 +1037,7 @@ class Engine:
                                      "error": str(e)}
                 self._emitUpdateState()
 
-        asyncio.run_coroutine_threadsafe(_download(), self._loop)
+        self._coroutineRunner.submit(_download())
 
     def _emitUpdateState(self):
         self._flows.setState("updateState", self.updateState())
@@ -1130,4 +1111,4 @@ _engine: Engine | None = None
 def start(flows):
     global _engine
     _engine = Engine(flows)
-    return _engine.packUis()
+    return _engine.request("packUis")

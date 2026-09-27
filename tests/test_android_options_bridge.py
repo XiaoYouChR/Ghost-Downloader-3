@@ -132,7 +132,7 @@ def test_task_edit_hands_the_service_model_types(engine, tmp_path):
     task = Task(name="a.bin", url=URL, packId="http", steps=[step], outputFolder=tmp_path / "old")
     engine._taskService = StubTaskService(task)
 
-    engine.applyTaskEdit(task.taskId, json.dumps({"outputFolder": str(tmp_path / "new")}))
+    engine.request("applyTaskEdit", task.taskId, json.dumps({"outputFolder": str(tmp_path / "new")}))
 
     assert engine._taskService.edited == {"outputFolder": tmp_path / "new"}
     assert task.outputFolder == tmp_path / "new"
@@ -144,7 +144,7 @@ def test_task_edit_of_the_same_folder_edits_nothing(engine, tmp_path):
     task = Task(name="a.bin", url=URL, packId="http", steps=[step], outputFolder=tmp_path / "old")
     engine._taskService = StubTaskService(task)
 
-    engine.applyTaskEdit(task.taskId, json.dumps({"outputFolder": str(tmp_path / "old")}))
+    engine.request("applyTaskEdit", task.taskId, json.dumps({"outputFolder": str(tmp_path / "old")}))
 
     assert engine._taskService.edited is None
     assert step.movedTo == []

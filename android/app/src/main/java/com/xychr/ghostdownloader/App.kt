@@ -40,7 +40,7 @@ class App : Application() {
         val packUiJson = module.callAttr("start", flows).toString()
         PackRegistry.load(packUiJson)
         val engine = module.get("_engine")!!
-        SettingRanges.load(engine.callAttr("settingRanges").toString())
+        SettingRanges.load(engine.callAttr("request", "settingRanges").toString())
         createEngineRepository(engine, flows)
 
         notices.start()

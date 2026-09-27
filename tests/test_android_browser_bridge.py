@@ -36,7 +36,7 @@ def engine(bridge, monkeypatch):
     "state, summary, expected",
     [
         (ListenState(), ("", ""), "idle"),
-        (ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.PORT_OCCUPIED), ("", ""), "portUnavailable"),
+        (ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.PORT_OCCUPIED), ("", ""), "failed"),
         (ListenState(ListenStatus.LISTENING, 14370), ("", ""), "listening"),
         (ListenState(ListenStatus.LISTENING, 14370), ("development", "2.2.0"), "connected"),
     ],
@@ -48,6 +48,7 @@ def test_status_tells_the_view_why_the_extension_cannot_connect(engine, state, s
     payload = json.loads(engine.browserExtension())
 
     assert payload["status"] == expected
+    assert payload["failure"] == state.failure
 
 
 def test_connected_status_carries_the_extension_version(engine):

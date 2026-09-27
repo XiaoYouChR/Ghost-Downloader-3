@@ -26,7 +26,7 @@ class EngineRepository(
 
     @PublishedApi internal suspend fun callEngine(name: String, vararg args: Any?): PyObject? {
         val unwrapped = Array(args.size) { i -> val a = args[i]; if (a is Encoded) a.value else a }
-        return withContext(Dispatchers.IO) { engine.callAttr(name, *unwrapped) }
+        return withContext(Dispatchers.IO) { engine.callAttr("request", name, *unwrapped) }
     }
 
     suspend inline fun <reified T> query(name: String, vararg args: Any?): T =

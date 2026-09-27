@@ -83,6 +83,7 @@ private fun ColumnScope.ServiceRows(settings: Settings, set: (String, Any) -> Un
             },
         )
         if (settings.isAria2RpcEnabled) {
+            Aria2RpcStatusRow(settings.aria2RpcPort)
             NumberSettingRow(
                 title = stringResource(R.string.settings_aria2_rpc_port),
                 value = settings.aria2RpcPort,
@@ -107,8 +108,36 @@ private fun ColumnScope.ServiceRows(settings: Settings, set: (String, Any) -> Un
 }
 
 @Serializable
+private data class ListenState(
+    val status: String = "",
+    val port: Int = 0,
+    val failure: String? = null,
+)
+
+@Composable
+private fun listenFailureText(failure: String?, port: Int): String = when (failure) {
+    "portOccupied" -> stringResource(R.string.settings_browser_port_unavailable, port)
+    "denied" -> stringResource(R.string.settings_listen_denied, port)
+    else -> stringResource(R.string.settings_listen_failed, port)
+}
+
+@Composable
+private fun Aria2RpcStatusRow(port: Int) {
+    val state by remember { engineRepository.observe<ListenState>("aria2Rpc") }
+        .collectAsStateWithLifecycle(ListenState())
+    InfoSettingRow(
+        title = stringResource(R.string.settings_aria2_rpc_status),
+        subtitle = when (state.status) {
+            "failed" -> listenFailureText(state.failure, port)
+            else -> stringResource(R.string.settings_aria2_rpc_listening, port)
+        },
+    )
+}
+
+@Serializable
 private data class BrowserExtension(
     val status: String = "",
+    val failure: String? = null,
     val token: String = "",
     val extensionVersion: String = "",
     val chromeWebstore: String = "",
@@ -137,7 +166,7 @@ private fun BrowserExtensionRows(isEnabled: Boolean, port: Int, set: (String, An
         subtitle = when (state.status) {
             "connected" -> stringResource(R.string.settings_browser_connected, state.extensionVersion)
             "listening" -> stringResource(R.string.settings_browser_listening, port)
-            "portUnavailable" -> stringResource(R.string.settings_browser_port_unavailable, port)
+            "failed" -> listenFailureText(state.failure, port)
             else -> stringResource(R.string.settings_browser_disconnected)
         },
     )

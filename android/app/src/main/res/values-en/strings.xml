@@ -250,6 +250,10 @@ Allow only if you just clicked \"Auto pair\" in the extension.</string>
     <string name="settings_aria2_rpc_desc">Receive download links from browser extensions and external tools on this device</string>
     <string name="settings_aria2_rpc_emulate">Emulate browser fingerprint</string>
     <string name="settings_aria2_rpc_emulate_desc">Enable if sites reject links added via RPC</string>
+    <string name="settings_aria2_rpc_status">Service status</string>
+    <string name="settings_aria2_rpc_listening">Listening on port %1$d</string>
+    <string name="settings_listen_denied">No permission to listen on port %1$d, please change port</string>
+    <string name="settings_listen_failed">Cannot listen on port %1$d, see log for details</string>
     <string name="settings_aria2_rpc_port">Listening port</string>
     <string name="settings_aria2_rpc_token">Token</string>
     <string name="settings_aria2_rpc_token_desc">Optional; client must provide if set</string>
