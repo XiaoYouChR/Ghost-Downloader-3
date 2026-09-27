@@ -30,14 +30,6 @@ N("TaskErrors", "校验失败")
 N("TaskErrors", "当前平台无可用更新")
 N("TaskErrors", "DMG 中未找到 .app")
 
-
-def toListenFailureText(state) -> str:
-    from PySide6.QtCore import QCoreApplication
-    match state.failure:
-        case "occupied":
-            text = QCoreApplication.translate("TaskErrors", "端口 {0} 被占用，请更换端口")
-        case "denied":
-            text = QCoreApplication.translate("TaskErrors", "没有权限监听端口 {0}，请更换端口")
-        case _:
-            text = QCoreApplication.translate("TaskErrors", "无法监听端口 {0}，详情见日志")
-    return text.format(state.port)
+N("TaskErrors", "端口 {port} 被占用，请更换端口")
+N("TaskErrors", "没有权限监听端口 {port}，请更换端口")
+N("TaskErrors", "无法监听端口 {port}，详情见日志")

@@ -16,7 +16,7 @@ from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 from app.config.cfg import CloseMode, cfg
 from app.config.constants import DONATE_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
-from app.i18n import toListenFailureText
+from app.i18n import toLocalizedError
 from app.services.loopback_server import ListenState, ListenStatus, LoopbackServer
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
@@ -311,7 +311,7 @@ class MainWindow(MSFluentWindow):
         infoBar = InfoBar(
             icon=InfoBarIcon.ERROR,
             title=title,
-            content=toListenFailureText(state),
+            content=toLocalizedError(state.error),
             orient=Qt.Orientation.Horizontal,
             isClosable=True,
             duration=-1,

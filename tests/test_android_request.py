@@ -8,7 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from app.services.coroutine_runner import CoroutineRunner
-from app.services.loopback_server import ListenFailure, ListenState, ListenStatus
+from app.models.task import TaskError
+from app.services.loopback_server import ListenState, ListenStatus
 from tests.helpers import StubFlows
 
 
@@ -91,10 +92,11 @@ def test_draft_parse_through_request_does_not_deadlock(engine, monkeypatch):
 
 
 @pytest.mark.parametrize("state, expected", [
-    (ListenState(), {"status": "off", "port": 0, "failure": None}),
-    (ListenState(ListenStatus.LISTENING, 16800), {"status": "listening", "port": 16800, "failure": None}),
-    (ListenState(ListenStatus.FAILED, 16800, failure=ListenFailure.OCCUPIED),
-     {"status": "failed", "port": 16800, "failure": "occupied"}),
+    (ListenState(), {"status": "off", "port": 0, "error": None}),
+    (ListenState(ListenStatus.LISTENING, 16800), {"status": "listening", "port": 16800, "error": None}),
+    (ListenState(ListenStatus.FAILED, 16800, error=TaskError("端口 {port} 被占用，请更换端口", port=16800)),
+     {"status": "failed", "port": 16800,
+      "error": {"message": "端口 {port} 被占用，请更换端口", "params": {"port": "16800"}}}),
 ])
 def test_aria2_listen_state_is_pushed(engine, state, expected):
     engine._aria2Server = StubServer(state)
