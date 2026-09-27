@@ -12,7 +12,7 @@ from websockets.exceptions import InvalidStatus
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
-from app.services.aria2_rpc import Aria2RpcServer
+from app.services.aria2_rpc import Aria2RpcService
 from app.services.coroutine_runner import CoroutineRunner
 from app.services.loopback_server import ListenStatus, LoopbackServer
 from tests.test_loopback_server import FakeItem, findFreePort, waitFor
@@ -83,7 +83,7 @@ async def aria2(monkeypatch, tmp_path):
     async def parse(options):
         return FakeTask(options)
 
-    rpc = Aria2RpcServer(runner, parse=parse, addTask=added.append)
+    rpc = Aria2RpcService(runner, parse=parse, addTask=added.append)
     rpc.taskDraftRequested.connect(drafted.extend)
     server = LoopbackServer(runner, rpc.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
     server.start()

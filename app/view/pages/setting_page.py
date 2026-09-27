@@ -35,12 +35,12 @@ from app.view.components.editors import FolderPicker
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, featureService, browserService, browserServer, aria2Server, coroutineRunner, categoryService, taskService, updateService, parent=None):
+    def __init__(self, featureService, browserService, browserServer, aria2RpcServer, coroutineRunner, categoryService, taskService, updateService, parent=None):
         super().__init__(parent)
         self._featureService = featureService
         self._browserService = browserService
         self._browserServer = browserServer
-        self._aria2Server = aria2Server
+        self._aria2RpcServer = aria2RpcServer
         self._coroutineRunner = coroutineRunner
         self._categoryService = categoryService
         self._taskService = taskService
@@ -398,7 +398,7 @@ class SettingPage(ScrollArea):
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
         self._browserService.connectionChanged.connect(self._refreshBrowserStatus, owner=self)
         self._browserServer.stateChanged.connect(self._refreshBrowserStatus, owner=self)
-        self._aria2Server.stateChanged.connect(self._refreshAria2Status, owner=self)
+        self._aria2RpcServer.stateChanged.connect(self._refreshAria2Status, owner=self)
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
@@ -478,7 +478,7 @@ class SettingPage(ScrollArea):
         self.browserEnableCard.setContent(text)
 
     def _refreshAria2Status(self, *_) -> None:
-        state = self._aria2Server.state
+        state = self._aria2RpcServer.state
         if state.status == ListenStatus.OFF:
             text = self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接")
         elif state.status == ListenStatus.FAILED:
