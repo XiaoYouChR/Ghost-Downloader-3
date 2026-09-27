@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from threading import Thread
 
@@ -20,7 +20,6 @@ URL = "https://example.test/a.bin"
 @dataclass(kw_only=True)
 class StubStep(TaskStep):
     stepIndex: int = 0
-    movedTo: list[str] = field(default_factory=list)
 
     async def run(self, reportSpeed, waitForSpeedLimit):
         pass
@@ -28,10 +27,6 @@ class StubStep(TaskStep):
     @property
     def outputPath(self) -> str:
         return self.task.outputPath
-
-    def moveFiles(self, oldFolder, newFolder):
-        self.movedTo.append(str(newFolder))
-        super().moveFiles(oldFolder, newFolder)
 
 
 class StubFeatureService:
@@ -111,7 +106,6 @@ def test_unchanged_folder_does_not_move_the_parsed_task(parsedEngine):
     task = parsedEngine._taskDraft.items()[0].task
     assert task is not None
     assert task.outputFolder == Path(FOLDER)
-    assert task.steps[0].movedTo == []
 
 
 def test_draft_projection_returns_the_folder_string(parsedEngine):
@@ -124,7 +118,6 @@ def test_draft_edit_of_the_same_folder_does_not_move_the_task(parsedEngine):
     task = parsedEngine._taskDraft.items()[0].task
     parsedEngine.applyDraftEdit(URL, json.dumps({"outputFolder": FOLDER}))
     assert task.outputFolder == Path(FOLDER)
-    assert task.steps[0].movedTo == []
 
 
 def test_task_edit_hands_the_service_model_types(engine, tmp_path):
@@ -136,7 +129,6 @@ def test_task_edit_hands_the_service_model_types(engine, tmp_path):
 
     assert engine._taskService.edited == {"outputFolder": tmp_path / "new"}
     assert task.outputFolder == tmp_path / "new"
-    assert step.movedTo == [str(tmp_path / "new")]
 
 
 def test_task_edit_of_the_same_folder_edits_nothing(engine, tmp_path):
@@ -147,4 +139,3 @@ def test_task_edit_of_the_same_folder_edits_nothing(engine, tmp_path):
     engine.request("applyTaskEdit", task.taskId, json.dumps({"outputFolder": str(tmp_path / "old")}))
 
     assert engine._taskService.edited is None
-    assert step.movedTo == []

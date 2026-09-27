@@ -40,4 +40,8 @@ sealed interface Notice {
     @Serializable
     @SerialName("extensionUpdated")
     data class ExtensionUpdated(val version: String) : Notice
+
+    @Serializable
+    @SerialName("overwriteFailed")
+    data class OverwriteFailed(val name: String) : Notice
 }

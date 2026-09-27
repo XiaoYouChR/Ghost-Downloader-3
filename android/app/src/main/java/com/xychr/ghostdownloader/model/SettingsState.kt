@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class Settings(
     val downloadFolder: String = "",
     val maxTaskNum: Int = 3,
+    val nameConflict: String = "keepBoth",
     val preBlockNum: Int = 8,
     val autoSpeedUp: Boolean = true,
     val maxReassignSize: Int = 512,

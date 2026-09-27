@@ -369,4 +369,16 @@
     <string name="ytdlp_prefer_mp4_desc">優先選擇 H.264/MP4 編碼，避免輸出 WebM/MKV</string>
     <string name="ytdlp_subtitle_languages">字幕語言</string>
     <string name="ytdlp_subtitle_languages_desc">未設定，以逗號分隔語言代碼</string>
+    <string name="name_conflict_title">下載資料夾中已有 %1$s</string>
+    <string name="name_conflict_existing_file">現有檔案：%1$s · %2$s 修改</string>
+    <string name="name_conflict_existing_folder">現有資料夾 · %1$s 修改</string>
+    <string name="name_conflict_new_file">新檔案：%1$s</string>
+    <string name="name_conflict_unknown_size">未知大小</string>
+    <string name="name_conflict_overwrite_hint">覆寫會永久刪除舊檔案。</string>
+    <string name="name_conflict_apply_to_rest">對其餘 %1$d 個衝突執行相同操作</string>
+    <string name="name_conflict_overwrite">覆寫</string>
+    <string name="name_conflict_keep_both">保留兩者</string>
+    <string name="notice_overwrite_failed">無法刪除舊檔案，新檔案已另存為 %1$s</string>
+    <string name="settings_name_conflict">同名檔案</string>
+    <string name="settings_name_conflict_ask">詢問</string>
 </resources>

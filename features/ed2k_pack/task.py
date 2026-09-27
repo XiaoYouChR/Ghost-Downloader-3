@@ -56,8 +56,9 @@ class ED2kTaskStep(TaskStep):
         task: ED2kTask = self.task
 
         def onStarted(result: RunResult):
+            if result.name != task.name:
+                raise TaskError("该文件已由另一个任务在下载")
             task.fileHash = result.fileHash
-            task.name = result.name
             if result.fileSize:
                 task.fileSize = result.fileSize
 
@@ -77,7 +78,6 @@ class ED2kTaskStep(TaskStep):
             onStarted=onStarted,
             onProgress=onProgress,
         )
-        self.setStatus(TaskStatus.COMPLETED)
 
 
 @dataclass(kw_only=True)
@@ -91,4 +91,3 @@ class ED2kInstallStep(TaskStep):
             raise TaskError("{name} 未安装，请在设置中安装", name="goed2kd")
         if sys.platform != "win32":
             path.chmod(path.stat().st_mode | 0o755)
-        self.setStatus(TaskStatus.COMPLETED)

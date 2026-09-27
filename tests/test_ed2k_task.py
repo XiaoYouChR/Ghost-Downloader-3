@@ -81,6 +81,10 @@ class DuplicateClient(FakeClient):
         raise Error(ErrorCode.TRANSFER_EXISTS, "transfer already exists")
 
 
+async def noLimit():
+    pass
+
+
 def makeTask(tmp_path: Path, name: str = "payload(1).bin") -> ED2kTask:
     task = ED2kTask(
         name=name,
@@ -217,7 +221,7 @@ async def test_download_completes_when_finished(monkeypatch, tmp_path):
     monkeypatch.setattr(session_module, "ed2kSession", session)
     task = makeTask(tmp_path)
 
-    await task.steps[0].run(lambda _: None, None)
+    await task.run(lambda _: None, noLimit)
 
     assert task.status == TaskStatus.COMPLETED
     assert task.steps[0].receivedBytes == 1234
@@ -231,7 +235,7 @@ async def completeDownload(monkeypatch, tmp_path) -> tuple[ED2kTask, FakeClient]
     session._client = fakeClient
     monkeypatch.setattr(session_module, "ed2kSession", session)
     task = makeTask(tmp_path)
-    await task.steps[0].run(lambda _: None, None)
+    await task.run(lambda _: None, noLimit)
     fakeClient.paused.clear()
     fakeClient.snapshotStarted.clear()
     return task, fakeClient
@@ -306,7 +310,7 @@ async def test_active_duplicate_never_reaches_daemon(monkeypatch, tmp_path):
     task = makeTask(tmp_path)
 
     with pytest.raises(TaskError, match="该 eD2k 链接已在下载中"):
-        await task.steps[0].run(lambda _: None, None)
+        await task.run(lambda _: None, noLimit)
 
     assert fakeClient.added == []
     session._activeTransfers.discard(identity)

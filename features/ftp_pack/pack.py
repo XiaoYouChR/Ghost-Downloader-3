@@ -85,10 +85,10 @@ class FtpParser(TaskParser):
                 if not files:
                     raise ValueError("该 FTP 目录中没有可下载的普通文件")
 
-            name = toSafeFilename(
-                sourcePath.name or connectionInfo.host,
-                fallback="ftp_download",
-            )
+            if len(files) == 1:
+                name = toSafeFilename(PurePosixPath(files[0].relativePath).name, fallback="ftp_download")
+            else:
+                name = toSafeFilename(sourcePath.name or connectionInfo.host, fallback="ftp_download")
 
             steps = []
             for file in files:

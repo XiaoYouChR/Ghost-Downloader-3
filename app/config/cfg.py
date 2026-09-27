@@ -239,6 +239,9 @@ class Config(QConfig):
         "GeneralDownload", "HistoryDownloadFolder", [], FolderListValidator()
     )
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
+    nameConflict = OptionsConfigItem(
+        "GeneralDownload", "NameConflict", "keepBoth", OptionsValidator(["keepBoth", "overwrite", "ask"])
+    )
     isSpeedLimitEnabled = ConfigItem("GeneralDownload", "isSpeedLimitEnabled", False, BoolValidator())
     speedLimitation = RangeConfigItem(
         "GeneralDownload", "SpeedLimitation", 4194304, RangeValidator(1024, 104857600)

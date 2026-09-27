@@ -70,12 +70,14 @@ import androidx.navigation.compose.rememberNavController
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.xychr.ghostdownloader.bridge.bridge
+import com.xychr.ghostdownloader.model.NameConflict
 import com.xychr.ghostdownloader.model.PairRequest
 import com.xychr.ghostdownloader.service.Notices
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
 import com.xychr.ghostdownloader.ui.components.liquid.BottomTab
 import com.xychr.ghostdownloader.ui.components.liquid.LiquidBottomBar
 import com.xychr.ghostdownloader.ui.components.notice.LocalSnackbar
+import com.xychr.ghostdownloader.ui.components.notice.NameConflictDialog
 import com.xychr.ghostdownloader.ui.components.notice.PairDialog
 import com.xychr.ghostdownloader.ui.components.notice.noticeMessage
 import com.xychr.ghostdownloader.ui.navigation.DESTINATION_DRAFT
@@ -194,6 +196,12 @@ class MainActivity : ComponentActivity() {
                                             bridge.invoke("setBrowserPairApproval", requestId, isApproved)
                                         }
                                     },
+                                    nameConflictFlow = bridge.observe("nameConflict"),
+                                    onNameConflictChoice = { taskId, choice, isAppliedToRest ->
+                                        lifecycleScope.launch {
+                                            bridge.invoke("setNameConflictChoice", taskId, choice, isAppliedToRest)
+                                        }
+                                    },
                                 )
                             }
 
@@ -264,6 +272,8 @@ private fun AppRoot(
     destinations: Flow<String>,
     pairFlow: Flow<PairRequest?>,
     onPairApproval: (String, Boolean) -> Unit,
+    nameConflictFlow: Flow<NameConflict?>,
+    onNameConflictChoice: (String, String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val taskNavController = rememberNavController()
@@ -293,6 +303,7 @@ private fun AppRoot(
     val draftState by draft.state.collectAsStateWithLifecycle()
     val updateNotice by updateViewModel.updateNotice.collectAsStateWithLifecycle()
     val pair by pairFlow.collectAsStateWithLifecycle(null)
+    val nameConflict by nameConflictFlow.collectAsStateWithLifecycle(null)
 
     val navigateTo: (String) -> Unit = { target ->
         selectedTab = BottomTab.TASKS
@@ -313,6 +324,10 @@ private fun AppRoot(
 
     pair?.let {
         PairDialog(it, onApprove = { onPairApproval(it.requestId, true) }, onReject = { onPairApproval(it.requestId, false) })
+    }
+
+    nameConflict?.let {
+        NameConflictDialog(it) { choice, isAppliedToRest -> onNameConflictChoice(it.taskId, choice, isAppliedToRest) }
     }
 
     CompositionLocalProvider(LocalSnackbar provides snackbar) {

@@ -52,6 +52,7 @@ def setupEnvironment():
 def startApp(application, isSilent=False):
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
+    from app.view.dialogs.name_conflict import NameConflictPrompt
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
     from app.services.loopback_server import ListenStatus
@@ -96,6 +97,8 @@ def startApp(application, isSilent=False):
     application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
     application.clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
+
+    application.nameConflictPrompt = NameConflictPrompt(engine.nameConflictQueue)
 
     from app.platform.windows import emptyWorkingSet
 

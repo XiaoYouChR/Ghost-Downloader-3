@@ -35,4 +35,8 @@ fun Context.noticeMessage(notice: Notice): NoticeMessage = when (notice) {
     is Notice.ExtensionUpdated -> NoticeMessage(
         getString(R.string.notice_extension_updated, notice.version), null, null,
     )
+
+    is Notice.OverwriteFailed -> NoticeMessage(
+        getString(R.string.notice_overwrite_failed, notice.name), null, null,
+    )
 }

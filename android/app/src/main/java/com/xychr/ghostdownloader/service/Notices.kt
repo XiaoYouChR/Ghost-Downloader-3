@@ -49,7 +49,8 @@ class Notices(app: Application) {
             is Notice.DiskSpace,
             is Notice.DraftTaken -> if (isForeground) notices.emit(notice) else context.send(notice)
 
-            is Notice.ExtensionUpdated -> if (isForeground) notices.emit(notice)
+            is Notice.ExtensionUpdated,
+            is Notice.OverwriteFailed -> if (isForeground) notices.emit(notice)
         }
     }
 

@@ -369,4 +369,16 @@
     <string name="ytdlp_prefer_mp4_desc">H.264/MP4 エンコードを優先し、WebM/MKV の出力を避けます</string>
     <string name="ytdlp_subtitle_languages">字幕言語</string>
     <string name="ytdlp_subtitle_languages_desc">未設定。言語コードをカンマ区切りで指定</string>
+    <string name="name_conflict_title">ダウンロードフォルダーに「%1$s」が既にあります</string>
+    <string name="name_conflict_existing_file">既存のファイル：%1$s · %2$s に更新</string>
+    <string name="name_conflict_existing_folder">既存のフォルダー · %1$s に更新</string>
+    <string name="name_conflict_new_file">新しいファイル：%1$s</string>
+    <string name="name_conflict_unknown_size">サイズ不明</string>
+    <string name="name_conflict_overwrite_hint">上書きすると古いファイルは完全に削除されます。</string>
+    <string name="name_conflict_apply_to_rest">残りの %1$d 件にも同じ操作を適用</string>
+    <string name="name_conflict_overwrite">上書き</string>
+    <string name="name_conflict_keep_both">両方残す</string>
+    <string name="notice_overwrite_failed">古いファイルを削除できませんでした。新しいファイルは「%1$s」として保存されました</string>
+    <string name="settings_name_conflict">同名のファイル</string>
+    <string name="settings_name_conflict_ask">確認する</string>
 </resources>

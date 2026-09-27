@@ -369,4 +369,16 @@ Permita somente se você acabou de clicar em \"Emparelhar automaticamente\" na e
     <string name="ytdlp_prefer_mp4_desc">Preferir codificação H.264/MP4 para evitar saída WebM/MKV</string>
     <string name="ytdlp_subtitle_languages">Idiomas das legendas</string>
     <string name="ytdlp_subtitle_languages_desc">Não definido, códigos de idioma separados por vírgula</string>
+    <string name="name_conflict_title">\"%1$s\" já existe na pasta de downloads</string>
+    <string name="name_conflict_existing_file">Arquivo existente: %1$s · modificado em %2$s</string>
+    <string name="name_conflict_existing_folder">Pasta existente · modificada em %1$s</string>
+    <string name="name_conflict_new_file">Novo arquivo: %1$s</string>
+    <string name="name_conflict_unknown_size">Tamanho desconhecido</string>
+    <string name="name_conflict_overwrite_hint">Substituir exclui o arquivo antigo permanentemente.</string>
+    <string name="name_conflict_apply_to_rest">Fazer o mesmo para os outros %1$d conflitos</string>
+    <string name="name_conflict_overwrite">Substituir</string>
+    <string name="name_conflict_keep_both">Manter ambos</string>
+    <string name="notice_overwrite_failed">Não foi possível excluir o arquivo antigo. O novo foi salvo como \"%1$s\"</string>
+    <string name="settings_name_conflict">Arquivos com o mesmo nome</string>
+    <string name="settings_name_conflict_ask">Perguntar</string>
 </resources>

@@ -67,7 +67,7 @@ class BTDraftCard(MultiFileDraftCard):
 
     def _initWidget(self):
         super()._initWidget()
-        icon = QFileIconProvider.IconType.File if self.task.isSingleFile else QFileIconProvider.IconType.Folder
+        icon = QFileIconProvider.IconType.Folder if self.task.isOutputFolder else QFileIconProvider.IconType.File
         self.iconLabel.setImage(QFileIconProvider().icon(icon).pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
 

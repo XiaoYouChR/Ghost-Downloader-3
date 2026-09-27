@@ -69,7 +69,8 @@ fun Context.send(notice: Notice) {
         is Notice.TaskFailed -> notifications.notify(taskNoticeId(notice.taskId), buildFailed(notice))
         is Notice.DiskSpace -> notifications.notify(NOTIF_ID_DISK, buildDiskSpace(notice))
         is Notice.DraftTaken -> notifications.notify(NOTIF_ID_DRAFT, buildDraftTaken(notice))
-        is Notice.ExtensionUpdated -> Unit
+        is Notice.ExtensionUpdated,
+        is Notice.OverwriteFailed -> Unit
     }
 }
 

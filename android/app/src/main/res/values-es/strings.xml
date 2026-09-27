@@ -363,4 +363,16 @@
     <string name="ytdlp_prefer_mp4_desc">Prefiere la codificación H.264/MP4 para evitar salidas WebM/MKV</string>
     <string name="ytdlp_subtitle_languages">Idiomas de subtítulos</string>
     <string name="ytdlp_subtitle_languages_desc">No configurado; códigos de idioma separados por comas</string>
+    <string name="name_conflict_title">«%1$s» ya existe en la carpeta de descargas</string>
+    <string name="name_conflict_existing_file">Archivo existente: %1$s · modificado %2$s</string>
+    <string name="name_conflict_existing_folder">Carpeta existente · modificada %1$s</string>
+    <string name="name_conflict_new_file">Archivo nuevo: %1$s</string>
+    <string name="name_conflict_unknown_size">Tamaño desconocido</string>
+    <string name="name_conflict_overwrite_hint">Sobrescribir elimina el archivo anterior de forma permanente.</string>
+    <string name="name_conflict_apply_to_rest">Hacer lo mismo con los otros %1$d conflictos</string>
+    <string name="name_conflict_overwrite">Sobrescribir</string>
+    <string name="name_conflict_keep_both">Conservar ambos</string>
+    <string name="notice_overwrite_failed">No se pudo eliminar el archivo anterior. El nuevo se guardó como «%1$s»</string>
+    <string name="settings_name_conflict">Archivos con el mismo nombre</string>
+    <string name="settings_name_conflict_ask">Preguntar</string>
 </resources>

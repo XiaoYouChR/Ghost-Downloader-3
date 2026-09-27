@@ -369,4 +369,16 @@
     <string name="ytdlp_prefer_mp4_desc">Выбирать H.264/MP4, избегая WebM/MKV</string>
     <string name="ytdlp_subtitle_languages">Языки субтитров</string>
     <string name="ytdlp_subtitle_languages_desc">Не задано, коды языков через запятую</string>
+    <string name="name_conflict_title">«%1$s» уже есть в папке загрузок</string>
+    <string name="name_conflict_existing_file">Существующий файл: %1$s · изменён %2$s</string>
+    <string name="name_conflict_existing_folder">Существующая папка · изменена %1$s</string>
+    <string name="name_conflict_new_file">Новый файл: %1$s</string>
+    <string name="name_conflict_unknown_size">Размер неизвестен</string>
+    <string name="name_conflict_overwrite_hint">При замене старый файл удаляется безвозвратно.</string>
+    <string name="name_conflict_apply_to_rest">Применить к остальным конфликтам (%1$d)</string>
+    <string name="name_conflict_overwrite">Заменить</string>
+    <string name="name_conflict_keep_both">Сохранить оба</string>
+    <string name="notice_overwrite_failed">Не удалось удалить старый файл. Новый файл сохранён как «%1$s»</string>
+    <string name="settings_name_conflict">Файлы с одинаковым именем</string>
+    <string name="settings_name_conflict_ask">Спрашивать</string>
 </resources>

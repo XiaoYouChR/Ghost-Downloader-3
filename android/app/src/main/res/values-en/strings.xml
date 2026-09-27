@@ -371,4 +371,16 @@ Allow only if you just clicked \"Auto pair\" in the extension.</string>
     <string name="ytdlp_prefer_mp4_desc">Prefer H.264/MP4 encoding to avoid WebM/MKV output</string>
     <string name="ytdlp_subtitle_languages">Subtitle languages</string>
     <string name="ytdlp_subtitle_languages_desc">Not set, comma-separated language codes</string>
+    <string name="name_conflict_title">\"%1$s\" already exists in the download folder</string>
+    <string name="name_conflict_existing_file">Existing file: %1$s · modified %2$s</string>
+    <string name="name_conflict_existing_folder">Existing folder · modified %1$s</string>
+    <string name="name_conflict_new_file">New file: %1$s</string>
+    <string name="name_conflict_unknown_size">Unknown size</string>
+    <string name="name_conflict_overwrite_hint">Overwriting permanently deletes the old file.</string>
+    <string name="name_conflict_apply_to_rest">Do the same for the other %1$d conflicts</string>
+    <string name="name_conflict_overwrite">Overwrite</string>
+    <string name="name_conflict_keep_both">Keep both</string>
+    <string name="notice_overwrite_failed">Couldn\'t delete the old file. The new file was saved as \"%1$s\"</string>
+    <string name="settings_name_conflict">Duplicate file names</string>
+    <string name="settings_name_conflict_ask">Ask</string>
 </resources>

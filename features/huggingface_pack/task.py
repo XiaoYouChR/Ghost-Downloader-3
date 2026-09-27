@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from app.models.task import Task, TaskFile, TaskStep
-from app.platform.filesystem import deletePath
 
 from http_pack.task import HttpTaskStep
 
@@ -16,20 +14,9 @@ class HuggingFaceFile(TaskFile):
 
 @dataclass(kw_only=True)
 class HuggingFaceStep(HttpTaskStep):
-    fileIndex: int = -1
-
     @property
     def outputPath(self) -> str:
-        if self.fileIndex >= 0 and self.task.files:
-            for file in self.task.files:
-                if file.index == self.fileIndex:
-                    return str(self.task.outputFolder / self.task.name / file.relativePath)
-        return super().outputPath
-
-    def deleteFiles(self) -> None:
-        path = Path(self.outputPath)
-        deletePath(path)
-        deletePath(Path(f"{path}.ghd"))
+        return str(self.task.toFilePath(self.fileIndex))
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
@@ -67,9 +54,3 @@ class HuggingFaceTask(Task):
     @property
     def countSelected(self) -> int:
         return sum(1 for f in self.files if f.selected) if self.files else 0
-
-    def deleteFiles(self) -> None:
-        for step in self.steps:
-            step.deleteFiles()
-        if self.files:
-            deletePath(Path(self.outputFolder / self.name))

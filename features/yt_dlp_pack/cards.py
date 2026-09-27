@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QStandardItem, QStandardItemModel
@@ -21,25 +20,31 @@ from app.view.components.range_slider import RangeSlider
 from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
-from .task import STEPS_PER_VIDEO, YouTubeCoverStep, YouTubeTask, buildFormatPair, probeFormats, probePlaylist
+from .task import (
+    YouTubeExtractStep, YouTubeMergeStep, YouTubeResourceStep, YouTubeSubtitleStep,
+    YouTubeTask, buildFormatPair, probeFormats, probePlaylist, splitLanguages,
+)
 
 
 from .choices import buildVideoTiers, buildAudioTiers, buildSubtitleChoices, buildAudioLanguageChoices
 
 
-STEP_LABELS = {
-    1: N("YtDlpTaskCard", "提取信息"),
-    2: N("YtDlpTaskCard", "下载视频"),
-    3: N("YtDlpTaskCard", "下载音频"),
-    4: N("YtDlpTaskCard", "合并"),
-    5: N("YtDlpTaskCard", "下载字幕"),
-}
+def toStepLabel(step) -> str:
+    if isinstance(step, YouTubeExtractStep):
+        return N("YtDlpTaskCard", "提取信息")
+    if isinstance(step, YouTubeResourceStep):
+        return N("YtDlpTaskCard", "下载视频") if step.role == "video" else N("YtDlpTaskCard", "下载音频")
+    if isinstance(step, YouTubeMergeStep):
+        return N("YtDlpTaskCard", "合并")
+    if isinstance(step, YouTubeSubtitleStep):
+        return N("YtDlpTaskCard", "下载字幕")
+    return ""
 
 
 def toYtDlpSizeText(task: YouTubeTask, speed: int, received: int) -> str | None:
     if task.status == TaskStatus.COMPLETED:
         if task.isPlaylist:
-            videoCount = len(task.steps) // STEPS_PER_VIDEO
+            videoCount = len(task.files or [])
             totalReceived = sum(s.receivedBytes for s in task.steps)
             return QCoreApplication.translate("YtDlpTaskCard", "{0} 个视频 · {1}").format(
                 videoCount, toReadableSize(totalReceived))
@@ -57,13 +62,12 @@ def toYtDlpNameText(task: YouTubeTask, speed: int, received: int) -> str | None:
     if not currentStep:
         return None
     fileIndex = currentStep.fileIndex or 0
-    stepInGroup = currentStep.stepIndex - fileIndex * STEPS_PER_VIDEO
-    sourceLabel = STEP_LABELS.get(stepInGroup, "")
+    sourceLabel = toStepLabel(currentStep)
     label = QCoreApplication.translate("YtDlpTaskCard", sourceLabel) if sourceLabel else ""
     if task.isPlaylist:
-        videoCount = len(task.steps) // STEPS_PER_VIDEO
-        videoStem = getattr(currentStep, "videoStem", "") or task.name
-        return f"{videoStem} ({fileIndex + 1}/{videoCount} · {label})" if label else None
+        videoCount = len(task.files or [])
+        videoName = task.toFilePath(fileIndex).name
+        return f"{videoName} ({fileIndex + 1}/{videoCount} · {label})" if label else None
     return f"{task.name} ({label})" if label else None
 
 
@@ -97,6 +101,7 @@ class VideoSelectDialog(MessageBoxBase):
 
     def __init__(self, task, parent=None):
         super().__init__(parent)
+        self._task = task
         self._files = task.files or []
 
         self.titleLabel = SubtitleLabel(self.tr("选择视频"), self)
@@ -134,7 +139,7 @@ class VideoSelectDialog(MessageBoxBase):
         self.treeView.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
         for file in self._files:
-            title = file.relativePath.strip() or f"视频 {file.index + 1}"
+            title = self._task.toDisplayPath(file).strip() or f"视频 {file.index + 1}"
 
             nameItem = QStandardItem(f"{file.index + 1}. {title}")
             nameItem.setCheckable(True)
@@ -247,7 +252,7 @@ class YtDlpDraftCard(DraftCard):
             self._audioLanguageChoices = buildAudioLanguageChoices(mediaInfo)
             self._audioLanguageButton.setTrackEnabled(bool(self._audioLanguageChoices))
             if self._audioLanguageChoices and not task.audioLanguages:
-                task.audioLanguages = self._audioLanguageChoices[0][0]
+                task.setAudioLanguages(self._audioLanguageChoices[0][0])
                 self._audioLanguageButton.setChecked(True)
             choices, autoLangs = buildSubtitleChoices(mediaInfo, self.tr("自动"))
             self._subtitleChoices = choices
@@ -320,17 +325,11 @@ class YtDlpDraftCard(DraftCard):
 
     def _onTrackToggled(self) -> None:
         task: YouTubeTask = self._task
-        task.isVideoEnabled = self._trackBar.videoButton.isChecked()
-        task.isAudioEnabled = self._trackBar.audioButton.isChecked()
-        task.isCoverEnabled = self._trackBar.coverButton.isChecked()
-
-        stem = Path(task.name).stem
-        if task.isVideoEnabled:
-            task.setName(f"{stem}.mp4")
-        elif task.isAudioEnabled:
-            task.setName(f"{stem}.m4a")
-        elif task.isCoverEnabled:
-            task.setName(f"{stem}.jpg")
+        task.setTracks(
+            self._trackBar.videoButton.isChecked(),
+            self._trackBar.audioButton.isChecked(),
+            self._trackBar.coverButton.isChecked(),
+        )
 
         self._refreshSummary()
 
@@ -387,13 +386,13 @@ class YtDlpDraftCard(DraftCard):
         self._refreshSummary()
 
     def _onAudioLanguageClicked(self) -> None:
-        currentLangs = [s.strip() for s in self._task.audioLanguages.split(",") if s.strip()]
+        currentLangs = splitLanguages(self._task.audioLanguages)
         dialog = SubtitleSelectDialog(self._audioLanguageChoices, currentLangs, self.window())
         dialog.titleLabel.setText(self.tr("选择音频语言"))
         try:
             if dialog.exec():
                 selected = dialog.selectedLanguages()
-                self._task.audioLanguages = ",".join(selected)
+                self._task.setAudioLanguages(",".join(selected))
                 self._audioLanguageButton.setChecked(bool(selected))
                 self._refreshSummary()
         finally:
@@ -436,7 +435,7 @@ class YtDlpDraftCard(DraftCard):
         self._audioLanguageChoices = buildAudioLanguageChoices(mediaInfo)
         self._audioLanguageButton.setTrackEnabled(bool(self._audioLanguageChoices))
         if self._audioLanguageChoices and not task.audioLanguages:
-            task.audioLanguages = self._audioLanguageChoices[0][0]
+            task.setAudioLanguages(self._audioLanguageChoices[0][0])
             self._audioLanguageButton.setChecked(True)
 
         choices, autoLangs = buildSubtitleChoices(mediaInfo, self.tr("自动"))
@@ -527,13 +526,12 @@ class YtDlpDraftCard(DraftCard):
         self._trackBar.spinner.hide()
 
     def _onSubtitleClicked(self) -> None:
-        currentLangs = [s.strip() for s in self._task.subtitleLanguages.split(",") if s.strip()]
+        currentLangs = splitLanguages(self._task.subtitleLanguages)
         dialog = SubtitleSelectDialog(self._subtitleChoices, currentLangs, self.window())
         try:
             if dialog.exec():
                 selected = dialog.selectedLanguages()
-                self._task.subtitleLanguages = ",".join(selected)
-                self._task.shouldIncludeAutoSubs = bool(self._autoLangs & set(selected))
+                self._task.setSubtitleLanguages(",".join(selected), bool(self._autoLangs & set(selected)))
                 self._trackBar.subtitleButton.setChecked(bool(selected))
         finally:
             dialog.deleteLater()

@@ -47,7 +47,7 @@ class FileSelectDialog(MessageBoxBase):
         self._bind()
 
     def _fileDisplayPath(self, file) -> str:
-        return file.relativePath
+        return self._task.toDisplayPath(file)
 
     def _initWidget(self) -> None:
         self.widget.setMinimumWidth(720)

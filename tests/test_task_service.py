@@ -16,6 +16,10 @@ from app.models.task import Task, TaskStep, TaskStatus
 class StubStep(TaskStep):
     stepIndex: int = 0
 
+    @property
+    def outputPath(self) -> str:
+        return self.task.outputPath
+
     async def run(self, reportSpeed, waitForSpeedLimit):
         pass
 
@@ -87,13 +91,32 @@ class StubFileWatcher:
     def removePath(self, _): pass
 
 
+class StubPlatform:
+    def __init__(self):
+        self.choice = NameConflictChoice.KEEP_BOTH
+        self.canTrash = True
+        self.trashed: list[Path] = []
+
+    def deleteRecoverably(self, path: Path) -> bool:
+        if not self.canTrash:
+            return False
+        self.trashed.append(path)
+        path.unlink()
+        return True
+
+
+@pytest.fixture()
+def platform():
+    return StubPlatform()
+
+
 @pytest.fixture()
 def speedMeter():
     return StubSpeedMeter()
 
 
 @pytest.fixture()
-def service(qapp, monkeypatch, tmp_path, speedMeter):
+def service(qapp, monkeypatch, tmp_path, platform, speedMeter):
     from app.config.cfg import cfg
     monkeypatch.setattr(cfg.maxTaskNum, "value", 3)
     monkeypatch.setattr(cfg.isCategoryEnabled, "value", False)
@@ -101,7 +124,9 @@ def service(qapp, monkeypatch, tmp_path, speedMeter):
 
     runner = StubCoroutineRunner()
     category = StubCategoryService()
-    svc = TaskService(runner, category, speedMeter, StubFileWatcher())
+    svc = TaskService(runner, category, speedMeter, StubFileWatcher(),
+                      deleteRecoverably=platform.deleteRecoverably,
+                      nameConflictChoice=lambda: platform.choice)
     return svc, runner
 
 
@@ -113,7 +138,7 @@ def makeTask(taskId: str = "t1", name: str = "test.zip") -> Task:
     return task
 
 
-from app.services.task_service import TaskService
+from app.services.task_service import NameConflictChoice, TaskService
 
 
 @dataclass(kw_only=True, eq=False)
@@ -161,13 +186,6 @@ class TestDeduplicateOutput:
         task = makeTask("dk1", name="existing.zip")
         svc.add(task)
         assert task.name == "existing(1).zip"
-
-    def test_ghd_conflict_renames(self, service, tmp_path):
-        svc, _ = service
-        (tmp_path / "partial.zip.ghd").touch()
-        task = makeTask("gh1", name="partial.zip")
-        svc.add(task)
-        assert task.name == "partial(1).zip"
 
     def test_batch_all_unique(self, service):
         svc, _ = service
@@ -239,6 +257,171 @@ class TestDeduplicateOutput:
         t2 = makeTask("ne2", name="README")
         svc.add(t2)
         assert t2.name == "README(1)"
+
+
+@dataclass(kw_only=True)
+class SubtitleStep(TaskStep):
+    stepIndex: int = 1
+
+    @property
+    def outputPath(self) -> str:
+        return str(self.task.outputFolder / f"{Path(self.task.name).stem}.en.srt")
+
+    async def run(self, reportSpeed, waitForSpeedLimit):
+        pass
+
+
+def makeVideoTask(taskId: str, name: str = "a.mp4") -> Task:
+    return Task(name=name, url="http://test/a", packId="test", taskId=taskId,
+                steps=[StubStep(stepIndex=0), SubtitleStep()])
+
+
+class TestNameConflict:
+
+    def test_record_whose_file_was_deleted_gives_up_its_name(self, service, tmp_path):
+        svc, _ = service
+        old = makeTask("old", name="same.zip")
+        svc.add(old)
+        old.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "same.zip").unlink()
+
+        new = makeTask("new", name="same.zip")
+        svc.add(new)
+
+        assert new.name == "same.zip"
+        assert svc.taskById("old") is None
+
+    def test_new_task_never_starts_from_progress_of_paused_task_whose_file_was_deleted(self, service, tmp_path):
+        svc, _ = service
+        old = makeTask("old", name="same.zip")
+        svc.add(old)
+        old.setStatus(TaskStatus.PAUSED)
+        (tmp_path / "same.zip.ghd").write_bytes(b"old progress")
+        (tmp_path / "same.zip").unlink()
+
+        new = makeTask("new", name="same.zip")
+        svc.add(new)
+
+        assert not (tmp_path / f"{new.name}.ghd").exists()
+
+    def test_new_task_never_starts_from_leftover_progress(self, service, tmp_path):
+        svc, _ = service
+        (tmp_path / "same.zip.ghd").write_bytes(b"leftover progress")
+
+        new = makeTask("new", name="same.zip")
+        svc.add(new)
+
+        assert not (tmp_path / f"{new.name}.ghd").exists()
+
+    def test_saved_unfinished_task_still_holds_its_name_after_restart(self, qapp, monkeypatch, platform, speedMeter, tmp_path):
+        import app.services.task_service as taskServiceModule
+        monkeypatch.setattr(taskServiceModule, "APP_DATA_DIR", tmp_path / "data")
+
+        def startService():
+            svc = TaskService(StubCoroutineRunner(), StubCategoryService(), speedMeter, StubFileWatcher(),
+                              deleteRecoverably=platform.deleteRecoverably,
+                              nameConflictChoice=lambda: platform.choice)
+            svc.resumeSaved()
+            return svc
+
+        before = startService()
+        saved = makeTask("saved", name="same.zip")
+        saved.outputFolder = tmp_path
+        before.add(saved, autoStart=False)
+        saved.setStatus(TaskStatus.PAUSED)
+        before.flush()
+
+        after = startService()
+        platform.choice = NameConflictChoice.OVERWRITE
+        new = makeTask("new", name="same.zip")
+        new.outputFolder = tmp_path
+        after.add(new)
+
+        assert new.name == "same(1).zip"
+        assert platform.trashed == []
+
+    def test_ask_hands_foreign_file_conflict_to_user(self, service, platform, tmp_path, qtbot):
+        svc, _ = service
+        platform.choice = NameConflictChoice.ASK
+        (tmp_path / "setup.exe").write_bytes(b"mine")
+        task = makeTask("ask", name="setup.exe")
+
+        with qtbot.waitSignal(svc.nameConflicted, timeout=1000) as blocker:
+            isAdded = svc.add(task)
+
+        assert not isAdded
+        assert blocker.args == [task]
+        assert svc.taskById("ask") is None
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["setup.exe"]
+
+    def test_unfinished_task_holding_name_always_keeps_both(self, service, platform, qtbot):
+        svc, _ = service
+        platform.choice = NameConflictChoice.ASK
+        svc.add(makeTask("first", name="same.zip"))
+        second = makeTask("second", name="same.zip")
+
+        with qtbot.assertNotEmitted(svc.nameConflicted):
+            isAdded = svc.add(second)
+
+        assert isAdded
+        assert second.name == "same(1).zip"
+
+    def test_overwrite_recycles_old_file_and_replaces_its_record(self, service, platform, tmp_path):
+        svc, _ = service
+        old = makeTask("old", name="setup.exe")
+        svc.add(old)
+        old.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "setup.exe").write_bytes(b"v1")
+        platform.choice = NameConflictChoice.OVERWRITE
+
+        new = makeTask("new", name="setup.exe")
+        svc.add(new)
+
+        assert new.name == "setup.exe"
+        assert platform.trashed == [tmp_path / "setup.exe"]
+        assert svc.taskById("old") is None
+
+    def test_overwrite_keeps_both_when_recycle_bin_is_unavailable(self, service, platform, tmp_path, qtbot):
+        svc, _ = service
+        (tmp_path / "setup.exe").write_bytes(b"mine")
+        platform.choice = NameConflictChoice.OVERWRITE
+        platform.canTrash = False
+        task = makeTask("new", name="setup.exe")
+
+        with qtbot.waitSignal(svc.overwriteFailed, timeout=1000) as blocker:
+            svc.add(task)
+
+        assert blocker.args == [task]
+        assert task.name == "setup(1).exe"
+        assert (tmp_path / "setup.exe").read_bytes() == b"mine"
+
+    def test_probeConflict_reports_taken_side_file_without_creating_anything(self, service, tmp_path):
+        svc, _ = service
+        (tmp_path / "a.en.srt").write_bytes(b"mine")
+        svc.add(makeTask("busy", name="b.zip"))
+
+        assert svc.probeConflict(makeVideoTask("v")) == tmp_path / "a.en.srt"
+        assert svc.probeConflict(makeTask("b", name="b.zip")) is None
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["a.en.srt", "b.zip"]
+
+    def test_probeConflict_looks_where_the_category_puts_the_task(self, service, tmp_path):
+        svc, _ = service
+        categoryFolder = tmp_path / "video"
+        categoryFolder.mkdir()
+        (categoryFolder / "a.zip").write_bytes(b"mine")
+        svc._categoryService.outputFolderOf = lambda task: (task.category, categoryFolder)
+
+        assert svc.probeConflict(makeTask("c", name="a.zip")) == categoryFolder / "a.zip"
+
+    def test_taken_side_file_numbers_whole_group(self, service, tmp_path):
+        svc, _ = service
+        (tmp_path / "a.en.srt").write_bytes(b"mine")
+        task = makeVideoTask("v")
+
+        svc.add(task)
+
+        assert task.name == "a(1).mp4"
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["a(1).en.srt", "a(1).mp4", "a.en.srt"]
 
 
 class TestAdd:
@@ -332,6 +515,48 @@ class TestDelete:
         with qtbot.waitSignal(svc.taskRemoved, timeout=1000) as blocker:
             svc.delete(task, shouldDeleteFiles=False)
         assert blocker.args == ["d1"]
+
+    def test_delete_releases_placeholder_of_unfinished_task(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("d3", name="a.zip")
+        svc.add(task)
+
+        svc.delete(task, shouldDeleteFiles=False)
+
+        assert list(tmp_path.iterdir()) == []
+
+    def test_delete_removes_half_downloaded_product_of_unfinished_task(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("d6", name="a.zip")
+        svc.add(task)
+        (tmp_path / "a.zip").write_bytes(b"half")
+        (tmp_path / "a.zip.ghd").write_bytes(b"offsets")
+
+        svc.delete(task, shouldDeleteFiles=False)
+
+        assert list(tmp_path.iterdir()) == []
+
+    def test_delete_without_files_keeps_completed_product(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("d4", name="a.zip")
+        svc.add(task)
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "a.zip").write_bytes(b"product")
+
+        svc.delete(task, shouldDeleteFiles=False)
+
+        assert (tmp_path / "a.zip").read_bytes() == b"product"
+
+    def test_delete_with_files_removes_product_and_placeholder(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("d5", name="a.zip")
+        svc.add(task)
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "a.zip").write_bytes(b"product")
+
+        svc.delete(task, shouldDeleteFiles=True)
+
+        assert list(tmp_path.iterdir()) == []
 
     def test_delete_removes_from_store(self, service):
         svc, runner = service
@@ -505,6 +730,17 @@ class TestMoveToFront:
 
 class TestRedownload:
 
+    def test_redownload_keeps_name_held(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("rd0", name="a.zip")
+        svc.add(task)
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "a.zip").write_bytes(b"product")
+
+        svc.redownload(task)
+
+        assert (tmp_path / "a.zip").read_bytes() == b""
+
     def test_redownload_resets_and_reschedules(self, service):
         svc, runner = service
         task = makeTask("rd1")
@@ -518,7 +754,119 @@ class TestRedownload:
         assert len(runner.submitted) > initial_count
 
 
+@dataclass(kw_only=True)
+class LanguageStep(TaskStep):
+    language: str = "en"
+
+    @property
+    def outputPath(self) -> str:
+        return str(self.task.outputFolder / f"{Path(self.task.name).stem}.{self.language}.vtt")
+
+    async def run(self, reportSpeed, waitForSpeedLimit):
+        pass
+
+
+@dataclass(kw_only=True, eq=False)
+class SubtitledTask(Task):
+    def setOptions(self, options: dict) -> None:
+        super().setOptions(options)
+        if "languages" in options:
+            self.steps = [s for s in self.steps if not isinstance(s, LanguageStep)]
+            for i, language in enumerate(options["languages"]):
+                self.addStep(LanguageStep(stepIndex=10 + i, language=language))
+
+
+def makeSubtitledTask(taskId: str) -> SubtitledTask:
+    return SubtitledTask(name="a.mp4", url="http://test/a", packId="test", taskId=taskId,
+                         steps=[StubStep(stepIndex=0), LanguageStep(stepIndex=10)])
+
+
 class TestEdit:
+
+    def test_edit_holds_side_file_of_added_language(self, service, tmp_path):
+        svc, _ = service
+        task = makeSubtitledTask("lang1")
+        svc.add(task)
+
+        svc.edit(task, {"languages": ["en", "fr"]})
+
+        assert task.name == "a.mp4"
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["a.en.vtt", "a.fr.vtt", "a.mp4"]
+
+    def test_edit_numbers_whole_group_when_added_side_file_is_taken(self, service, tmp_path):
+        svc, _ = service
+        task = makeSubtitledTask("lang2")
+        svc.add(task)
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "a.mp4").write_bytes(b"video")
+        (tmp_path / "a.fr.vtt").write_bytes(b"mine")
+
+        svc.edit(task, {"languages": ["en", "fr"]})
+
+        assert task.name == "a(1).mp4"
+        assert (tmp_path / "a(1).mp4").read_bytes() == b"video"
+        assert (tmp_path / "a.fr.vtt").read_bytes() == b"mine"
+        assert sorted(p.name for p in tmp_path.iterdir()) == [
+            "a(1).en.vtt", "a(1).fr.vtt", "a(1).mp4", "a.fr.vtt"]
+
+    def test_edit_move_releases_old_name_and_holds_new_one(self, service, platform, tmp_path, qtbot):
+        svc, _ = service
+        platform.choice = NameConflictChoice.ASK
+        moved = makeTask("moved", name="a.zip")
+        svc.add(moved)
+        newFolder = tmp_path / "new"
+
+        svc.edit(moved, {"outputFolder": newFolder})
+        besideOld = makeTask("old", name="a.zip")
+        besideNew = makeTask("new", name="a.zip")
+        besideNew.outputFolder = newFolder
+        with qtbot.assertNotEmitted(svc.nameConflicted):
+            svc.add(besideOld)
+            svc.add(besideNew)
+
+        assert besideOld.name == "a.zip"
+        assert besideNew.name == "a(1).zip"
+        assert svc.taskById("moved") is moved
+
+    def test_edit_releases_side_file_of_removed_language(self, service, tmp_path):
+        svc, _ = service
+        task = makeSubtitledTask("lang3")
+        svc.add(task)
+
+        svc.edit(task, {"languages": []})
+
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["a.mp4"]
+
+    def test_edit_moves_product_into_new_folder_beside_existing_file(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("mv", name="a.zip")
+        svc.add(task)
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "a.zip").write_bytes(b"product")
+        newFolder = tmp_path / "new"
+        newFolder.mkdir()
+        (newFolder / "a.zip").write_bytes(b"mine")
+
+        svc.edit(task, {"outputFolder": str(newFolder)})
+
+        assert task.name == "a(1).zip"
+        assert (newFolder / "a(1).zip").read_bytes() == b"product"
+        assert (newFolder / "a.zip").read_bytes() == b"mine"
+        assert not (tmp_path / "a.zip").exists()
+
+    def test_edit_moves_unfinished_product_with_its_record(self, service, tmp_path):
+        svc, _ = service
+        task = makeTask("mv2", name="a.zip")
+        svc.add(task)
+        (tmp_path / "a.zip").write_bytes(b"half")
+        (tmp_path / "a.zip.ghd").write_bytes(b"offsets")
+        newFolder = tmp_path / "new"
+
+        svc.edit(task, {"outputFolder": str(newFolder)})
+
+        assert (newFolder / "a.zip").read_bytes() == b"half"
+        assert (newFolder / "a.zip.ghd").read_bytes() == b"offsets"
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["new"]
 
     def test_edit_applies_options(self, service):
         svc, runner = service
@@ -716,6 +1064,7 @@ class TestSeeding:
         svc.add(task)
         finishRun(runner, task)
         seedingWorkId = runner.submitted[-1][0]
+        Path(task.outputPath).unlink()
         svc._onWatchedFileChanged(task.outputPath)
         assert seedingWorkId in runner.cancelled
         assert not task.isSeeding

@@ -394,4 +394,16 @@
     <plurals name="notice_done_summary">
         <item quantity="other">%1$d 个文件已下载完成</item>
     </plurals>
+    <string name="name_conflict_title">下载目录中已有 %1$s</string>
+    <string name="name_conflict_existing_file">现有文件：%1$s，%2$s 修改</string>
+    <string name="name_conflict_existing_folder">现有文件夹：%1$s 修改</string>
+    <string name="name_conflict_new_file">新文件：%1$s</string>
+    <string name="name_conflict_unknown_size">未知大小</string>
+    <string name="name_conflict_overwrite_hint">覆盖会永久删除旧文件。</string>
+    <string name="name_conflict_apply_to_rest">对其余 %1$d 个冲突执行相同操作</string>
+    <string name="name_conflict_overwrite">覆盖</string>
+    <string name="name_conflict_keep_both">保留两者</string>
+    <string name="notice_overwrite_failed">无法删除旧文件，新文件已另存为 %1$s</string>
+    <string name="settings_name_conflict">同名文件</string>
+    <string name="settings_name_conflict_ask">询问</string>
 </resources>

@@ -13,8 +13,14 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL
 from app.platform.file_watcher import InotifyFileWatcher
-from app.platform.filesystem import isExisting, isFolder
+from app.platform.filesystem import deletePath, isExisting
 from app.services.loopback_server import ListenStatus
+from app.services.task_service import NameConflictChoice
+
+
+def deletePermanently(path: Path) -> bool:
+    deletePath(path)
+    return True
 
 
 class HashState:
@@ -57,11 +63,13 @@ class Bridge:
         )
         self._engine = Engine(
             self._coroutineRunner, InotifyFileWatcher(loop, self._coroutineRunner.post), loadCrx=None,
+            deleteRecoverably=deletePermanently,
         )
         self._isTasksPending = False
         self._categoryService = self._engine.categoryService
         self._speedMeter = self._engine.speedMeter
         self._taskService = self._engine.taskService
+        self._nameConflictQueue = self._engine.nameConflictQueue
         self._runtimeStatusService = self._engine.runtimeStatusService
         self._featureService = self._engine.featureService
         self._browserService = self._engine.browserService
@@ -145,6 +153,8 @@ class Bridge:
         self._taskService.taskCompleted.connect(self._onTaskCompleted)
         self._taskService.taskFailed.connect(self._onTaskFailed)
         self._taskService.diskSpaceInsufficient.connect(self._onDiskSpaceInsufficient)
+        self._nameConflictQueue.conflictChanged.connect(self._onNameConflictChanged)
+        self._taskService.overwriteFailed.connect(self._onOverwriteFailed)
 
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
@@ -195,6 +205,27 @@ class Bridge:
 
     def _onDiskSpaceInsufficient(self, free: int, needed: int):
         self._emitNotice("diskSpace", free=free, needed=needed)
+
+    def _onOverwriteFailed(self, task):
+        self._emitNotice("overwriteFailed", name=task.name)
+
+    def _onNameConflictChanged(self, conflict):
+        payload = None if conflict is None else {
+            "taskId": conflict.task.taskId,
+            "name": conflict.takenPath.name,
+            "isFolder": conflict.isFolder,
+            "existingSize": conflict.existingSize,
+            "modifiedAt": conflict.modifiedAt,
+            "newSize": max(conflict.task.fileSize, 0),
+            "restCount": conflict.restCount,
+        }
+        self._flows.setState("nameConflict", json.dumps(payload, ensure_ascii=False))
+
+    def setNameConflictChoice(self, taskId: str, choice: str, isAppliedToRest: bool):
+        if choice:
+            self._nameConflictQueue.setChoice(taskId, NameConflictChoice(choice), isAppliedToRest)
+        else:
+            self._nameConflictQueue.cancel(taskId)
 
     def _onBrowserDraft(self, tasks):
         self._taskDraft.addParsedTasks(tasks)
@@ -292,7 +323,7 @@ class Bridge:
             "outputPath": str(task.outputPath),
             "outputFolder": str(task.outputFolder),
             "hasOutputFile": task.hasOutputFile,
-            "isOutputFolder": isFolder(task.outputPath),
+            "isOutputFolder": task.isOutputFolder,
             "isFileMissing": (task.status == TaskStatus.COMPLETED and task.hasOutputFile
                               and not isExisting(task.outputPath)),
             "name": task.name,
@@ -401,7 +432,7 @@ class Bridge:
         fields["files"] = [
             {
                 "index": f.index,
-                "path": f.relativePath,
+                "path": task.toDisplayPath(f),
                 "groups": groups.get(f.index, []),
                 "categoryId": self._categoryService.matchByName(f.relativePath),
                 "size": f.size,
@@ -516,7 +547,7 @@ class Bridge:
                 "files": [] if task is None or not task.files else [
                     {
                         "index": f.index,
-                        "path": f.relativePath,
+                        "path": task.toDisplayPath(f),
                         "groups": groups.get(f.index, []),
                         "size": f.size,
                         "isSelected": f.selected,

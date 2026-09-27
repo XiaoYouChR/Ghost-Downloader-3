@@ -118,7 +118,7 @@ class FeatureService:
         if not pack:
             return None
         CardClass = pack.draftCardClass(task) or DraftCard
-        return CardClass(task, self._categoryService, self._coroutineRunner, parent)
+        return CardClass(task, self._categoryService, self._coroutineRunner, self._taskService.probeConflict, parent)
 
     def createEditDialog(self, task: Task, parent=None):
         from app.view.dialogs.edit_task import LiveEditDialog

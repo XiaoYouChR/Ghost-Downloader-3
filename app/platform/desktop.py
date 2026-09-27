@@ -4,7 +4,7 @@ import sys
 from os import PathLike
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, QMimeData, QProcess, QResource, QUrl, Qt
+from PySide6.QtCore import QFile, QLocale, QMimeData, QProcess, QResource, QUrl, Qt
 from PySide6.QtGui import QDesktopServices, QDrag
 from PySide6.QtWidgets import QApplication, QWidget
 from loguru import logger
@@ -107,6 +107,11 @@ def _revealInFolderShell(path: Path) -> bool:
     finally:
         if weInitialized:
             ole32.CoUninitialize()
+
+
+def deleteRecoverably(path: Path) -> bool:
+    isMoved, _ = QFile.moveToTrash(str(path))
+    return isMoved
 
 
 def loadCrx() -> bytes:

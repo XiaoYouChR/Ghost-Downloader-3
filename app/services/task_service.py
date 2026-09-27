@@ -6,30 +6,161 @@ import sys
 from pathlib import Path
 from shutil import disk_usage
 from collections.abc import Callable
+from dataclasses import dataclass
+from enum import StrEnum
+from shutil import move
 from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
-from app.platform.filesystem import isExisting, splitStemExt
+from app.platform.filesystem import deletePath, isExisting, splitStemExt
 from app.signal import Signal
 
 if TYPE_CHECKING:
     from app.models.task import Task
 
 
+class NameConflictChoice(StrEnum):
+    KEEP_BOTH = "keepBoth"
+    OVERWRITE = "overwrite"
+    ASK = "ask"
+
+
+@dataclass(frozen=True)
+class AddResult:
+    replacedTasks: list[Task]
+    isOverwriteFailed: bool
+
+
+@dataclass(frozen=True)
+class Placeholders:
+    outputFolder: Path
+    name: str
+    paths: list[Path]
+
+
 class TaskStore:
-    def __init__(self):
+    def __init__(self, deleteRecoverably: Callable[[Path], bool]):
         self._tasks: dict[str, Task] = {}
         self._loaded = False
         self._path = APP_DATA_DIR / "tasks.jsonl"
+        self._deleteRecoverably = deleteRecoverably
+        self._placeholders: dict[str, Placeholders] = {}
+        self._taskByPlaceholder: dict[Path, Task] = {}
 
-    def add(self, task: Task) -> None:
+    def add(self, task: Task, choice: NameConflictChoice) -> AddResult | None:
+        task.outputFolder.mkdir(parents=True, exist_ok=True)
+        isOverwriteFailed = False
+        stem, ext = splitStemExt(task.name)
+        index = 0
+        while True:
+            try:
+                self._createPlaceholders(task)
+                break
+            except FileExistsError as error:
+                takenPath = Path(error.filename)
+            isUnfinished = self._isUnfinishedPlaceholder(takenPath)
+            if not isUnfinished and choice == NameConflictChoice.ASK:
+                return None
+            if not isUnfinished and choice == NameConflictChoice.OVERWRITE:
+                if self._deleteRecoverably(takenPath):
+                    continue
+                isOverwriteFailed = True
+                choice = NameConflictChoice.KEEP_BOTH
+            index += 1
+            task.setName(f"{stem}({index}){ext}")
+        replacedTasks: list[Task] = []
+        for path in task.placeholderPaths:
+            replaced = self._taskByPlaceholder.get(path)
+            if replaced is not None and replaced not in replacedTasks:
+                replacedTasks.append(replaced)
+        for replaced in replacedTasks:
+            self.remove(replaced.taskId)
         self._tasks[task.taskId] = task
+        self._setPlaceholders(task)
+        return AddResult(replacedTasks, isOverwriteFailed)
+
+    def updatePlaceholders(self, task: Task) -> None:
+        from app.models.task import deletePlaceholder
+        placeholders = self._placeholders[task.taskId]
+        if task.placeholderPaths == placeholders.paths:
+            return
+        task.outputFolder.mkdir(parents=True, exist_ok=True)
+        stem, ext = splitStemExt(task.name)
+        index = 0
+        while True:
+            try:
+                self._createPlaceholders(task)
+                break
+            except FileExistsError:
+                index += 1
+                task.setName(f"{stem}({index}){ext}")
+        newPaths = task.placeholderPaths
+        if (task.outputFolder, task.name) != (placeholders.outputFolder, placeholders.name):
+            oldPaths = task.placeholderPathsAt(placeholders.outputFolder, placeholders.name)
+            for oldPath, newPath in zip(oldPaths, newPaths):
+                if oldPath not in placeholders.paths:
+                    continue
+                for old, new in ((oldPath, newPath), (Path(f"{oldPath}.ghd"), Path(f"{newPath}.ghd"))):
+                    if old.exists():
+                        deletePath(new)
+                        move(old, new)
+        for path in placeholders.paths:
+            if path not in newPaths:
+                deletePlaceholder(path)
+        self._setPlaceholders(task)
 
     def remove(self, taskId: str) -> Task | None:
+        self._removePlaceholders(taskId)
         return self._tasks.pop(taskId, None)
+
+    def probeConflict(self, task: Task, folder: Path) -> Path | None:
+        paths = sorted(folder / path.relative_to(task.outputFolder) for path in task.placeholderPaths)
+        return next((path for path in paths if isExisting(path) and not self._isUnfinishedPlaceholder(path)), None)
+
+    def _isUnfinishedPlaceholder(self, path: Path) -> bool:
+        from app.models.task import TaskStatus
+        task = self._taskByPlaceholder.get(path)
+        return task is not None and task.status != TaskStatus.COMPLETED
+
+    def _createPlaceholders(self, task: Task) -> None:
+        from app.models.task import deletePlaceholder
+        placeholders = self._placeholders.get(task.taskId)
+        existingPaths = placeholders.paths if placeholders else []
+        created: list[Path] = []
+        try:
+            for path in task.placeholderPaths:
+                if path in existingPaths:
+                    continue
+                if task.isOutputFolder and path == Path(task.outputPath):
+                    path.mkdir()
+                else:
+                    path.touch(exist_ok=False)
+                created.append(path)
+        except FileExistsError:
+            for path in created:
+                deletePlaceholder(path)
+            raise
+        for path in created:
+            deletePath(Path(f"{path}.ghd"))
+
+    def _setPlaceholders(self, task: Task) -> None:
+        self._removePlaceholders(task.taskId)
+        paths = task.placeholderPaths
+        self._placeholders[task.taskId] = Placeholders(task.outputFolder, task.name, paths)
+        for path in paths:
+            self._taskByPlaceholder[path] = task
+
+    def _removePlaceholders(self, taskId: str) -> None:
+        placeholders = self._placeholders.pop(taskId, None)
+        if placeholders is None:
+            return
+        for path in placeholders.paths:
+            task = self._taskByPlaceholder.get(path)
+            if task is not None and task.taskId == taskId:
+                del self._taskByPlaceholder[path]
 
     def taskById(self, taskId: str) -> Task | None:
         return self._tasks.get(taskId)
@@ -74,6 +205,7 @@ class TaskStore:
                 try:
                     task = Task.fromDict(json.loads(line))
                     self._tasks[task.taskId] = task
+                    self._setPlaceholders(task)
                     tasks.append(task)
                 except Exception as e:
                     logger.opt(exception=e).error("failed to parse task record")
@@ -147,12 +279,17 @@ class TaskService:
     fileDisappeared = Signal(object)
     fileDeleteDenied = Signal()
     diskSpaceInsufficient = Signal(int, int)
+    nameConflicted = Signal(object)
+    overwriteFailed = Signal(object)
 
-    def __init__(self, coroutineRunner, categoryService, speedMeter, fileWatcher):
+    def __init__(self, coroutineRunner, categoryService, speedMeter, fileWatcher,
+                 deleteRecoverably: Callable[[Path], bool],
+                 nameConflictChoice: Callable[[], NameConflictChoice]):
         self._coroutineRunner = coroutineRunner
+        self._nameConflictChoice = nameConflictChoice
         self._categoryService = categoryService
         self._speedMeter = speedMeter
-        self._store = TaskStore()
+        self._store = TaskStore(deleteRecoverably)
         self._queue = TaskQueue()
         self._seeding: dict[str, str] = {}
         self._fileWatcher = fileWatcher
@@ -188,44 +325,39 @@ class TaskService:
             return -1.0
         return min(100.0, totalReceived / totalSize * 100)
 
-    def add(self, task: Task, autoStart=True) -> None:
+    def add(self, task: Task, autoStart=True, choice: NameConflictChoice | None = None) -> bool:
         if task.taskId in self._store.tasks:
-            return
+            return True
         task.category, task.outputFolder = self._categoryService.outputFolderOf(task)
         task.shouldSeed = True
-        self._deduplicateOutput(task)
-        self._store.add(task)
+        result = self._store.add(task, choice or self._nameConflictChoice())
+        if result is None:
+            self.nameConflicted.emit(task)
+            return False
+        if result.isOverwriteFailed:
+            self.overwriteFailed.emit(task)
+        for replaced in result.replacedTasks:
+            self._unwatchFile(replaced)
+            self._cancelWork(replaced)
+            self.taskRemoved.emit(replaced.taskId)
         self._flushSoon()
         self.taskAdded.emit(task)
         if not autoStart:
-            return
+            return True
         if task.fileSize > 0:
             try:
                 free = disk_usage(task.outputFolder).free
                 if free < task.fileSize:
                     self.diskSpaceInsufficient.emit(free, task.fileSize)
-                    return
+                    return True
             except OSError:
                 pass
         self._schedule(task)
+        return True
 
-    def _deduplicateOutput(self, task: Task) -> None:
-        storePaths = {t.outputPath for t in self._store.tasks.values()}
-
-        def isTaken() -> bool:
-            op = task.outputPath
-            return op in storePaths or isExisting(op) or isExisting(f"{op}.ghd")
-
-        if not isTaken():
-            return
-
-        stem, ext = splitStemExt(task.name)
-        index = 1
-        while True:
-            task.setName(f"{stem}({index}){ext}")
-            if not isTaken():
-                break
-            index += 1
+    def probeConflict(self, task: Task) -> Path | None:
+        _, folder = self._categoryService.outputFolderOf(task)
+        return self._store.probeConflict(task, folder)
 
     def start(self, task: Task) -> None:
         if self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId):
@@ -257,7 +389,11 @@ class TaskService:
         if shouldDeleteFiles and not canDelete and not self._hasNotifiedDeleteDenied:
             self._hasNotifiedDeleteDenied = True
             self.fileDeleteDenied.emit()
-        self._cancelWork(task, finished=task.deleteFiles if canDelete else None)
+        def onStopped():
+            if canDelete:
+                task.deleteFiles()
+            task.deletePlaceholders()
+        self._cancelWork(task, finished=onStopped)
         self._store.remove(task.taskId)
         self._flushSoon()
         self.taskRemoved.emit(task.taskId)
@@ -280,6 +416,7 @@ class TaskService:
             if newTask is not None:
                 task.replaceWith(newTask)
             task.setOptions(options)
+            self._store.updatePlaceholders(task)
             self._flushSoon()
             self._schedule(task)
         self._cancelWork(task, finished=onStopped)
@@ -296,6 +433,7 @@ class TaskService:
 
         def apply():
             task.setSelection(selectedSet)
+            self._store.updatePlaceholders(task)
             if wasCompleted and task.files and any(f.selected and not f.completed for f in task.files):
                 task.completedAt = 0
                 self._unwatchFile(task)

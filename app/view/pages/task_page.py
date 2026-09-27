@@ -289,6 +289,7 @@ class TaskPage(QWidget):
         self._taskService.queueChanged.connect(self._onQueueChanged, owner=self)
         self._taskService.fileDisappeared.connect(self._onFileDisappeared, owner=self)
         self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied, owner=self)
+        self._taskService.overwriteFailed.connect(self._onOverwriteFailed, owner=self)
         self._speedMeter.speedChanged.connect(self._onSpeedChanged, owner=self)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
@@ -849,6 +850,15 @@ class TaskPage(QWidget):
         card = self._liveCards.get(task.taskId)
         if card is not None:
             card.refresh(force=True)
+
+    def _onOverwriteFailed(self, task: Task) -> None:
+        InfoBar.warning(
+            self.tr("无法移到回收站"),
+            self.tr("旧文件已保留，新文件另存为 {0}").format(task.name),
+            duration=5000,
+            position=InfoBarPosition.TOP,
+            parent=self.window(),
+        )
 
     def _onFileDeleteDenied(self) -> None:
         bar = InfoBar.warning(

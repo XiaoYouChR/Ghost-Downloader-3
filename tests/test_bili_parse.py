@@ -363,6 +363,7 @@ def test_cover_steps_season_and_selected_episodes():
     assert any(p.endswith("各种番 - 棋魂.jpg") for p in coverFiles)
 
     setEpisodeTitle([files[0]], "新标题")
+    task.updateNames()
     coverFiles = [s.outputPath for s in task.steps if isinstance(s, BilibiliCoverStep)]
     assert any(p.endswith("各种番 - 新标题.jpg") for p in coverFiles)
     assert not any("游戏王5DS" in p for p in coverFiles)
@@ -404,14 +405,18 @@ def test_relativePath_follows_episode_and_page_names():
     ]
     task = BilibiliTask(name="合集.mp4", url="u", outputFolder=Path("."), files=files, _baseName="合集")
     task.update()
-    assert [p.relativePath for p in files] == ["AC_DC 现场", "上", "P2"]
+    assert [task.toDisplayPath(p) for p in files] == ["AC_DC 现场", "上", "P2"]
+    assert [p.relativePath for p in files] == [
+        "合集 - AC_DC 现场.mp4", "合集 - 游戏王 - P1 上.mp4", "合集 - 游戏王 - P2.mp4"]
 
     setFileName(task, 2, "下/集")
     assert [p.episodeTitle for p in files[1:]] == ["游戏王", "游戏王"]
-    assert files[2].relativePath == "下_集"
+    assert task.toDisplayPath(files[2]) == "下_集"
+    assert files[2].relativePath == "合集 - 游戏王 - P2 下_集.mp4"
 
     setFileName(task, 0, "新名")
-    assert files[0].relativePath == "新名"
+    assert task.toDisplayPath(files[0]) == "新名"
+    assert files[0].relativePath == "合集 - 新名.mp4"
 
 
 def test_updateNames_after_rename_and_trim():
@@ -427,15 +432,13 @@ def test_updateNames_after_rename_and_trim():
         files=files, _baseName="各种番",
     )
     task.update()
-    suffixes = {s.pageSuffix for s in task.steps if getattr(s, "pageSuffix", None)}
-    assert suffixes == {" - 旧名"}
+    assert files[0].relativePath == "各种番 - 旧名.mp4"
 
     files[0].episodeTitle = "新名"
     files[0].startTime = 10
     files[0].endTime = 20
     task.updateNames()
-    suffixes = {s.pageSuffix for s in task.steps if getattr(s, "pageSuffix", None)}
-    assert suffixes == {" - 新名 [00m10s-00m20s]"}
+    assert files[0].relativePath == "各种番 - 新名 [00m10s-00m20s].mp4"
 
 
 def test_setTimeRanges_only_touches_listed_pages():

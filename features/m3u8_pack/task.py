@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import os
 import re
-import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -13,7 +12,7 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.format import toBytes
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
-from app.platform.filesystem import deletePath, toPosixPath
+from app.platform.filesystem import toPosixPath
 from .config import m3u8Runtime
 
 VOD_PROGRESS_PATTERN = re.compile(
@@ -115,15 +114,6 @@ class M3U8Task(Task):
                     step.error = None
             self.updateStatus()
 
-    def _move(self, newFolder: Path) -> None:
-        from shutil import move
-        oldTemp = self.outputFolder / ".gd3_m3u8" / self.taskId
-        if oldTemp.exists():
-            newTemp = newFolder / ".gd3_m3u8" / self.taskId
-            newTemp.parent.mkdir(parents=True, exist_ok=True)
-            move(str(oldTemp), str(newTemp))
-        super()._move(newFolder)
-
 
 @dataclass(kw_only=True)
 class M3U8TaskStep(TaskStep):
@@ -163,7 +153,6 @@ class M3U8TaskStep(TaskStep):
     liveStatus: str = ""
     liveElapsed: str = ""
     liveTotal: str = ""
-    actualExtension: str = ""
 
     @property
     def canPause(self) -> bool:
@@ -175,7 +164,7 @@ class M3U8TaskStep(TaskStep):
 
     @property
     def _tempFolder(self) -> str:
-        return toPosixPath(self.task.outputFolder / ".gd3_m3u8" / self.task.taskId)
+        return toPosixPath(self.task.partPath / "tmp")
 
     @property
     def _saveName(self) -> str:
@@ -200,52 +189,13 @@ class M3U8TaskStep(TaskStep):
         if self._process is not None and self._process.returncode is None:
             self._process.terminate()
 
-    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        from shutil import move
-        super().moveFiles(oldFolder, newFolder)
-        rawPath = self.outputPath
-        if rawPath:
-            ghdPath = Path(f"{rawPath}.ghd")
-            if ghdPath.exists():
-                try:
-                    relPath = Path(rawPath).relative_to(oldFolder)
-                    newGhd = newFolder / f"{relPath}.ghd"
-                    newGhd.parent.mkdir(parents=True, exist_ok=True)
-                    move(str(ghdPath), str(newGhd))
-                except ValueError:
-                    pass
-        oldTemp = Path(self._tempFolder)
-        if oldTemp.is_dir():
-            newTemp = newFolder / ".gd3_m3u8" / self.task.taskId
-            newTemp.parent.mkdir(parents=True, exist_ok=True)
-            move(str(oldTemp), str(newTemp))
-
-    def deleteFiles(self):
-        tempFolder = Path(self._tempFolder)
-        deletePath(tempFolder)
-        try:
-            tempFolder.parent.rmdir()
-        except OSError:
-            pass
-        outputDir = self.task.outputFolder
-        if not outputDir.is_dir():
-            return
-        prefix = f"{self._saveName}."
-        try:
-            entries = list(outputDir.iterdir())
-        except OSError:
-            return
-        for candidate in entries:
-            if candidate.is_file() and candidate.name.startswith(prefix) and candidate.name != self.task.name:
-                deletePath(candidate)
-
     def _buildCommand(self) -> list[str]:
         def toBool(v: bool) -> str:
             return "true" if v else "false"
 
         args = [
             self.task.url,
-            f"--save-dir={toPosixPath(self.task.outputFolder)}",
+            f"--save-dir={toPosixPath(self.task.partPath)}",
             f"--save-name={self._saveName}",
             f"--tmp-dir={self._tempFolder}",
             f"--thread-count={self.threadCount}",
@@ -402,44 +352,26 @@ class M3U8TaskStep(TaskStep):
         self._processOutput = "".join(rawChunks)
 
     def _findOutputFile(self) -> bool:
-        Path(f"{self.outputPath}.ghd").unlink(missing_ok=True)
         target = Path(self.outputPath)
         if target.is_file() and target.stat().st_size > 0:
-            self.actualExtension = target.suffix.lstrip(".")
             self.task.fileSize = max(self.task.fileSize, target.stat().st_size)
             return True
-        target.unlink(missing_ok=True)
 
-        outputDir = self.task.outputFolder
-        if not outputDir.is_dir():
+        prefix = f"{self._saveName.lower()}."
+        found = max(
+            (c for c in self.task.partPath.glob("*")
+             if c.is_file() and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
+             and c.name.lower().startswith(prefix)),
+            key=lambda c: c.stat().st_mtime,
+            default=None,
+        )
+        if found is None:
             return False
-
-        fallbackExt = "ts" if self.task.isLive else self.outputFormat
-        expectedSuffix = f".{self.actualExtension or fallbackExt}"
-        prefix = self._saveName.lower()
-
-        try:
-            entries = list(outputDir.iterdir())
-        except PermissionError:
-            if sys.platform == "darwin":
-                raise TaskError("macOS 阻止了访问下载目录，请在 系统设置 > 隐私与安全性 > 完全磁盘访问权限 中添加 Ghost Downloader")
-            raise TaskError("无权限访问下载目录：{folder}", folder=outputDir)
-
-        candidates = [
-            c for c in entries
-            if c.is_file()
-            and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
-            and c.name.lower().startswith(prefix)
-        ]
-        if not candidates:
-            return False
-
-        candidates.sort(key=lambda p: (p.suffix.lower() != expectedSuffix, -p.stat().st_mtime))
-        found = candidates[0]
-        self.actualExtension = found.suffix.lstrip(".")
+        if found.suffix.lower() != target.suffix.lower():
+            raise TaskError("N_m3u8DL-RE 输出了 {actual} 文件，与任务的 {expected} 不符",
+                            actual=found.suffix, expected=target.suffix)
         self.task.fileSize = max(self.task.fileSize, found.stat().st_size)
-        if found.name != self.task.name:
-            self.task.setName(found.name)
+        os.replace(found, target)
         return True
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
@@ -450,9 +382,7 @@ class M3U8TaskStep(TaskStep):
         if not execPath:
             raise TaskError("{name} 未安装，请在设置中安装", name="N_m3u8DL-RE")
 
-        self.task.outputFolder.mkdir(parents=True, exist_ok=True)
         Path(self._tempFolder).mkdir(parents=True, exist_ok=True)
-        Path(f"{self.outputPath}.ghd").touch(exist_ok=True)
 
         env = None
         if self.shouldKeepImageSegments:
@@ -485,7 +415,6 @@ class M3U8TaskStep(TaskStep):
                     "未找到输出文件：{detail}",
                     detail=self.lastMessage[-200:] if self.lastMessage else "",
                 )
-            self.setStatus(TaskStatus.COMPLETED)
         except asyncio.CancelledError:
             if self._process is not None and self._process.returncode is None:
                 self._process.terminate()

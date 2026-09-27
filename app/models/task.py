@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass, field
 from enum import auto, IntEnum
 from pathlib import Path
-from shutil import move
 from time import time
 from collections.abc import Iterable
 from typing import ClassVar
@@ -13,8 +13,15 @@ from uuid import uuid4
 from loguru import logger
 
 from app.config.cfg import cfg, currentHeaders
-from app.platform.filesystem import toSafeFilename
+from app.platform.filesystem import deletePath, splitStemExt, toSafeFilename
 
+
+
+def deletePlaceholder(path: Path) -> None:
+    if path.is_dir() and not any(path.iterdir()):
+        path.rmdir()
+    elif path.is_file() and path.stat().st_size == 0:
+        path.unlink()
 
 
 class TaskStatus(IntEnum):
@@ -160,27 +167,6 @@ class TaskStep:
     def outputPath(self) -> str:
         return ""
 
-    def deleteFiles(self):
-        pass
-
-    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        rawPath = self.outputPath
-        if not rawPath:
-            return
-        oldPath = Path(rawPath)
-        if not oldPath.exists():
-            return
-        try:
-            relPath = oldPath.relative_to(oldFolder)
-        except ValueError:
-            return
-        newPath = newFolder / relPath
-        newPath.parent.mkdir(parents=True, exist_ok=True)
-        move(str(oldPath), str(newPath))
-        ghdPath = Path(f"{oldPath}.ghd")
-        if ghdPath.exists():
-            move(str(ghdPath), str(newFolder / f"{relPath}.ghd"))
-
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
         raise NotImplementedError
@@ -227,6 +213,52 @@ class Task:
         return str(self.outputFolder / self.name)
 
     @property
+    def isOutputFolder(self) -> bool:
+        return len(self.files or []) > 1
+
+    def toFilePath(self, fileIndex: int | None) -> Path:
+        if self.isOutputFolder:
+            for file in self.files:
+                if file.index == fileIndex:
+                    return Path(self.outputPath, file.relativePath)
+        return Path(self.outputPath)
+
+    def toDisplayPath(self, file: TaskFile) -> str:
+        return file.relativePath
+
+    def toSidePath(self, fileIndex: int | None, suffix: str) -> Path:
+        path = self.toFilePath(fileIndex)
+        isFolder = self.isOutputFolder and path == Path(self.outputPath)
+        stem = path.name if isFolder else splitStemExt(path.name)[0]
+        return path.with_name(f"{stem}.{suffix}")
+
+    @property
+    def partPath(self) -> Path:
+        return Path(f"{self.outputPath}.ghd")
+
+    @property
+    def placeholderPaths(self) -> list[Path]:
+        if not self.hasOutputFile:
+            return []
+        paths = [Path(self.outputPath)]
+        for step in self.steps:
+            # 文件夹任务中属于某个文件的 Step 都写在文件夹里，逐个求路径在上千个文件时太慢
+            if self.isOutputFolder and step.fileIndex is not None:
+                continue
+            path = Path(step.outputPath)
+            if step.outputPath and path.parent == self.outputFolder and path not in paths:
+                paths.append(path)
+        return paths
+
+    def placeholderPathsAt(self, outputFolder: Path, name: str) -> list[Path]:
+        current = self.outputFolder, self.name
+        self.outputFolder, self.name = outputFolder, name
+        try:
+            return self.placeholderPaths
+        finally:
+            self.outputFolder, self.name = current
+
+    @property
     def canPause(self) -> bool:
         for step in self.steps:
             if step.status == TaskStatus.RUNNING:
@@ -255,20 +287,11 @@ class Task:
     def setOptions(self, options: dict) -> None:
         newFolder = options.get("outputFolder")
         if isinstance(newFolder, (str, Path)):
-            newFolder = Path(newFolder)
-            if newFolder != self.outputFolder:
-                self._move(newFolder)
+            self.outputFolder = Path(newFolder)
         if "category" in options:
             self.category = options["category"]
         for step in self.steps:
             step.setOptions(options)
-
-    def _move(self, newFolder: Path) -> None:
-        oldFolder = self.outputFolder
-        newFolder.mkdir(parents=True, exist_ok=True)
-        for step in self.steps:
-            step.moveFiles(oldFolder, newFolder)
-        self.outputFolder = newFolder
 
     def _isStepSelected(self, step: TaskStep) -> bool:
         if not self.files:
@@ -404,19 +427,13 @@ class Task:
             yield step
 
     def deleteFiles(self):
-        from app.platform.filesystem import deletePath
-        for step in self.steps:
-            step.deleteFiles()
-        targets: set[Path] = set()
-        if self.outputPath:
-            targets.add(Path(self.outputPath))
-        for step in self.steps:
-            outputFile = getattr(step, "outputFile", "")
-            if outputFile:
-                targets.add(Path(outputFile))
-        for target in targets:
-            deletePath(target)
-            deletePath(Path(str(target) + ".ghd"))
+        for path in self.placeholderPaths:
+            if path.is_dir():
+                for child in path.iterdir():
+                    deletePath(child)
+            elif path.is_file():
+                os.truncate(path, 0)
+            deletePath(Path(f"{path}.ghd"))
 
     def canReuseProgress(self, newTask: Task) -> bool:
         return False
@@ -435,7 +452,12 @@ class Task:
         try:
             for step in self.pendingSteps():
                 currentStep = step
+                if step.outputPath:
+                    Path(step.outputPath).parent.mkdir(parents=True, exist_ok=True)
                 await step.run(reportSpeed, waitForSpeedLimit)
+                step.setStatus(TaskStatus.COMPLETED)
+            if self.status == TaskStatus.COMPLETED:
+                deletePath(self.partPath)
         except asyncio.CancelledError:
             logger.info("{} stopped", self.name)
             raise
@@ -444,6 +466,16 @@ class Task:
                 currentStep.setError(toTaskError(e))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
+
+    def deletePlaceholders(self) -> None:
+        for step in self.steps:
+            outputPath = step.outputPath
+            if outputPath and step.status != TaskStatus.COMPLETED:
+                deletePath(Path(outputPath))
+                deletePath(Path(f"{outputPath}.ghd"))
+        for path in self.placeholderPaths:
+            deletePlaceholder(path)
+            deletePath(Path(f"{path}.ghd"))
 
     async def runSeeding(self, isManual: bool) -> None:
         raise NotImplementedError

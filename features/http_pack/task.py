@@ -70,26 +70,11 @@ class HttpTaskStep(TaskStep):
     httpByteOffset: int = 0
     lastModified: str = ""
     isAccelerated: bool = False
-    outputFile: str = ""
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
     @property
     def canPause(self) -> bool:
         return self.canUseRangeRequests
-
-    def deleteFiles(self):
-        from app.platform.filesystem import deletePath
-        path = Path(self.outputPath)
-        deletePath(path)
-        deletePath(Path(f"{path}.ghd"))
-
-    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        super().moveFiles(oldFolder, newFolder)
-        if self.outputFile:
-            try:
-                self.outputFile = str(newFolder / Path(self.outputFile).relative_to(oldFolder))
-            except ValueError:
-                pass
 
     def setOptions(self, options: dict) -> None:
         if "headers" in options:
@@ -103,17 +88,18 @@ class HttpTaskStep(TaskStep):
 
     @property
     def outputPath(self) -> str:
-        if self.outputFile:
-            return self.outputFile
-        return str(self.task.outputFolder / self.task.name)
+        return self.task.outputPath
+
+    @property
+    def recordPath(self) -> Path:
+        return Path(f"{self.outputPath}.ghd")
 
     def _loadRecord(self) -> list[HttpSubworker]:
-        recordPath = Path(self.outputPath + ".ghd")
-        if not recordPath.exists():
+        if not self.recordPath.exists():
             return []
         try:
             subworkers = []
-            with open(recordPath, "rb") as f:
+            with open(self.recordPath, "rb") as f:
                 index = 0
                 while data := f.read(24):
                     start, position, end = unpack("<QQQ", data)
@@ -146,12 +132,11 @@ class HttpTaskStep(TaskStep):
         return subworkers
 
     def _deleteRecord(self) -> None:
-        target = Path(self.outputPath + ".ghd")
         try:
-            if target.is_file() or target.is_symlink():
-                target.unlink()
+            if self.recordPath.is_file() or self.recordPath.is_symlink():
+                self.recordPath.unlink()
         except Exception as e:
-            logger.opt(exception=e).error("删除进度文件失败 {}", target)
+            logger.opt(exception=e).error("删除进度文件失败 {}", self.recordPath)
 
     def _splitSlowest(self) -> HttpSubworker | None:
         slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
@@ -229,7 +214,7 @@ class HttpTaskStep(TaskStep):
     async def _supervise(self) -> None:
         recordFile = None
         if self.canUseRangeRequests:
-            recordFile = open(self.outputPath + ".ghd", "wb")
+            recordFile = open(self.recordPath, "wb")
         try:
             self.receivedBytes = sum(sw.receivedBytes for sw in self.subworkers)
             while True:
@@ -394,8 +379,6 @@ class HttpTaskStep(TaskStep):
         self._nextSplitStartAt = 0
         shouldDeleteRecord = False
 
-        Path(self.outputPath).parent.mkdir(parents=True, exist_ok=True)
-
         self._effectiveHeaders = {**self.headers}
         if self.userAgent and not any(k.lower() == "user-agent" for k in self.headers):
             self._effectiveHeaders["user-agent"] = self.userAgent
@@ -448,7 +431,6 @@ class HttpTaskStep(TaskStep):
                         for subworker in self.subworkers:
                             self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
 
-                    self.setStatus(TaskStatus.COMPLETED)
                     shouldDeleteRecord = True
                     break
                 except CancelledError:

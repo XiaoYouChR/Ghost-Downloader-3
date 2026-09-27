@@ -514,7 +514,9 @@ class BrowserService:
             self.taskDraftRequested.emit([task])
             return
 
-        self._taskService.add(task)
+        if not self._taskService.add(task):
+            self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
+            return
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.CREATED, taskId=task.taskId)
 
     def _onTaskParseFailed(self, error, session: BrowserClientSession, requestId: str, **_) -> None:

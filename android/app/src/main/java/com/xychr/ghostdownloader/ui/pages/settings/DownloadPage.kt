@@ -10,6 +10,7 @@ import com.xychr.ghostdownloader.bridge.SettingRanges
 import com.xychr.ghostdownloader.model.Settings
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
@@ -43,6 +44,16 @@ private fun ColumnScope.DownloadRows(
             path = settings.downloadFolder,
             picker = picker,
             onReset = { set("downloadFolder", defaultDownloadFolder()) },
+        )
+        OptionsSettingRow(
+            title = stringResource(R.string.settings_name_conflict),
+            value = settings.nameConflict,
+            options = listOf(
+                "keepBoth" to stringResource(R.string.name_conflict_keep_both),
+                "overwrite" to stringResource(R.string.name_conflict_overwrite),
+                "ask" to stringResource(R.string.settings_name_conflict_ask),
+            ),
+            onSelect = { set("nameConflict", it) },
         )
         SliderSettingRow(
             title = stringResource(R.string.settings_max_task_num),
