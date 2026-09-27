@@ -17,11 +17,16 @@ from qfluentwidgets import (
     PrimaryPushButton, PushButton, SubtitleLabel, SwitchButton, Theme,
     TitleLabel, TransparentPushButton, isDarkTheme, qconfig, themeColor,
 )
+from qfluentwidgets import MSFluentTitleBar
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
+from app.platform.desktop import loadCrx, openChromiumUrl, revealInFolder
+from app.platform.run_at_login import setRunAtLogin
+from app.platform.url_scheme import registerUrlScheme, unregisterUrlScheme
+from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
 from app.services.loopback_server import ListenStatus
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
@@ -41,7 +46,6 @@ if TYPE_CHECKING:
 
 WINDOW_SIZE = QSize(960, 600)
 PREVIEW_GIF = ":/res/install_chrome_extension_guidance.webp"
-# 960 - 边距 36*2 - 右栏 280 - 间距 16 = 592，按 16:9 取整
 PREVIEW_SIZE = QSize(592, 333)
 STORE_COLUMN_WIDTH = 280
 
@@ -499,7 +503,7 @@ class BrowserExtensionPage(QWidget):
         self._banner.setFixedWidth(PREVIEW_SIZE.width())
         self._bannerSlot.addWidget(self._banner)
 
-    def refreshPortStatus(self) -> None:
+    def refreshListenState(self) -> None:
         if self._isPaired:
             return
         state = self._browserServer.state
@@ -532,12 +536,9 @@ class BrowserExtensionPage(QWidget):
             self._setConnectedBanner(version)
         else:
             self._isPaired = False
-            self.refreshPortStatus()
+            self.refreshListenState()
 
     def _onManualInstallClicked(self) -> None:
-        from app.platform.desktop import loadCrx
-        from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
-
         self._coroutineRunner.submit(
             installExtension(loadCrx(), EXTENSION_UNPACK_DIR),
             done=self._onExtensionExtracted,
@@ -546,7 +547,6 @@ class BrowserExtensionPage(QWidget):
         )
 
     def _onExtensionExtracted(self, path: Path) -> None:
-        from app.platform.desktop import openChromiumUrl, revealInFolder
         revealInFolder(str(path))
         if not openChromiumUrl("chrome://extensions"):
             QApplication.clipboard().setText("chrome://extensions")
@@ -562,16 +562,14 @@ class BrowserExtensionPage(QWidget):
             duration=5000, position=InfoBarPosition.TOP, parent=self,
         )
 
-    def onPairRequestChanged(self, request: PairRequest | None) -> None:
-        if request is None:
-            return
+    def onPairRequested(self, request: PairRequest) -> None:
         self._browserService.approvePair(request.requestId)
         self._isPaired = True
         self._setConnectedBanner(request.extensionVersion)
 
     def _onListenStateChanged(self, _state) -> None:
         if self.isVisible():
-            self.refreshPortStatus()
+            self.refreshListenState()
 
     def _onProtocolMismatched(self) -> None:
         self._setBanner(
@@ -717,7 +715,6 @@ class AdvancedOptionsPage(QWidget):
 
     def save(self) -> None:
         if self.runAtLoginCard.isChecked() != cfg.shouldRunAtLogin.value:
-            from app.platform.run_at_login import setRunAtLogin
             setRunAtLogin(self.runAtLoginCard.isChecked())
             cfg.set(cfg.shouldRunAtLogin, self.runAtLoginCard.isChecked())
 
@@ -734,7 +731,6 @@ class AdvancedOptionsPage(QWidget):
                     cfg.set(config.associateUriSchemes, self.uriSchemeCard.isChecked())
 
         if self.urlSchemeCard is not None:
-            from app.platform.url_scheme import registerUrlScheme, unregisterUrlScheme
             if self.urlSchemeCard.isChecked():
                 registerUrlScheme()
             else:
@@ -810,7 +806,6 @@ class OobeWindow(FluentWidget):
         self._refreshNavigation()
 
     def _initWidget(self) -> None:
-        from qfluentwidgets import MSFluentTitleBar
         self.setTitleBar(MSFluentTitleBar(self))
         self.setWindowTitle("Ghost Downloader")
         self.setWindowIcon(QIcon(":/image/logo.png"))
@@ -890,11 +885,10 @@ class OobeWindow(FluentWidget):
         self.nextButton.clicked.connect(self._onNextClicked)
         self.skipButton.clicked.connect(self._finish)
 
-    def onPairRequestChanged(self, request: PairRequest | None) -> None:
-        self.browserExtensionPage.onPairRequestChanged(request)
+    def onPairRequested(self, request: PairRequest) -> None:
+        self.browserExtensionPage.onPairRequested(request)
 
     def _onLanguageChanged(self) -> None:
-        # 信号源 langCombo 在旧 content 里且仍在调用栈上，只能 deleteLater
         old = self.content
         self._initContent()
         self._initContentLayout()
@@ -929,7 +923,7 @@ class OobeWindow(FluentWidget):
         self.stackedWidget.setCurrentIndex(self._currentIndex)
         self._refreshNavigation()
         if self._currentIndex == 2:
-            self.browserExtensionPage.refreshPortStatus()
+            self.browserExtensionPage.refreshListenState()
         elif self._currentIndex == 3:
             self.runtimeInstallPage.mount()
 
@@ -960,7 +954,6 @@ class OobeWindow(FluentWidget):
         self.close()
 
     def nativeEvent(self, eventType, message):
-        # Win10 WS_THICKFRAME 拖动时会短暂注入错误高度
         if sys.platform == "win32":
             msg = MSG.from_address(message.__int__())
             if msg.message == win32con.WM_WINDOWPOSCHANGING:
@@ -972,7 +965,6 @@ class OobeWindow(FluentWidget):
         return super().nativeEvent(eventType, message)
 
     def closeEvent(self, event) -> None:
-        # 用户直接关窗视为"跳过全部"
         if not self._isFinished:
             self._isFinished = True
             cfg.set(cfg.hasCompletedOobe, True)
