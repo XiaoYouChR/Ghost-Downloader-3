@@ -50,14 +50,12 @@ def setupEnvironment():
 
 
 def startApp(application, isSilent=False):
-    import shutil
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
-    from app.config.paths import EXECUTABLE_DIR
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
     from app.services.update_service import UpdateService
-    from app.startup import createEngine, loadPacks, checkUpdateAtStartup
+    from app.startup import loadResources, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -78,14 +76,12 @@ def startApp(application, isSilent=False):
         from app.view.shell.dock import setDockIconVisible
         setDockIconVisible(cfg.shouldShowDockIcon.value, activate=False)
 
+    loadResources(application)
     engine = createEngine(application)
     coroutineRunner, taskService, featureService = engine.coroutineRunner, engine.taskService, engine.featureService
     browserService, speedMeter = engine.browserService, engine.speedMeter
 
-    appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
-    backupDir = appDir.parent / f"{appDir.name}_backup"
-    if backupDir.is_dir():
-        shutil.rmtree(backupDir, ignore_errors=True)
+    deleteBackupDir()
 
     MainWindow.refreshThemeColor()
 

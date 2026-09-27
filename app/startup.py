@@ -1,5 +1,13 @@
-"""桌面端独有的启动阶段：创建 Engine、加载翻译与 pack、启动时检查更新。"""
+"""桌面端独有的准备步骤，每步自成一体、不碰 View。各步的顺序和服务与 View 之间的接线由入口 Ghost-Downloader-3.py 决定。"""
 from __future__ import annotations
+
+
+def loadResources(application):
+    from PySide6.QtCore import QResource
+    from app.config.paths import EXECUTABLE_DIR
+
+    QResource.registerResource(str(EXECUTABLE_DIR / "app" / "assets" / "resources.rcc"))
+    loadTranslators(application)
 
 
 def loadTranslators(application):
@@ -22,16 +30,11 @@ def loadTranslators(application):
 
 def createEngine(application):
     import sys
-    from PySide6.QtCore import QFileSystemWatcher, QResource, QTimer
+    from PySide6.QtCore import QFileSystemWatcher, QTimer
     from shiboken6 import isValid
-    from app.config.paths import EXECUTABLE_DIR
     from app.engine import Engine
     from app.platform.desktop import loadCrx
     from app.services.coroutine_runner import CoroutineRunner
-
-    QResource.registerResource(str(EXECUTABLE_DIR / "app" / "assets" / "resources.rcc"))
-
-    loadTranslators(application)
 
     if sys.platform == "win32":
         from winloop import new_event_loop
@@ -44,6 +47,17 @@ def createEngine(application):
     )
     coroutineRunner.start()
     return Engine(coroutineRunner, QFileSystemWatcher(), loadCrx)
+
+
+def deleteBackupDir():
+    import shutil
+    import sys
+    from app.config.paths import EXECUTABLE_DIR
+
+    appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
+    backupDir = appDir.parent / f"{appDir.name}_backup"
+    if backupDir.is_dir():
+        shutil.rmtree(backupDir, ignore_errors=True)
 
 
 def loadPacks(featureService, coroutineRunner, speedMeter):
