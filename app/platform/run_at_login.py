@@ -4,10 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-if sys.platform == "linux":
-    from app.config.paths import EXECUTABLE_PATH
+from app.config.paths import EXECUTABLE_PATH
 
 
 def setRunAtLogin(enabled: bool) -> None:
@@ -28,8 +25,7 @@ def _setWindows(enabled: bool) -> None:
         0, winreg.KEY_WRITE,
     )
     if enabled:
-        exePath = QCoreApplication.applicationFilePath().replace("/", "\\")
-        winreg.SetValueEx(key, "GhostDownloader", 0, winreg.REG_SZ, f'"{exePath}" --silence')
+        winreg.SetValueEx(key, "GhostDownloader", 0, winreg.REG_SZ, f'"{EXECUTABLE_PATH}" --silence')
     else:
         try:
             winreg.DeleteValue(key, "GhostDownloader")
@@ -44,7 +40,6 @@ def _setMacOS(enabled: bool) -> None:
 
     if enabled:
         plistPath.parent.mkdir(parents=True, exist_ok=True)
-        appPath = QCoreApplication.applicationFilePath()
         plistPath.write_text(
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
@@ -52,7 +47,7 @@ def _setMacOS(enabled: bool) -> None:
             '<plist version="1.0">\n<dict>\n'
             '<key>Label</key>\n<string>com.xiaoyouchr.ghostdownloader</string>\n'
             '<key>ProgramArguments</key>\n<array>\n'
-            f'<string>{appPath}</string>\n<string>--silence</string>\n'
+            f'<string>{EXECUTABLE_PATH}</string>\n<string>--silence</string>\n'
             '</array>\n<key>RunAtLoad</key>\n<true/>\n'
             '</dict>\n</plist>\n',
             encoding="utf-8",
