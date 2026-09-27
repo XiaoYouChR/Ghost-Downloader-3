@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView
 from qfluentwidgets import (
     BodyLabel, FluentIcon, MessageBoxBase,
     PrimaryPushButton, PushButton, SubtitleLabel,
-    ToolTipFilter, TransparentToolButton,
+    TransparentToolButton,
 )
 
 from app.format import toReadableSize
@@ -732,8 +732,5 @@ class BilibiliTaskCard(MultiFileTaskCard):
     def _initWidget(self) -> None:
         super()._initWidget()
         task: BilibiliTask = self._task
-        if not task.isVideoEnabled and not task.isAudioEnabled:
-            self.selectFilesButton.hide()
         tip = self.tr("选择合集") if task.isSeason else self.tr("选择分P")
         self.selectFilesButton.setToolTip(tip)
-        self.selectFilesButton.installEventFilter(ToolTipFilter(self.selectFilesButton))
