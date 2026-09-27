@@ -99,7 +99,7 @@ def test_draft_parse_through_request_does_not_deadlock(engine, monkeypatch):
       "error": {"message": "端口 {port} 被占用，请更换端口", "params": {"port": "16800"}}}),
 ])
 def test_aria2_listen_state_is_pushed(engine, state, expected):
-    engine._aria2Server = StubServer(state)
+    engine._aria2RpcServer = StubServer(state)
 
     engine._emitAria2Rpc()
 

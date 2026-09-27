@@ -65,8 +65,8 @@ class Bridge:
         self._featureService = self._engine.featureService
         self._browserService = self._engine.browserService
         self._browserServer = self._engine.browserServer
+        self._aria2RpcService = self._engine.aria2RpcService
         self._aria2RpcServer = self._engine.aria2RpcServer
-        self._aria2Server = self._engine.aria2Server
 
         from app.models.pack import PackServices
 
@@ -100,9 +100,9 @@ class Bridge:
         self._browserServer.stateChanged.connect(self._emitKeepAlive)
         self._browserService.taskDraftRequested.connect(self._onBrowserDraft)
         self._browserService.extensionUpdated.connect(self._onExtensionUpdated)
-        self._aria2RpcServer.taskDraftRequested.connect(self._onBrowserDraft)
-        self._aria2Server.stateChanged.connect(self._emitAria2Rpc)
-        self._aria2Server.stateChanged.connect(self._emitKeepAlive)
+        self._aria2RpcService.taskDraftRequested.connect(self._onBrowserDraft)
+        self._aria2RpcServer.stateChanged.connect(self._emitAria2Rpc)
+        self._aria2RpcServer.stateChanged.connect(self._emitKeepAlive)
 
         self._coroutineRunner.start()
         self.request("_activate")
@@ -824,7 +824,7 @@ class Bridge:
         }, ensure_ascii=False)
 
     def _emitAria2Rpc(self, *_args):
-        state = self._aria2Server.state
+        state = self._aria2RpcServer.state
         self._flows.setState("aria2Rpc", json.dumps(
             {"status": state.status, "port": state.port,
              "error": state.error.toDict() if state.error else None}))
@@ -868,7 +868,7 @@ class Bridge:
         if seeding:
             return json.dumps({"reason": "seeding", "count": seeding})
 
-        if any(s.state.status == ListenStatus.LISTENING for s in (self._aria2Server, self._browserServer)):
+        if any(s.state.status == ListenStatus.LISTENING for s in (self._aria2RpcServer, self._browserServer)):
             return json.dumps({"reason": "serving"})
         return json.dumps({"reason": ""})
 

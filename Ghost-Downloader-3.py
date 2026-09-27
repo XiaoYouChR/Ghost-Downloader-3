@@ -113,7 +113,7 @@ def startApp(application, isSilent=False):
 
     def createWindow() -> MainWindow:
         nonlocal window
-        window = MainWindow(taskService, featureService, browserService, engine.browserServer, engine.aria2Server, engine.categoryService, speedMeter, coroutineRunner, plan, updateService)
+        window = MainWindow(taskService, featureService, browserService, engine.browserServer, engine.aria2RpcServer, engine.categoryService, speedMeter, coroutineRunner, plan, updateService)
         window.destroyed.connect(onWindowDestroyed)
         return window
 
@@ -138,7 +138,7 @@ def startApp(application, isSilent=False):
 
     browserService.taskDraftRequested.connect(onBrowserDraft)
     browserService.extensionUpdated.connect(onExtensionUpdated)
-    engine.aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
+    engine.aria2RpcService.taskDraftRequested.connect(onBrowserDraft)
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 

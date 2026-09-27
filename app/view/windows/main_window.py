@@ -75,7 +75,7 @@ class MainWindow(MSFluentWindow):
         featureService: FeatureService,
         browserService: BrowserService,
         browserServer: LoopbackServer,
-        aria2Server: LoopbackServer,
+        aria2RpcServer: LoopbackServer,
         categoryService: CategoryService,
         speedMeter: SpeedMeter,
         coroutineRunner: CoroutineRunner,
@@ -93,7 +93,7 @@ class MainWindow(MSFluentWindow):
         self._featureService = featureService
         self._browserService = browserService
         self._browserServer = browserServer
-        self._aria2Server = aria2Server
+        self._aria2RpcServer = aria2RpcServer
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
         self._speedMeter = speedMeter
@@ -195,7 +195,7 @@ class MainWindow(MSFluentWindow):
             )
         if pageClass is SettingPage:
             return SettingPage(
-                self._featureService, self._browserService, self._browserServer, self._aria2Server,
+                self._featureService, self._browserService, self._browserServer, self._aria2RpcServer,
                 self._coroutineRunner, self._categoryService, self._taskService,
                 self._updateService, parent=self,
             )
@@ -242,7 +242,7 @@ class MainWindow(MSFluentWindow):
             self._updateService.changed.connect(self._onUpdateChanged, owner=self)
 
         self._browserServer.stateChanged.connect(self._onBrowserListenStateChanged, owner=self)
-        self._aria2Server.stateChanged.connect(self._onAria2ListenStateChanged, owner=self)
+        self._aria2RpcServer.stateChanged.connect(self._onAria2ListenStateChanged, owner=self)
 
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectWin)

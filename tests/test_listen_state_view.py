@@ -46,31 +46,31 @@ class FakeCategoryService:
         return []
 
 
-def buildPage(browserService, browserServer, aria2Server):
+def buildPage(browserService, browserServer, aria2RpcServer):
     from app.view.pages.setting_page import SettingPage
 
-    return SettingPage(FakeFeatureService(), browserService, browserServer, aria2Server,
+    return SettingPage(FakeFeatureService(), browserService, browserServer, aria2RpcServer,
                        coroutineRunner=None, categoryService=FakeCategoryService(), taskService=None,
                        updateService=FakeUpdateService())
 
 
 @pytest.fixture
 def page(qtbot):
-    browserServer, aria2Server = FakeServer(), FakeServer()
-    page = buildPage(FakeBrowserService(), browserServer, aria2Server)
+    browserServer, aria2RpcServer = FakeServer(), FakeServer()
+    page = buildPage(FakeBrowserService(), browserServer, aria2RpcServer)
     qtbot.addWidget(page)
-    page.browserServer, page.aria2Server = browserServer, aria2Server
+    page.browserServer, page.aria2RpcServer = browserServer, aria2RpcServer
     return page
 
 
 def test_aria2_card_shows_listening_port(page):
-    page.aria2Server.setState(LISTENING)
+    page.aria2RpcServer.setState(LISTENING)
 
     assert page.aria2EnableCard.contentLabel.text() == "正在端口 16800 上监听"
 
 
 def test_aria2_card_shows_occupied_port(page):
-    page.aria2Server.setState(OCCUPIED)
+    page.aria2RpcServer.setState(OCCUPIED)
 
     assert page.aria2EnableCard.contentLabel.text() == "端口 16800 被占用，请更换端口"
 
@@ -98,11 +98,11 @@ def test_destroyed_page_no_longer_receives_signals(qtbot):
     from PySide6.QtCore import QEvent
     from PySide6.QtWidgets import QApplication
 
-    browserService, browserServer, aria2Server = FakeBrowserService(), FakeServer(), FakeServer()
-    page = buildPage(browserService, browserServer, aria2Server)
+    browserService, browserServer, aria2RpcServer = FakeBrowserService(), FakeServer(), FakeServer()
+    page = buildPage(browserService, browserServer, aria2RpcServer)
     page.deleteLater()
     QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
     browserService.connectionChanged.emit()
     browserServer.setState(LISTENING)
-    aria2Server.setState(OCCUPIED)
+    aria2RpcServer.setState(OCCUPIED)
