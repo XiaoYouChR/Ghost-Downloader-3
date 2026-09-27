@@ -17,7 +17,7 @@ from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.config.paths import APP_DATA_DIR
 from app.platform.filesystem import isExisting
-from app.services.websocket_stream import WebSocketStream, acceptWebSocket, readHead
+from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
 from app.update import isNewer
 
@@ -29,20 +29,15 @@ if TYPE_CHECKING:
 EXTENSION_UNPACK_DIR = APP_DATA_DIR / "browser_extension"
 
 
-async def extractBrowserExtension(loadCrx) -> Path:
-    def _extract() -> Path:
-        crxData = loadCrx()
+async def installExtension(crx: bytes, folder: Path) -> Path:
+    def install() -> Path:
+        headerSize = struct.unpack_from("<I", crx, 8)[0]
+        folder.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(BytesIO(crx[12 + headerSize:])) as zf:
+            zf.extractall(folder)
+        return folder
 
-        headerSize = struct.unpack_from("<I", crxData, 8)[0]
-        zipOffset = 12 + headerSize
-
-        EXTENSION_UNPACK_DIR.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(BytesIO(crxData[zipOffset:])) as zf:
-            zf.extractall(EXTENSION_UNPACK_DIR)
-
-        return EXTENSION_UNPACK_DIR
-
-    return await asyncio.to_thread(_extract)
+    return await asyncio.to_thread(install)
 
 
 @dataclass
@@ -194,14 +189,14 @@ class BrowserService:
     pairRequestChanged = Signal(object)
     connectionChanged = Signal()
     protocolMismatched = Signal()
+    taskDraftRequested = Signal(list)
+    extensionUpdated = Signal(str)
 
-    def __init__(self, coroutineRunner, taskService, parse, loadCrx, requestDraft, onExtensionUpdated):
+    def __init__(self, coroutineRunner, taskService, parse, loadCrx):
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService
         self._parse = parse
         self._loadCrx = loadCrx
-        self._requestDraft = requestDraft
-        self._onExtensionUpdated = onExtensionUpdated
         self._sessions: dict[WebSocketStream, BrowserClientSession] = {}
         self._pairRequest: PairRequest | None = None
         self._pairSession: BrowserClientSession | None = None
@@ -269,7 +264,7 @@ class BrowserService:
 
     async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         head = await readHead(reader)
-        stream = await acceptWebSocket(reader, writer, head, maxSize=2**20) if head else None
+        stream = await WebSocketStream.open(reader, writer, head, maxSize=2**20) if head else None
         if stream is None:
             return
         host, port = writer.get_extra_info("peername")[:2]
@@ -443,12 +438,13 @@ class BrowserService:
             },
         })
 
-        if (session.installType == "development"
+        if (self._loadCrx is not None
+                and session.installType == "development"
                 and isNewer(session.extensionVersion, LATEST_EXTENSION_VERSION)
                 and not self._isUpdatingExtension):
             self._isUpdatingExtension = True
             self._coroutineRunner.submit(
-                extractBrowserExtension(self._loadCrx),
+                installExtension(self._loadCrx(), EXTENSION_UNPACK_DIR),
                 done=self._onExtensionExtracted,
                 failed=self._onExtensionExtractFailed,
                 session=session,
@@ -458,7 +454,7 @@ class BrowserService:
         if session.stream not in self._sessions:
             return
         self._send(session, {"type": MessageType.RELOAD})
-        self._onExtensionUpdated(LATEST_EXTENSION_VERSION)
+        self.extensionUpdated.emit(LATEST_EXTENSION_VERSION)
 
     def _onExtensionExtractFailed(self, error: str, **_) -> None:
         self._isUpdatingExtension = False
@@ -514,7 +510,7 @@ class BrowserService:
         shouldDraft = draft if draft is not None else cfg.shouldDraftTakenDownload.value
         if shouldDraft:
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
-            self._requestDraft([task])
+            self.taskDraftRequested.emit([task])
             return
 
         self._taskService.add(task)

@@ -445,14 +445,11 @@ class SettingPage(ScrollArea):
                         duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onChromiumInstallClicked(self) -> None:
-        from app.services.browser_service import extractBrowserExtension
-
-        def loadCrx():
-            from PySide6.QtCore import QResource
-            return bytes(QResource(":/res/chrome_extension.crx").data())
+        from app.platform.desktop import loadCrx
+        from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
 
         self._coroutineRunner.submit(
-            extractBrowserExtension(loadCrx),
+            installExtension(loadCrx(), EXTENSION_UNPACK_DIR),
             done=self._onExtensionExtractDone,
             failed=self._onExtensionExtractFailed,
         )
@@ -491,14 +488,15 @@ class SettingPage(ScrollArea):
         self.aria2EnableCard.setContent(text)
 
     def _onExportExtensionClicked(self) -> None:
-        from PySide6.QtCore import QFile, QIODevice, QResource
+        from PySide6.QtCore import QFile, QIODevice
         from PySide6.QtWidgets import QFileDialog
+        from app.platform.desktop import loadCrx
         path, _ = QFileDialog.getSaveFileName(self, self.tr("选择导出路径"),
                                               "./Extension.crx", "Chromium Extension(*.crx)")
         if path:
             f = QFile(path)
             if f.open(QIODevice.OpenModeFlag.WriteOnly):
-                f.write(bytes(QResource(":/res/chrome_extension.crx").data()))
+                f.write(loadCrx())
                 f.close()
 
     def _onUrlSchemeChanged(self, enabled: bool) -> None:

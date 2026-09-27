@@ -116,7 +116,7 @@ private data class ListenState(
 
 @Composable
 private fun listenFailureText(failure: String?, port: Int): String = when (failure) {
-    "portOccupied" -> stringResource(R.string.settings_browser_port_unavailable, port)
+    "occupied" -> stringResource(R.string.settings_browser_port_unavailable, port)
     "denied" -> stringResource(R.string.settings_listen_denied, port)
     else -> stringResource(R.string.settings_listen_failed, port)
 }

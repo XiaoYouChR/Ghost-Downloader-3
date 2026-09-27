@@ -3,12 +3,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-import struct
-import zipfile
 from dataclasses import asdict
 from collections import namedtuple
 from functools import partial
-from io import BytesIO
 from pathlib import Path
 
 from loguru import logger
@@ -108,7 +105,7 @@ class Engine:
 
         self._aria2RpcServer = Aria2RpcServer(
             self._coroutineRunner, parse=self._featureService.parse,
-            addTask=self._taskService.add, requestDraft=self._onBrowserDraft,
+            addTask=self._taskService.add,
         )
         self._aria2Server = LoopbackServer(
             self._coroutineRunner, self._aria2RpcServer.handle,
@@ -118,7 +115,6 @@ class Engine:
         self._browserService = BrowserService(
             self._coroutineRunner, self._taskService,
             parse=self._featureService.parse, loadCrx=None,
-            requestDraft=self._onBrowserDraft, onExtensionUpdated=self._onExtensionUpdated,
         )
         self._browserServer = LoopbackServer(
             self._coroutineRunner, self._browserService.handle,
@@ -128,7 +124,11 @@ class Engine:
         self._browserService.connectionChanged.connect(self._emitBrowserExtension)
         self._browserServer.stateChanged.connect(self._emitBrowserExtension)
         self._browserServer.stateChanged.connect(self._emitKeepAlive)
+        self._browserService.taskDraftRequested.connect(self._onBrowserDraft)
+        self._browserService.extensionUpdated.connect(self._onExtensionUpdated)
+        self._aria2RpcServer.taskDraftRequested.connect(self._onBrowserDraft)
         self._aria2Server.stateChanged.connect(self._emitAria2Rpc)
+        self._aria2Server.stateChanged.connect(self._emitKeepAlive)
 
         self._coroutineRunner.start()
         self.request("_activate")
@@ -189,7 +189,6 @@ class Engine:
 
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
-        self._aria2Server.stateChanged.connect(self._emitKeepAlive)
 
         self._runtimeStatusService.statusChanged.connect(lambda _: self._emitRuntimes())
 
@@ -871,16 +870,9 @@ class Engine:
         else:
             self._browserService.rejectPair(requestId)
 
-    def extractBrowserExtension(self, crxPath: str, folder: str) -> str:
-        crxData = Path(crxPath).read_bytes()
-        headerSize = struct.unpack_from("<I", crxData, 8)[0]
-        zipOffset = 12 + headerSize
-
-        dest = Path(folder)
-        dest.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(BytesIO(crxData[zipOffset:])) as zf:
-            zf.extractall(dest)
-        return str(dest)
+    async def extractBrowserExtension(self, crxPath: str, folder: str) -> str:
+        from app.services.browser_service import installExtension
+        return str(await installExtension(Path(crxPath).read_bytes(), Path(folder)))
 
     def _emitPairRequest(self, *_args):
         request = self._browserService.pairRequest

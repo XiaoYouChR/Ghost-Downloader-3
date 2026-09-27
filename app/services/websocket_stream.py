@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 
-from websockets.frames import Opcode
+from websockets.frames import CloseCode, Opcode
 from websockets.protocol import State
 from websockets.server import ServerProtocol
 
@@ -18,17 +18,6 @@ async def readHead(reader: asyncio.StreamReader) -> bytes | None:
     return head if len(head) <= MAX_HEAD_SIZE else None
 
 
-async def acceptWebSocket(reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
-                          head: bytes, maxSize: int) -> WebSocketStream | None:
-    protocol = ServerProtocol(max_size=maxSize)
-    # ServerProtocol 只认自己解析出的握手；手工构造 Request 会让它停在 HTTP 解析状态，吞掉后续帧
-    protocol.receive_data(head)
-    protocol.send_response(protocol.accept(protocol.events_received()[0]))
-    stream = WebSocketStream(protocol, reader, writer)
-    await stream._flush()
-    return stream if protocol.state is State.OPEN else None
-
-
 class WebSocketStream:
     """RFC 6455 服务端连接：ping、close 回应、分片重组、大小上限由 ServerProtocol 处理。只在 loop 线程使用。"""
 
@@ -36,6 +25,17 @@ class WebSocketStream:
         self._protocol = protocol
         self._reader = reader
         self._writer = writer
+
+    @classmethod
+    async def open(cls, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+                   head: bytes, maxSize: int) -> WebSocketStream | None:
+        protocol = ServerProtocol(max_size=maxSize)
+        # ServerProtocol 只认自己解析出的握手；手工构造 Request 会让它停在 HTTP 解析状态，吞掉后续帧
+        protocol.receive_data(head)
+        protocol.send_response(protocol.accept(protocol.events_received()[0]))
+        stream = cls(protocol, reader, writer)
+        await stream._flush()
+        return stream if protocol.state is State.OPEN else None
 
     async def messages(self) -> AsyncIterator[bytes]:
         parts: list[bytes] = []
@@ -67,10 +67,10 @@ class WebSocketStream:
         self._protocol.send_text(text.encode())
         await self._flush()
 
-    async def close(self, code: int = 1000) -> None:
+    async def close(self) -> None:
         if self._protocol.state is not State.OPEN:
             return
-        self._protocol.send_close(code)
+        self._protocol.send_close(CloseCode.NORMAL_CLOSURE)
         await self._flush()
 
     async def _flush(self) -> None:

@@ -18,7 +18,7 @@ class StubBrowserService:
 
 
 class StubServer:
-    def __init__(self, state=ListenState(ListenStatus.LISTENING, 14370, hasIpv6=True)):
+    def __init__(self, state=ListenState(ListenStatus.LISTENING, 14370)):
         self.state = state
 
 
@@ -36,7 +36,7 @@ def engine(bridge, monkeypatch):
     "state, summary, expected",
     [
         (ListenState(), ("", ""), "idle"),
-        (ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.PORT_OCCUPIED), ("", ""), "failed"),
+        (ListenState(ListenStatus.FAILED, 14370, failure=ListenFailure.OCCUPIED), ("", ""), "failed"),
         (ListenState(ListenStatus.LISTENING, 14370), ("", ""), "listening"),
         (ListenState(ListenStatus.LISTENING, 14370), ("development", "2.2.0"), "connected"),
     ],

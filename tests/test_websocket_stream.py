@@ -8,7 +8,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError
 
-from app.services.websocket_stream import acceptWebSocket, readHead
+from app.services.websocket_stream import WebSocketStream, readHead
 
 pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
 
@@ -21,7 +21,7 @@ async def serve():
     async def start(maxSize: int = 2**20) -> str:
         async def handle(reader, writer):
             head = await readHead(reader)
-            stream = await acceptWebSocket(reader, writer, head, maxSize=maxSize)
+            stream = await WebSocketStream.open(reader, writer, head, maxSize=maxSize)
             async for message in stream.messages():
                 await stream.send(message.decode()[::-1])
             await stream.send("late")

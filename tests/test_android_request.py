@@ -92,9 +92,9 @@ def test_draft_parse_through_request_does_not_deadlock(engine, monkeypatch):
 
 @pytest.mark.parametrize("state, expected", [
     (ListenState(), {"status": "off", "port": 0, "failure": None}),
-    (ListenState(ListenStatus.LISTENING, 16800, hasIpv6=True), {"status": "listening", "port": 16800, "failure": None}),
-    (ListenState(ListenStatus.FAILED, 16800, failure=ListenFailure.PORT_OCCUPIED),
-     {"status": "failed", "port": 16800, "failure": "portOccupied"}),
+    (ListenState(ListenStatus.LISTENING, 16800), {"status": "listening", "port": 16800, "failure": None}),
+    (ListenState(ListenStatus.FAILED, 16800, failure=ListenFailure.OCCUPIED),
+     {"status": "failed", "port": 16800, "failure": "occupied"}),
 ])
 def test_aria2_listen_state_is_pushed(engine, state, expected):
     engine._aria2Server = StubServer(state)
