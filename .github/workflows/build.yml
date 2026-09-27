@@ -821,7 +821,7 @@ jobs:
           EOF
 
       - name: Build APK
-        working-directory: compose
+        working-directory: android
         run: |
           if [ "$HAS_KEYSTORE" = 'true' ]; then
             echo "APK_VARIANT=release" >> "$GITHUB_ENV"
