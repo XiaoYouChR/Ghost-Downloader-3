@@ -20,7 +20,7 @@ from qfluentwidgets import (
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.i18n import toLocalizedError
+from app.i18n import toListenFailureText, toLocalizedError
 from app.models.task import toTaskError
 from app.services.loopback_server import ListenStatus
 from app.config.constants import (
@@ -483,8 +483,14 @@ class BrowserExtensionPage(QWidget):
         self.manualCard.clicked.connect(self._onManualInstallClicked)
         for card, url in self.storeCards:
             card.clicked.connect(lambda u=url: QDesktopServices.openUrl(QUrl(u)))
-        self._browserService.connectionChanged.connect(self._onConnectionChanged)
-        self._browserService.protocolMismatched.connect(self._onProtocolMismatched)
+        subscriptions = [
+            (self._browserService.connectionChanged, self._onConnectionChanged),
+            (self._browserService.protocolMismatched, self._onProtocolMismatched),
+            (self._browserServer.stateChanged, self._onListenStateChanged),
+        ]
+        for signal, slot in subscriptions:
+            signal.connect(slot)
+        self.destroyed.connect(lambda: [signal.disconnect(slot) for signal, slot in subscriptions])
 
     def _setBanner(self, icon: InfoBarIcon, title: str) -> None:
         if self._banner is not None:
@@ -502,22 +508,17 @@ class BrowserExtensionPage(QWidget):
         if self._isPaired:
             return
         state = self._browserServer.state
-        if state.status == ListenStatus.LISTENING:
-            self._setBanner(
-                InfoBarIcon.INFORMATION,
-                self.tr("正在端口 {} 上等待扩展连接").format(state.port),
-            )
-        elif not cfg.isBrowserExtensionEnabled.value:
+        if state.status == ListenStatus.OFF:
             self._setBanner(
                 InfoBarIcon.WARNING,
                 self.tr("浏览器扩展未启用，可稍后在设置中开启"),
             )
+        elif state.status == ListenStatus.FAILED:
+            self._setBanner(InfoBarIcon.WARNING, toListenFailureText(state))
         else:
             self._setBanner(
-                InfoBarIcon.WARNING,
-                self.tr("端口 {} 被占用，请在设置中更换端口").format(
-                    cfg.browserExtensionPort.value
-                ),
+                InfoBarIcon.INFORMATION,
+                self.tr("正在端口 {} 上等待扩展连接").format(state.port),
             )
 
     def _setConnectedBanner(self, version: str) -> None:
@@ -575,6 +576,10 @@ class BrowserExtensionPage(QWidget):
         self._browserService.approvePair(request.requestId)
         self._isPaired = True
         self._setConnectedBanner(request.extensionVersion)
+
+    def _onListenStateChanged(self, _state) -> None:
+        if self.isVisible():
+            self.refreshPortStatus()
 
     def _onProtocolMismatched(self) -> None:
         self._setBanner(

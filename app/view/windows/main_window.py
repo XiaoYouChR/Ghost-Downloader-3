@@ -8,7 +8,7 @@ from PySide6.QtCore import QCoreApplication, QEvent, QRect, QUrl, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QDesktopServices, QKeySequence, QPainter, QPalette, QShortcut
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
+    MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarIcon, InfoBarPosition,
     SearchLineEdit, setThemeColor, IconWidget, SubtitleLabel, isDarkTheme,
 )
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
@@ -16,6 +16,8 @@ from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 from app.config.cfg import CloseMode, cfg
 from app.config.constants import DONATE_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
+from app.i18n import toListenFailureText
+from app.services.loopback_server import ListenState, ListenStatus, LoopbackServer
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
 from app.view.pages.setting_page import SettingPage
@@ -27,7 +29,6 @@ if TYPE_CHECKING:
     from app.services.browser_service import BrowserService, PairRequest
     from app.services.category_service import CategoryService
     from app.services.coroutine_runner import CoroutineRunner
-    from app.services.loopback_server import LoopbackServer
     from app.services.speed_meter import SpeedMeter
     from app.services.feature_service import FeatureService
     from app.services.task_service import TaskService
@@ -240,6 +241,14 @@ class MainWindow(MSFluentWindow):
         if self._updateService is not None:
             self._updateService.changed.connect(self._onUpdateChanged)
 
+        subscriptions = [
+            (self._browserServer.stateChanged, self._onBrowserListenStateChanged),
+            (self._aria2Server.stateChanged, self._onAria2ListenStateChanged),
+        ]
+        for signal, slot in subscriptions:
+            signal.connect(slot)
+        self.destroyed.connect(lambda: [signal.disconnect(slot) for signal, slot in subscriptions])
+
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectWin)
         elif sys.platform == "darwin":
@@ -292,6 +301,32 @@ class MainWindow(MSFluentWindow):
             self._browserService.approvePair(request.requestId)
         else:
             self._browserService.rejectPair(request.requestId)
+
+    def _onBrowserListenStateChanged(self, state: ListenState) -> None:
+        if state.status == ListenStatus.FAILED:
+            self._showListenFailure(self.tr("浏览器扩展服务无法启动"), state)
+
+    def _onAria2ListenStateChanged(self, state: ListenState) -> None:
+        if state.status == ListenStatus.FAILED:
+            self._showListenFailure(self.tr("Aria2 RPC 兼容服务无法启动"), state)
+
+    def _showListenFailure(self, title: str, state: ListenState) -> None:
+        from qfluentwidgets import PushButton
+
+        infoBar = InfoBar(
+            icon=InfoBarIcon.ERROR,
+            title=title,
+            content=toListenFailureText(state),
+            orient=Qt.Orientation.Horizontal,
+            isClosable=True,
+            duration=-1,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self,
+        )
+        settingButton = PushButton(FluentIcon.SETTING, self.tr("前往设置"))
+        settingButton.clicked.connect(lambda: (infoBar.close(), self._showPage(SettingPage)))
+        infoBar.addWidget(settingButton)
+        infoBar.show()
 
     def _onUpdateAvailable(self, info) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
