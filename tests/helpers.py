@@ -7,7 +7,7 @@ from types import ModuleType
 
 from aiohttp import web
 
-ENGINE_PATH = Path(__file__).parents[1] / "android/app/src/main/python/engine.py"
+BRIDGE_PATH = Path(__file__).parents[1] / "android/app/src/main/python/bridge.py"
 
 
 class StubFlows:
@@ -21,12 +21,12 @@ class StubFlows:
         pass
 
 
-def loadEngine():
+def loadBridge():
     stub = ModuleType("app.platform.file_watcher")
     stub.InotifyFileWatcher = object
     sys.modules["app.platform.file_watcher"] = stub
 
-    spec = importlib.util.spec_from_file_location("android_engine", ENGINE_PATH)
+    spec = importlib.util.spec_from_file_location("android_bridge", BRIDGE_PATH)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

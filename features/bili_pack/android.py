@@ -49,7 +49,7 @@ def init(pack) -> dict:
     return {"accountState": _account.accountChanged, "qrState": _account.qrStateChanged}
 
 
-# ---- task/draft serialization (called by engine.py internally) ----
+# ---- task/draft serialization (called by bridge.py internally) ----
 
 def taskFields(task) -> dict:
     return {
@@ -125,7 +125,7 @@ def draftFields(task) -> dict:
     }
 
 
-# ---- draft mutations (called by engine.py setDraft dispatcher) ----
+# ---- draft mutations (called by bridge.py setDraft dispatcher) ----
 
 def setControl(task, controlId: str, value: str):
     if controlId == "video":

@@ -6,12 +6,12 @@ import sys
 import pytest
 from aiohttp import web
 
-from tests.helpers import loadEngine
+from tests.helpers import loadBridge
 
 
 @pytest.fixture(scope="module")
 def bridge():
-    return loadEngine()
+    return loadBridge()
 
 
 @pytest.fixture
