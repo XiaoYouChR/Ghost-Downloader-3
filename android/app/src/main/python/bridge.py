@@ -117,7 +117,6 @@ class Bridge:
         return await result if inspect.isawaitable(result) else result
 
     def _activate(self):
-        self._bindSpeedMeter()
         self._engine.start()
         self._setupFlows()
         self._emitKeepAlive()
@@ -125,17 +124,6 @@ class Bridge:
         self._emitAria2Rpc()
         if cfg.shouldCheckUpdateAtStartup.value:
             self._coroutineRunner.submit(self._checkUpdateAtStartup())
-
-    def _bindSpeedMeter(self):
-        self._taskService.taskStarted.connect(lambda _: self._speedMeter.start())
-        self._taskService.seedingStarted.connect(lambda _: self._speedMeter.start())
-        self._taskService.tasksAllCompleted.connect(self._onTaskWorkEnded)
-        self._taskService.seedingStopped.connect(self._onTaskWorkEnded)
-
-    def _onTaskWorkEnded(self, *_args):
-        if self._taskService.runningCount() == 0 and not any(
-                t.isSeeding for t in self._taskService.tasks):
-            self._speedMeter.stop()
 
     def _setupFlows(self):
         for signal in (

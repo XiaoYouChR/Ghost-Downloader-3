@@ -58,6 +58,13 @@ class StubCategoryService:
 
 
 class StubSpeedMeter:
+    def __init__(self):
+        self.calls: list[str] = []
+
+    @property
+    def isRunning(self) -> bool:
+        return bool(self.calls) and self.calls[-1] == "start"
+
     def addSpeed(self, n):
         pass
 
@@ -65,10 +72,10 @@ class StubSpeedMeter:
         pass
 
     def start(self):
-        pass
+        self.calls.append("start")
 
     def stop(self):
-        pass
+        self.calls.append("stop")
 
 
 class StubFileWatcher:
@@ -81,7 +88,12 @@ class StubFileWatcher:
 
 
 @pytest.fixture()
-def service(qapp, monkeypatch, tmp_path):
+def speedMeter():
+    return StubSpeedMeter()
+
+
+@pytest.fixture()
+def service(qapp, monkeypatch, tmp_path, speedMeter):
     from app.config.cfg import cfg
     monkeypatch.setattr(cfg.maxTaskNum, "value", 3)
     monkeypatch.setattr(cfg.isCategoryEnabled, "value", False)
@@ -89,8 +101,7 @@ def service(qapp, monkeypatch, tmp_path):
 
     runner = StubCoroutineRunner()
     category = StubCategoryService()
-    speed = StubSpeedMeter()
-    svc = TaskService(runner, category, speed, StubFileWatcher())
+    svc = TaskService(runner, category, speedMeter, StubFileWatcher())
     return svc, runner
 
 
@@ -757,3 +768,51 @@ class TestSeeding:
 
         staleDone(None)
         assert not task.isSeeding
+
+
+class TestSpeedMeter:
+    """速度表在有任务下载或做种时走表，驱动速度显示和任务进度推送。"""
+
+    def test_meter_stops_when_last_running_task_is_paused(self, service, speedMeter):
+        svc, runner = service
+        task = makeTask("sm0")
+        svc.add(task)
+        assert speedMeter.isRunning
+        svc.pause(task)
+        assert not speedMeter.isRunning
+
+    def test_meter_keeps_running_while_seeding(self, service, speedMeter, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sm1", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        assert task.isSeeding
+        assert speedMeter.isRunning
+        assert "stop" not in speedMeter.calls
+
+    def test_meter_stops_when_seeding_stops_and_nothing_runs(self, service, speedMeter, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sm2", tmp_path)
+        svc.add(task)
+        finishRun(runner, task)
+        svc.stopSeeding(task)
+        assert not speedMeter.isRunning
+
+    def test_meter_keeps_running_when_seeding_stops_but_a_download_runs(self, service, speedMeter, tmp_path):
+        svc, runner = service
+        seed = makeSeedTask("sm3", tmp_path)
+        svc.add(seed)
+        finishRun(runner, seed)
+        svc.add(makeTask("sm3-other"))
+        svc.stopSeeding(seed)
+        assert speedMeter.isRunning
+
+    def test_meter_starts_for_seeding_restored_at_launch(self, service, speedMeter, tmp_path):
+        svc, runner = service
+        task = makeSeedTask("sm4", tmp_path)
+        task.shouldSeed = True
+        task.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / task.name).touch()
+        svc._store.loadSaved = lambda: [task]
+        svc.resumeSaved()
+        assert speedMeter.isRunning

@@ -25,9 +25,10 @@ class SpeedMeter:
             self._tickLoop(), failed=self._onTickFailed)
 
     def stop(self) -> None:
-        if self._tickWorkId is not None:
-            self._coroutineRunner.cancel(self._tickWorkId)
-            self._tickWorkId = None
+        if self._tickWorkId is None:
+            return
+        self._coroutineRunner.cancel(self._tickWorkId)
+        self._tickWorkId = None
         self._bytes = 0
         self._currentSpeed = 0
         self.speedChanged.emit(0)
