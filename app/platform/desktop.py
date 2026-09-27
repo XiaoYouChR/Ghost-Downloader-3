@@ -4,7 +4,7 @@ import sys
 from os import PathLike
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, QMimeData, QProcess, QUrl, Qt
+from PySide6.QtCore import QLocale, QMimeData, QProcess, QResource, QUrl, Qt
 from PySide6.QtGui import QDesktopServices, QDrag
 from PySide6.QtWidgets import QApplication, QWidget
 from loguru import logger
@@ -107,6 +107,10 @@ def _revealInFolderShell(path: Path) -> bool:
     finally:
         if weInitialized:
             ole32.CoUninitialize()
+
+
+def loadCrx() -> bytes:
+    return bytes(QResource(":/res/chrome_extension.crx").data())
 
 
 def openFile(path: str | bytes | PathLike[str]) -> None:

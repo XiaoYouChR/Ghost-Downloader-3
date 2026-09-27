@@ -83,7 +83,8 @@ async def aria2(monkeypatch, tmp_path):
     async def parse(options):
         return FakeTask(options)
 
-    rpc = Aria2RpcServer(runner, parse=parse, addTask=added.append, requestDraft=drafted.extend)
+    rpc = Aria2RpcServer(runner, parse=parse, addTask=added.append)
+    rpc.taskDraftRequested.connect(drafted.extend)
     server = LoopbackServer(runner, rpc.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
     server.start()
     await waitFor(lambda: server.state.status == ListenStatus.LISTENING)

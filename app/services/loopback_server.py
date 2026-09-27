@@ -23,7 +23,7 @@ class ListenStatus(StrEnum):
 
 
 class ListenFailure(StrEnum):
-    PORT_OCCUPIED = "portOccupied"
+    OCCUPIED = "occupied"
     DENIED = "denied"
     OTHER = "other"
 
@@ -32,13 +32,12 @@ class ListenFailure(StrEnum):
 class ListenState:
     status: ListenStatus = ListenStatus.OFF
     port: int = 0
-    hasIpv6: bool = False
     failure: ListenFailure | None = None
 
 
 def toListenFailure(error: OSError) -> ListenFailure:
     if error.errno in (errno.EADDRINUSE, getattr(errno, "WSAEADDRINUSE", None)):
-        return ListenFailure.PORT_OCCUPIED
+        return ListenFailure.OCCUPIED
     if error.errno in (errno.EACCES, getattr(errno, "WSAEACCES", None)):
         return ListenFailure.DENIED
     return ListenFailure.OTHER
@@ -100,7 +99,7 @@ class LoopbackServer:
     def _request(self, port: int | None) -> None:
         if port is not None:
             self._setState(ListenState(ListenStatus.STARTING, port))
-        self._coroutineRunner.submit(self._apply(port), done=self._setState)
+        self._coroutineRunner.submit(self._run(port), done=self._setState)
 
     def _setState(self, state: ListenState) -> None:
         if state == self._state:
@@ -108,7 +107,7 @@ class LoopbackServer:
         self._state = state
         self.stateChanged.emit(state)
 
-    async def _apply(self, port: int | None) -> ListenState:
+    async def _run(self, port: int | None) -> ListenState:
         if self._lock is None:
             self._lock = asyncio.Lock()
         async with self._lock:
@@ -130,7 +129,7 @@ class LoopbackServer:
 
         for sock in sockets:
             self._servers.append(await asyncio.start_server(self._onConnection, sock=sock))
-        return ListenState(ListenStatus.LISTENING, port, hasIpv6=len(sockets) == 2)
+        return ListenState(ListenStatus.LISTENING, port)
 
     async def _close(self) -> None:
         servers, self._servers = self._servers, []

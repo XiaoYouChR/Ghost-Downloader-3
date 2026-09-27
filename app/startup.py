@@ -1,4 +1,4 @@
-"""Shared engine startup, binding, and shutdown for desktop and Android."""
+"""桌面端的启动阶段：构造引擎服务、加载 pack、启动与关闭。Android 由 engine.py 自己组装。"""
 from __future__ import annotations
 
 
@@ -53,7 +53,12 @@ def loadEngine(application):
 
 def createServices(coroutineRunner, categoryService, speedMeter):
     from PySide6.QtCore import QFileSystemWatcher
+    from app.platform.desktop import loadCrx
+    from app.config.cfg import cfg
+    from app.services.aria2_rpc import Aria2RpcServer
+    from app.services.browser_service import BrowserService
     from app.services.feature_service import FeatureService
+    from app.services.loopback_server import LoopbackServer
     from app.services.runtime_status import RuntimeStatusService
     from app.services.task_service import TaskService
     from app.services.update_service import UpdateService
@@ -64,7 +69,15 @@ def createServices(coroutineRunner, categoryService, speedMeter):
     featureService = FeatureService(taskService, categoryService, coroutineRunner, runtimeStatusService)
     updateService = UpdateService(coroutineRunner)
 
-    return featureService, taskService, updateService, runtimeStatusService
+    browserService = BrowserService(coroutineRunner, taskService, featureService.parse, loadCrx)
+    browserServer = LoopbackServer(coroutineRunner, browserService.handle,
+                                   isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
+    aria2RpcServer = Aria2RpcServer(coroutineRunner, featureService.parse, taskService.add)
+    aria2Server = LoopbackServer(coroutineRunner, aria2RpcServer.handle,
+                                 isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
+
+    return (featureService, taskService, updateService, runtimeStatusService,
+            browserService, browserServer, aria2RpcServer, aria2Server)
 
 
 def loadPacks(featureService, coroutineRunner, speedMeter):

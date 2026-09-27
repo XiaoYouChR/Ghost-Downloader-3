@@ -5,8 +5,8 @@ import pytest
 from app.services.loopback_server import ListenFailure, ListenState, ListenStatus
 from app.signal import Signal
 
-OCCUPIED = ListenState(ListenStatus.FAILED, 16800, failure=ListenFailure.PORT_OCCUPIED)
-LISTENING = ListenState(ListenStatus.LISTENING, 16800, hasIpv6=True)
+OCCUPIED = ListenState(ListenStatus.FAILED, 16800, failure=ListenFailure.OCCUPIED)
+LISTENING = ListenState(ListenStatus.LISTENING, 16800)
 
 
 class FakeServer:

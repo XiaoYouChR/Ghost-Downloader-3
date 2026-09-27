@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import json
+import struct
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -9,9 +12,10 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 
 from app.config.cfg import cfg
-from app.config.constants import VERSION
+from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.models.task import Task, TaskStatus
-from app.services.browser_service import PROTOCOL_VERSION, BrowserService, PairRequest
+from app.services import browser_service
+from app.services.browser_service import PROTOCOL_VERSION, BrowserService, PairRequest, installExtension
 from app.services.coroutine_runner import CoroutineRunner
 from app.services.loopback_server import ListenStatus, LoopbackServer
 from tests.test_loopback_server import FakeItem, findFreePort, waitFor
@@ -78,6 +82,11 @@ async def waitClosed(ws) -> None:
 
 @pytest.fixture
 async def browser(monkeypatch, tmp_path):
+    async for harness in startBrowser(monkeypatch, tmp_path, loadCrx=None):
+        yield harness
+
+
+async def startBrowser(monkeypatch, tmp_path, loadCrx):
     monkeypatch.setattr(cfg, "set", lambda item, value, save=True: monkeypatch.setattr(item, "value", value))
     monkeypatch.setattr(cfg.browserExtensionPairToken, "value", TOKEN)
     monkeypatch.setattr(cfg.shouldDraftTakenDownload, "value", False)
@@ -92,8 +101,9 @@ async def browser(monkeypatch, tmp_path):
             raise ValueError("unreachable")
         return Task(name="video.mp4", url=options.url, packId="http_pack", outputFolder=options.outputFolder)
 
-    service = BrowserService(runner, taskService, parse=parse, loadCrx=None,
-                             requestDraft=drafted.extend, onExtensionUpdated=lambda _: None)
+    service = BrowserService(runner, taskService, parse=parse, loadCrx=loadCrx)
+    service.taskDraftRequested.connect(drafted.extend)
+    service.extensionUpdated.connect(lambda version: events.append(("extensionUpdated", version)))
     service.connectionChanged.connect(lambda: events.append("connectionChanged"))
     service.protocolMismatched.connect(lambda: events.append("protocolMismatched"))
     service.pairRequestChanged.connect(lambda request: events.append(request))
@@ -216,8 +226,7 @@ class TestToken:
         monkeypatch.setattr(cfg.browserExtensionPairToken, "value", "")
         loop = asyncio.get_running_loop()
 
-        BrowserService(CoroutineRunner(loop.call_soon, loop=loop), FakeTaskService(), parse=None, loadCrx=None,
-                       requestDraft=None, onExtensionUpdated=None)
+        BrowserService(CoroutineRunner(loop.call_soon, loop=loop), FakeTaskService(), parse=None, loadCrx=None)
 
         assert len(cfg.browserExtensionPairToken.value) >= 16
 
@@ -355,3 +364,47 @@ async def test_stopping_server_disconnects_extension(browser):
         browser.server.stop()
         await waitClosed(ws)
     await waitFor(lambda: browser.service.connectionSummary == ("", ""))
+
+
+def buildCrx(files: dict[str, str]) -> bytes:
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w") as zf:
+        for name, text in files.items():
+            zf.writestr(name, text)
+    header = b"signed-header"
+    return b"Cr24" + struct.pack("<II", 3, len(header)) + header + archive.getvalue()
+
+
+class TestExtensionInstall:
+    async def test_crx_is_unpacked_into_folder(self, tmp_path):
+        folder = await installExtension(buildCrx({"manifest.json": "{}", "js/background.js": "run()"}), tmp_path / "ext")
+
+        assert (folder / "manifest.json").read_text() == "{}"
+        assert (folder / "js/background.js").read_text() == "run()"
+
+    async def test_outdated_development_extension_is_updated_and_reloaded(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(browser_service, "EXTENSION_UNPACK_DIR", tmp_path / "ext")
+        crx = buildCrx({"manifest.json": "{}"})
+        async for browser in startBrowser(monkeypatch, tmp_path, loadCrx=lambda: crx):
+            async with browser.connect() as ws:
+                await self.helloFromOldDevelopmentBuild(ws)
+                reload = await receive(ws, "reload")
+
+            assert reload == {"type": "reload"}
+            assert (tmp_path / "ext/manifest.json").exists()
+            assert ("extensionUpdated", LATEST_EXTENSION_VERSION) in browser.events
+
+    async def test_no_update_without_bundled_extension(self, browser):
+        async with browser.connect() as ws:
+            await self.helloFromOldDevelopmentBuild(ws)
+            await ws.send(json.dumps({"type": "subscribe_tasks"}))
+            snapshot = await receive(ws)
+
+        assert snapshot["type"] == "task_snapshot"
+        assert not any(isinstance(e, tuple) and e[0] == "extensionUpdated" for e in browser.events)
+
+    @staticmethod
+    async def helloFromOldDevelopmentBuild(ws) -> None:
+        await ws.send(json.dumps({"type": "hello", "protocolVersion": PROTOCOL_VERSION, "token": TOKEN,
+                                  "extensionVersion": "0.0.1", "installType": "development"}))
+        assert (await receive(ws))["type"] == "hello_ack"

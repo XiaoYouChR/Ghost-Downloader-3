@@ -86,14 +86,12 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
 
-    featureService, taskService, updateService, runtimeStatusService = createServices(
+    (featureService, taskService, updateService, runtimeStatusService,
+     browserService, browserServer, aria2RpcServer, aria2Server) = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
     loadPacks(featureService, coroutineRunner, speedMeter)
 
-    from app.services.aria2_rpc import Aria2RpcServer
-    from app.services.browser_service import BrowserService
-    from app.services.loopback_server import LoopbackServer
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
@@ -115,23 +113,23 @@ def startApp(application, isSilent=False):
         window = None
         emptyWorkingSetIfIdle()
 
-    def show() -> MainWindow:
+    def createWindow() -> MainWindow:
         nonlocal window
+        window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
+        window.destroyed.connect(onWindowDestroyed)
+        return window
+
+    def show() -> MainWindow:
         if window is None:
-            window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
-            window.setupPacks()
-            window.destroyed.connect(onWindowDestroyed)
+            createWindow().setupPacks()
         window.show()
         from app.platform.desktop import raiseWindow
         raiseWindow(window)
         return window
 
     def onBrowserDraft(tasks):
-        nonlocal window
         if window is None:
-            window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
-            window.setupPacks()
-            window.destroyed.connect(onWindowDestroyed)
+            createWindow().setupPacks()
         window.addTasks(tasks)
 
     def onExtensionUpdated(version):
@@ -140,17 +138,9 @@ def startApp(application, isSilent=False):
         InfoBar.success(w.tr("浏览器扩展已更新"), f"v{version}",
                         duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=w)
 
-    def loadCrx():
-        from PySide6.QtCore import QResource
-        return bytes(QResource(":/res/chrome_extension.crx").data())
-
-    browserService = BrowserService(coroutineRunner, taskService, featureService.parse, loadCrx,
-                                    requestDraft=onBrowserDraft, onExtensionUpdated=onExtensionUpdated)
-    browserServer = LoopbackServer(coroutineRunner, browserService.handle,
-                                   isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
-    aria2RpcServer = Aria2RpcServer(coroutineRunner, featureService.parse, taskService.add, requestDraft=onBrowserDraft)
-    aria2Server = LoopbackServer(coroutineRunner, aria2RpcServer.handle,
-                                 isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
+    browserService.taskDraftRequested.connect(onBrowserDraft)
+    browserService.extensionUpdated.connect(onExtensionUpdated)
+    aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
     browserServer.start()  # OOBE 之前启动，OOBE 期间可完成扩展配对
     aria2Server.start()
 
@@ -179,8 +169,7 @@ def startApp(application, isSilent=False):
 
         show()
     else:
-        window = MainWindow(taskService, featureService, browserService, browserServer, aria2Server, categoryService, speedMeter, coroutineRunner, plan, updateService)
-        window.destroyed.connect(onWindowDestroyed)
+        createWindow()
 
         if not isSilent and sys.platform != "darwin":
             from qfluentwidgets import SplashScreen

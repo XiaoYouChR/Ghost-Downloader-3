@@ -535,14 +535,11 @@ class BrowserExtensionPage(QWidget):
             self.refreshPortStatus()
 
     def _onManualInstallClicked(self) -> None:
-        from app.services.browser_service import extractBrowserExtension
-
-        def loadCrx():
-            from PySide6.QtCore import QResource
-            return bytes(QResource(":/res/chrome_extension.crx").data())
+        from app.platform.desktop import loadCrx
+        from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
 
         self._coroutineRunner.submit(
-            extractBrowserExtension(loadCrx),
+            installExtension(loadCrx(), EXTENSION_UNPACK_DIR),
             done=self._onExtensionExtracted,
             failed=self._onExtensionExtractFailed,
             owner=self,

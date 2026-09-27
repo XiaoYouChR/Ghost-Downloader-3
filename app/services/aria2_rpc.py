@@ -13,7 +13,8 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import VERSION
 from app.models.task import TaskOptions
-from app.services.websocket_stream import acceptWebSocket, readHead
+from app.services.websocket_stream import WebSocketStream, readHead
+from app.signal import Signal
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -106,14 +107,15 @@ def toHeaders(options: dict) -> dict[str, str]:
 class Aria2RpcServer:
     """aria2 JSON-RPC 的最小兼容：getVersion 与 addUri，HTTP POST 与 WebSocket 共用 /jsonrpc。
 
-    handle 在 loop 线程运行；解析完成的 Task 在 dispatcher 线程交给 addTask 或 requestDraft。
+    handle 在 loop 线程运行；解析完成的 Task 在 dispatcher 线程交给 addTask，或经 taskDraftRequested 进草稿。
     """
 
-    def __init__(self, coroutineRunner, parse, addTask, requestDraft) -> None:
+    taskDraftRequested = Signal(list)
+
+    def __init__(self, coroutineRunner, parse, addTask) -> None:
         self._coroutineRunner = coroutineRunner
         self._parse = parse
         self._addTask = addTask
-        self._requestDraft = requestDraft
 
     async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         head = await readHead(reader)
@@ -150,7 +152,7 @@ class Aria2RpcServer:
         writer.write(buildHttpResponse(toHttpStatus(response), payload, {"Content-Type": "application/json-rpc"}))
 
     async def _runWebSocket(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, head: bytes) -> None:
-        stream = await acceptWebSocket(reader, writer, head, maxSize=MAX_REQUEST_SIZE)
+        stream = await WebSocketStream.open(reader, writer, head, maxSize=MAX_REQUEST_SIZE)
         if stream is None:
             return
         async for message in stream.messages():
@@ -220,7 +222,7 @@ class Aria2RpcServer:
         if name:
             task.setName(name)
         if cfg.shouldDraftTakenDownload.value:
-            self._requestDraft([task])
+            self.taskDraftRequested.emit([task])
             return
         self._addTask(task)
 

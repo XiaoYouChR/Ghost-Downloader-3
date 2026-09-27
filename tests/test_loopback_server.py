@@ -96,7 +96,6 @@ async def test_listens_on_ipv4_and_ipv6_loopback(build):
     server.start()
     await waitFor(lambda: isListening(server))
 
-    assert server.state.hasIpv6
     assert await roundTrip("127.0.0.1", server.state.port) == b"hello\n"
     assert await roundTrip("::1", server.state.port) == b"hello\n"
 
@@ -108,7 +107,7 @@ async def test_occupied_port_fails_and_recovers_after_port_change(build):
     server.start()
     await waitFor(lambda: server.state.status == ListenStatus.FAILED)
 
-    assert server.state.failure == ListenFailure.PORT_OCCUPIED
+    assert server.state.failure == ListenFailure.OCCUPIED
     assert server.state.port == port
 
     portItem.set(findFreePort())
@@ -123,7 +122,6 @@ async def test_occupied_ipv6_still_listens_on_ipv4(build):
     server.start()
     await waitFor(lambda: isListening(server))
 
-    assert not server.state.hasIpv6
     assert await roundTrip("127.0.0.1", port) == b"hello\n"
     occupier.close()
 
@@ -180,6 +178,14 @@ async def test_failing_connection_does_not_stop_server(build):
 
     assert await asyncio.wait_for(reader.read(), 1) == b""
     assert await roundTrip("127.0.0.1", server.state.port) == b"hello\n"
+
+
+async def test_enabled_server_is_not_off_before_bind_finishes(build):
+    server, isEnabledItem, portItem = build()
+    server.start()
+
+    assert server.state.status != ListenStatus.OFF
+    assert server.state.port == portItem.value
 
 
 async def test_state_changes_are_emitted_once_each(build):
