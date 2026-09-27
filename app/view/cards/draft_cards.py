@@ -6,7 +6,7 @@ from PySide6.QtCore import QFileInfo, Signal
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import (
-    Action, BodyLabel, FluentIcon, ImageLabel, LineEdit, RoundMenu,
+    Action, BodyLabel, FluentIcon, IconWidget, ImageLabel, LineEdit, RoundMenu,
     ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 
@@ -25,11 +25,12 @@ class DraftCard(QWidget):
     categoryPicked = Signal(str)
     editRequested = Signal()
 
-    def __init__(self, task: Task, categoryService, coroutineRunner, parent=None):
+    def __init__(self, task: Task, categoryService, coroutineRunner, probeConflict, parent=None):
         super().__init__(parent)
         self._task = task
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
+        self._probeConflict = probeConflict
 
         self.iconLabel = ImageLabel(self)
         self.iconLabel.setImage(QFileIconProvider().icon(QFileInfo(task.name)).pixmap(16, 16))
@@ -37,6 +38,7 @@ class DraftCard(QWidget):
         self.nameLabel = EditableLabel(task.name, self)
         self.nameEdit = LineEdit(self)
         self.sizeLabel = BodyLabel(toReadableSize(task.fileSize) if task.fileSize > 1 else "--", self)
+        self.conflictIcon = IconWidget(FluentIcon.INFO, self)
         self.categoryButton = TransparentToolButton(self)
         self.editButton = TransparentToolButton(FluentIcon.EDIT, self)
 
@@ -58,7 +60,11 @@ class DraftCard(QWidget):
         self.editButton.setToolTip(self.tr("编辑任务参数"))
         self.editButton.installEventFilter(ToolTipFilter(self.editButton))
         self.editButton.setVisible(self._task.canEdit)
+        self.conflictIcon.setFixedSize(16, 16)
+        self.conflictIcon.setToolTip(self.tr("下载目录中已有同名文件，下载时按设置处理"))
+        self.conflictIcon.installEventFilter(ToolTipFilter(self.conflictIcon))
         self._refreshCategoryButton()
+        self._refreshConflictIcon()
 
     def _initLayout(self) -> None:
         layout = QHBoxLayout(self)
@@ -67,6 +73,7 @@ class DraftCard(QWidget):
         layout.addWidget(self.iconLabel)
         layout.addWidget(self.nameLabel, 1)
         layout.addWidget(self.nameEdit, 1)
+        layout.addWidget(self.conflictIcon)
         layout.addWidget(self.sizeLabel)
 
     def _bind(self) -> None:
@@ -75,6 +82,9 @@ class DraftCard(QWidget):
         self.editButton.clicked.connect(self.editRequested.emit)
         self.categoryButton.clicked.connect(self._showCategoryMenu)
         cfg.isCategoryEnabled.valueChanged.connect(self._refreshCategoryButton)
+
+    def _refreshConflictIcon(self) -> None:
+        self.conflictIcon.setVisible(self._probeConflict(self._task) is not None)
 
     def _refreshFileIcon(self) -> None:
         self.iconLabel.setImage(QFileIconProvider().icon(QFileInfo(self._task.name)).pixmap(16, 16))
@@ -95,6 +105,7 @@ class DraftCard(QWidget):
             self.nameLabel.setText(self._task.name)
             self.nameEdit.setText(self._task.name)
             self._refreshFileIcon()
+            self._refreshConflictIcon()
         self.nameEdit.hide()
         self.nameLabel.show()
 
@@ -128,6 +139,7 @@ class DraftCard(QWidget):
     def _onCategoryPicked(self, categoryId: str) -> None:
         self._task.category = categoryId
         self._refreshCategoryButton()
+        self._refreshConflictIcon()
         self.categoryPicked.emit(categoryId)
 
     @property

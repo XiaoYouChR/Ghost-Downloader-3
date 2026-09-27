@@ -16,7 +16,7 @@ from app.platform.filesystem import localFilePath, toSafeFilename
 
 from .config import bittorrentConfig
 from .session import btSession
-from .task import BTFile, BTTask, BTTaskStep
+from .task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
 from .web_tracker.service import trackerService
 
 
@@ -85,12 +85,15 @@ class TorrentParser(TaskParser):
         rootName = toSafeFilename(PurePosixPath(entries[0].relativePath).parts[0], fallback="torrent")
         name = toSafeFilename(Path(entries[0].relativePath).name, fallback="torrent") if len(entries) == 1 else rootName
 
+        steps = [BTTaskStep(stepIndex=1)]
+        if sourceType == "magnet" and bittorrentConfig.saveMagnetFile.value:
+            steps.append(BTTorrentFileStep(stepIndex=0))
         task = BTTask(
             name=name,
             url=sourceUrl,
             fileSize=sum(e.size for e in entries),
             outputFolder=outputFolder,
-            steps=[BTTaskStep(stepIndex=1)],
+            steps=steps,
             sourceType=sourceType,
             torrentData=b64encode(torrentBytes).decode(),
             trackers=trackers,

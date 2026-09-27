@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
+from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
 from app.client import buildClient
@@ -137,7 +138,10 @@ class HuggingFaceParser(TaskParser):
                 downloadUrl=self._fileUrl(repoId, repoType, revision, path),
             ))
 
-        repoName = toSafeFilename(repoId.replace("/", "_"), fallback="huggingface")
+        if len(files) == 1:
+            repoName = toSafeFilename(PurePosixPath(files[0].relativePath).name, fallback="huggingface")
+        else:
+            repoName = toSafeFilename(repoId.replace("/", "_"), fallback="huggingface")
 
         steps = [
             HuggingFaceStep(

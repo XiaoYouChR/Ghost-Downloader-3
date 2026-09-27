@@ -18,6 +18,8 @@ class FakeTaskService:
     queueChanged = Signal()
     fileDisappeared = Signal(object)
     fileDeleteDenied = Signal(object)
+    nameConflicted = Signal(object)
+    overwriteFailed = Signal(object)
     tasks = []
 
     def waitingOrder(self):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+from pathlib import Path
 
 import pytest
 
@@ -16,24 +17,11 @@ def loadAdapter(pack: str):
     return importlib.import_module(f"features.{pack}.android")
 
 
-class StubTask:
-    audioLanguages = ""
-
-    def __init__(self, name="视频.mp4", isVideoEnabled=True, isAudioEnabled=True,
-                 isCoverEnabled=False, coverUrl=""):
-        self.name = name
-        self.isVideoEnabled = isVideoEnabled
-        self.isAudioEnabled = isAudioEnabled
-        self.isCoverEnabled = isCoverEnabled
-        self.coverUrl = coverUrl
-        self.maxVideoHeight = 0
-        self.maxAudioBitrate = 0
-
-    def setCoverUrl(self, url):
-        self.coverUrl = url
-
-    def setName(self, name):
-        self.name = name
+def makeTask(name="视频.mp4", isVideoEnabled=True, isAudioEnabled=True, isCoverEnabled=False, coverUrl=""):
+    from features.yt_dlp_pack.task import YouTubeTask
+    return YouTubeTask(name=name, url="https://www.youtube.com/watch?v=x", packId="yt_dlp", outputFolder=Path("/tmp"),
+                       isVideoEnabled=isVideoEnabled, isAudioEnabled=isAudioEnabled,
+                       isCoverEnabled=isCoverEnabled, coverUrl=coverUrl)
 
 
 @pytest.fixture
@@ -45,7 +33,7 @@ def ytdlp(monkeypatch):
 
 
 def test_probe_pins_the_first_audio_language_like_desktop(ytdlp):
-    task = StubTask()
+    task = makeTask()
 
     ytdlp.probe(task, "https://example.test/v", "media")
 
@@ -53,7 +41,7 @@ def test_probe_pins_the_first_audio_language_like_desktop(ytdlp):
 
 
 def test_probe_keeps_an_existing_choice(ytdlp):
-    task = StubTask()
+    task = makeTask()
     task.audioLanguages = "ja"
 
     ytdlp.probe(task, "https://example.test/v", "media")
@@ -63,7 +51,7 @@ def test_probe_keeps_an_existing_choice(ytdlp):
 
 def test_single_language_media_is_left_unpinned(ytdlp, monkeypatch):
     monkeypatch.setattr(ytdlp, "probeFormats", lambda url: {"formats": [INFO["formats"][1]]})
-    task = StubTask()
+    task = makeTask()
 
     ytdlp.probe(task, "https://example.test/v", "media")
 
@@ -71,7 +59,7 @@ def test_single_language_media_is_left_unpinned(ytdlp, monkeypatch):
 
 
 def test_probe_keeps_the_cover_when_media_has_no_thumbnail(ytdlp):
-    task = StubTask(coverUrl="https://example.test/old.jpg")
+    task = makeTask(coverUrl="https://example.test/old.jpg")
 
     ytdlp.probe(task, "https://example.test/v", "media")
 
@@ -81,7 +69,7 @@ def test_probe_keeps_the_cover_when_media_has_no_thumbnail(ytdlp):
 def test_probe_takes_the_cover_from_the_thumbnail(ytdlp, monkeypatch):
     monkeypatch.setattr(ytdlp, "probeFormats",
                         lambda url: {**INFO, "thumbnail": "https://example.test/new.jpg"})
-    task = StubTask()
+    task = makeTask()
 
     ytdlp.probe(task, "https://example.test/v", "media")
 
@@ -89,7 +77,7 @@ def test_probe_takes_the_cover_from_the_thumbnail(ytdlp, monkeypatch):
 
 
 def test_quality_change_keeps_the_task_name(ytdlp):
-    task = StubTask(name="自定义名字")
+    task = makeTask(name="自定义名字")
 
     ytdlp.setControl(task, "video", "1080")
 
@@ -97,7 +85,7 @@ def test_quality_change_keeps_the_task_name(ytdlp):
 
 
 def test_language_change_keeps_the_task_name(ytdlp):
-    task = StubTask(name="自定义名字")
+    task = makeTask(name="自定义名字")
 
     ytdlp.setControl(task, "language", "ja")
 
@@ -105,7 +93,7 @@ def test_language_change_keeps_the_task_name(ytdlp):
 
 
 def test_track_toggle_rewrites_the_extension(ytdlp):
-    task = StubTask(name="自定义名字", isVideoEnabled=False)
+    task = makeTask(name="自定义名字", isVideoEnabled=False)
 
     ytdlp.setControl(task, "video", "720")
 
@@ -113,7 +101,7 @@ def test_track_toggle_rewrites_the_extension(ytdlp):
 
 
 def test_cover_toggle_rewrites_the_extension_like_desktop(ytdlp):
-    task = StubTask(name="自定义名字")
+    task = makeTask(name="自定义名字")
 
     ytdlp.setControl(task, "cover", "1")
 
@@ -121,7 +109,7 @@ def test_cover_toggle_rewrites_the_extension_like_desktop(ytdlp):
 
 
 def test_cover_toggle_with_audio_only_rewrites_to_m4a(ytdlp):
-    task = StubTask(name="自定义名字", isVideoEnabled=False)
+    task = makeTask(name="自定义名字", isVideoEnabled=False)
 
     ytdlp.setControl(task, "cover", "1")
 
@@ -129,7 +117,7 @@ def test_cover_toggle_with_audio_only_rewrites_to_m4a(ytdlp):
 
 
 def test_flag_change_rewrites_even_when_the_extension_is_unchanged(ytdlp):
-    task = StubTask(name="自定义名字")
+    task = makeTask(name="自定义名字")
 
     ytdlp.setControl(task, "audio", "")
 

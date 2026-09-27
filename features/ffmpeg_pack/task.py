@@ -7,7 +7,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from app.models.task import TaskError, TaskStep, TaskStatus
+from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath
 from http_pack.task import HttpTaskStep
 from .config import ffmpegRuntime
@@ -16,9 +16,8 @@ from .config import ffmpegRuntime
 ISOBMFF_BOX_TYPES = {b'ftyp', b'styp', b'moof', b'moov', b'free', b'skip', b'mdat', b'pdin'}
 
 
-def mediaStem(task) -> str:
-    name = task.name
-    return name.rsplit(".", 1)[0] if "." in name else name
+def toResourcePath(task: Task, role: str, extension: str) -> Path:
+    return task.partPath / (f"{role}.{extension}" if extension else role)
 
 
 @dataclass(kw_only=True)
@@ -28,8 +27,7 @@ class FFmpegResourceStep(HttpTaskStep):
 
     @property
     def outputPath(self) -> str:
-        suffix = f".{self.extension}" if self.extension else ""
-        return str(self.task.outputFolder / f"{mediaStem(self.task)}.{self.role}{suffix}")
+        return str(toResourcePath(self.task, self.role, self.extension))
 
 
 @dataclass(kw_only=True)
@@ -42,21 +40,15 @@ class FFmpegStep(TaskStep):
 
     @property
     def outputPath(self) -> str:
-        return self.outputFile
-
-    @property
-    def outputFile(self) -> str:
-        return str(self.task.outputFolder / f"{mediaStem(self.task)}.mp4")
+        return self.task.outputPath
 
     @property
     def _videoPath(self) -> Path:
-        suffix = f".{self.videoExtension}" if self.videoExtension else ""
-        return self.task.outputFolder / f"{mediaStem(self.task)}.video{suffix}"
+        return toResourcePath(self.task, "video", self.videoExtension)
 
     @property
     def _audioPath(self) -> Path:
-        suffix = f".{self.audioExtension}" if self.audioExtension else ""
-        return self.task.outputFolder / f"{mediaStem(self.task)}.audio{suffix}"
+        return toResourcePath(self.task, "audio", self.audioExtension)
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
 
@@ -64,8 +56,6 @@ class FFmpegStep(TaskStep):
         ffprobePath = ffmpegRuntime.ffprobePath()
         if not ffmpegPath or not ffprobePath:
             raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
-
-        Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
 
         totalDuration = await self._probeDuration(ffprobePath, self._videoPath)
 
@@ -75,7 +65,7 @@ class FFmpegStep(TaskStep):
             "-i", str(self._videoPath),
             "-i", str(self._audioPath),
             "-c", "copy",
-            self.outputFile,
+            self.outputPath,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -103,12 +93,9 @@ class FFmpegStep(TaskStep):
                     detail=stderr or "unknown error",
                 )
 
-            self.setStatus(TaskStatus.COMPLETED)
-
             if self.shouldDeleteSource:
                 for path in (self._videoPath, self._audioPath):
                     deletePath(path)
-                    deletePath(Path(f"{path}.ghd"))
         except asyncio.CancelledError:
             self.setStatus(TaskStatus.PAUSED)
             if process.returncode is None:

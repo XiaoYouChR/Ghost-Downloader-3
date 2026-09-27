@@ -6,17 +6,19 @@ import io
 import shutil
 import tempfile
 import threading
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from dataclasses import dataclass, field
+from itertools import count
 from pathlib import Path
 from time import time
 from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
-from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus
-from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
+from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus, deletePlaceholder
+from app.platform.filesystem import splitStemExt, toSafeFilename
+from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep
 from http_pack.task import HttpTaskStep
 
 ERROR_HINTS = (
@@ -29,15 +31,6 @@ ERROR_HINTS = (
     ("requested format is not available", "请求的格式不可用，请稍后重试（{detail}）"),
     ("http error 403", "下载被拒绝（403），链接可能已失效（{detail}）"),
 )
-
-STEPS_PER_VIDEO = 5
-
-
-def buildTimeSuffix(startTime: int, endTime: int) -> str:
-    def fmt(sec: int) -> str:
-        m, s = divmod(sec, 60)
-        return f"{m:02d}m{s:02d}s"
-    return f"[{fmt(startTime)}-{fmt(endTime)}]"
 
 _pathLock = threading.Lock()
 _pathInserted = False
@@ -118,7 +111,7 @@ def buildFormatPair(info: dict, task: YouTubeTask) -> tuple[dict | None, dict | 
         and f.get("vcodec", "none") == "none"
     ]
 
-    primaryLang = next((s.strip() for s in task.audioLanguages.split(",") if s.strip()), "")
+    primaryLang = next(iter(parseLanguages(task.audioLanguages)), "")
     if primaryLang:
         langFormats = [f for f in audioFormats if f.get("language") == primaryLang]
         if langFormats:
@@ -183,15 +176,33 @@ class YouTubeFile(TaskFile):
     endTime: int = 0
 
 
-def buildStepGroup(fileIndex: int, videoUrl: str = "", videoStem: str = "") -> list[TaskStep]:
-    base = fileIndex * STEPS_PER_VIDEO
-    return [
-        YouTubeExtractStep(stepIndex=base + 1, fileIndex=fileIndex, videoUrl=videoUrl),
-        YouTubeResourceStep(stepIndex=base + 2, fileIndex=fileIndex, videoStem=videoStem, role="video"),
-        YouTubeResourceStep(stepIndex=base + 3, fileIndex=fileIndex, videoStem=videoStem, role="audio"),
-        YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoUrl=videoUrl, videoStem=videoStem),
-        YouTubeSubtitleStep(stepIndex=base + 5, fileIndex=fileIndex, videoUrl=videoUrl, videoStem=videoStem),
+def parseLanguages(value: str) -> list[str]:
+    return [s.strip() for s in value.split(",") if s.strip()]
+
+
+def buildStepGroup(task: YouTubeTask, fileIndex: int, stepIndexes: Iterator[int], videoUrl: str = "") -> list[TaskStep]:
+    steps: list[TaskStep] = [
+        YouTubeExtractStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, videoUrl=videoUrl),
+        YouTubeResourceStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, role="video"),
+        YouTubeResourceStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, role="audio"),
+        YouTubeMergeStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, videoUrl=videoUrl),
     ]
+    if task.isVideoEnabled or task.isAudioEnabled:
+        for language in parseLanguages(task.subtitleLanguages):
+            steps.append(YouTubeSubtitleStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, language=language))
+    if task.isAudioEnabled:
+        for language in parseLanguages(task.audioLanguages)[1:]:
+            steps.append(YouTubeResourceStep(
+                stepIndex=next(stepIndexes), fileIndex=fileIndex, role="audio", language=language))
+            steps.append(YouTubeMergeStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, language=language))
+    return steps
+
+
+def toResourcePath(task: Task, fileIndex: int, role: str, language: str, extension: str) -> Path:
+    extension = extension or ("m4a" if language else "")
+    kind = f"{language}.audio" if language else role
+    suffix = f"{kind}.{extension}" if extension else kind
+    return task.partPath / task.toSidePath(fileIndex, suffix).name
 
 
 @dataclass(kw_only=True, eq=False)
@@ -210,43 +221,76 @@ class YouTubeTask(Task):
     isCoverEnabled: bool = False
     isPlaylist: bool = False
 
+    def __post_init__(self):
+        super().__post_init__()
+        if any(isinstance(s, YouTubeSubtitleStep) and not s.language for s in self.steps):
+            self.updateSteps()
+
+    def setTracks(self, isVideoEnabled: bool, isAudioEnabled: bool, isCoverEnabled: bool) -> None:
+        if (isVideoEnabled, isAudioEnabled, isCoverEnabled) == (self.isVideoEnabled, self.isAudioEnabled, self.isCoverEnabled):
+            return
+        self.isVideoEnabled, self.isAudioEnabled, self.isCoverEnabled = isVideoEnabled, isAudioEnabled, isCoverEnabled
+        extension = "mp4" if isVideoEnabled else "m4a" if isAudioEnabled else "jpg" if isCoverEnabled else ""
+        if extension:
+            self.setName(f"{splitStemExt(self.name)[0]}.{extension}")
+        self.updateSteps()
+
+    def setAudioLanguages(self, languages: str) -> None:
+        self.audioLanguages = languages
+        self.updateSteps()
+
+    def setSubtitleLanguages(self, languages: str, shouldIncludeAutoSubs: bool) -> None:
+        self.subtitleLanguages = languages
+        self.shouldIncludeAutoSubs = shouldIncludeAutoSubs
+        self.updateSteps()
+
     def setCoverUrl(self, url: str) -> None:
-        if not url:
-            return
-        self.coverUrl = url
-        if any(isinstance(s, YouTubeCoverStep) for s in self.steps):
-            return
-        stepIndex = max((s.stepIndex for s in self.steps), default=0) + 1
-        self.addStep(YouTubeCoverStep(
-            stepIndex=stepIndex,
-            url=url,
-            fileSize=0,
-            headers={},
+        if url:
+            self.coverUrl = url
+            self.updateSteps()
+
+    def setVideos(self, videos: list[dict]) -> None:
+        extension = "mp4" if self.isVideoEnabled else "m4a"
+        taken: set[str] = set()
+        self.files = []
+        for i, video in enumerate(videos):
+            name = f"{toSafeFilename(str(video.get('title') or f'视频 {i + 1}'))}.{extension}"
+            stem, ext = splitStemExt(name)
+            index = 0
+            while name.lower() in taken:
+                index += 1
+                name = f"{stem}({index}){ext}"
+            taken.add(name.lower())
+            self.files.append(YouTubeFile(
+                index=i,
+                relativePath=name,
+                videoId=str(video.get("id") or ""),
+                duration=int(video.get("duration") or 0),
+            ))
+        self.updateSteps()
+
+    def toDisplayPath(self, file: YouTubeFile) -> str:
+        return splitStemExt(file.relativePath)[0]
+
+    def updateSteps(self) -> None:
+        extension = "mp4" if self.isVideoEnabled else "m4a"
+        for file in self.files or []:
+            stem, _ = splitStemExt(file.relativePath)
+            file.relativePath = f"{stem}.{extension}"
+        stepIndexes = count()
+        steps = [step for file in self.files or []
+                 for step in buildStepGroup(self, file.index, stepIndexes, f"https://www.youtube.com/watch?v={file.videoId}")]
+        steps = steps or buildStepGroup(self, 0, stepIndexes)
+        steps.append(YouTubeCoverStep(
+            stepIndex=next(stepIndexes),
+            url=self.coverUrl,
             canUseRangeRequests=False,
             subworkerCount=1,
         ))
-
-    def setVideos(self, videos: list[dict]) -> None:
-        from app.platform.filesystem import toSafeFilename
-        self.files = [
-            YouTubeFile(
-                index=i,
-                relativePath=toSafeFilename(str(video.get("title") or f"视频 {i + 1}")),
-                videoId=str(video.get("id") or ""),
-                duration=int(video.get("duration") or 0),
-            )
-            for i, video in enumerate(videos)
-        ]
-        self.steps.clear()
-        for file in self.files:
-            videoUrl = f"https://www.youtube.com/watch?v={file.videoId}"
-            for step in buildStepGroup(file.index, videoUrl=videoUrl, videoStem=file.relativePath):
-                self.addStep(step)
-        if not self.steps:
-            for step in buildStepGroup(0):
-                self.addStep(step)
-        if self.coverUrl:
-            self.setCoverUrl(self.coverUrl)
+        for step in steps:
+            step._bindTask(self)
+        self.steps = steps
+        self.updateStatus()
 
     def setSelection(self, selectedIndexes) -> None:
         super().setSelection(selectedIndexes)
@@ -299,11 +343,9 @@ class YouTubeExtractStep(TaskStep):
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         if not self.task.isVideoEnabled and not self.task.isAudioEnabled:
-            self.setStatus(TaskStatus.COMPLETED)
             return
 
         if self._hasFreshSiblingUrls():
-            self.setStatus(TaskStatus.COMPLETED)
             return
 
         from .config import youTubeRuntime
@@ -336,22 +378,20 @@ class YouTubeExtractStep(TaskStep):
         if file and (file.startTime or file.endTime):
             await self._updateSegmentRanges(file)
 
-        title = info.get("title")
-        if title:
-            from app.platform.filesystem import toSafeFilename
-            safeName = toSafeFilename(title)
-            if safeName:
-                suffix = ""
-                if file and (file.startTime or file.endTime):
-                    suffix = f" {buildTimeSuffix(file.startTime, file.endTime)}"
-                if self.fileIndex == 0 and len(self.task.files or []) <= 1:
-                    ext = "m4a" if not videoFmt else "mp4"
-                    self.task.setName(f"{safeName}{suffix}.{ext}")
-                for step in self.task.steps:
-                    if step.fileIndex == self.fileIndex and hasattr(step, "videoStem"):
-                        step.videoStem = f"{safeName}{suffix}" if suffix else safeName
+        self._updateSubtitleSteps(info)
 
-        self.setStatus(TaskStatus.COMPLETED)
+    def _updateSubtitleSteps(self, info: dict) -> None:
+        from .config import loadCookieHeader
+        cookieHeader = loadCookieHeader()
+        for step in self.task.steps:
+            if not isinstance(step, YouTubeSubtitleStep) or step.fileIndex != self.fileIndex:
+                continue
+            formats = (info.get("subtitles") or {}).get(step.language)
+            if not formats and self.task.shouldIncludeAutoSubs:
+                formats = (info.get("automatic_captions") or {}).get(step.language)
+            subtitle = next((f for f in formats or [] if f.get("ext") == "vtt" and f.get("url")), None)
+            step.url = subtitle["url"] if subtitle else ""
+            step.headers = {"cookie": cookieHeader} if cookieHeader else {}
 
     def _hasFreshSiblingUrls(self) -> bool:
         now = time()
@@ -457,15 +497,7 @@ class YouTubeExtractStep(TaskStep):
         self.task.fileSize = totalSize if totalSize > 0 else 0
 
     def _updateExtraAudioSteps(self, info: dict, subworkerCount: int) -> None:
-        if not self.task.isAudioEnabled:
-            return
-
         from .config import ytDlpConfig
-
-        allLangs = [s.strip() for s in self.task.audioLanguages.split(",") if s.strip()]
-        extraLangs = allLangs[1:]
-        if not extraLangs:
-            return
 
         formats = [f for f in (info.get("formats") or []) if f.get("protocol") in DIRECT_PROTOCOLS]
         audioFormats = [
@@ -474,189 +506,70 @@ class YouTubeExtractStep(TaskStep):
         ]
         shouldPreferMp4 = ytDlpConfig.shouldPreferMp4.value
 
-        existingLangs = {
-            s.language for s in self.task.steps
-            if isinstance(s, YouTubeResourceStep) and s.language and s.fileIndex == self.fileIndex
-        }
-
-        maxStepIndex = max((s.stepIndex for s in self.task.steps), default=0)
-
-        for lang in extraLangs:
-            langFormats = [f for f in audioFormats if f.get("language") == lang]
-            if not langFormats:
-                logger.warning("audio language '{}' not available for extra track, skipping", lang)
+        for step in self.task.steps:
+            if not isinstance(step, YouTubeResourceStep) or not step.language or step.fileIndex != self.fileIndex:
                 continue
-
-            langFormats.sort(
+            langFormats = sorted(
+                (f for f in audioFormats if f.get("language") == step.language),
                 key=lambda f: (
                     shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"),
                     f.get("abr") or f.get("tbr") or 0,
                 ),
                 reverse=True,
             )
-            fmt = langFormats[0]
-
-            if lang in existingLangs:
-                for s in self.task.steps:
-                    if isinstance(s, YouTubeResourceStep) and s.language == lang and s.fileIndex == self.fileIndex:
-                        s.url = fmt["url"]
-                        s.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
-                        s.extension = fmt.get("ext") or "m4a"
-                        s.headers = dict(fmt.get("http_headers") or {})
-                        break
-                hasMerge = any(
-                    isinstance(s, YouTubeMergeStep) and s.language == lang and s.fileIndex == self.fileIndex
-                    for s in self.task.steps
-                )
-                if not hasMerge:
-                    maxStepIndex += 1
-                    self.task.addStep(YouTubeMergeStep(
-                        stepIndex=maxStepIndex, fileIndex=self.fileIndex,
-                        videoStem="", language=lang, audioExtension=fmt.get("ext") or "m4a",
-                    ))
+            if not langFormats:
+                logger.warning("audio language '{}' not available for extra track, skipping", step.language)
+                step.url = ""
                 continue
-
-            maxStepIndex += 1
-            resourceStep = YouTubeResourceStep(
-                stepIndex=maxStepIndex,
-                fileIndex=self.fileIndex,
-                videoStem="",
-                role="audio",
-                language=lang,
-                url=fmt["url"],
-                fileSize=fmt.get("filesize") or fmt.get("filesize_approx") or 0,
-                extension=fmt.get("ext") or "m4a",
-                canUseRangeRequests=True,
-                subworkerCount=subworkerCount,
-                headers=dict(fmt.get("http_headers") or {}),
-            )
-            self.task.addStep(resourceStep)
-
-            maxStepIndex += 1
-            mergeStep = YouTubeMergeStep(
-                stepIndex=maxStepIndex,
-                fileIndex=self.fileIndex,
-                videoStem="",
-                language=lang,
-                audioExtension=fmt.get("ext") or "m4a",
-            )
-            self.task.addStep(mergeStep)
+            fmt = langFormats[0]
+            step.url = fmt["url"]
+            step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
+            step.extension = fmt.get("ext") or "m4a"
+            step.canUseRangeRequests = True
+            step.subworkerCount = subworkerCount
+            step.headers = dict(fmt.get("http_headers") or {})
+            for merge in self.task.steps:
+                if (isinstance(merge, YouTubeMergeStep) and merge.language == step.language
+                        and merge.fileIndex == self.fileIndex):
+                    merge.audioExtension = step.extension
 
 
 @dataclass(kw_only=True)
 class YouTubeResourceStep(FFmpegResourceStep):
     fileIndex: int = 0
-    videoStem: str = ""
     language: str = ""
 
     @property
     def outputPath(self) -> str:
-        stem = self.videoStem or mediaStem(self.task)
-        if self.language:
-            suffix = f".{self.extension}" if self.extension else ".m4a"
-            return str(self.task.outputFolder / f"{stem}.{self.language}.audio{suffix}")
-        suffix = f".{self.extension}" if self.extension else ""
-        return str(self.task.outputFolder / f"{stem}.{self.role}{suffix}")
+        return str(toResourcePath(self.task, self.fileIndex, self.role, self.language, self.extension))
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        if not self.url:
-            self.setStatus(TaskStatus.COMPLETED)
-            return
-        await super().run(reportSpeed, waitForSpeedLimit)
+        if self.url:
+            await super().run(reportSpeed, waitForSpeedLimit)
 
 
 @dataclass(kw_only=True)
-class YouTubeSubtitleStep(TaskStep):
+class YouTubeSubtitleStep(HttpTaskStep):
     fileIndex: int = 0
-    videoUrl: str = ""
-    videoStem: str = ""
+    language: str = ""
+    canUseRangeRequests: bool = False
+    subworkerCount: int = 1
 
     @property
     def outputPath(self) -> str:
-        return ""
-
-    def deleteFiles(self) -> None:
-        stem = self.videoStem or mediaStem(self.task)
-        for path in self.task.outputFolder.glob(f"{stem}.*.vtt"):
-            path.unlink(missing_ok=True)
-
-    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        stem = self.videoStem or mediaStem(self.task)
-        for path in oldFolder.glob(f"{stem}.*.vtt"):
-            target = newFolder / path.name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            if path.exists():
-                shutil.move(str(path), str(target))
+        return str(self.task.toSidePath(self.fileIndex, f"{toSafeFilename(self.language, fallback='subtitle')}.vtt"))
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        if not self.task.subtitleLanguages or (
-            not self.task.isVideoEnabled and not self.task.isAudioEnabled
-        ):
-            self.setStatus(TaskStatus.COMPLETED)
-            return
-
-        from app.client import buildClient
-        from app.platform.filesystem import toSafeFilename
-        from .config import loadCookieHeader
-
-        info = await asyncio.to_thread(probeFormats, self.videoUrl or self.task.url)
-        languages = [s.strip() for s in self.task.subtitleLanguages.split(",") if s.strip()]
-        stem = self.videoStem or mediaStem(self.task)
-        outputFolder = self.task.outputFolder
-        outputFolder.mkdir(parents=True, exist_ok=True)
-
-        downloads = []
-        for lang in languages:
-            formats = (info.get("subtitles") or {}).get(lang)
-            isAuto = False
-            if not formats and self.task.shouldIncludeAutoSubs:
-                formats = (info.get("automatic_captions") or {}).get(lang)
-                isAuto = True
-            if not formats:
-                continue
-            subtitle = next(
-                (f for f in formats if f.get("ext") == "vtt" and f.get("url")),
-                None,
-            )
-            if not subtitle:
-                continue
-            safeLang = toSafeFilename(lang, fallback="subtitle")
-            autoSuffix = ".auto" if isAuto else ""
-            vttFile = outputFolder / f"{stem}.{safeLang}{autoSuffix}.vtt"
-            downloads.append((lang, subtitle["url"], vttFile))
-
-        if not downloads:
-            self.setStatus(TaskStatus.COMPLETED)
-            return
-
-        cookieHeader = loadCookieHeader()
-        client = buildClient(headers={"cookie": cookieHeader} if cookieHeader else None)
-        try:
-            for i, (lang, url, vttFile) in enumerate(downloads):
-                if vttFile.exists():
-                    self.progress = (i + 1) / len(downloads) * 100
-                    continue
-                try:
-                    response = await client.get(url)
-                    try:
-                        response.raise_for_status()
-                        vttFile.write_bytes(await response.bytes())
-                    finally:
-                        response.close()
-                except Exception:
-                    logger.opt(exception=True).debug("Subtitle download failed: {}", lang)
-                self.progress = (i + 1) / len(downloads) * 100
-        finally:
-            client.close()
-
-        self.setStatus(TaskStatus.COMPLETED)
+        if self.url:
+            await super().run(reportSpeed, waitForSpeedLimit)
+        else:
+            deletePlaceholder(Path(self.outputPath))
 
 
 @dataclass(kw_only=True)
 class YouTubeMergeStep(FFmpegStep):
     fileIndex: int = 0
     videoUrl: str = ""
-    videoStem: str = ""
     language: str = ""
     metadataTitle: str = ""
     metadataArtist: str = ""
@@ -666,28 +579,18 @@ class YouTubeMergeStep(FFmpegStep):
     segStartTime: float = field(default=0.0, repr=False)
 
     @property
-    def outputFile(self) -> str:
-        stem = self.videoStem or mediaStem(self.task)
+    def outputPath(self) -> str:
         if self.language:
-            ext = self.audioExtension or "m4a"
-            return str(self.task.outputFolder / f"{stem}.{self.language}.{ext}")
-        ext = "mp4" if self.videoExtension else (self.audioExtension or "m4a")
-        return str(self.task.outputFolder / f"{stem}.{ext}")
+            return str(self.task.toSidePath(self.fileIndex, f"{self.language}.m4a"))
+        return str(self.task.toFilePath(self.fileIndex))
 
     @property
     def _videoPath(self) -> Path:
-        stem = self.videoStem or mediaStem(self.task)
-        suffix = f".{self.videoExtension}" if self.videoExtension else ""
-        return self.task.outputFolder / f"{stem}.video{suffix}"
+        return toResourcePath(self.task, self.fileIndex, "video", "", self.videoExtension)
 
     @property
     def _audioPath(self) -> Path:
-        stem = self.videoStem or mediaStem(self.task)
-        if self.language:
-            suffix = f".{self.audioExtension}" if self.audioExtension else ".m4a"
-            return self.task.outputFolder / f"{stem}.{self.language}.audio{suffix}"
-        suffix = f".{self.audioExtension}" if self.audioExtension else ""
-        return self.task.outputFolder / f"{stem}.audio{suffix}"
+        return toResourcePath(self.task, self.fileIndex, "audio", self.language, self.audioExtension)
 
     @property
     def _timeRange(self) -> tuple[int, int] | None:
@@ -730,17 +633,14 @@ class YouTubeMergeStep(FFmpegStep):
 
         singleInput = self._videoPath if hasVideo else self._audioPath if hasAudio else None
         if not singleInput:
-            self.setStatus(TaskStatus.COMPLETED)
+            deletePlaceholder(Path(self.outputPath))
             return
 
-        if self.metadataTitle or self.chapters or self._timeRange:
-            await self._runSingleWithMetadata(singleInput)
+        isSameContainer = singleInput.suffix.lower() == Path(self.outputPath).suffix.lower()
+        if isSameContainer and not (self.metadataTitle or self.chapters or self._timeRange):
+            singleInput.replace(self.outputPath)
         else:
-            outputPath = Path(self.outputFile)
-            outputPath.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(singleInput), str(outputPath))
-            Path(f"{singleInput}.ghd").unlink(missing_ok=True)
-            self.setStatus(TaskStatus.COMPLETED)
+            await self._runSingleWithMetadata(singleInput)
 
     async def _runSingleWithMetadata(self, inputPath: Path) -> None:
         from ffmpeg_pack.config import ffmpegRuntime
@@ -751,7 +651,6 @@ class YouTubeMergeStep(FFmpegStep):
         if not ffmpegPath or not ffprobePath:
             raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
 
-        Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
         totalDuration = await self._probeDuration(ffprobePath, inputPath)
 
         preArgs, postArgs = self._buildTrimArgs()
@@ -779,7 +678,7 @@ class YouTubeMergeStep(FFmpegStep):
         if self.metadataArtist:
             args.extend(["-metadata", f"artist={self.metadataArtist}"])
 
-        args.append(self.outputFile)
+        args.extend(["-f", "mp4", self.outputPath])
 
         process = await asyncio.create_subprocess_exec(
             *args,
@@ -801,11 +700,8 @@ class YouTubeMergeStep(FFmpegStep):
                     detail=stderr or "unknown error",
                 )
 
-            self.setStatus(TaskStatus.COMPLETED)
-
             if self.shouldDeleteSource:
                 deletePath(inputPath)
-                deletePath(Path(f"{inputPath}.ghd"))
         except asyncio.CancelledError:
             self.setStatus(TaskStatus.PAUSED)
             if process.returncode is None:
@@ -829,7 +725,6 @@ class YouTubeMergeStep(FFmpegStep):
         if not ffmpegPath or not ffprobePath:
             raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
 
-        Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
         totalDuration = await self._probeDuration(ffprobePath, self._videoPath)
 
         preArgs, postArgs = self._buildTrimArgs()
@@ -859,7 +754,7 @@ class YouTubeMergeStep(FFmpegStep):
         if self.metadataArtist:
             args.extend(["-metadata", f"artist={self.metadataArtist}"])
 
-        args.append(self.outputFile)
+        args.extend(["-f", "mp4", self.outputPath])
 
         process = await asyncio.create_subprocess_exec(
             *args,
@@ -881,12 +776,9 @@ class YouTubeMergeStep(FFmpegStep):
                     detail=stderr or "unknown error",
                 )
 
-            self.setStatus(TaskStatus.COMPLETED)
-
             if self.shouldDeleteSource:
                 for path in (self._videoPath, self._audioPath):
                     deletePath(path)
-                    deletePath(Path(f"{path}.ghd"))
         except asyncio.CancelledError:
             self.setStatus(TaskStatus.PAUSED)
             if process.returncode is None:
@@ -912,7 +804,7 @@ class YouTubeMergeStep(FFmpegStep):
             lines.append(f"START={start}")
             lines.append(f"END={end}")
             lines.append(f"title={title}")
-        fd, path = tempfile.mkstemp(suffix=".txt", prefix="gd3_chapters_")
+        fd, path = tempfile.mkstemp(suffix=".txt", prefix="chapters_", dir=self.task.partPath)
         with open(fd, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
         return path
@@ -923,11 +815,10 @@ class YouTubeCoverStep(HttpTaskStep):
 
     @property
     def outputPath(self) -> str:
-        stem = Path(self.task.name).stem
-        return str(self.task.outputFolder / f"{stem}.jpg")
+        if not self.task.isCoverEnabled:
+            return ""
+        return str(self.task.toSidePath(None, "jpg"))
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        if not self.task.isCoverEnabled:
-            self.setStatus(TaskStatus.COMPLETED)
-            return
-        await super().run(reportSpeed, waitForSpeedLimit)
+        if self.url:
+            await super().run(reportSpeed, waitForSpeedLimit)

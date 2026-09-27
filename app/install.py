@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 from time import perf_counter
 from urllib.parse import urlparse
 
-from app.models.task import Task, TaskError, TaskStep, TaskStatus
+from app.models.task import Task, TaskError, TaskStep
 from app.platform.filesystem import deletePath, toPosixPath
 
 CHUNK_SIZE = 1 << 20
@@ -149,8 +149,6 @@ class ExtractStep(TaskStep):
         else:
             raise TaskError("不支持的压缩格式：{name}", name=archive.name)
 
-        self.setStatus(TaskStatus.COMPLETED)
-
 
 @dataclass(kw_only=True)
 class InstallStep(TaskStep):
@@ -200,8 +198,6 @@ class InstallStep(TaskStep):
 
             if self.shouldDeleteSource and archive is not None and archive.exists():
                 archive.unlink()
-
-            self.setStatus(TaskStatus.COMPLETED)
         finally:
             if self.shouldDeleteSource and sourceFolder.exists():
                 shutil.rmtree(sourceFolder, ignore_errors=True)
@@ -223,7 +219,6 @@ class ChecksumStep(TaskStep):
         if expected != actual:
             raise TaskError("SHA256 校验失败：期望 {expected}，实际 {actual}", expected=expected, actual=actual)
         deletePath(Path(self.sha256File))
-        self.setStatus(TaskStatus.COMPLETED)
 
     def _sha256(self, path: Path) -> str:
         digest = hashlib.sha256()
@@ -245,7 +240,6 @@ class BinaryInstallStep(TaskStep):
             raise TaskError("下载的文件未找到：{path}", path=str(path))
         if sys.platform != "win32":
             path.chmod(path.stat().st_mode | 0o755)
-        self.setStatus(TaskStatus.COMPLETED)
 
 
 @dataclass(kw_only=True)
@@ -262,7 +256,6 @@ class FetchStep(TaskStep):
             reportSpeed()
 
         await fetchFile(self.url, Path(self.outputFile), onProgress=onProgress)
-        self.setStatus(TaskStatus.COMPLETED)
 
 
 def createInstallTask(

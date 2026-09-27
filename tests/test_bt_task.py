@@ -5,7 +5,7 @@ from pathlib import Path
 from app.models.task import TaskStatus
 from bittorrent_pack import session as session_module
 from bittorrent_pack import android
-from bittorrent_pack.task import BTFile, BTTask, BTTaskStep
+from bittorrent_pack.task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
 
 
 class FakeSession:
@@ -43,7 +43,10 @@ def test_file_added_while_download_finishes_is_downloaded(monkeypatch, tmp_path)
     fake = FakeSession(onRun=lambda: task.setSelection({0, 1}))
     monkeypatch.setattr(session_module, "btSession", fake)
 
-    asyncio.run(task.steps[0].run(lambda _: None, None))
+    async def noLimit():
+        pass
+
+    asyncio.run(task.run(lambda _: None, noLimit))
 
     assert fake.runPriorities == [[4, 0], [4, 4]]
     assert task.status == TaskStatus.COMPLETED
@@ -55,3 +58,19 @@ def test_completed_task_that_is_not_seeding_has_no_state_text(tmp_path):
     task.stateText = "checking_resume_data"
 
     assert android.taskFields(task)["statusText"] == ""
+
+
+def test_progress_follows_the_download_only(tmp_path):
+    task = makeTask(tmp_path)
+    task.addStep(BTTorrentFileStep(stepIndex=0))
+    task.step.progress = 80
+
+    assert task.currentSnapshot()[0] == 80
+
+
+def test_magnet_torrent_file_is_named_after_whole_task_name(tmp_path):
+    task = makeTask(tmp_path)
+    task.name = "Ubuntu 22.04"
+    task.addStep(BTTorrentFileStep(stepIndex=0))
+
+    assert task.placeholderPaths == [tmp_path / "Ubuntu 22.04", tmp_path / "Ubuntu 22.04.torrent"]

@@ -18,6 +18,31 @@ _Avoid_: download、job；Name 不叫 title 或 filename；Output Folder 不叫 
 一个 Task 产生的下载文件和分片临时文件。
 _Avoid_: 与 Selectable File 混淆
 
+**Name Conflict**:
+新 Task 的 Name 在 Output Folder 中已被占用。以磁盘为准：路径上有文件或文件夹即被占用。
+处理方式（Choice）有三种：保留两者（新 Task 改用带序号的 Name）、覆盖（旧文件移到回收站；移不了则退回保留两者）、询问（弹出对话框由用户选择）。
+占用者是未完成的 Task 时不适用 Choice，总是保留两者。
+Name 在 Task 加入时确定，Task Run 不改 Name。
+_Avoid_: 重名、duplicate（留给重复链接）
+
+**Placeholder**:
+Task 加入时为它将产出的每个最终路径（成品和 Side File）创建的空文件或空文件夹，用来占住 Name。
+任一路径被占用即为 Name Conflict。Task 存在期间一直持有，Task 被移除时释放。
+_Avoid_: 占位符文件、lock file
+
+**Side File**:
+随成品一起产出、以成品 Name 为前缀的附属文件——字幕、封面、种子文件。
+_Avoid_: side product、sidecar；与 Selectable File 混淆
+
+**Part Path**:
+最终路径旁存放其未完成数据的 `{最终路径}.ghd`。只有进度记录时是文件，还有中间文件时是文件夹。
+成品原地写入 Placeholder。Task 完成后 Part Path 被删除；Task 被移除时，未完成的输出和 Part Path 总是删除，"删除文件"只决定已完成的成品。
+_Avoid_: Part Folder、work folder、temp、cache、Staging（Staging 指更新下载物）
+
+**Replace**:
+新 Task 取得旧 Task Record 的路径时，旧 Task Record 被移除、由新 Task 顶替。只移除记录，不删磁盘。
+_Avoid_: merge、overwrite（覆盖指磁盘文件）
+
 **Pausable**:
 Task 的可暂停性，派生属性。取决于当前运行 Step 是否支持断点恢复。
 
@@ -29,6 +54,7 @@ Task 的可暂停性，派生属性。取决于当前运行 Step 是否支持断
 **Selectable File**:
 多文件 Task 内的一个可勾选下载单元——仓库文件、播放列表视频、多分 P 页面或种子文件。
 任何 Task 状态下都允许改变选择；取消选择的文件保留部分进度。
+Task 有多于一个 Selectable File 时，成品是以 Name 命名的文件夹；只有一个时，成品就是这个文件本身。
 _Avoid_: 与 Task Files 混淆
 
 **Revive**:

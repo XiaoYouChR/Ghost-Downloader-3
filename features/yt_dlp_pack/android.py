@@ -1,10 +1,9 @@
 """Android draft adapter. No Qt imports; extraction uses the same functions as Desktop."""
 from __future__ import annotations
 
-from pathlib import Path
 
 from .choices import buildAudioLanguageChoices, buildAudioTiers, buildSubtitleChoices, buildVideoTiers
-from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist
+from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist, parseLanguages
 
 UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
 
@@ -67,7 +66,7 @@ def probe(task, url, kind):
         task._mediaInfo = info
         choices = buildAudioLanguageChoices(info)
         if choices and not task.audioLanguages:
-            task.audioLanguages = choices[0][0]
+            task.setAudioLanguages(choices[0][0])
         thumbnailUrl = info.get("thumbnail") or ""
         if thumbnailUrl:
             task.setCoverUrl(thumbnailUrl)
@@ -91,31 +90,26 @@ def updateSize(task):
 
 
 def setControl(task, controlId, value):
-    tracks = (task.isVideoEnabled, task.isAudioEnabled, task.isCoverEnabled)
     if controlId == "video":
-        task.isVideoEnabled = bool(value)
         if value:
             task.maxVideoHeight = int(value)
+        task.setTracks(bool(value), task.isAudioEnabled, task.isCoverEnabled)
     elif controlId == "audio":
-        task.isAudioEnabled = bool(value)
         if value:
             task.maxAudioBitrate = int(value)
+        task.setTracks(task.isVideoEnabled, bool(value), task.isCoverEnabled)
     elif controlId == "language":
-        task.audioLanguages = value
+        task.setAudioLanguages(value)
     elif controlId == "cover":
-        task.isCoverEnabled = bool(value)
+        task.setTracks(task.isVideoEnabled, task.isAudioEnabled, bool(value))
     else:
         raise ValueError(f"Unknown control: {controlId}")
-    if (task.isVideoEnabled, task.isAudioEnabled, task.isCoverEnabled) != tracks:
-        extension = "mp4" if task.isVideoEnabled else "m4a" if task.isAudioEnabled else "jpg"
-        task.setName(f"{Path(task.name).stem}.{extension}")
     updateSize(task)
 
 
 def setSubtitles(task, languages):
     _, auto = buildSubtitleChoices(getattr(task, "_mediaInfo", {}), "")
-    task.subtitleLanguages = languages
-    task.shouldIncludeAutoSubs = bool(auto.intersection(languages.split(",")))
+    task.setSubtitleLanguages(languages, bool(auto.intersection(parseLanguages(languages))))
 
 
 def setTrim(task, start, end):

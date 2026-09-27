@@ -15,7 +15,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus, SpecialFileSize
-from app.platform.filesystem import deletePath, toPosixPath
+from app.platform.filesystem import toPosixPath
 from app.platform.sysio import ftruncate, pwrite
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
@@ -135,12 +135,11 @@ class FtpStep(TaskStep):
 
     @property
     def outputPath(self) -> str:
-        task: FtpTask = self.task
-        if self.fileIndex >= 0 and task.files and task.isFolder:
-            for file in task.files:
-                if file.index == self.fileIndex:
-                    return toPosixPath(task.outputFolder / task.name / file.relativePath)
-        return toPosixPath(task.outputFolder / task.name)
+        return toPosixPath(self.task.toFilePath(self.fileIndex))
+
+    @property
+    def recordPath(self) -> Path:
+        return Path(f"{self.outputPath}.ghd")
 
     def setOptions(self, options: dict) -> None:
         if "subworkerCount" in options:
@@ -164,12 +163,11 @@ class FtpStep(TaskStep):
         )
 
     def _loadRecord(self) -> list[FtpSubworker]:
-        recordPath = Path(self.outputPath + ".ghd")
-        if not recordPath.exists():
+        if not self.recordPath.exists():
             return []
         try:
             subworkers = []
-            with open(recordPath, "rb") as f:
+            with open(self.recordPath, "rb") as f:
                 index = 0
                 while data := f.read(24):
                     start, position, end = unpack("<QQQ", data)
@@ -205,12 +203,11 @@ class FtpStep(TaskStep):
         return subworkers
 
     def _deleteRecord(self) -> None:
-        target = Path(self.outputPath + ".ghd")
         try:
-            if target.is_file() or target.is_symlink():
-                target.unlink()
+            if self.recordPath.is_file() or self.recordPath.is_symlink():
+                self.recordPath.unlink()
         except Exception as e:
-            logger.opt(exception=e).error("删除进度文件失败 {}", target)
+            logger.opt(exception=e).error("删除进度文件失败 {}", self.recordPath)
 
     def _reassignSubworker(self) -> None:
         if self._stopping or self.task.status != TaskStatus.RUNNING or self.fileSize <= 0:
@@ -278,7 +275,7 @@ class FtpStep(TaskStep):
     async def _supervise(self) -> None:
         recordFile = None
         if self.canUseRangeRequests:
-            recordFile = open(self.outputPath + ".ghd", "wb")
+            recordFile = open(self.recordPath, "wb")
         try:
             self.receivedBytes = sum(sw.receivedBytes for sw in self._subworkers)
             while True:
@@ -435,8 +432,6 @@ class FtpStep(TaskStep):
         self._stopping = False
         shouldDeleteRecord = False
 
-        Path(self.outputPath).parent.mkdir(parents=True, exist_ok=True)
-
         restored = False
         if self.canUseRangeRequests:
             loaded = self._loadRecord()
@@ -476,7 +471,6 @@ class FtpStep(TaskStep):
                     if exc is not None:
                         raise exc
 
-            self.setStatus(TaskStatus.COMPLETED)
             shouldDeleteRecord = True
         except CancelledError:
             await self._stopSubworkerTasks()
@@ -516,19 +510,7 @@ class FtpTask(Task):
                     self.addStep(FtpStep.fromFile(file, self))
 
     @property
-    def isFolder(self) -> bool:
-        return self.sourceType == "dir"
-
-    @property
     def countSelected(self) -> int:
         return sum(1 for file in self.files if file.selected)
 
-    def deleteFiles(self):
-        if self.isFolder:
-            deletePath(Path(self.outputPath))
-            return
-        for step in self.steps:
-            target = Path(step.outputPath)
-            deletePath(target)
-            deletePath(Path(f"{target}.ghd"))
 

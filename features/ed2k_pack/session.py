@@ -68,6 +68,8 @@ class ED2kSession:
                 except Error as e:
                     if e.code == ErrorCode.TRANSFER_EXISTS:
                         transfer = await client.resume(linkHash.upper())
+                    elif e.code == ErrorCode.OUTPUT_EXISTS:
+                        raise TaskError("goed2kd 版本过旧，请在设置中更新") from e
                     elif wasCancelled:
                         raise asyncio.CancelledError() from e
                     else:

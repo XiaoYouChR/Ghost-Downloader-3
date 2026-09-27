@@ -8,7 +8,7 @@ from app.platform.filesystem import toSafeFilename
 from loguru import logger
 
 from .config import ytDlpConfig, youTubeRuntime
-from .task import YouTubeTask, buildStepGroup
+from .task import YouTubeTask
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 
@@ -39,8 +39,7 @@ class YouTubeParser(TaskParser):
             outputFolder=options.outputFolder,
             isPlaylist=isPlaylist,
         )
-        for step in buildStepGroup(0):
-            task.addStep(step)
+        task.updateSteps()
         return task
 
     async def _fetchTitle(self, url: str) -> str:

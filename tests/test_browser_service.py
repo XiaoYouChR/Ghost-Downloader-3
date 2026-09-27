@@ -41,10 +41,14 @@ class FakeTaskService:
     def __init__(self):
         self.tasks: list[Task] = []
         self.calls: list[tuple] = []
+        self.isNameConflictAsked = False
 
     def add(self, task):
+        if self.isNameConflictAsked:
+            return False
         self.tasks.append(task)
         self.taskAdded.emit(task)
+        return True
 
     def taskById(self, taskId):
         return next((t for t in self.tasks if t.taskId == taskId), None)
@@ -290,6 +294,14 @@ class TestCreateTask:
         assert result["status"] == "drafted"
         assert browser.taskService.tasks == []
         assert browser.drafted[0].url == "https://a.test/v"
+
+    async def test_name_conflict_left_to_user_is_drafted(self, browser):
+        browser.taskService.isNameConflictAsked = True
+
+        result = await self.create(browser, source="download", payload={"url": "https://a.test/v"})
+
+        assert result["status"] == "drafted"
+        assert browser.taskService.tasks == []
 
     async def test_parse_failure_is_rejected(self, browser):
         result = await self.create(browser, source="download", payload={"url": "https://fail.test/v"})

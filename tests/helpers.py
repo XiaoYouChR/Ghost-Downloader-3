@@ -71,5 +71,8 @@ async def runStep(step) -> list[int]:
     async def waitForSpeedLimit():
         pass
 
-    await step.run(reportSpeed, waitForSpeedLimit)
+    from app.models.task import TaskStatus
+    if step.task.status != TaskStatus.RUNNING:
+        step.task.setStatus(TaskStatus.RUNNING)
+    await step.task.run(reportSpeed, waitForSpeedLimit)
     return speeds

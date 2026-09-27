@@ -7,8 +7,7 @@ from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
 from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus
-from app.platform.filesystem import deletePath, toPosixPath
-from .config import bittorrentConfig
+from app.platform.filesystem import toPosixPath
 
 if TYPE_CHECKING:
     from .session import TorrentParams, TorrentProgress
@@ -53,24 +52,17 @@ class BTTask(Task):
 
     @property
     def step(self) -> BTTaskStep:
-        return self.steps[0]
+        return next(s for s in self.steps if isinstance(s, BTTaskStep))
 
-    @property
-    def magnetTorrentPath(self) -> Path | None:
-        if self.sourceType != "magnet":
-            return None
-        return self.outputFolder / f"{self.name}.torrent"
+    def currentSnapshot(self) -> tuple[float, int, int]:
+        return self.step.progress, self.step.speed, self.step.receivedBytes
 
     @property
     def countSelected(self) -> int:
         return sum(1 for f in self.files if f.selected)
 
-    @property
-    def isSingleFile(self) -> bool:
-        return len(self.files) == 1
-
     def toRelativePath(self, file: BTFile) -> str:
-        if self.isSingleFile:
+        if not self.isOutputFolder:
             return self.name
         return toPosixPath(Path(self.name, *PurePosixPath(file.relativePath).parts[1:]))
 
@@ -106,17 +98,6 @@ class BTTask(Task):
             self.step.speed = 0
             self.step.error = None
             self.updateStatus()
-
-    def deleteFiles(self):
-        super().deleteFiles()
-        if self.magnetTorrentPath is not None:
-            deletePath(self.magnetTorrentPath)
-
-    def _move(self, newFolder: Path) -> None:
-        from shutil import move
-        if self.magnetTorrentPath is not None and self.magnetTorrentPath.exists():
-            move(str(self.magnetTorrentPath), str(newFolder / f"{self.name}.torrent"))
-        super()._move(newFolder)
 
     def reset(self) -> TaskStatus:
         result = super().reset()
@@ -178,10 +159,6 @@ class BTTask(Task):
 
 @dataclass(kw_only=True)
 class BTTaskStep(TaskStep):
-    @property
-    def outputPath(self) -> str:
-        return self.task.outputPath
-
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         from .session import btSession, TorrentProgress
 
@@ -189,18 +166,6 @@ class BTTaskStep(TaskStep):
 
         if task.countSelected <= 0:
             raise TaskError("至少需要选择一个文件")
-
-        target = Path(task.outputPath)
-        if not target.exists():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.touch() if task.isSingleFile else target.mkdir()
-
-        if task.sourceType == "magnet" and bittorrentConfig.saveMagnetFile.value:
-            try:
-                task.magnetTorrentPath.write_bytes(b64decode(task.torrentData))
-            except Exception as e:
-                from loguru import logger
-                logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", task.name)
 
         def onProgress(p: TorrentProgress):
             task.updateStats(p)
@@ -240,4 +205,14 @@ class BTTaskStep(TaskStep):
                     task.resumeData = b64encode(cached).decode()
                 raise
 
-        self.setStatus(TaskStatus.COMPLETED)
+
+@dataclass(kw_only=True)
+class BTTorrentFileStep(TaskStep):
+    canPause = False
+
+    @property
+    def outputPath(self) -> str:
+        return str(self.task.outputFolder / f"{self.task.name}.torrent")
+
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        Path(self.outputPath).write_bytes(b64decode(self.task.torrentData))

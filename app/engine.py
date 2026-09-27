@@ -7,19 +7,24 @@ from app.services.browser_service import BrowserService
 from app.services.category_service import CategoryService
 from app.services.feature_service import FeatureService
 from app.services.loopback_server import LoopbackServer
+from app.services.name_conflict_queue import NameConflictQueue
 from app.services.runtime_status import RuntimeStatusService
 from app.services.speed_meter import SpeedMeter
-from app.services.task_service import TaskService
+from app.services.task_service import NameConflictChoice, TaskService
 
 
 class Engine:
     """不发信号、不持有 View；View 直接连接各服务的信号。coroutineRunner 由组合根创建并启停。"""
 
-    def __init__(self, coroutineRunner, fileWatcher, loadCrx) -> None:
+    def __init__(self, coroutineRunner, fileWatcher, loadCrx, deleteRecoverably) -> None:
         self.coroutineRunner = coroutineRunner
         self.categoryService = CategoryService()
         self.speedMeter = SpeedMeter(coroutineRunner)
-        self.taskService = TaskService(coroutineRunner, self.categoryService, self.speedMeter, fileWatcher)
+        self.taskService = TaskService(coroutineRunner, self.categoryService, self.speedMeter, fileWatcher,
+                                       deleteRecoverably, lambda: NameConflictChoice(cfg.nameConflict.value))
+        self.nameConflictQueue = NameConflictQueue(self.taskService.probeConflict, self.taskService.add,
+                                                   coroutineRunner.post)
+        self.taskService.nameConflicted.connect(self.nameConflictQueue.add)
         self.runtimeStatusService = RuntimeStatusService(coroutineRunner)
         self.featureService = FeatureService(self.taskService, self.categoryService, coroutineRunner,
                                              self.runtimeStatusService)
