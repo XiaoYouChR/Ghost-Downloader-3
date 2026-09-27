@@ -23,7 +23,8 @@ I18N_DIR = ASSETS_DIR / "i18n"
 QRC_PATH = ASSETS_DIR / "resources.qrc"
 RESOURCES_RCC = ASSETS_DIR / "resources.rcc"
 
-ENGINE_CONTEXTS = ["TaskErrors", "BinaryRuntime", "TaskState"]
+ENGINE_CONTEXTS = ["TaskErrors", "BinaryRuntime", "TaskState",
+                   "TrackBar", "YtDlpDraftCard", "StreamSelectCard"]
 
 ANDROID_RES_DIR = REPO / "android" / "app" / "src" / "main" / "res"
 ANDROID_I18N_KT = (
