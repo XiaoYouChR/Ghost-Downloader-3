@@ -247,6 +247,19 @@ class TestCreateTask:
         assert task.name == "Clip.mp4"
         assert task.outputFolder == tmp_path / "out"
 
+    async def test_decryption_keys_reach_the_hls_step(self, browser, monkeypatch):
+        from m3u8_pack.task import M3U8Task, M3U8TaskStep
+
+        async def parse(options):
+            return M3U8Task(name="live.mp4", url=options.url, steps=[M3U8TaskStep(stepIndex=0)])
+
+        monkeypatch.setattr(browser.service, "_parse", parse)
+        result = await self.create(browser, source="page_media", payload={
+            "url": "https://a.test/master.m3u8", "decryptionKeys": ["kid:key"]})
+
+        assert result["status"] == "created"
+        assert browser.taskService.tasks[0].steps[0].decryptionKeys == ["kid:key"]
+
     async def test_explicit_draft_overrides_setting(self, browser):
         result = await self.create(browser, source="download", draft=True, payload={"url": "https://a.test/v"})
 

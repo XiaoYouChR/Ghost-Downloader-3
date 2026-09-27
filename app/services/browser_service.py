@@ -501,8 +501,8 @@ class BrowserService:
     def _onTaskParsed(self, task: Task, session: BrowserClientSession, requestId: str,
                       title: str, draft: bool | None = None,
                       decryptionKeys: list | None = None) -> None:
-        if decryptionKeys and hasattr(task.step, "setOptions"):
-            task.step.setOptions({"decryptionKeys": decryptionKeys})
+        if decryptionKeys:
+            task.setOptions({"decryptionKeys": decryptionKeys})
 
         if title:
             existingSuffix = Path(task.name).suffix
