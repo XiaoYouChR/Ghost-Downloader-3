@@ -18,6 +18,7 @@ from app.services import browser_service
 from app.services.browser_service import PROTOCOL_VERSION, BrowserService, PairRequest, installExtension
 from app.services.coroutine_runner import CoroutineRunner
 from app.services.loopback_server import ListenStatus, LoopbackServer
+from app.signal import BoundSignal, Signal
 from tests.test_loopback_server import FakeItem, findFreePort, waitFor
 
 pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
@@ -26,12 +27,24 @@ TOKEN = "pair-token"
 
 
 class FakeTaskService:
+    taskAdded = Signal(object)
+    taskRemoved = Signal(str)
+    taskStarted = Signal(object)
+    taskPaused = Signal(object)
+    taskCompleted = Signal(object)
+    taskFailed = Signal(object)
+    seedingStarted = Signal(object)
+    seedingStopped = Signal(object)
+    queueChanged = Signal()
+    fileDisappeared = Signal(object)
+
     def __init__(self):
         self.tasks: list[Task] = []
         self.calls: list[tuple] = []
 
     def add(self, task):
         self.tasks.append(task)
+        self.taskAdded.emit(task)
 
     def taskById(self, taskId):
         return next((t for t in self.tasks if t.taskId == taskId), None)
@@ -51,10 +64,11 @@ class FakeTaskService:
 
 class Harness:
     def __init__(self, service: BrowserService, server: LoopbackServer, taskService: FakeTaskService,
-                 drafted: list, events: list):
+                 speedChanged: BoundSignal, drafted: list, events: list):
         self.service = service
         self.server = server
         self.taskService = taskService
+        self.speedChanged = speedChanged
         self.drafted = drafted
         self.events = events
 
@@ -94,6 +108,7 @@ async def startBrowser(monkeypatch, tmp_path, loadCrx):
     loop = asyncio.get_running_loop()
     runner = CoroutineRunner(loop.call_soon, loop=loop)
     taskService = FakeTaskService()
+    speedChanged = BoundSignal()
     drafted, events = [], []
 
     async def parse(options):
@@ -101,7 +116,7 @@ async def startBrowser(monkeypatch, tmp_path, loadCrx):
             raise ValueError("unreachable")
         return Task(name="video.mp4", url=options.url, packId="http_pack", outputFolder=options.outputFolder)
 
-    service = BrowserService(runner, taskService, parse=parse, loadCrx=loadCrx)
+    service = BrowserService(runner, taskService, speedChanged, parse=parse, loadCrx=loadCrx)
     service.taskDraftRequested.connect(drafted.extend)
     service.extensionUpdated.connect(lambda version: events.append(("extensionUpdated", version)))
     service.connectionChanged.connect(lambda: events.append("connectionChanged"))
@@ -111,7 +126,7 @@ async def startBrowser(monkeypatch, tmp_path, loadCrx):
     server.start()
     await waitFor(lambda: server.state.status == ListenStatus.LISTENING)
 
-    yield Harness(service, server, taskService, drafted, events)
+    yield Harness(service, server, taskService, speedChanged, drafted, events)
 
     server.stop()
     await asyncio.sleep(0.05)
@@ -226,7 +241,7 @@ class TestToken:
         monkeypatch.setattr(cfg.browserExtensionPairToken, "value", "")
         loop = asyncio.get_running_loop()
 
-        BrowserService(CoroutineRunner(loop.call_soon, loop=loop), FakeTaskService(), parse=None, loadCrx=None)
+        BrowserService(CoroutineRunner(loop.call_soon, loop=loop), FakeTaskService(), BoundSignal(), parse=None, loadCrx=None)
 
         assert len(cfg.browserExtensionPairToken.value) >= 16
 
@@ -292,21 +307,64 @@ class TestCreateTask:
 
 
 class TestSnapshots:
-    async def test_subscriber_gets_snapshot_and_later_changes_only(self, browser, tmp_path):
-        browser.taskService.add(Task(name="a.bin", url="https://a.test/a", packId="http_pack", outputFolder=tmp_path))
+    @staticmethod
+    def makeTask(name: str, tmp_path) -> Task:
+        return Task(name=name, url=f"https://a.test/{name}", packId="http_pack", outputFolder=tmp_path)
+
+    @staticmethod
+    async def subscribe(browser, ws) -> dict:
+        await browser.hello(ws)
+        await ws.send(json.dumps({"type": "subscribe_tasks"}))
+        return await receive(ws, "task_snapshot")
+
+    @staticmethod
+    async def assertNothingSent(ws) -> None:
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(ws.recv(), 0.3)
+
+    async def test_subscriber_gets_snapshot_at_once(self, browser, tmp_path):
+        browser.taskService.add(self.makeTask("a.bin", tmp_path))
         async with browser.connect() as ws:
-            await browser.hello(ws)
-            await ws.send(json.dumps({"type": "subscribe_tasks"}))
-            first = await receive(ws, "task_snapshot")
-
-            with pytest.raises(asyncio.TimeoutError):
-                await asyncio.wait_for(ws.recv(), 1.3)
-
-            browser.taskService.add(Task(name="b.bin", url="https://a.test/b", packId="http_pack", outputFolder=tmp_path))
-            second = await receive(ws, "task_snapshot")
+            first = await self.subscribe(browser, ws)
 
         assert [t["name"] for t in first["tasks"]] == ["a.bin"]
+
+    async def test_task_change_sends_snapshot(self, browser, tmp_path):
+        browser.taskService.add(self.makeTask("a.bin", tmp_path))
+        async with browser.connect() as ws:
+            await self.subscribe(browser, ws)
+            browser.taskService.add(self.makeTask("b.bin", tmp_path))
+            second = await receive(ws, "task_snapshot")
+
         assert sorted(t["name"] for t in second["tasks"]) == ["a.bin", "b.bin"]
+
+    async def test_tick_sends_changed_snapshot(self, browser, tmp_path):
+        task = self.makeTask("a.bin", tmp_path)
+        browser.taskService.add(task)
+        async with browser.connect() as ws:
+            await self.subscribe(browser, ws)
+            task.setName("c.bin")
+            browser.speedChanged.emit(0)
+            second = await receive(ws, "task_snapshot")
+
+        assert [t["name"] for t in second["tasks"]] == ["c.bin"]
+
+    async def test_tick_without_change_sends_nothing(self, browser, tmp_path):
+        browser.taskService.add(self.makeTask("a.bin", tmp_path))
+        async with browser.connect() as ws:
+            await self.subscribe(browser, ws)
+            browser.speedChanged.emit(0)
+            await self.assertNothingSent(ws)
+
+    async def test_burst_of_changes_sends_one_snapshot(self, browser, tmp_path):
+        async with browser.connect() as ws:
+            await self.subscribe(browser, ws)
+            for i in range(10):
+                browser.taskService.add(self.makeTask(f"{i}.bin", tmp_path))
+            second = await receive(ws, "task_snapshot")
+            await self.assertNothingSent(ws)
+
+        assert len(second["tasks"]) == 10
 
 
 class TestTaskAction:

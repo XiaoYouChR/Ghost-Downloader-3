@@ -24,7 +24,8 @@ class Engine:
         self.featureService = FeatureService(self.taskService, self.categoryService, coroutineRunner,
                                              self.runtimeStatusService)
 
-        self.browserService = BrowserService(coroutineRunner, self.taskService, self.featureService.parse, loadCrx)
+        self.browserService = BrowserService(coroutineRunner, self.taskService, self.speedMeter.speedChanged,
+                                             self.featureService.parse, loadCrx)
         self.browserServer = LoopbackServer(coroutineRunner, self.browserService.handle,
                                             isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
         self.aria2RpcService = Aria2RpcService(coroutineRunner, self.featureService.parse, self.taskService.add)
