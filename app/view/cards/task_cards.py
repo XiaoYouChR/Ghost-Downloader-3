@@ -45,7 +45,6 @@ class ButtonState:
 
 
 BUTTON_DEFAULT = ButtonState()
-BUTTON_HIDDEN = ButtonState(visible=False)
 
 
 @dataclass(frozen=True)
@@ -88,14 +87,15 @@ TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, N("TaskCard", "暂停/继�
 SELECT_FILES_BUTTON = ButtonSpec("selectFiles", FluentIcon.LIBRARY, N("TaskCard", "选择文件"),
     states={None: lambda t: ButtonState(visible=bool(t.files) and len(t.files) > 1)})
 
-VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, N("TaskCard", "校验文件哈希"),
-    default=BUTTON_HIDDEN,
-    states={
-        TaskStatus.COMPLETED: lambda t: ButtonState(
-            enabled=t.hasOutputFile and isExisting(t.outputPath)),
-    })
+VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, N("TaskCard", "校验文件哈希"), states={
+    None: lambda t: ButtonState(visible=not (bool(t.files) and len(t.files) > 1), enabled=False),
+    TaskStatus.COMPLETED: lambda t: ButtonState(
+        visible=not (bool(t.files) and len(t.files) > 1),
+        enabled=t.hasOutputFile and isExisting(t.outputPath)),
+})
 
 OPEN_FILE_BUTTON = ButtonSpec("openFile", FluentIcon.LINK, N("TaskCard", "打开文件"), states={
+    None: lambda t: ButtonState(enabled=False),
     TaskStatus.COMPLETED: lambda t: ButtonState(
         enabled=not t.hasOutputFile or isExisting(t.outputPath)),
 })
