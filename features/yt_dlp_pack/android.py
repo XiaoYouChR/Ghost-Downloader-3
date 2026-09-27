@@ -9,17 +9,17 @@ from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist
 UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
 
 
-def toDraftOptions(pairs) -> list[dict]:
-    return [{"key": key, "label": label} for key, label in pairs]
+def toDraftOptions(pairs, **params) -> list[dict]:
+    return [{"key": key, "label": label, "params": params} for key, label in pairs]
 
 
 def draftFields(task) -> dict:
     info = getattr(task, "_mediaInfo", {})
     hasInfo = bool(info.get("formats"))
-    subtitles, _ = buildSubtitleChoices(info, "自动")
+    subtitles, _ = buildSubtitleChoices(info, "{auto}")
     page = task.files[0] if task.files and len(task.files) == 1 else None
-    videoTiers = buildVideoTiers(info, "最佳画质") if hasInfo else [("0", "最佳画质")]
-    audioTiers = buildAudioTiers(info, "最佳音质") if hasInfo else [("0", "最佳音质")]
+    videoTiers = buildVideoTiers(info, "{best}") if hasInfo else [("0", "{best}")]
+    audioTiers = buildAudioTiers(info, "{best}") if hasInfo else [("0", "{best}")]
     return {
         "canProbeMedia": True,
         "hasMediaInfo": hasInfo,
@@ -29,19 +29,19 @@ def draftFields(task) -> dict:
                 "id": "video",
                 "title": "视频",
                 "value": str(task.maxVideoHeight) if task.isVideoEnabled else "",
-                "options": toDraftOptions(videoTiers),
+                "options": toDraftOptions(videoTiers, best="最佳画质"),
                 "isOptional": task.isAudioEnabled,
             },
             {
                 "id": "audio",
                 "title": "音频",
                 "value": str(task.maxAudioBitrate) if task.isAudioEnabled else "",
-                "options": toDraftOptions(audioTiers),
+                "options": toDraftOptions(audioTiers, best="最佳音质"),
                 "isOptional": task.isVideoEnabled,
             },
             {
                 "id": "language",
-                "title": "语言",
+                "title": "音频语言",
                 "value": task.audioLanguages if task.isAudioEnabled else "",
                 "options": toDraftOptions(buildAudioLanguageChoices(info)),
                 "isMultiple": True,
@@ -50,7 +50,7 @@ def draftFields(task) -> dict:
         ],
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
-        "subtitles": toDraftOptions(subtitles),
+        "subtitles": toDraftOptions(subtitles, auto="自动"),
         "subtitleLanguages": [s for s in task.subtitleLanguages.split(",") if s],
         "duration": int(info.get("duration") or 0) if not task.isPlaylist else 0,
         "startTime": page.startTime if page else 0,

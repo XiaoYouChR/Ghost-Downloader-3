@@ -3,6 +3,7 @@ package com.xychr.ghostdownloader.i18n
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.xychr.ghostdownloader.model.DraftOption
 import com.xychr.ghostdownloader.model.TaskError
 
 /**
@@ -22,6 +23,10 @@ fun Context.engineText(error: TaskError): String = engineText(error.message, err
 
 @Composable
 fun engineText(error: TaskError): String = LocalContext.current.engineText(error)
+
+@Composable
+fun engineText(option: DraftOption): String =
+    engineText(option.label, option.params.mapValues { engineText(it.value) })
 
 fun Context.engineText(error: Throwable): String = engineText(error.toTaskError())
 

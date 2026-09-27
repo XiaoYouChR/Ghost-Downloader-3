@@ -1,6 +1,7 @@
 package com.xychr.ghostdownloader.ui.pages
 
 import com.xychr.ghostdownloader.bridge.bridge
+import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.*
 
 import androidx.activity.compose.BackHandler
@@ -200,7 +201,7 @@ fun TaskOptionsEditor(
                 draft.streams?.let { streams -> ChoiceField(
                     stringResource(R.string.task_stream),
                     draft.selectVideo.orEmpty(),
-                    streams.map { it.key to it.label },
+                    streams.map { it.key to engineText(it) },
                     { onChange(draft.copy(selectVideo = it)) },
                     isEnabled = !state.isSaving,
                 ) }

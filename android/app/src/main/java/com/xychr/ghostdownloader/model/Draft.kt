@@ -15,7 +15,11 @@ data class DraftFile(
 )
 
 @Serializable
-data class DraftOption(val key: String = "", val label: String = "")
+data class DraftOption(
+    val key: String = "",
+    val label: String = "",
+    val params: Map<String, String> = emptyMap(),
+)
 
 data class DraftControl(
     val id: String,

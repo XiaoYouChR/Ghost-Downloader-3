@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.DraftControl
 
 @Composable
@@ -73,7 +74,7 @@ private fun DraftControlChip(
                 isSelected = control.value.isEmpty(),
             ) { isOpen = false; onSelect(control.id, "") }
             control.options.forEach { option ->
-                DraftControlEntry(option.label, option.key == control.value) {
+                DraftControlEntry(engineText(option), option.key == control.value) {
                     isOpen = false
                     onSelect(control.id, option.key)
                 }
@@ -107,7 +108,7 @@ private fun DraftControlSheet(control: DraftControl, onDismiss: () -> Unit, onAp
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(bottom = 16.dp)) {
             if (control.title.isNotEmpty()) Text(
-                control.title,
+                engineText(control.title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
@@ -128,10 +129,10 @@ private fun DraftControlSheet(control: DraftControl, onDismiss: () -> Unit, onAp
 private fun controlLabel(control: DraftControl): String {
     val keys = control.value.split(",").filter(String::isNotEmpty)
     val valueText = keys.firstOrNull()?.let { key ->
-        control.options.firstOrNull { it.key == key }?.label ?: key
+        control.options.firstOrNull { it.key == key }?.let { engineText(it) } ?: key
     } ?: stringResource(if (control.isMultiple) R.string.draft_control_auto else R.string.draft_control_off)
     return listOf(
-        control.title,
+        engineText(control.title),
         if (keys.size > 1) stringResource(R.string.draft_control_more, valueText, keys.size - 1) else valueText,
     ).filter(String::isNotEmpty).joinToString(" ")
 }

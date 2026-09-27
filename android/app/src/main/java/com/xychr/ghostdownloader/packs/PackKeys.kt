@@ -32,7 +32,11 @@ fun JsonObject.sizes(key: String): Map<String, Int> =
 fun JsonObject.optionList(key: String): List<DraftOption> =
     (this[key] as? JsonArray)?.map {
         val obj = it.jsonObject
-        DraftOption(obj["key"]?.jsonPrimitive?.content ?: "", obj["label"]?.jsonPrimitive?.content ?: "")
+        DraftOption(
+            obj["key"]?.jsonPrimitive?.content ?: "",
+            obj["label"]?.jsonPrimitive?.content ?: "",
+            (obj["params"] as? JsonObject)?.mapValues { it.value.jsonPrimitive.content }.orEmpty(),
+        )
     } ?: emptyList()
 
 fun JsonObject.controlList(): List<DraftControl> =

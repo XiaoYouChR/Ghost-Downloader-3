@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.DraftOption
 
 @Composable
@@ -31,7 +32,7 @@ fun DraftChoices(
                 verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(isChecked, onCheckedChange = null)
                 Text(
-                    option.label, Modifier.padding(start = 12.dp),
+                    engineText(option), Modifier.padding(start = 12.dp),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
