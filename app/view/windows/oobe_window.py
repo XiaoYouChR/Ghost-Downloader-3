@@ -804,6 +804,7 @@ class OobeWindow(FluentWidget):
         self._isFinished = False
         self._initWidget()
         self._initContent()
+        self._initContentLayout()
         self._initLayout()
         self._bind()
         self._refreshNavigation()
@@ -826,15 +827,16 @@ class OobeWindow(FluentWidget):
         return QRect(0, 10, 75, size.height())
 
     def _initContent(self) -> None:
-        self.welcomePage = WelcomePage(self)
-        self.basicSettingsPage = BasicSettingsPage(self)
+        self.content = QWidget(self)
+        self.welcomePage = WelcomePage(self.content)
+        self.basicSettingsPage = BasicSettingsPage(self.content)
         self.browserExtensionPage = BrowserExtensionPage(
-            self._browserService, self._browserServer, self._coroutineRunner, self)
-        self.runtimeInstallPage = RuntimeInstallPage(self._featureService, self)
-        self.advancedOptionsPage = AdvancedOptionsPage(self._featureService, self)
-        self.completePage = CompletePage(self)
+            self._browserService, self._browserServer, self._coroutineRunner, self.content)
+        self.runtimeInstallPage = RuntimeInstallPage(self._featureService, self.content)
+        self.advancedOptionsPage = AdvancedOptionsPage(self._featureService, self.content)
+        self.completePage = CompletePage(self.content)
 
-        self.stackedWidget = DrillInTransitionStackedWidget(self)
+        self.stackedWidget = DrillInTransitionStackedWidget(self.content)
         self.stackedWidget.addWidget(self.welcomePage)
         self.stackedWidget.addWidget(self.basicSettingsPage)
         self.stackedWidget.addWidget(self.browserExtensionPage)
@@ -842,19 +844,19 @@ class OobeWindow(FluentWidget):
         self.stackedWidget.addWidget(self.advancedOptionsPage)
         self.stackedWidget.addWidget(self.completePage)
 
-        self.backButton = PushButton(self.tr("上一步"), self)
-        self.skipButton = TransparentPushButton(self.tr("跳过全部"), self)
-        self.nextButton = PrimaryPushButton(self.tr("下一步"), self)
-        self.pipsPager = HorizontalPipsPager(self)
+        self.backButton = PushButton(self.tr("上一步"), self.content)
+        self.skipButton = TransparentPushButton(self.tr("跳过全部"), self.content)
+        self.nextButton = PrimaryPushButton(self.tr("下一步"), self.content)
+        self.pipsPager = HorizontalPipsPager(self.content)
         self.pipsPager.setPageNumber(self.PAGE_COUNT)
         self.pipsPager.setVisibleNumber(self.PAGE_COUNT)
         self.pipsPager.setPreviousButtonDisplayMode(PipsScrollButtonDisplayMode.NEVER)
         self.pipsPager.setNextButtonDisplayMode(PipsScrollButtonDisplayMode.NEVER)
         self.pipsPager.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
-    def _initLayout(self) -> None:
-        mainLayout = QVBoxLayout(self)
-        mainLayout.setContentsMargins(36, self.titleBar.height() + 8, 36, 16)
+    def _initContentLayout(self) -> None:
+        mainLayout = QVBoxLayout(self.content)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.setSpacing(0)
         mainLayout.addWidget(self.stackedWidget, 1)
 
@@ -875,9 +877,14 @@ class OobeWindow(FluentWidget):
         navLayout.addLayout(rightBox, 1)
         mainLayout.addLayout(navLayout)
 
+    def _initLayout(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(36, self.titleBar.height() + 8, 36, 16)
+        layout.addWidget(self.content)
+
     def _bind(self) -> None:
         self.welcomePage.startClicked.connect(self._onNextClicked)
-        self.basicSettingsPage.languageChanged.connect(self._rebuildContent)
+        self.basicSettingsPage.languageChanged.connect(self._onLanguageChanged)
         self.completePage.finishClicked.connect(self._finish)
         self.backButton.clicked.connect(self._onBackClicked)
         self.nextButton.clicked.connect(self._onNextClicked)
@@ -886,20 +893,18 @@ class OobeWindow(FluentWidget):
     def onPairRequestChanged(self, request: PairRequest | None) -> None:
         self.browserExtensionPage.onPairRequestChanged(request)
 
-    def _rebuildContent(self) -> None:
-        index = self._currentIndex
-        for widget in [self.stackedWidget, self.backButton,
-                       self.skipButton, self.nextButton, self.pipsPager]:
-            widget.hide()
-            widget.deleteLater()
-        QWidget().setLayout(self.layout())
-
+    def _onLanguageChanged(self) -> None:
+        # 信号源 langCombo 在旧 content 里且仍在调用栈上，只能 deleteLater
+        old = self.content
         self._initContent()
-        self._initLayout()
+        self._initContentLayout()
+        self.layout().replaceWidget(old, self.content)
+        old.hide()
+        old.deleteLater()
+
         self._bind()
-        self._currentIndex = index
         self.stackedWidget.setAnimationEnabled(False)
-        self.stackedWidget.setCurrentIndex(index)
+        self.stackedWidget.setCurrentIndex(self._currentIndex)
         self.stackedWidget.setAnimationEnabled(True)
         self._refreshNavigation()
 
