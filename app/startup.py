@@ -53,7 +53,6 @@ def loadEngine(application):
 
 def createServices(coroutineRunner, categoryService, speedMeter):
     from PySide6.QtCore import QFileSystemWatcher
-    from app.services.aria2_rpc import Aria2RpcServer
     from app.services.browser_service import BrowserService
     from app.services.feature_service import FeatureService
     from app.services.runtime_status import RuntimeStatusService
@@ -69,10 +68,9 @@ def createServices(coroutineRunner, categoryService, speedMeter):
         return bytes(QResource(":/res/chrome_extension.crx").data())
 
     browserService = BrowserService(coroutineRunner, taskService, parse=featureService.parse, loadCrx=loadCrx)
-    aria2RpcServer = Aria2RpcServer(coroutineRunner, parse=featureService.parse, addTask=taskService.add)
     updateService = UpdateService(coroutineRunner)
 
-    return featureService, taskService, browserService, aria2RpcServer, updateService, runtimeStatusService
+    return featureService, taskService, browserService, updateService, runtimeStatusService
 
 
 def loadPacks(featureService, coroutineRunner, speedMeter):
@@ -111,12 +109,12 @@ def checkUpdateAtStartup(updateService):
     updateService.check()
 
 
-def stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, speedMeter, updateService=None):
+def stopEngine(taskService, browserService, aria2Server, featureService, coroutineRunner, speedMeter, updateService=None):
     taskService.stop()
     taskService.flush()
     speedMeter.stop()
     browserService.stop()
-    aria2RpcServer.stop()
+    aria2Server.stop()
     featureService.deactivate()
     taskService.flush()
     if updateService is not None:

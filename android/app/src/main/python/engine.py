@@ -16,6 +16,7 @@ from app.config.cfg import cfg
 from app.config.constants import CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL
 from app.platform.file_watcher import InotifyFileWatcher
 from app.platform.filesystem import isExisting, isFolder
+from app.services.loopback_server import ListenStatus
 
 
 class HashState:
@@ -101,14 +102,17 @@ class Engine:
         self._taskDraft.taskConfirmed.connect(self._taskService.add)
 
         from app.services.aria2_rpc import Aria2RpcServer
+        from app.services.loopback_server import LoopbackServer
         from app.services.browser_service import BrowserService
 
         self._aria2RpcServer = Aria2RpcServer(
             self._coroutineRunner, parse=self._featureService.parse,
-            addTask=self._taskService.add,
+            addTask=self._taskService.add, requestDraft=self._onBrowserDraft,
         )
-        cfg.isAria2RpcEnabled.valueChanged.connect(self._aria2RpcServer.setEnabled)
-        cfg.aria2RpcPort.valueChanged.connect(self._onAria2RpcPortChanged)
+        self._aria2Server = LoopbackServer(
+            self._coroutineRunner, self._aria2RpcServer.handle,
+            isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort,
+        )
 
         self._pendingPair = None
         self._browserService = BrowserService(
@@ -127,8 +131,7 @@ class Engine:
         self._taskService.resumeSaved()
         self._featureService.activate()
         self._setupFlows()
-        if cfg.isAria2RpcEnabled.value:
-            self._aria2RpcServer.start()
+        self._aria2Server.start()
         if cfg.isBrowserExtensionEnabled.value:
             self._browserService.start()
         self._emitKeepAlive()
@@ -171,7 +174,7 @@ class Engine:
 
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
-        cfg.isAria2RpcEnabled.valueChanged.connect(self._emitKeepAlive)
+        self._aria2Server.stateChanged.connect(self._emitKeepAlive)
         cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitKeepAlive)
         cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitBrowserExtension)
         cfg.browserExtensionPort.valueChanged.connect(self._emitBrowserExtension)
@@ -919,11 +922,6 @@ class Engine:
         return {key: self._pendingPair[key] for key in
                 ("requestId", "clientKind", "extensionVersion", "peerAddress")}
 
-    def _onAria2RpcPortChanged(self, _port):
-        if cfg.isAria2RpcEnabled.value:
-            self._aria2RpcServer.stop()
-            self._aria2RpcServer.start()
-
     def _onBrowserPortChanged(self, _port):
         if cfg.isBrowserExtensionEnabled.value:
             self._browserService.stop()
@@ -947,7 +945,7 @@ class Engine:
         if seeding:
             return json.dumps({"reason": "seeding", "count": seeding})
 
-        if self._aria2RpcServer.isRunning or self._browserService.boundPort:
+        if self._aria2Server.state.status == ListenStatus.LISTENING or self._browserService.boundPort:
             return json.dumps({"reason": "serving"})
         return json.dumps({"reason": ""})
 

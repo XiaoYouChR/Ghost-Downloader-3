@@ -86,11 +86,13 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
 
-    featureService, taskService, browserService, aria2RpcServer, updateService, runtimeStatusService = createServices(
+    featureService, taskService, browserService, updateService, runtimeStatusService = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
     loadPacks(featureService, coroutineRunner, speedMeter)
 
+    from app.services.aria2_rpc import Aria2RpcServer
+    from app.services.loopback_server import LoopbackServer
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
@@ -201,17 +203,10 @@ def startApp(application, isSilent=False):
 
     cfg.browserExtensionPort.valueChanged.connect(onBrowserPortChanged)
 
-    aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
-    if cfg.isAria2RpcEnabled.value:
-        aria2RpcServer.start()
-    cfg.isAria2RpcEnabled.valueChanged.connect(aria2RpcServer.setEnabled)
-
-    def onAria2PortChanged(_port):
-        if cfg.isAria2RpcEnabled.value:
-            aria2RpcServer.stop()
-            aria2RpcServer.start()
-
-    cfg.aria2RpcPort.valueChanged.connect(onAria2PortChanged)
+    aria2RpcServer = Aria2RpcServer(coroutineRunner, featureService.parse, taskService.add, requestDraft=onBrowserDraft)
+    aria2Server = LoopbackServer(coroutineRunner, aria2RpcServer.handle,
+                                 isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
+    aria2Server.start()
 
     application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 
@@ -263,7 +258,7 @@ def startApp(application, isSilent=False):
     updateService.changed.connect(onUpdateChanged)
     checkUpdateAtStartup(updateService)
 
-    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, speedMeter, updateService))
+    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2Server, featureService, coroutineRunner, speedMeter, updateService))
 
 
 if __name__ == "__main__":
