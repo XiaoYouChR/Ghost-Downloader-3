@@ -58,6 +58,7 @@ class Bridge:
         self._engine = Engine(
             self._coroutineRunner, InotifyFileWatcher(loop, self._coroutineRunner.post), loadCrx=None,
         )
+        self._isTasksPending = False
         self._categoryService = self._engine.categoryService
         self._speedMeter = self._engine.speedMeter
         self._taskService = self._engine.taskService
@@ -136,15 +137,14 @@ class Bridge:
             self._taskService.tasksAllCompleted,
             self._taskService.seedingStarted,
             self._taskService.seedingStopped,
+            self._taskService.queueChanged,
+            self._taskService.fileDisappeared,
         ):
-            signal.connect(self._emitKeepAlive)
-            signal.connect(self._emitTasks)
+            signal.connect(self._onTasksChanged)
 
         self._taskService.taskCompleted.connect(self._onTaskCompleted)
         self._taskService.taskFailed.connect(self._onTaskFailed)
         self._taskService.diskSpaceInsufficient.connect(self._onDiskSpaceInsufficient)
-        self._taskService.queueChanged.connect(self._emitTasks)
-        self._taskService.fileDisappeared.connect(self._emitTasks)
 
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
@@ -212,9 +212,17 @@ class Bridge:
     def _emitCategoryState(self, *_args):
         self._flows.setState("categoryState", self.categoryState())
 
-    def _emitTasks(self, *_args):
+    def _onTasksChanged(self, *_args):
+        if self._isTasksPending:
+            return
+        self._isTasksPending = True
+        self._coroutineRunner.post(self._emitTasks)
+
+    def _emitTasks(self):
+        self._isTasksPending = False
         self._flows.setState("tasks", self.tasks())
         self._emitTaskProgress()
+        self._emitKeepAlive()
 
     def _emitTaskProgress(self, *_args):
         self._flows.setState("taskProgress", self.taskProgress())

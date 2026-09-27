@@ -13,9 +13,11 @@ BRIDGE_PATH = Path(__file__).parents[1] / "android/app/src/main/python/bridge.py
 class StubFlows:
     def __init__(self):
         self.states: dict[str, str] = {}
+        self.history: list[str] = []
 
     def setState(self, key, value):
         self.states[key] = value
+        self.history.append(key)
 
     def sendEvent(self, key, value):
         pass
