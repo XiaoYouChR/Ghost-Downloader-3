@@ -17,7 +17,8 @@ from app.config.cfg import CloseMode, cfg
 from app.config.constants import DONATE_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
 from app.i18n import toLocalizedError
-from app.services.loopback_server import ListenState, ListenStatus, LoopbackServer
+from app.models.task import TaskError
+from app.services.loopback_server import LoopbackServer
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
 from app.view.pages.setting_page import SettingPage
@@ -241,9 +242,6 @@ class MainWindow(MSFluentWindow):
         if self._updateService is not None:
             self._updateService.changed.connect(self._onUpdateChanged, owner=self)
 
-        self._browserServer.stateChanged.connect(self._onBrowserListenStateChanged, owner=self)
-        self._aria2RpcServer.stateChanged.connect(self._onAria2ListenStateChanged, owner=self)
-
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectWin)
         elif sys.platform == "darwin":
@@ -297,21 +295,19 @@ class MainWindow(MSFluentWindow):
         else:
             self._browserService.rejectPair(request.requestId)
 
-    def _onBrowserListenStateChanged(self, state: ListenState) -> None:
-        if state.status == ListenStatus.FAILED:
-            self._showListenFailure(self.tr("浏览器扩展服务无法启动"), state)
+    def alertBrowserListenFailure(self, error: TaskError) -> None:
+        self._alertListenFailure(self.tr("浏览器扩展服务无法启动"), error)
 
-    def _onAria2ListenStateChanged(self, state: ListenState) -> None:
-        if state.status == ListenStatus.FAILED:
-            self._showListenFailure(self.tr("Aria2 RPC 兼容服务无法启动"), state)
+    def alertAria2ListenFailure(self, error: TaskError) -> None:
+        self._alertListenFailure(self.tr("Aria2 RPC 兼容服务无法启动"), error)
 
-    def _showListenFailure(self, title: str, state: ListenState) -> None:
+    def _alertListenFailure(self, title: str, error: TaskError) -> None:
         from qfluentwidgets import PushButton
 
         infoBar = InfoBar(
             icon=InfoBarIcon.ERROR,
             title=title,
-            content=toLocalizedError(state.error),
+            content=toLocalizedError(error),
             orient=Qt.Orientation.Horizontal,
             isClosable=True,
             duration=-1,
