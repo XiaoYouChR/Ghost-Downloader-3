@@ -7,5 +7,5 @@ def proxySiteList() -> list:
     return list(GITHUB_PROXY_SITES)
 
 async def probeSites() -> dict:
-    from .config import probeProxyLatencies
+    from .probe import probeProxyLatencies
     return await probeProxyLatencies()
