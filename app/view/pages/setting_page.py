@@ -34,10 +34,12 @@ from app.view.components.editors import FolderPicker
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, featureService, browserService, coroutineRunner, categoryService, taskService, updateService, parent=None):
+    def __init__(self, featureService, browserService, browserServer, aria2Server, coroutineRunner, categoryService, taskService, updateService, parent=None):
         super().__init__(parent)
         self._featureService = featureService
         self._browserService = browserService
+        self._browserServer = browserServer
+        self._aria2Server = aria2Server
         self._coroutineRunner = coroutineRunner
         self._categoryService = categoryService
         self._taskService = taskService
@@ -426,12 +428,10 @@ class SettingPage(ScrollArea):
         InfoBar.success(self.tr("已配置"), self.tr("重启软件后生效"), duration=1500, parent=self)
 
     def _refreshPairTokenCard(self) -> None:
-        self.browserPairTokenCard.setContent(self._browserService.token)
+        self.browserPairTokenCard.setContent(cfg.browserExtensionPairToken.value)
 
     def _onCopyTokenClicked(self) -> None:
-        token = self._browserService.token
-        if not token:
-            return
+        token = cfg.browserExtensionPairToken.value
         QApplication.clipboard().setText(token)
         InfoBar.success(self.tr("已复制配对令牌"), token,
                         duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
@@ -465,7 +465,6 @@ class SettingPage(ScrollArea):
 
     def _refreshBrowserStatus(self) -> None:
         installType, version = self._browserService.connectionSummary
-        port = self._browserService.boundPort
         if not installType:
             text = self.tr("未连接")
         elif installType == "development":

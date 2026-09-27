@@ -24,9 +24,10 @@ from app.view.pages.task_page import TaskPage
 if TYPE_CHECKING:
     from qfluentwidgets import FluentIconBase
     from app.models.task import Task
-    from app.services.browser_service import BrowserService
+    from app.services.browser_service import BrowserService, PairRequest
     from app.services.category_service import CategoryService
     from app.services.coroutine_runner import CoroutineRunner
+    from app.services.loopback_server import LoopbackServer
     from app.services.speed_meter import SpeedMeter
     from app.services.feature_service import FeatureService
     from app.services.task_service import TaskService
@@ -72,6 +73,8 @@ class MainWindow(MSFluentWindow):
         taskService: TaskService,
         featureService: FeatureService,
         browserService: BrowserService,
+        browserServer: LoopbackServer,
+        aria2Server: LoopbackServer,
         categoryService: CategoryService,
         speedMeter: SpeedMeter,
         coroutineRunner: CoroutineRunner,
@@ -88,6 +91,8 @@ class MainWindow(MSFluentWindow):
         self._taskService = taskService
         self._featureService = featureService
         self._browserService = browserService
+        self._browserServer = browserServer
+        self._aria2Server = aria2Server
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
         self._speedMeter = speedMeter
@@ -189,7 +194,7 @@ class MainWindow(MSFluentWindow):
             )
         if pageClass is SettingPage:
             return SettingPage(
-                self._featureService, self._browserService,
+                self._featureService, self._browserService, self._browserServer, self._aria2Server,
                 self._coroutineRunner, self._categoryService, self._taskService,
                 self._updateService, parent=self,
             )
@@ -270,18 +275,13 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
 
-    def confirmPair(self, request) -> None:
-        session = request["session"]
-        requestId = request["requestId"]
-        peerAddress = request.get("peerAddress", "")
-        extensionVersion = request.get("extensionVersion", self.tr("未知"))
-        clientKind = request.get("clientKind", self.tr("浏览器扩展"))
-
+    def confirmPair(self, request: PairRequest) -> None:
         content = self.tr(
             "浏览器扩展正在请求连接到 Ghost Downloader。\n\n"
             "来源: {0}\n客户端: {1}\n扩展版本: {2}\n\n"
             "仅在你刚刚点击扩展里的\"自动配对\"时允许。"
-        ).format(peerAddress, clientKind, extensionVersion)
+        ).format(request.peerAddress, request.clientKind or self.tr("浏览器扩展"),
+                 request.extensionVersion or self.tr("未知"))
 
         dialog = MessageBox(self.tr("浏览器扩展配对请求"), content, self)
         dialog.yesButton.setText(self.tr("允许配对"))
@@ -289,9 +289,9 @@ class MainWindow(MSFluentWindow):
         dialog.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         if dialog.exec():
-            self._browserService.approvePair(session, requestId)
+            self._browserService.approvePair(request.requestId)
         else:
-            self._browserService.rejectPair(session, requestId)
+            self._browserService.rejectPair(request.requestId)
 
     def _onUpdateAvailable(self, info) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
