@@ -109,6 +109,15 @@ class TestTransport:
         assert response.json() == {"jsonrpc": "2.0", "id": "a",
                                    "result": {"version": VERSION, "enabledFeatures": ["HTTPS"]}}
 
+    async def test_getGlobalOption_over_http(self, aria2, tmp_path):
+        response = await aria2.post({"jsonrpc": "2.0", "id": "g", "method": "aria2.getGlobalOption",
+                                     "params": ["token:"]})
+
+        assert response.status == 200
+        assert response.headers["content-type"] == "application/json-rpc"
+        assert response.headers["access-control-allow-origin"] == "*"
+        assert response.json() == {"jsonrpc": "2.0", "id": "g", "result": {"dir": str(tmp_path)}}
+
     async def test_getVersion_over_websocket(self, aria2):
         async with aria2.connect() as ws:
             await ws.send(json.dumps({"jsonrpc": "2.0", "id": "w", "method": "aria2.getVersion", "params": []}))
