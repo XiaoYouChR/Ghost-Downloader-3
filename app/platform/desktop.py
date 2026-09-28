@@ -142,6 +142,13 @@ def revealInFolder(path: str | PathLike[str]) -> None:
         openFolder(path.parent)
 
 
+def sendToClipboard(path: str | PathLike[str]) -> None:
+    # 必须在主线程调用：Qt 剪贴板属于 GUI 线程
+    mimeData = QMimeData()
+    mimeData.setUrls([QUrl.fromLocalFile(str(path))])
+    QApplication.clipboard().setMimeData(mimeData)
+
+
 def shutdown() -> None:
     from subprocess import Popen
     match sys.platform:

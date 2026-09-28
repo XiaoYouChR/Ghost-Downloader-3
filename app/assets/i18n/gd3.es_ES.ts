@@ -2408,6 +2408,11 @@ Permita solo si acaba de hacer clic en "Emparejamiento automático" en la extens
             <source>打开文件夹</source>
             <translation>Abrir carpeta</translation>
         </message>
+        <message>
+            <location filename="../../platform/desktop_notification.py" line="79" />
+            <source>复制</source>
+            <translation>Copiar</translation>
+        </message>
     </context>
     <context>
         <name>OobeWindow</name>

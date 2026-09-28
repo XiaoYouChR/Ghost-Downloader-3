@@ -3298,6 +3298,11 @@ FFmpeg: {2}</translation>
             <source>打开文件夹</source>
             <translation>開啟資料夾</translation>
         </message>
+        <message>
+            <location filename="../../platform/desktop_notification.py" line="79" />
+            <source>复制</source>
+            <translation>複製</translation>
+        </message>
     </context>
     <context>
         <name>OobeWindow</name>

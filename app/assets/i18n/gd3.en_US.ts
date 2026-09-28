@@ -3256,6 +3256,11 @@ Only allow this request if you have requested "Auto Pair" from the extension.</t
             <source>打开文件夹</source>
             <translation>Open Folder</translation>
         </message>
+        <message>
+            <location filename="../../platform/desktop_notification.py" line="79" />
+            <source>复制</source>
+            <translation>Copy</translation>
+        </message>
     </context>
     <context>
         <name>OobeWindow</name>

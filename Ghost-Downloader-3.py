@@ -216,7 +216,7 @@ def startApp(application, isSilent=False):
     taskService.tasksAllCompleted.connect(release)
 
     from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
-    coroutineRunner.submit(init(coroutineRunner.submit))
+    coroutineRunner.submit(init(coroutineRunner.submit, coroutineRunner.post))
     taskService.taskCompleted.connect(notifyTaskCompleted)
     taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
 

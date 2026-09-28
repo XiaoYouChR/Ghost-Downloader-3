@@ -2375,6 +2375,11 @@ http://example.com/{mp4,mkv}/video</source>
         <source>打开文件夹</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../platform/desktop_notification.py" line="79"/>
+        <source>复制</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>OobeWindow</name>

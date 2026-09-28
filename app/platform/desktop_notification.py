@@ -7,7 +7,7 @@ from PySide6.QtCore import QCoreApplication, QFileInfo, QStandardPaths, Qt
 from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 
-from app.platform.desktop import openFile, revealInFolder
+from app.platform.desktop import openFile, revealInFolder, sendToClipboard
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -15,11 +15,12 @@ if TYPE_CHECKING:
 
 notifier: DesktopNotifier | None = None
 _submit = None
+_post = None
 
 
-async def init(submit) -> None:
-    global _submit
-    _submit = submit
+async def init(submit, post) -> None:
+    global _submit, _post
+    _submit, _post = submit, post
     from desktop_notifier import DesktopNotifier as DN, Icon
 
     iconPath = Path(QStandardPaths.writableLocation(
@@ -74,6 +75,8 @@ def notifyTaskCompleted(task: Task) -> None:
         buttons=[
             Button(title=QCoreApplication.translate("Notifications", "打开文件"), on_pressed=lambda: openFile(outputPath)),
             Button(title=QCoreApplication.translate("Notifications", "打开文件夹"), on_pressed=lambda: revealInFolder(outputPath)),
+            # 回调在通知事件循环线程触发，剪贴板须回到主线程操作
+            Button(title=QCoreApplication.translate("Notifications", "复制"), on_pressed=lambda: _post(sendToClipboard, outputPath)),
         ],
         on_clicked=lambda: openFile(outputPath),
         icon=Icon(path=iconPath) if iconPath.exists() else None,
