@@ -17,9 +17,9 @@ from app.models.task import Task, TaskStatus
 from app.services import browser_service
 from app.services.browser_service import PROTOCOL_VERSION, BrowserService, PairRequest, installExtension
 from app.services.coroutine_runner import CoroutineRunner
-from app.services.loopback_server import ListenStatus, LoopbackServer
+from app.services.port_listener import ListenStatus, PortListener
 from app.signal import BoundSignal, Signal
-from tests.test_loopback_server import FakeItem, findFreePort, waitFor
+from tests.test_port_listener import FakeItem, findFreePort, waitFor
 
 pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
 
@@ -67,17 +67,17 @@ class FakeTaskService:
 
 
 class Harness:
-    def __init__(self, service: BrowserService, server: LoopbackServer, taskService: FakeTaskService,
+    def __init__(self, service: BrowserService, listener: PortListener, taskService: FakeTaskService,
                  speedChanged: BoundSignal, drafted: list, events: list):
         self.service = service
-        self.server = server
+        self.listener = listener
         self.taskService = taskService
         self.speedChanged = speedChanged
         self.drafted = drafted
         self.events = events
 
     def connect(self):
-        return websockets.connect(f"ws://127.0.0.1:{self.server.state.port}/")
+        return websockets.connect(f"ws://127.0.0.1:{self.listener.state.port}/")
 
     async def hello(self, ws, token: str = TOKEN, protocolVersion: int = PROTOCOL_VERSION) -> dict:
         await ws.send(json.dumps({"type": "hello", "protocolVersion": protocolVersion, "token": token,
@@ -126,13 +126,13 @@ async def startBrowser(monkeypatch, tmp_path, loadCrx):
     service.connectionChanged.connect(lambda: events.append("connectionChanged"))
     service.protocolMismatched.connect(lambda: events.append("protocolMismatched"))
     service.pairRequestChanged.connect(lambda request: events.append(request))
-    server = LoopbackServer(runner, service.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
-    server.start()
-    await waitFor(lambda: server.state.status == ListenStatus.LISTENING)
+    listener = PortListener(runner, service.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
+    listener.start()
+    await waitFor(lambda: listener.state.status == ListenStatus.LISTENING)
 
-    yield Harness(service, server, taskService, speedChanged, drafted, events)
+    yield Harness(service, listener, taskService, speedChanged, drafted, events)
 
-    server.stop()
+    listener.stop()
     await asyncio.sleep(0.05)
 
 
@@ -427,11 +427,11 @@ class TestTaskAction:
         assert result["message"] == "不支持的操作"
 
 
-async def test_stopping_server_disconnects_extension(browser):
+async def test_stopping_listener_disconnects_extension(browser):
     async with browser.connect() as ws:
         await browser.hello(ws)
         await waitFor(lambda: browser.service.connectionSummary != ("", ""))
-        browser.server.stop()
+        browser.listener.stop()
         await waitClosed(ws)
     await waitFor(lambda: browser.service.connectionSummary == ("", ""))
 

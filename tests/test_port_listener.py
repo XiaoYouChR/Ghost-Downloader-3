@@ -6,7 +6,7 @@ import socket
 import pytest
 
 from app.services.coroutine_runner import CoroutineRunner
-from app.services.loopback_server import ListenState, ListenStatus, LoopbackServer
+from app.services.port_listener import ListenState, ListenStatus, PortListener
 from app.signal import Signal
 
 pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
@@ -70,130 +70,130 @@ async def roundTrip(host: str, port: int, text: bytes = b"hello\n") -> bytes:
 
 @pytest.fixture
 async def build():
-    servers = []
+    listeners = []
 
     def build(isEnabled=True, port=None):
         loop = asyncio.get_running_loop()
         runner = CoroutineRunner(loop.call_soon, loop=loop)
         isEnabledItem, portItem = FakeItem(isEnabled), FakeItem(port or findFreePort())
-        server = LoopbackServer(runner, echo, isEnabled=isEnabledItem, port=portItem)
-        servers.append(server)
-        return server, isEnabledItem, portItem
+        listener = PortListener(runner, echo, isEnabled=isEnabledItem, port=portItem)
+        listeners.append(listener)
+        return listener, isEnabledItem, portItem
 
     yield build
 
-    for server in servers:
-        server.stop()
+    for listener in listeners:
+        listener.stop()
     await asyncio.sleep(0.05)
 
 
-def isListening(server: LoopbackServer) -> bool:
-    return server.state.status == ListenStatus.LISTENING
+def isListening(listener: PortListener) -> bool:
+    return listener.state.status == ListenStatus.LISTENING
 
 
 async def test_listens_on_ipv4_and_ipv6_loopback(build):
-    server, isEnabledItem, portItem = build()
-    server.start()
-    await waitFor(lambda: isListening(server))
+    listener, isEnabledItem, portItem = build()
+    listener.start()
+    await waitFor(lambda: isListening(listener))
 
-    assert await roundTrip("127.0.0.1", server.state.port) == b"hello\n"
-    assert await roundTrip("::1", server.state.port) == b"hello\n"
+    assert await roundTrip("127.0.0.1", listener.state.port) == b"hello\n"
+    assert await roundTrip("::1", listener.state.port) == b"hello\n"
 
 
 async def test_occupied_port_fails_and_recovers_after_port_change(build):
     port = findFreePort()
     occupier = occupy("127.0.0.1", port)
-    server, isEnabledItem, portItem = build(port=port)
-    server.start()
-    await waitFor(lambda: server.state.status == ListenStatus.FAILED)
+    listener, isEnabledItem, portItem = build(port=port)
+    listener.start()
+    await waitFor(lambda: listener.state.status == ListenStatus.FAILED)
 
-    assert str(server.state.error) == f"端口 {port} 被占用，请更换端口"
-    assert server.state.port == port
+    assert str(listener.state.error) == f"端口 {port} 被占用，请更换端口"
+    assert listener.state.port == port
 
     portItem.set(findFreePort())
-    await waitFor(lambda: isListening(server))
+    await waitFor(lambda: isListening(listener))
     occupier.close()
 
 
 async def test_occupied_ipv6_still_listens_on_ipv4(build):
     port = findFreePort()
     occupier = occupy("::1", port)
-    server, isEnabledItem, portItem = build(port=port)
-    server.start()
-    await waitFor(lambda: isListening(server))
+    listener, isEnabledItem, portItem = build(port=port)
+    listener.start()
+    await waitFor(lambda: isListening(listener))
 
     assert await roundTrip("127.0.0.1", port) == b"hello\n"
     occupier.close()
 
 
 async def test_rapid_toggling_ends_listening_without_failure(build):
-    server, isEnabledItem, portItem = build()
+    listener, isEnabledItem, portItem = build()
     states: list[ListenState] = []
-    server.stateChanged.connect(states.append)
-    server.start()
+    listener.stateChanged.connect(states.append)
+    listener.start()
     for _ in range(50):
         isEnabledItem.set(False)
         isEnabledItem.set(True)
-    await waitFor(lambda: isListening(server))
+    await waitFor(lambda: isListening(listener))
     await asyncio.sleep(0.1)
 
-    assert isListening(server)
+    assert isListening(listener)
     assert all(s.status != ListenStatus.FAILED for s in states)
-    assert await roundTrip("127.0.0.1", server.state.port) == b"hello\n"
+    assert await roundTrip("127.0.0.1", listener.state.port) == b"hello\n"
 
 
 async def test_disabling_closes_established_connections(build):
-    server, isEnabledItem, portItem = build()
-    server.start()
-    await waitFor(lambda: isListening(server))
-    reader, writer = await asyncio.open_connection("127.0.0.1", server.state.port)
+    listener, isEnabledItem, portItem = build()
+    listener.start()
+    await waitFor(lambda: isListening(listener))
+    reader, writer = await asyncio.open_connection("127.0.0.1", listener.state.port)
 
     isEnabledItem.set(False)
 
     assert await asyncio.wait_for(reader.read(), 1) == b""
-    await waitFor(lambda: server.state.status == ListenStatus.OFF)
+    await waitFor(lambda: listener.state.status == ListenStatus.OFF)
     writer.close()
 
 
 async def test_stop_then_start_in_same_tick_keeps_listening(build):
-    server, isEnabledItem, portItem = build()
-    server.start()
-    await waitFor(lambda: isListening(server))
-    port = server.state.port
+    listener, isEnabledItem, portItem = build()
+    listener.start()
+    await waitFor(lambda: isListening(listener))
+    port = listener.state.port
 
-    server.stop()
-    server.start()
+    listener.stop()
+    listener.start()
     await asyncio.sleep(0.1)
 
-    assert isListening(server)
+    assert isListening(listener)
     assert await roundTrip("127.0.0.1", port) == b"hello\n"
 
 
-async def test_failing_connection_does_not_stop_server(build):
-    server, isEnabledItem, portItem = build()
-    server.start()
-    await waitFor(lambda: isListening(server))
-    reader, writer = await asyncio.open_connection("127.0.0.1", server.state.port)
+async def test_failing_connection_does_not_stop_listener(build):
+    listener, isEnabledItem, portItem = build()
+    listener.start()
+    await waitFor(lambda: isListening(listener))
+    reader, writer = await asyncio.open_connection("127.0.0.1", listener.state.port)
     writer.write(b"boom\n")
 
     assert await asyncio.wait_for(reader.read(), 1) == b""
-    assert await roundTrip("127.0.0.1", server.state.port) == b"hello\n"
+    assert await roundTrip("127.0.0.1", listener.state.port) == b"hello\n"
 
 
-async def test_enabled_server_is_not_off_before_bind_finishes(build):
-    server, isEnabledItem, portItem = build()
-    server.start()
+async def test_enabled_listener_is_not_off_before_bind_finishes(build):
+    listener, isEnabledItem, portItem = build()
+    listener.start()
 
-    assert server.state.status != ListenStatus.OFF
-    assert server.state.port == portItem.value
+    assert listener.state.status != ListenStatus.OFF
+    assert listener.state.port == portItem.value
 
 
 async def test_state_changes_are_emitted_once_each(build):
-    server, isEnabledItem, portItem = build()
+    listener, isEnabledItem, portItem = build()
     states: list[ListenStatus] = []
-    server.stateChanged.connect(lambda s: states.append(s.status))
-    server.start()
-    await waitFor(lambda: isListening(server))
+    listener.stateChanged.connect(lambda s: states.append(s.status))
+    listener.start()
+    await waitFor(lambda: isListening(listener))
     await asyncio.sleep(0.05)
 
     assert states == [ListenStatus.STARTING, ListenStatus.LISTENING]

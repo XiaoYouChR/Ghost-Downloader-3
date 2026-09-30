@@ -15,8 +15,8 @@ from app.config.constants import VERSION
 from app.models.task import TaskError
 from app.services.aria2_rpc import Aria2RpcService
 from app.services.coroutine_runner import CoroutineRunner
-from app.services.loopback_server import ListenStatus, LoopbackServer
-from tests.test_loopback_server import FakeItem, findFreePort, waitFor
+from app.services.port_listener import ListenStatus, PortListener
+from tests.test_port_listener import FakeItem, findFreePort, waitFor
 
 pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
 
@@ -90,13 +90,13 @@ async def aria2(monkeypatch, tmp_path):
     rpc = Aria2RpcService(runner, parse=parse, addTask=added.append)
     rpc.taskDraftRequested.connect(drafted.extend)
     rpc.parseFailed.connect(lambda url, error: failed.append((url, error)))
-    server = LoopbackServer(runner, rpc.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
-    server.start()
-    await waitFor(lambda: server.state.status == ListenStatus.LISTENING)
+    listener = PortListener(runner, rpc.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
+    listener.start()
+    await waitFor(lambda: listener.state.status == ListenStatus.LISTENING)
 
-    yield Aria2Client(server.state.port, added, drafted, failed)
+    yield Aria2Client(listener.state.port, added, drafted, failed)
 
-    server.stop()
+    listener.stop()
     await asyncio.sleep(0.05)
 
 
@@ -150,7 +150,7 @@ class TestTransport:
                 pass
         assert error.value.response.status_code == 404
 
-    async def test_client_leaving_mid_head_does_not_stall_server(self, aria2):
+    async def test_client_leaving_mid_head_does_not_stall_listener(self, aria2):
         _, writer = await asyncio.open_connection("127.0.0.1", aria2.port)
         writer.write(b"POST /jsonrpc HTTP/1.1\r\nHost: x\r\n")
         writer.close()

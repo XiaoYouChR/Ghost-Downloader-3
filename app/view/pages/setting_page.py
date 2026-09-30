@@ -17,7 +17,7 @@ from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.platform.android import IS_ANDROID
-from app.services.loopback_server import ListenStatus
+from app.services.port_listener import ListenStatus
 from app.config.constants import (
     AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
     FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
@@ -35,12 +35,12 @@ from app.view.components.editors import FolderPicker
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, featureService, browserService, browserServer, aria2RpcServer, coroutineRunner, categoryService, taskService, updateService, parent=None):
+    def __init__(self, featureService, browserService, browserListener, aria2RpcListener, coroutineRunner, categoryService, taskService, updateService, parent=None):
         super().__init__(parent)
         self._featureService = featureService
         self._browserService = browserService
-        self._browserServer = browserServer
-        self._aria2RpcServer = aria2RpcServer
+        self._browserListener = browserListener
+        self._aria2RpcListener = aria2RpcListener
         self._coroutineRunner = coroutineRunner
         self._categoryService = categoryService
         self._taskService = taskService
@@ -400,8 +400,8 @@ class SettingPage(ScrollArea):
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
         self._browserService.connectionChanged.connect(self._refreshBrowserStatus, owner=self)
-        self._browserServer.stateChanged.connect(self._refreshBrowserStatus, owner=self)
-        self._aria2RpcServer.stateChanged.connect(self._refreshAria2Status, owner=self)
+        self._browserListener.stateChanged.connect(self._refreshBrowserStatus, owner=self)
+        self._aria2RpcListener.stateChanged.connect(self._refreshAria2Status, owner=self)
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
@@ -466,7 +466,7 @@ class SettingPage(ScrollArea):
                       duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _refreshBrowserStatus(self, *_) -> None:
-        state = self._browserServer.state
+        state = self._browserListener.state
         installType, version = self._browserService.connectionSummary
         if state.status == ListenStatus.OFF:
             text = self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用")
@@ -481,7 +481,7 @@ class SettingPage(ScrollArea):
         self.browserEnableCard.setContent(text)
 
     def _refreshAria2Status(self, *_) -> None:
-        state = self._aria2RpcServer.state
+        state = self._aria2RpcListener.state
         if state.status == ListenStatus.OFF:
             text = self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接")
         elif state.status == ListenStatus.FAILED:

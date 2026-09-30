@@ -27,7 +27,7 @@ from app.platform.desktop import loadCrx, openChromiumUrl, revealInFolder
 from app.platform.file_association import registerUrlScheme, unregisterUrlScheme
 from app.platform.run_at_login import setRunAtLogin
 from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
-from app.services.loopback_server import ListenStatus
+from app.services.port_listener import ListenStatus
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
     LATEST_EXTENSION_VERSION,
@@ -398,10 +398,10 @@ class BasicSettingsPage(QWidget):
 
 class BrowserExtensionPage(QWidget):
 
-    def __init__(self, browserService, browserServer, coroutineRunner, parent=None):
+    def __init__(self, browserService, browserListener, coroutineRunner, parent=None):
         super().__init__(parent)
         self._browserService = browserService
-        self._browserServer = browserServer
+        self._browserListener = browserListener
         self._coroutineRunner = coroutineRunner
         self._isPaired = False
         self._banner: InfoBar | None = None
@@ -489,7 +489,7 @@ class BrowserExtensionPage(QWidget):
             card.clicked.connect(lambda u=url: QDesktopServices.openUrl(QUrl(u)))
         self._browserService.connectionChanged.connect(self._onConnectionChanged, owner=self)
         self._browserService.protocolMismatched.connect(self._onProtocolMismatched, owner=self)
-        self._browserServer.stateChanged.connect(self._onListenStateChanged, owner=self)
+        self._browserListener.stateChanged.connect(self._onListenStateChanged, owner=self)
 
     def _setBanner(self, icon: InfoBarIcon, title: str) -> None:
         if self._banner is not None:
@@ -506,7 +506,7 @@ class BrowserExtensionPage(QWidget):
     def refreshListenState(self) -> None:
         if self._isPaired:
             return
-        state = self._browserServer.state
+        state = self._browserListener.state
         if state.status == ListenStatus.OFF:
             self._setBanner(
                 InfoBarIcon.WARNING,
@@ -788,11 +788,11 @@ class OobeWindow(FluentWidget):
 
     PAGE_COUNT = 6
 
-    def __init__(self, browserService, browserServer, coroutineRunner, featureService,
+    def __init__(self, browserService, browserListener, coroutineRunner, featureService,
                  runtimeStatusService, parent=None):
         super().__init__(parent=parent)
         self._browserService = browserService
-        self._browserServer = browserServer
+        self._browserListener = browserListener
         self._coroutineRunner = coroutineRunner
         self._featureService = featureService
         self._runtimeStatusService = runtimeStatusService
@@ -826,7 +826,7 @@ class OobeWindow(FluentWidget):
         self.welcomePage = WelcomePage(self.content)
         self.basicSettingsPage = BasicSettingsPage(self.content)
         self.browserExtensionPage = BrowserExtensionPage(
-            self._browserService, self._browserServer, self._coroutineRunner, self.content)
+            self._browserService, self._browserListener, self._coroutineRunner, self.content)
         self.runtimeInstallPage = RuntimeInstallPage(self._featureService, self.content)
         self.advancedOptionsPage = AdvancedOptionsPage(self._featureService, self.content)
         self.completePage = CompletePage(self.content)

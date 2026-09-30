@@ -6,7 +6,7 @@ import pytest
 
 from app.config.cfg import cfg
 from app.models.task import TaskError
-from app.services.loopback_server import ListenState, ListenStatus
+from app.services.port_listener import ListenState, ListenStatus
 from tests.helpers import StubFlows
 
 
@@ -18,7 +18,7 @@ class StubBrowserService:
         cfg.browserExtensionPairToken.value = "regenerated"
 
 
-class StubServer:
+class StubListener:
     def __init__(self, state=ListenState(ListenStatus.LISTENING, 14370)):
         self.state = state
 
@@ -29,7 +29,7 @@ def engine(bridge, monkeypatch):
     instance = bridge.Bridge.__new__(bridge.Bridge)
     instance._flows = StubFlows()
     instance._browserService = StubBrowserService()
-    instance._browserServer = StubServer()
+    instance._browserListener = StubListener()
     return instance
 
 
@@ -43,7 +43,7 @@ def engine(bridge, monkeypatch):
     ],
 )
 def test_status_tells_the_view_why_the_extension_cannot_connect(engine, state, summary, expected):
-    engine._browserServer = StubServer(state)
+    engine._browserListener = StubListener(state)
     engine._browserService = StubBrowserService(summary=summary)
 
     payload = json.loads(engine.browserExtension())

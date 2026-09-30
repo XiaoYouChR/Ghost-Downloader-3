@@ -55,7 +55,7 @@ def createSocket(host: str, port: int) -> socket.socket:
     return sock
 
 
-class LoopbackServer:
+class PortListener:
     stateChanged = Signal(object)
 
     def __init__(self, coroutineRunner, handle: Handle, *, isEnabled, port) -> None:
@@ -109,12 +109,12 @@ class LoopbackServer:
         try:
             sockets = [createSocket("127.0.0.1", port)]
         except OSError as e:
-            logger.error("Loopback server failed to bind 127.0.0.1:{}: {}", port, e)
+            logger.error("Port listener failed to bind 127.0.0.1:{}: {}", port, e)
             return ListenState(ListenStatus.FAILED, port, error=toListenError(e, port))
         try:
             sockets.append(createSocket("::1", port))
         except OSError as e:
-            logger.warning("IPv6 loopback server failed to bind [::1]:{}: {}", port, e)
+            logger.warning("Port listener failed to bind [::1]:{}: {}", port, e)
 
         for sock in sockets:
             self._servers.append(await asyncio.start_server(self._onConnection, sock=sock))
@@ -139,7 +139,7 @@ class LoopbackServer:
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            logger.opt(exception=e).warning("Loopback connection failed")
+            logger.opt(exception=e).warning("Port listener connection failed")
         finally:
             self._connections.discard(task)
             writer.close()

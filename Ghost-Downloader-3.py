@@ -55,7 +55,7 @@ def startApp(application, isSilent=False):
     from app.view.dialogs.name_conflict import NameConflictPrompt
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
-    from app.services.loopback_server import ListenStatus
+    from app.services.port_listener import ListenStatus
     from app.services.update_service import UpdateService
     from app.startup import loadResources, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
@@ -115,7 +115,7 @@ def startApp(application, isSilent=False):
 
     def createWindow() -> MainWindow:
         nonlocal window
-        window = MainWindow(taskService, featureService, browserService, engine.browserServer, engine.aria2RpcServer, engine.categoryService, speedMeter, coroutineRunner, plan, updateService)
+        window = MainWindow(taskService, featureService, browserService, engine.browserListener, engine.aria2RpcListener, engine.categoryService, speedMeter, coroutineRunner, plan, updateService)
         window.destroyed.connect(onWindowDestroyed)
         return window
 
@@ -151,7 +151,7 @@ def startApp(application, isSilent=False):
 
         engine.start()
 
-        oobe = OobeWindow(browserService, engine.browserServer, coroutineRunner, featureService, engine.runtimeStatusService)
+        oobe = OobeWindow(browserService, engine.browserListener, coroutineRunner, featureService, engine.runtimeStatusService)
         def onOobePairRequestChanged(request):
             if request is not None:
                 oobe.onPairRequested(request)
@@ -191,9 +191,9 @@ def startApp(application, isSilent=False):
     signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().onExceptionCaught(msg))
     browserService.pairRequestChanged.connect(lambda request: request and show().onPairRequested(request))
-    engine.browserServer.stateChanged.connect(
+    engine.browserListener.stateChanged.connect(
         lambda state: state.status == ListenStatus.FAILED and show().onBrowserListenFailed(state.error))
-    engine.aria2RpcServer.stateChanged.connect(
+    engine.aria2RpcListener.stateChanged.connect(
         lambda state: state.status == ListenStatus.FAILED and show().onAria2ListenFailed(state.error))
 
     application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))

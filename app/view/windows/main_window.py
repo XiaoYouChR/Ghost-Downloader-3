@@ -23,7 +23,7 @@ from app.platform.desktop import raiseWindow, revealInFolder
 from app.services.task_draft import TaskDraft
 from app.i18n import toLocalizedError
 from app.models.task import TaskError, TaskOptions
-from app.services.loopback_server import LoopbackServer
+from app.services.port_listener import PortListener
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
 from app.update import fetchAssetUrl, fetchBestAssetUrl, fetchRelease
@@ -90,8 +90,8 @@ class MainWindow(MSFluentWindow):
         taskService: TaskService,
         featureService: FeatureService,
         browserService: BrowserService,
-        browserServer: LoopbackServer,
-        aria2RpcServer: LoopbackServer,
+        browserListener: PortListener,
+        aria2RpcListener: PortListener,
         categoryService: CategoryService,
         speedMeter: SpeedMeter,
         coroutineRunner: CoroutineRunner,
@@ -108,8 +108,8 @@ class MainWindow(MSFluentWindow):
         self._taskService = taskService
         self._featureService = featureService
         self._browserService = browserService
-        self._browserServer = browserServer
-        self._aria2RpcServer = aria2RpcServer
+        self._browserListener = browserListener
+        self._aria2RpcListener = aria2RpcListener
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
         self._speedMeter = speedMeter
@@ -210,7 +210,7 @@ class MainWindow(MSFluentWindow):
             )
         if pageClass is SettingPage:
             return SettingPage(
-                self._featureService, self._browserService, self._browserServer, self._aria2RpcServer,
+                self._featureService, self._browserService, self._browserListener, self._aria2RpcListener,
                 self._coroutineRunner, self._categoryService, self._taskService,
                 self._updateService, parent=self,
             )

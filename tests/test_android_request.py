@@ -9,7 +9,7 @@ import pytest
 
 from app.services.coroutine_runner import CoroutineRunner
 from app.models.task import TaskError
-from app.services.loopback_server import ListenState, ListenStatus
+from app.services.port_listener import ListenState, ListenStatus
 from tests.helpers import StubFlows
 
 
@@ -24,7 +24,7 @@ class StubTaskDraft:
         self.calls.append(("setUrls", urls))
 
 
-class StubServer:
+class StubListener:
     def __init__(self, state: ListenState):
         self.state = state
 
@@ -99,7 +99,7 @@ def test_draft_parse_through_request_does_not_deadlock(engine, monkeypatch):
       "error": {"message": "端口 {port} 被占用，请更换端口", "params": {"port": "16800"}}}),
 ])
 def test_aria2_listen_state_is_pushed(engine, state, expected):
-    engine._aria2RpcServer = StubServer(state)
+    engine._aria2RpcListener = StubListener(state)
 
     engine._emitAria2Rpc()
 
