@@ -1120,8 +1120,6 @@ class TestSeeding:
 
 
 class TestSpeedMeter:
-    """速度表在有任务下载或做种时走表，驱动速度显示和任务进度推送。"""
-
     def test_meter_stops_when_last_running_task_is_paused(self, service, speedMeter):
         svc, runner = service
         task = makeTask("sm0")

@@ -1,4 +1,3 @@
-"""bridge 推给 Kotlin 的任务状态：同一次操作里的多次任务变化只推一次。"""
 from tests.test_android_request import engine  # noqa: F401
 
 
