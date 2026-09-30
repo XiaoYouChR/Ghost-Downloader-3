@@ -127,7 +127,7 @@ def startApp(application, isSilent=False):
         raiseWindow(window)
         return window
 
-    def onBrowserDraft(tasks):
+    def onTaskDraftRequested(tasks):
         if window is None:
             createWindow().setupPacks()
         window.addTasks(tasks)
@@ -138,9 +138,9 @@ def startApp(application, isSilent=False):
         InfoBar.success(w.tr("浏览器扩展已更新"), f"v{version}",
                         duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=w)
 
-    browserService.taskDraftRequested.connect(onBrowserDraft)
+    browserService.taskDraftRequested.connect(onTaskDraftRequested)
     browserService.extensionUpdated.connect(onExtensionUpdated)
-    engine.aria2RpcService.taskDraftRequested.connect(onBrowserDraft)
+    engine.aria2RpcService.taskDraftRequested.connect(onTaskDraftRequested)
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
