@@ -10,7 +10,7 @@ from loguru import logger
 from app.platform.desktop import openFile, revealInFolder
 
 if TYPE_CHECKING:
-    from app.models.task import Task
+    from app.models.task import Task, TaskError
     from desktop_notifier import DesktopNotifier
 
 notifier: DesktopNotifier | None = None
@@ -42,6 +42,17 @@ def notifyDiskSpaceInsufficient(free: int, needed: int) -> None:
         title=QCoreApplication.translate("Notifications", "磁盘空间不足"),
         message=QCoreApplication.translate("Notifications", "剩余 {0}，需要 {1}，任务未自动开始").format(
             toReadableSize(free), toReadableSize(needed)),
+    ))
+
+
+def notifyParseFailed(url: str, error: TaskError) -> None:
+    if notifier is None:
+        return
+    from app.i18n import toLocalizedError
+    displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
+    _submit(notifier.send(
+        title=QCoreApplication.translate("Notifications", "链接解析失败"),
+        message=f"{displayUrl}\n{toLocalizedError(error)}",
     ))
 
 

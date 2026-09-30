@@ -12,7 +12,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
-from app.models.task import TaskOptions
+from app.models.task import TaskOptions, toTaskError
 from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
 
@@ -108,9 +108,11 @@ class Aria2RpcService:
     """aria2 JSON-RPC 的最小兼容：getVersion 与 addUri，HTTP POST 与 WebSocket 共用 /jsonrpc。
 
     handle 在 loop 线程运行；解析完成的 Task 在 dispatcher 线程交给 addTask，或经 taskDraftRequested 进草稿。
+    解析失败时 gid 早已回给客户端，只能经 parseFailed 告诉用户。
     """
 
     taskDraftRequested = Signal(list)
+    parseFailed = Signal(str, object)
 
     def __init__(self, coroutineRunner, parse, addTask) -> None:
         self._coroutineRunner = coroutineRunner
@@ -214,11 +216,11 @@ class Aria2RpcService:
         self._coroutineRunner.submit(
             self._parse(taskOptions),
             done=self._onTaskParsed, failed=self._onTaskParseFailed,
-            name=toText(options, "out"),
+            name=toText(options, "out"), url=uris[0],
         )
         return token_hex(8)
 
-    def _onTaskParsed(self, task: Task, name: str) -> None:
+    def _onTaskParsed(self, task: Task, name: str, **_) -> None:
         if name:
             task.setName(name)
         if cfg.shouldDraftTakenDownload.value:
@@ -226,5 +228,6 @@ class Aria2RpcService:
             return
         self._addTask(task)
 
-    def _onTaskParseFailed(self, error, **_) -> None:
+    def _onTaskParseFailed(self, error, url: str, **_) -> None:
         logger.warning("Aria2 RPC task parse failed: {}", error)
+        self.parseFailed.emit(url, toTaskError(error))

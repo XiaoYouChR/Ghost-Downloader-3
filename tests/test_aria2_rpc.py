@@ -12,6 +12,7 @@ from websockets.exceptions import InvalidStatus
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
+from app.models.task import TaskError
 from app.services.aria2_rpc import Aria2RpcService
 from app.services.coroutine_runner import CoroutineRunner
 from app.services.loopback_server import ListenStatus, LoopbackServer
@@ -40,10 +41,11 @@ class Response:
 
 
 class Aria2Client:
-    def __init__(self, port: int, added: list, drafted: list):
+    def __init__(self, port: int, added: list, drafted: list, failed: list):
         self.port = port
         self.added = added
         self.drafted = drafted
+        self.failed = failed
 
     async def send(self, raw: bytes) -> Response | None:
         reader, writer = await asyncio.open_connection("127.0.0.1", self.port)
@@ -78,18 +80,21 @@ async def aria2(monkeypatch, tmp_path):
     monkeypatch.setattr(cfg.downloadFolder, "value", str(tmp_path))
     loop = asyncio.get_running_loop()
     runner = CoroutineRunner(loop.call_soon, loop=loop)
-    added, drafted = [], []
+    added, drafted, failed = [], [], []
 
     async def parse(options):
+        if "fail" in options.url:
+            raise ValueError("unreachable")
         return FakeTask(options)
 
     rpc = Aria2RpcService(runner, parse=parse, addTask=added.append)
     rpc.taskDraftRequested.connect(drafted.extend)
+    rpc.parseFailed.connect(lambda url, error: failed.append((url, error)))
     server = LoopbackServer(runner, rpc.handle, isEnabled=FakeItem(True), port=FakeItem(findFreePort()))
     server.start()
     await waitFor(lambda: server.state.status == ListenStatus.LISTENING)
 
-    yield Aria2Client(server.state.port, added, drafted)
+    yield Aria2Client(server.state.port, added, drafted, failed)
 
     server.stop()
     await asyncio.sleep(0.05)
@@ -258,3 +263,14 @@ class TestAddUri:
 
         assert aria2.added == []
         assert aria2.drafted[0].options.url == "https://a.test/f"
+
+    async def test_parse_failure_is_reported_after_gid_is_returned(self, aria2):
+        result = await aria2.call("aria2.addUri", [["https://fail.test/f"]])
+        await waitFor(lambda: aria2.failed)
+
+        assert isGid(result["result"])
+        assert aria2.added == []
+        [(url, error)] = aria2.failed
+        assert url == "https://fail.test/f"
+        assert isinstance(error, TaskError)
+        assert (error.message, error.params) == ("发生了意外错误：{detail}", {"detail": "unreachable"})

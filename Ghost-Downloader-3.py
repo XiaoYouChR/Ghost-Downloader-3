@@ -215,10 +215,11 @@ def startApp(application, isSilent=False):
     taskService.taskStarted.connect(lambda _: hold())
     taskService.tasksAllCompleted.connect(release)
 
-    from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
+    from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient, notifyParseFailed
     coroutineRunner.submit(init(coroutineRunner.submit))
     taskService.taskCompleted.connect(notifyTaskCompleted)
     taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
+    engine.aria2RpcService.parseFailed.connect(notifyParseFailed)
 
     taskService.tasksAllCompleted.connect(emptyWorkingSetIfIdle)
 
