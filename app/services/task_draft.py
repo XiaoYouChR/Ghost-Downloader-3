@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
 from app.signal import Signal
@@ -149,6 +150,12 @@ class TaskDraft:
 
         for task in tasks:
             url = task.url
+            try:
+                path = Path(url)
+                if path.is_file():
+                    url = path.as_uri()
+            except (OSError, ValueError):
+                pass
             item = byUrl.get(url)
             if item is not None:
                 if item.task is not None:

@@ -94,7 +94,7 @@ def startApp(application, isSilent=False):
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
 
-    application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
+    application.clipboardListener = ClipboardListener(coroutineRunner, featureService, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
     application.clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
 
@@ -196,7 +196,7 @@ def startApp(application, isSilent=False):
     engine.aria2RpcServer.stateChanged.connect(
         lambda state: state.status == ListenStatus.FAILED and show().onAria2ListenFailed(state.error))
 
-    application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
+    application.clipboardListener.tasksDetected.connect(lambda tasks: show().addTasks(tasks, isStandalone=False))
 
     if sys.platform == "darwin":
         from app.view.shell.mac_status_item import MacStatusItem

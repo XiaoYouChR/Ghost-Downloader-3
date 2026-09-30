@@ -270,17 +270,17 @@ class MainWindow(MSFluentWindow):
         if not dialog.isVisible():
             dialog.showMask()
 
-    def addTasks(self, tasks: list[Task]) -> None:
+    def addTasks(self, tasks: list[Task], isStandalone: bool = True) -> None:
         dialog = self._draftDialog
         dialog.addParsedTasks(tasks)
         if dialog.isActive:
             return
-        if sys.platform == "darwin":
+        if isStandalone and sys.platform != "darwin":
+            dialog.showStandalone()
+        else:
             self.show()
             raiseWindow(self)
             dialog.showMask()
-        else:
-            dialog.showStandalone()
 
     @cached_property
     def _draftDialog(self) -> TaskDraftDialog:
