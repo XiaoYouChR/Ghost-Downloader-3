@@ -14,13 +14,14 @@ class StubFlows:
     def __init__(self):
         self.states: dict[str, str] = {}
         self.history: list[str] = []
+        self.events: list[tuple[str, str]] = []
 
     def setState(self, key, value):
         self.states[key] = value
         self.history.append(key)
 
     def sendEvent(self, key, value):
-        pass
+        self.events.append((key, value))
 
 
 def loadBridge():

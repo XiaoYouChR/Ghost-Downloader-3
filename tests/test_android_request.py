@@ -104,3 +104,12 @@ def test_aria2_listen_state_is_pushed(engine, state, expected):
     engine._emitAria2Rpc()
 
     assert json.loads(engine._flows.states["aria2Rpc"]) == expected
+
+
+def test_aria2_parse_failure_is_a_notice(engine):
+    engine._onParseFailed("https://a.test/f", TaskError("发生了意外错误：{detail}", detail="unreachable"))
+
+    [(key, value)] = engine._flows.events
+    assert key == "notice"
+    assert json.loads(value) == {"kind": "parseFailed", "url": "https://a.test/f",
+                                 "message": "发生了意外错误：{detail}", "params": {"detail": "unreachable"}}
