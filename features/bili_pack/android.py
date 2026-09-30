@@ -49,8 +49,6 @@ def init(pack) -> dict:
     return {"accountState": _account.accountChanged, "qrState": _account.qrStateChanged}
 
 
-# ---- task/draft serialization (called by bridge.py internally) ----
-
 def taskFields(task) -> dict:
     return {
         "fileSelectKind": "season" if task.isSeason else "pages",
@@ -124,8 +122,6 @@ def draftFields(task) -> dict:
         "hasPreview": bool(page and page.cid),
     }
 
-
-# ---- draft mutations (called by bridge.py setDraft dispatcher) ----
 
 def setControl(task, controlId: str, value: str):
     if controlId == "video":

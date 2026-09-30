@@ -149,7 +149,7 @@ def startApp(application, isSilent=False):
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow
 
-        engine.start()  # OOBE 期间可完成扩展配对
+        engine.start()
 
         oobe = OobeWindow(browserService, engine.browserServer, coroutineRunner, featureService, engine.runtimeStatusService)
         def onOobePairRequestChanged(request):

@@ -1,7 +1,3 @@
-"""GitHub 加速的选站：响应判定规则与竞速。
-
-使用本地 aiohttp 服务器模拟 Proxy Site，不连外网。
-"""
 from __future__ import annotations
 
 import asyncio

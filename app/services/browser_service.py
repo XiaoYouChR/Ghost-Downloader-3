@@ -184,8 +184,6 @@ def toTaskSummary(task: Task) -> dict:
 
 
 class BrowserService:
-    """浏览器扩展的协议适配器。handle 在 loop 线程收发帧；会话与 Pair Request 只在 dispatcher 线程读写。"""
-
     pairRequestChanged = Signal(object)
     connectionChanged = Signal()
     protocolMismatched = Signal()

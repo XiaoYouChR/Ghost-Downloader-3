@@ -1,4 +1,3 @@
-"""桌面和 Android 共用的服务图与启停顺序。平台差异在构造时注入。"""
 from __future__ import annotations
 
 from app.config.cfg import cfg
@@ -14,8 +13,6 @@ from app.services.task_service import NameConflictChoice, TaskService
 
 
 class Engine:
-    """不发信号、不持有 View；View 直接连接各服务的信号。coroutineRunner 由组合根创建并启停。"""
-
     def __init__(self, coroutineRunner, fileWatcher, loadCrx, deleteRecoverably) -> None:
         self.coroutineRunner = coroutineRunner
         self.categoryService = CategoryService()

@@ -42,7 +42,6 @@ def createSocket(host: str, port: int) -> socket.socket:
     family = socket.AF_INET6 if ":" in host else socket.AF_INET
     sock = socket.socket(family, socket.SOCK_STREAM)
     try:
-        # Windows 的 SO_REUSEADDR 允许抢占正在监听的端口，那样端口冲突就检测不到了
         if sys.platform != "win32":
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if family == socket.AF_INET6:
@@ -57,11 +56,6 @@ def createSocket(host: str, port: int) -> socket.socket:
 
 
 class LoopbackServer:
-    """按 isEnabled/port 配置在 127.0.0.1 与 ::1 上监听，拥有全部连接。
-
-    公开方法只在 dispatcher 线程调用；socket 只在 loop 线程上按提交顺序打开和关闭。
-    """
-
     stateChanged = Signal(object)
 
     def __init__(self, coroutineRunner, handle: Handle, *, isEnabled, port) -> None:

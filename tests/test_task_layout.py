@@ -1,8 +1,3 @@
-"""Task 在 Output Folder 中的布局：Placeholder、Part Path。
-
-Seam P1: TaskStore.add / Task.deleteFiles / deletePlaceholders / placeholderPaths
-Seam P2: Task.run
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

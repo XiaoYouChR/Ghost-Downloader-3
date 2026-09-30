@@ -641,7 +641,6 @@ class TestStallRecovery:
         releaseHang.set()
 
     async def test_dead_client_retries_on_a_new_one(self, server, tmp_path, monkeypatch):
-        """A client that cannot fetch is closed, and the next attempt finishes the file on a new one."""
         content = buildFileContent(500)
         firstAttempt = True
 
@@ -685,7 +684,6 @@ class TestStallRecovery:
 class TestInitialStart:
 
     async def test_initial_subworkers_start_together(self, server, tmp_path, monkeypatch):
-        """Only split subworkers wait their turn. The initial ones send their requests at once."""
         content = buildFileContent(800)
         rangeHandler = buildRangeHandler(content)
         requestTimes = []

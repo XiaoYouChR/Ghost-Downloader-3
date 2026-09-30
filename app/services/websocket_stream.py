@@ -19,8 +19,6 @@ async def readHead(reader: asyncio.StreamReader) -> bytes | None:
 
 
 class WebSocketStream:
-    """RFC 6455 服务端连接：ping、close 回应、分片重组、大小上限由 ServerProtocol 处理。只在 loop 线程使用。"""
-
     def __init__(self, protocol: ServerProtocol, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         self._protocol = protocol
         self._reader = reader
@@ -30,7 +28,6 @@ class WebSocketStream:
     async def open(cls, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
                    head: bytes, maxSize: int) -> WebSocketStream | None:
         protocol = ServerProtocol(max_size=maxSize)
-        # ServerProtocol 只认自己解析出的握手；手工构造 Request 会让它停在 HTTP 解析状态，吞掉后续帧
         protocol.receive_data(head)
         protocol.send_response(protocol.accept(protocol.events_received()[0]))
         stream = cls(protocol, reader, writer)

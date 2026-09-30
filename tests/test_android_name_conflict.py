@@ -1,4 +1,3 @@
-"""bridge 只把 NameConflictQueue 的询问投影给 Kotlin，并把回复转回队列。"""
 import json
 from pathlib import Path
 from types import SimpleNamespace

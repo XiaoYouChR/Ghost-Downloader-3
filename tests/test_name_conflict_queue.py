@@ -1,4 +1,3 @@
-"""逐个询问 Name Conflict：同一轮加入的冲突收齐后再问，询问内容是不会变的快照。"""
 from pathlib import Path
 from types import SimpleNamespace
 

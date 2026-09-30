@@ -1,4 +1,3 @@
-"""桌面端独有的准备步骤，每步自成一体、不碰 View。各步的顺序和服务与 View 之间的接线由入口 Ghost-Downloader-3.py 决定。"""
 from __future__ import annotations
 
 

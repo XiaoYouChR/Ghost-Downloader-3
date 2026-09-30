@@ -105,11 +105,6 @@ def toHeaders(options: dict) -> dict[str, str]:
 
 
 class Aria2RpcService:
-    """aria2 JSON-RPC 的最小兼容：getVersion、getGlobalOption 与 addUri，HTTP POST 与 WebSocket 共用 /jsonrpc。
-
-    handle 在 loop 线程运行；解析完成的 Task 在 dispatcher 线程交给 addTask，或经 taskDraftRequested 进草稿。
-    """
-
     taskDraftRequested = Signal(list)
     parseFailed = Signal(str, object)
 
