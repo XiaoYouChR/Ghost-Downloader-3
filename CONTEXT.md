@@ -125,7 +125,12 @@ _Avoid_: 直接操作 Task 的状态转换
 _Avoid_: module、extension
 
 **Binary Runtime**:
-FeaturePack 可探测或提供安装任务的外部可执行文件家族。
+FeaturePack 可探测、安装和卸载的外部可执行文件家族。安装由 Binary Runtime 自己完成，不是 Task。
+_Avoid_: 安装任务
+
+**Install Folder**:
+用户为一个 Binary Runtime 选定的文件夹。应用不独占它：安装只覆盖该 Runtime 自己的文件，卸载只删除这些文件，其他内容不动。
+_Avoid_: 运行时目录、安装路径
 
 **Browser Service**:
 浏览器扩展的协议适配器：接收扩展消息，翻译为 Task Service 动词，返回结果。

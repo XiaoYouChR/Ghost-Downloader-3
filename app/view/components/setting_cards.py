@@ -865,8 +865,10 @@ class RuntimeCard(SettingCard):
         )
 
         if status.isInstalling:
-            if status.progress > 0:
-                self.setContent(self.tr("正在安装... {0}%").format(f"{status.progress:.0f}"))
+            if status.progress <= 0:
+                self.setContent(self.tr("正在准备..."))
+            elif status.progress < 100:
+                self.setContent(self.tr("正在下载... {0}%").format(status.progress))
             else:
                 self.setContent(self.tr("正在安装..."))
             self.installButton.hide()

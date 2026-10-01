@@ -11,10 +11,10 @@ from app.config.cfg import ConfigItem
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID, nativeLibraryDir
-from app.platform.filesystem import findExecutable
+from app.platform.filesystem import deletePath, findExecutable
 from app.models.task import TaskError
-from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
-from app.install import createInstallTask
+from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
+from app.install import installArchive, matchSha256
 
 
 FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-FFmpeg"})
@@ -74,7 +74,7 @@ class FFmpegRuntime(BinaryRuntime):
                 return ""
             binary = Path(nativeDir) / "libffmpeg.so"
             return str(binary) if binary.exists() else ""
-        return findExecutable(self.installFolder(), "ffmpeg", "bin")
+        return findExecutable(self.installFolder(), "ffmpeg")
 
     def ffprobePath(self) -> str:
         if IS_ANDROID:
@@ -83,7 +83,7 @@ class FFmpegRuntime(BinaryRuntime):
                 return ""
             binary = Path(nativeDir) / "libffprobe.so"
             return str(binary) if binary.exists() else ""
-        return findExecutable(self.installFolder(), "ffprobe", "bin")
+        return findExecutable(self.installFolder(), "ffprobe")
 
     async def probeVersion(self) -> VersionInfo:
         path = self.path()
@@ -110,23 +110,26 @@ class FFmpegRuntime(BinaryRuntime):
     async def fetchLatestVersion(self) -> str:
         return (await fetchLatestRelease(FFMPEG_REPO)).version
 
-    async def createInstallTask(self, version: str = ""):
+    def installedPaths(self) -> list[Path]:
+        folder = self.installFolder()
+        suffix = ".exe" if sys.platform == "win32" else ""
+        return [folder / f"ffmpeg{suffix}", folder / f"ffprobe{suffix}", folder / "VERSION"]
+
+    async def install(self, version: str, onProgress) -> None:
         tag = version or (await fetchLatestRelease(FFMPEG_REPO)).version
-        target = ffmpegAssetTarget()
         extension = "zip" if sys.platform == "win32" else "tar.gz"
-        asset = f"ffmpeg-{target}.{extension}"
-        url = await probeDownloadUrl(FFMPEG_REPO, tag, asset)
-        executableNames = (
-            ("ffmpeg.exe", "ffprobe.exe") if sys.platform == "win32"
-            else ("ffmpeg", "ffprobe")
-        )
-        return createInstallTask(
-            url=url,
-            outputFolder=self.installFolder(),
-            name=f"FFmpeg 安装 ({target})",
-            executableNames=executableNames,
-            sha256Url=await probeDownloadUrl(FFMPEG_REPO, tag, f"{asset}.sha256"),
-        )
+        asset = f"ffmpeg-{ffmpegAssetTarget()}.{extension}"
+        folder = self.installFolder()
+        archive = folder / asset
+        sha256File = folder / f"{asset}.sha256"
+        await fetchReleaseAsset(FFMPEG_REPO, tag, asset, archive, onProgress)
+        await fetchReleaseAsset(FFMPEG_REPO, tag, sha256File.name, sha256File)
+        isMatched = await matchSha256(archive, sha256File)
+        deletePath(sha256File)
+        if not isMatched:
+            deletePath(archive)
+            raise TaskError("安装包校验失败，可能已损坏，请重试")
+        await installArchive(archive, folder)
 
 
 ffmpegRuntime = FFmpegRuntime()

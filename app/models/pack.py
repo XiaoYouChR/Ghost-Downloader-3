@@ -170,13 +170,18 @@ class BinaryRuntime:
 
     # ── Lifecycle ──
 
-    def delete(self) -> None:
-        folder = self.installFolder()
-        if folder.exists():
-            shutil.rmtree(folder)
-
-    async def createInstallTask(self, version: str = "") -> Task:
+    def installedPaths(self) -> list[Path]:
         raise NotImplementedError
+
+    async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
+        raise NotImplementedError
+
+    def delete(self) -> None:
+        for path in self.installedPaths():
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
 
 
 class PackPage:

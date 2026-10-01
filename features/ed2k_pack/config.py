@@ -8,12 +8,10 @@ from app.config.cfg import BoolValidator, ConfigItem, RangeConfigItem, RangeVali
 from app.i18n import N
 
 from app.config.paths import APP_DATA_DIR
-from app.install import FetchStep, InstallTask
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
-from app.platform.filesystem import findExecutable, toPosixPath
-from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
-from .task import ED2kInstallStep
+from app.platform.filesystem import findExecutable
+from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
 
 ED2K_REPO = Repo("XiaoYouChR/Python-eD2k", mirrors={"gitcode": "XiaoYouChR/Python-eD2k"})
 
@@ -107,25 +105,15 @@ class ED2kRuntime(BinaryRuntime):
     async def fetchLatestVersion(self) -> str:
         return (await fetchLatestRelease(ED2K_REPO)).version
 
-    async def createInstallTask(self, version: str = ""):
-        tag = version or (await fetchLatestRelease(ED2K_REPO)).version
-        assetName = _assetName()
-        url = await probeDownloadUrl(ED2K_REPO, tag, assetName)
-        folder = self.installFolder()
-        binaryName = "goed2kd.exe" if sys.platform == "win32" else "goed2kd"
-        binaryPath = toPosixPath(folder / binaryName)
+    def installedPaths(self) -> list[Path]:
+        return [self.installFolder() / ("goed2kd.exe" if sys.platform == "win32" else "goed2kd")]
 
-        task = InstallTask(
-            name=f"goed2kd 安装 ({assetName})",
-            url=url,
-            packId="ed2k",
-            fileSize=0,
-            outputFolder=folder,
-            installFolder=str(folder),
-        )
-        task.addStep(FetchStep(stepIndex=1, url=url, outputFile=binaryPath))
-        task.addStep(ED2kInstallStep(stepIndex=2, binaryPath=binaryPath))
-        return task
+    async def install(self, version: str, onProgress) -> None:
+        tag = version or (await fetchLatestRelease(ED2K_REPO)).version
+        binaryPath = self.installedPaths()[0]
+        await fetchReleaseAsset(ED2K_REPO, tag, _assetName(), binaryPath, onProgress)
+        if sys.platform != "win32":
+            binaryPath.chmod(binaryPath.stat().st_mode | 0o755)
 
 
 def _assetName() -> str:

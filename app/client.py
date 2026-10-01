@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from wreq import ClientConfig
 
 FALLBACK_PROFILE = "chrome"
+FETCH_READ_TIMEOUT = 30
 
 FAMILY_BY_PREFIX = {
     "Chrome": "chrome", "Edge": "edge", "Firefox": "firefox", "Opera": "opera",
@@ -163,7 +164,7 @@ async def fetchFile(
     outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> None:
-    client = buildClient()
+    client = buildClient(readTimeout=FETCH_READ_TIMEOUT)
     try:
         outputPath.parent.mkdir(parents=True, exist_ok=True)
         response = await client.get(url)

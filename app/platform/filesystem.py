@@ -98,12 +98,8 @@ def localFilePath(url: str, validSuffixes: set[str] | None = None) -> Path | Non
     return path
 
 
-def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
+def findExecutable(installFolder: Path, name: str) -> str:
     exe = f"{name}.exe" if sys.platform == "win32" else name
-    for sub in subdirs:
-        candidate = installFolder / sub / exe
-        if candidate.is_file():
-            return toPosixPath(candidate)
     candidate = installFolder / exe
     if candidate.is_file():
         return toPosixPath(candidate)

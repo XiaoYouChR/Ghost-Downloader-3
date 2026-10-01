@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
-from pathlib import Path
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from .python_ed2k import Transfer
@@ -78,16 +76,3 @@ class ED2kTaskStep(TaskStep):
             onStarted=onStarted,
             onProgress=onProgress,
         )
-
-
-@dataclass(kw_only=True)
-class ED2kInstallStep(TaskStep):
-    canPause = False
-    binaryPath: str = ""
-
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        path = Path(self.binaryPath)
-        if not path.is_file():
-            raise TaskError("{name} 未安装，请在设置中安装", name="goed2kd")
-        if sys.platform != "win32":
-            path.chmod(path.stat().st_mode | 0o755)

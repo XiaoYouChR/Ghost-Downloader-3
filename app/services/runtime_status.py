@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
@@ -23,7 +22,7 @@ class RuntimeStatus:
     error: TaskError | None = None
     isBusy: bool = False
     isInstalling: bool = False
-    progress: float = 0
+    progress: int = 0
 
 
 class RuntimeStatusService:
@@ -99,22 +98,19 @@ class RuntimeStatusService:
         self.statusChanged.emit(status)
 
     async def _runInstall(self, runtime: BinaryRuntime, version: str = "") -> None:
-        from app.models.task import TaskStatus
+        runtimeId = runtime.runtimeId
 
-        task = await runtime.createInstallTask(version)
-        task.setStatus(TaskStatus.RUNNING)
+        def reportProgress(percent: float) -> None:
+            progress = int(percent)
+            current = self._statuses.get(runtimeId)
+            if current and current.isInstalling and current.progress != progress:
+                status = replace(current, progress=progress)
+                self._statuses[runtimeId] = status
+                self._coroutineRunner.post(self.statusChanged.emit, status)
 
-        def reportProgress(*_args):
-            step = next((s for s in task.steps if s.progress > 0), None)
-            if step:
-                runtimeId = runtime.runtimeId
-                current = self._statuses.get(runtimeId)
-                if current and current.isInstalling and current.progress != step.progress:
-                    status = replace(current, progress=step.progress)
-                    self._statuses[runtimeId] = status
-                    self._coroutineRunner.post(self.statusChanged.emit, status)
-
-        await task.run(reportProgress, lambda: asyncio.sleep(0))
+        await runtime.install(version, reportProgress)
+        if not runtime.isAppManaged():
+            raise TaskError("安装后未找到 {name}", name=runtime.name)
 
     def _onInstallFinished(self, _, runtimeId: str) -> None:
         self._installingIds.discard(runtimeId)

@@ -227,6 +227,8 @@ PYPI_MIRRORS = {
     "gitcode": "https://mirrors.bfsu.edu.cn/pypi/web/json",
     "github": "https://pypi.org/pypi",
 }
+PYPI_FILES = "https://files.pythonhosted.org/packages/"
+PYPI_FILES_MIRROR = "https://mirrors.bfsu.edu.cn/pypi/web/packages/"
 
 
 def buildPypiUrl(package: str, *, source: str) -> str:
@@ -236,25 +238,51 @@ def buildPypiUrl(package: str, *, source: str) -> str:
     return f"{base}/{package}/json"
 
 
-async def fetchPypiJson(package: str) -> dict:
+async def fetchPypiReleases(package: str) -> dict[str, list[dict]]:
     async def attempt(source):
         url = buildPypiUrl(package, source=source)
         client = buildClient(timeout=15)
         try:
             resp = await client.get(url)
             resp.raise_for_status()
-            return await resp.json()
+            return (await resp.json())["releases"]
         except Exception as e:
             logger.debug("从 {} 获取 PyPI {} 失败: {}", source, package, repr(e))
             raise
         finally:
             client.close()
 
-    result, index, _ = await staggered_race(
-        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
-    if index is not None:
-        return result
-    raise TaskError("无法获取 PyPI 包信息: {package}", package=package)
+    results = await asyncio.gather(*[attempt(s) for s in SOURCE_ORDER], return_exceptions=True)
+    succeeded = [r for r in results if not isinstance(r, BaseException)]
+    if not succeeded:
+        raise TaskError("无法获取 PyPI 包信息: {package}", package=package)
+    releases: dict[str, list[dict]] = {}
+    for result in reversed(succeeded):
+        releases |= result
+    return releases
+
+
+async def fetchPypiFile(url: str, outputPath: Path, onProgress: Callable[[float], None] | None = None) -> None:
+    async def probe(candidate):
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
+        try:
+            resp = await client.get(candidate)
+            try:
+                resp.raise_for_status()
+                return candidate
+            finally:
+                resp.close()
+        except Exception as e:
+            logger.debug("下载 {} 失败: {}", candidate, repr(e))
+            raise
+        finally:
+            client.close()
+
+    candidates = [url, url.replace(PYPI_FILES, PYPI_FILES_MIRROR, 1)] if url.startswith(PYPI_FILES) else [url]
+    result, index, _ = await staggered_race([lambda c=c: probe(c) for c in candidates], STAGGER_DELAY)
+    if index is None:
+        raise TaskError("无法下载 {url}", url=url)
+    await fetchFile(result, outputPath, onProgress=onProgress)
 
 
 def buildDownloadUrl(repo: Repo, tag: str, asset: str, *, source: str) -> str:
