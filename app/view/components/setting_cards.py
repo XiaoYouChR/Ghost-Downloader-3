@@ -23,6 +23,7 @@ from app.config.cfg import cfg, proxy, currentHeaders, currentHeadersPresetIndex
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.view.components.banners import WarningBanner
+from app.view.components.install_button import InstallButton
 
 HOST_PATTERN = compile(
     r"^(?:(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)"
@@ -809,8 +810,7 @@ class RuntimeCard(SettingCard):
         self._runtime: BinaryRuntime = runtime
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
-        self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
-        self.cancelButton = ToolButton(FluentIcon.CLOSE, self)
+        self.installButton = InstallButton(self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
         self.deleteButton = ToolButton(FluentIcon.DELETE, self)
 
@@ -822,9 +822,8 @@ class RuntimeCard(SettingCard):
     def _initWidget(self) -> None:
         if not self._runtime.canInstall:
             self.installButton.hide()
-        self.cancelButton.hide()
-        self.cancelButton.setToolTip(self.tr("取消安装"))
-        self.cancelButton.installEventFilter(ToolTipFilter(self.cancelButton))
+        self.installButton.setText(self.tr("一键安装"))
+        self.installButton.installEventFilter(ToolTipFilter(self.installButton))
         self.deleteButton.hide()
         self.deleteButton.setToolTip(self.tr("卸载"))
         self.deleteButton.installEventFilter(ToolTipFilter(self.deleteButton))
@@ -836,7 +835,6 @@ class RuntimeCard(SettingCard):
         self._buttonLayout.setContentsMargins(0, 0, 0, 0)
         self._buttonLayout.setSpacing(8)
         self._buttonLayout.addWidget(self.installButton)
-        self._buttonLayout.addWidget(self.cancelButton)
         self._buttonLayout.addWidget(self.refreshButton)
         self._buttonLayout.addWidget(self.deleteButton)
         self.hBoxLayout.addLayout(self._buttonLayout)
@@ -845,7 +843,6 @@ class RuntimeCard(SettingCard):
     def _bind(self) -> None:
         self._runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged, owner=self)
         self.installButton.clicked.connect(self._onInstallClicked)
-        self.cancelButton.clicked.connect(self._onCancelClicked)
         self.deleteButton.clicked.connect(self._onDeleteClicked)
         self.refreshButton.clicked.connect(self._onRefreshClicked)
 
@@ -871,19 +868,21 @@ class RuntimeCard(SettingCard):
                 self.setContent(self.tr("正在下载... {0}%").format(status.progress))
             else:
                 self.setContent(self.tr("正在安装..."))
-            self.installButton.hide()
-            self.cancelButton.setVisible(self._runtime.canInstall)
+            self.installButton.setInstalling(True)
+            self.installButton.setProgress(status.progress)
+            self.installButton.setToolTip(self.tr("取消安装"))
+            self.installButton.setVisible(self._runtime.canInstall)
             self.deleteButton.hide()
             return
+
+        self.installButton.setInstalling(False)
+        self.installButton.setToolTip("")
 
         if status.isBusy:
             self.setContent(self.tr("正在检测运行时..."))
             self.installButton.hide()
-            self.cancelButton.hide()
             self.deleteButton.hide()
             return
-
-        self.cancelButton.hide()
 
         if status.error is not None:
             self.setContent(toLocalizedError(status.error))
@@ -926,10 +925,10 @@ class RuntimeCard(SettingCard):
             self.updateStatus(status)
 
     def _onInstallClicked(self) -> None:
-        self._runtimeStatusService.install(self._runtime)
-
-    def _onCancelClicked(self) -> None:
-        self._runtimeStatusService.cancelInstall(self._runtime)
+        if self._runtimeStatusService.status(self._runtime).isInstalling:
+            self._runtimeStatusService.cancelInstall(self._runtime)
+        else:
+            self._runtimeStatusService.install(self._runtime)
 
     def _onDeleteClicked(self) -> None:
         from qfluentwidgets import MessageBox
