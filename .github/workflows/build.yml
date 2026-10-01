@@ -676,6 +676,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Ghost-Downloader-Android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          path: android
+
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
@@ -698,6 +704,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Ghost-Downloader-Android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          path: android
+
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
@@ -719,6 +731,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Ghost-Downloader-Android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          path: android
 
       - uses: actions/checkout@v7
         with:
@@ -746,6 +764,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Ghost-Downloader-Android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          path: android
+
       - name: Fetch pre-built binaries
         working-directory: android/build-scripts
         run: ./fetch_android_libs.sh
@@ -765,6 +789,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Ghost-Downloader-Android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          path: android
 
       - name: Free disk space
         run: |

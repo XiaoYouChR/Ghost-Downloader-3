@@ -42,3 +42,6 @@ browser_extension/firefox/
 
 # Marketing screenshot portable profile (scripts/marketing_shots.py)
 /GhostDownloader/
+
+# Android 是独立的私有仓库
+/android/
