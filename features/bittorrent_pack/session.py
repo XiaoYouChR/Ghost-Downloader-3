@@ -16,6 +16,7 @@ from app.config.cfg import cfg, proxy
 from app.models.task import TaskError
 
 from .config import bittorrentConfig
+from .swarm import PeerInfo, SwarmInfo, TrackerInfo, toPeers, toSourceTrackers, toSwarmInfo, toTracker
 
 if TYPE_CHECKING:
     pass
@@ -244,6 +245,24 @@ class BTSession:
 
     def lastResumeData(self, taskId: str) -> bytes | None:
         return self._resumeCache.pop(taskId, None)
+
+    def swarmInfo(self, taskId: str) -> SwarmInfo | None:
+        entry = self._active.get(taskId)
+        return toSwarmInfo(entry.handle.status()) if entry else None
+
+    def peers(self, taskId: str) -> tuple[PeerInfo, ...]:
+        entry = self._active.get(taskId)
+        return toPeers(entry.handle.get_peer_info()) if entry else ()
+
+    def trackers(self, taskId: str) -> tuple[TrackerInfo, ...]:
+        entry = self._active.get(taskId)
+        if entry is None:
+            return ()
+        info = entry.handle.torrent_file()
+        sourceTrackers = toSourceTrackers(
+            entry.handle.get_peer_info(), bittorrentConfig.enableDht.value, bittorrentConfig.enableLsd.value,
+            bool(info and info.priv()))
+        return (*sourceTrackers, *(toTracker(raw) for raw in entry.handle.trackers()))
 
     async def close(self) -> None:
         self._saveDhtState()

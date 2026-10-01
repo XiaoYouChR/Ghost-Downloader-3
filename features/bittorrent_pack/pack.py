@@ -117,6 +117,11 @@ class BitTorrentPack(FeaturePack):
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
 
+    def detailCards(self, task, parent=None):
+        from .detail_cards import PeerCard, TorrentCard, TrackerCard
+        runner = self._services.coroutineRunner
+        return [TorrentCard(task, runner, parent), TrackerCard(task, runner, parent), PeerCard(task, runner, parent)]
+
     def fileTypes(self):
         return [
             FileType(
