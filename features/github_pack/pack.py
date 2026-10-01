@@ -6,7 +6,7 @@ from loguru import logger
 
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
-from http_pack.pack import HttpParser
+from http_pack.pack import buildTask
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
 from .probe import probeUrls, toProxyHeaders
@@ -92,24 +92,21 @@ class GitHubParser(TaskParser):
         selected = selectedProxySite()
         urls = [f"{site}/{originalUrl}" for site in GITHUB_PROXY_SITES if site != selected] + [originalUrl]
 
-        winner = ""
+        file = None
         if selected:
             try:
-                await probeUrls([f"{selected}/{originalUrl}"], originalUrl, options.headers)
-                winner, fallbackUrls = f"{selected}/{originalUrl}", urls
+                winner, file, _ = await probeUrls(options, [f"{selected}/{originalUrl}"])
+                fallbackUrls = urls
             except Exception as e:
                 logger.warning("所选代理站不可用 {}: {}", selected, e)
-        if not winner:
-            winner, fallbackUrls = await probeUrls(urls, originalUrl, options.headers)
+        if file is None:
+            winner, file, fallbackUrls = await probeUrls(options, urls)
 
-        if winner == originalUrl:
-            task = await HttpParser().parse(options)
-        else:
-            task = await self.delegate(replace(options, url=winner, headers=toProxyHeaders(options.headers)))
-
-        step = task.steps[0]
-        if fallbackUrls and isinstance(step, HttpTaskStep):
-            githubStep = GitHubHttpTaskStep.build(step, fallbackUrls)
+        logger.info("GitHub 选用 {}", winner)
+        headers = options.headers if winner == originalUrl else toProxyHeaders(options.headers)
+        task = buildTask(replace(options, url=winner, headers=headers), file)
+        if fallbackUrls:
+            githubStep = GitHubHttpTaskStep.build(task.steps[0], fallbackUrls)
             task.steps[0] = githubStep
             githubStep._bindTask(task)
 

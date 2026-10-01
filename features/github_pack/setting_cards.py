@@ -1,4 +1,3 @@
-"""GitHub 加速的设置卡片（View）。config.py 只留配置数据。"""
 from __future__ import annotations
 
 from urllib.parse import urlparse
