@@ -26,6 +26,7 @@ from app.config.cfg import ConfigItem, cfg
 from app.view.components.editors import AutoSizingEdit
 
 FAILURE_NOTICE_AGE = 7 * 86400
+CARD_HEIGHT = 70
 
 
 def tr(text: str) -> str:
@@ -84,6 +85,7 @@ class BootstrapListCard(SettingCard):
         self._bind()
 
     def _initWidget(self):
+        self.setFixedHeight(CARD_HEIGHT)
         self.refreshButton.setToolTip(self.tr("立即更新"))
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
         if self._list.isRefreshing:
