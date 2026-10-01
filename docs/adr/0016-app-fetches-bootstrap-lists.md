@@ -17,4 +17,4 @@ BT 的 Tracker 列表和 eD2k 的 `server.met`、`nodes.dat` 都由应用经全�
 - 更新时间取缓存文件的修改时间，条数在加载时计算；失败原因只在本次运行中保留，不弹 Notice。
 - 内置快照需要在发版前用脚本更新。
 - DHT 引导节点不是 Bootstrap List，保持为代码常量。
-- 应用交给 goed2kd 多个本地 `server.met` 路径，需要 goed2kd 0.3.0 及以上；`ED2kRuntime` 在启动前按版本检查。
+- 应用交给 eD2k 引擎多个本地列表文件，需要 goed2kd 0.2.4 及以上；换成 Kelpie 后由它的 Python 包在握手时检查版本。
