@@ -10,9 +10,13 @@ from loguru import logger
 
 from app.config.paths import APP_DATA_DIR
 from app.models.task import TaskError
+from app.update import parseVersion
 from .config import ed2kConfig, ed2kRuntime
 from .python_ed2k import Client, Settings, Transfer, TransferState
 from .python_ed2k.errors import ErrorCode, Error
+
+
+MIN_GOED2KD_VERSION = (0, 2, 4)
 
 
 @dataclass(frozen=True)
@@ -39,8 +43,9 @@ class ED2kSession:
         fileHash: str,
         name: str,
         outputFolder: Path,
-        onStarted: Callable[[RunResult], None] | None = None,
-        onProgress: Callable[[Transfer], None] | None = None,
+        uploadedBytes: int,
+        onStarted: Callable[[RunResult], None],
+        onProgress: Callable[[Transfer, int], None],
     ) -> None:
         _, linkSize, linkHash = parseEd2kLink(link)
         identity = toTransferKey(linkHash, linkSize)
@@ -76,21 +81,22 @@ class ED2kSession:
                         raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
 
             fileHash = transfer.hash
-            if onStarted:
-                onStarted(RunResult(
+            onStarted(RunResult(
                     fileHash=fileHash,
-                    name=transfer.name or name,
-                    fileSize=transfer.size,
-                ))
+                name=transfer.name or name,
+                fileSize=transfer.size,
+            ))
             if wasCancelled:
                 raise asyncio.CancelledError()
 
+            firstUpload = None
             async for snapshot in client.snapshots():
                 for t in snapshot.transfers:
                     if t.hash != fileHash:
                         continue
-                    if onProgress:
-                        onProgress(t)
+                    if firstUpload is None:
+                        firstUpload = t.upload
+                    onProgress(t, uploadedBytes + t.upload - firstUpload)
                     if t.state == TransferState.FINISHED:
                         await client.pause(fileHash)
                         return
@@ -111,8 +117,9 @@ class ED2kSession:
         link: str,
         fileHash: str,
         seedingTimeSeconds: int,
+        uploadedBytes: int,
         isManual: bool,
-        onProgress: Callable[[Transfer, int], None],
+        onProgress: Callable[[Transfer, int, int], None],
     ) -> None:
         _, linkSize, linkHash = parseEd2kLink(link)
         identity = toTransferKey(linkHash, linkSize)
@@ -126,13 +133,17 @@ class ED2kSession:
             await client.resume(fileHash)
             loop = asyncio.get_running_loop()
             seedingStart = loop.time() - seedingTimeSeconds
+            firstUpload = None
             async for snapshot in client.snapshots():
                 for t in snapshot.transfers:
                     if t.hash != fileHash:
                         continue
+                    if firstUpload is None:
+                        firstUpload = t.upload
                     elapsed = int(loop.time() - seedingStart)
-                    onProgress(t, elapsed)
-                    if not isManual and isSeedingLimitReached(elapsed):
+                    uploaded = uploadedBytes + t.upload - firstUpload
+                    onProgress(t, elapsed, uploaded)
+                    if not isManual and isSeedingLimitReached(elapsed, uploaded, t.size):
                         await client.pause(fileHash)
                         return
                     break
@@ -173,6 +184,11 @@ class ED2kSession:
                 raise TaskError(
                     "{name} 未安装，请在设置中安装", name=ed2kRuntime.name
                 )
+            version = parseVersion((await ed2kRuntime.probeVersion()).version)
+            if version and version < MIN_GOED2KD_VERSION:
+                raise TaskError(
+                    "{name} 版本过旧，请在设置中更新", name=ed2kRuntime.name
+                )
             client = Client(Path(path), APP_DATA_DIR / "ed2k_data")
             await client.start(Settings(
                 enableDht=ed2kConfig.enableDht.value,
@@ -194,9 +210,12 @@ class ED2kSession:
 ed2kSession = ED2kSession()
 
 
-def isSeedingLimitReached(elapsed: int) -> bool:
-    limit = ed2kConfig.seedingTimeLimit.value
-    return limit > 0 and elapsed >= limit * 60
+def isSeedingLimitReached(elapsed: int, uploaded: int, size: int) -> bool:
+    ratioLimit = ed2kConfig.seedingRatioLimit.value
+    if ratioLimit > 0 and size > 0 and uploaded * 100 >= ratioLimit * size:
+        return True
+    timeLimit = ed2kConfig.seedingTimeLimit.value
+    return timeLimit > 0 and elapsed >= timeLimit * 60
 
 
 def toTransferKey(fileHash: str, fileSize: int) -> tuple[str, int]:

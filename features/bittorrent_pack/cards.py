@@ -83,12 +83,7 @@ class BTTaskCard(MultiFileTaskCard):
     def _refreshForStatus(self, task):
         super()._refreshForStatus(task)
         if task.isSeeding and not self._isFileMissing:
-            parts = []
-            if task.shareRatioPercent > 0:
-                parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
-            if task.seedingTimeSeconds > 0:
-                parts.append(self.tr("做种 {0}").format(toReadableTime(task.seedingTimeSeconds)))
-            self._setStatus(self.tr("做种中") + "  " + " · ".join(parts))
+            self._setStatus(self.tr("，").join([self.tr("做种中"), *self._toSeedingParts(task)]))
         elif task.status == TaskStatus.RUNNING and task.stateText and task.stateText != "downloading":
             self.progressBar.hide()
             label = BT_STATE_LABELS.get(task.stateText)
@@ -100,10 +95,14 @@ class BTTaskCard(MultiFileTaskCard):
                 label = BT_STATE_LABELS.get(task.stateText)
                 if label:
                     parts.append(self.tr(label))
-            if task.shareRatioPercent > 0:
-                parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
-            if task.seedingTimeSeconds > 0:
-                parts.append(self.tr("做种 {0}").format(toReadableTime(task.seedingTimeSeconds)))
-            summary = " · ".join(parts)
-            if summary and not self._isFileMissing:
-                self.statusLabel.setText(summary)
+            parts += self._toSeedingParts(task)
+            if parts and not self._isFileMissing:
+                self.statusLabel.setText(self.tr("，").join(parts))
+
+    def _toSeedingParts(self, task: BTTask) -> list[str]:
+        parts = []
+        if task.shareRatioPercent > 0:
+            parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
+        if task.seedingTimeSeconds > 0:
+            parts.append(self.tr("已做种 {0}").format(toReadableTime(task.seedingTimeSeconds)))
+        return parts

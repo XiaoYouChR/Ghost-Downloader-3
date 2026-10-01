@@ -14,28 +14,36 @@ class ED2kTask(Task):
     activePeerCount: int | None = None
     totalPeerCount: int = 0
     uploadRate: int = 0
+    uploadedBytes: int = 0
     seedingTimeSeconds: int = 0
+
+    @property
+    def shareRatioPercent(self) -> float:
+        return self.uploadedBytes / self.fileSize * 100 if self.fileSize > 0 else 0.0
 
     def reset(self) -> TaskStatus:
         self.fileHash = ""
         self.activePeerCount = None
         self.totalPeerCount = 0
         self.uploadRate = 0
+        self.uploadedBytes = 0
         self.seedingTimeSeconds = 0
         return super().reset()
 
     async def runSeeding(self, isManual: bool) -> None:
         from .session import ed2kSession
 
-        def onProgress(t: Transfer, elapsed: int):
+        def onProgress(t: Transfer, elapsed: int, uploaded: int):
             self.uploadRate = t.uploadRate
+            self.uploadedBytes = uploaded
             self.activePeerCount = t.activePeers
             self.totalPeerCount = t.peers
             self.seedingTimeSeconds = elapsed
 
         try:
             await ed2kSession.runSeeding(
-                self.url, self.fileHash, self.seedingTimeSeconds, isManual, onProgress)
+                self.url, self.fileHash, self.seedingTimeSeconds, self.uploadedBytes,
+                isManual, onProgress)
         finally:
             self.uploadRate = 0
 
@@ -60,8 +68,9 @@ class ED2kTaskStep(TaskStep):
             if result.fileSize:
                 task.fileSize = result.fileSize
 
-        def onProgress(t: Transfer):
+        def onProgress(t: Transfer, uploaded: int):
             task.uploadRate = t.uploadRate
+            task.uploadedBytes = uploaded
             task.activePeerCount = t.activePeers
             task.totalPeerCount = t.peers
             self.receivedBytes = t.received
@@ -72,7 +81,7 @@ class ED2kTaskStep(TaskStep):
                 self.progress = min(99.9, t.received / t.size * 100)
 
         await ed2kSession.run(
-            task.url, task.fileHash, task.name, task.outputFolder,
+            task.url, task.fileHash, task.name, task.outputFolder, task.uploadedBytes,
             onStarted=onStarted,
             onProgress=onProgress,
         )

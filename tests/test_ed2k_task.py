@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from app.models.pack import VersionInfo
 from app.models.task import TaskError, TaskOptions, TaskStatus
 from ed2k_pack import session as session_module
 from ed2k_pack.pack import ED2kParser
@@ -41,6 +42,7 @@ class FakeClient:
             received=0,
             downloadRate=0,
             uploadRate=0,
+            upload=0,
             activePeers=0,
             peers=0,
         )
@@ -52,7 +54,7 @@ class FakeClient:
 
     async def snapshots(self):
         self.snapshotStarted.set()
-        yield Snapshot(transfers=(self.transfer,))
+        yield Snapshot(transfers=(self.transfer,), serverConnected=True, kadNodes=0)
         await asyncio.Event().wait()
 
     async def pause(self, fileHash: str) -> None:
@@ -75,6 +77,7 @@ class DuplicateClient(FakeClient):
             received=0,
             downloadRate=0,
             uploadRate=0,
+            upload=0,
             activePeers=0,
             peers=0,
         )
@@ -288,6 +291,54 @@ async def test_manual_seeding_ignores_limit(monkeypatch, tmp_path):
         await seeding
 
 
+class UploadingClient(FakeClient):
+    def __init__(self, states: list[tuple[TransferState, int]]):
+        super().__init__()
+        self.states = states
+
+    async def snapshots(self):
+        self.snapshotStarted.set()
+        for state, upload in self.states:
+            self.transfer = replace(self.transfer, state=state, upload=upload)
+            yield Snapshot(transfers=(self.transfer,), serverConnected=True, kadNodes=0)
+        await asyncio.Event().wait()
+
+
+async def test_download_adds_its_upload_to_the_task_total(monkeypatch, tmp_path):
+    fakeClient = UploadingClient([
+        (TransferState.DOWNLOADING, 10),
+        (TransferState.FINISHED, 50),
+    ])
+    session = session_module.ED2kSession()
+    session._client = fakeClient
+    monkeypatch.setattr(session_module, "ed2kSession", session)
+    task = makeTask(tmp_path)
+    task.uploadedBytes = 100
+
+    await task.run(lambda _: None, noLimit)
+
+    assert task.uploadedBytes == 140
+
+
+async def test_seeding_ends_at_share_ratio_limit(monkeypatch, tmp_path):
+    from ed2k_pack.config import ed2kConfig
+    monkeypatch.setattr(ed2kConfig.seedingRatioLimit, "value", 100)
+    task, _ = await completeDownload(monkeypatch, tmp_path)
+    fakeClient = UploadingClient([
+        (TransferState.FINISHED, 0),
+        (TransferState.FINISHED, 40),
+    ])
+    fakeClient.transfer = session_module.ed2kSession._client.transfer
+    session_module.ed2kSession._client = fakeClient
+    task.uploadedBytes = 1200
+
+    await task.runSeeding(isManual=False)
+
+    assert task.uploadedBytes == 1240
+    assert task.shareRatioPercent >= 100
+    assert fakeClient.paused == [FILE_HASH]
+
+
 async def test_parser_rejects_active_duplicate_on_add_task_page(monkeypatch, tmp_path):
     session = session_module.ED2kSession()
     identity = toTransferKey(FILE_HASH, 1234)
@@ -314,3 +365,36 @@ async def test_active_duplicate_never_reaches_daemon(monkeypatch, tmp_path):
 
     assert fakeClient.added == []
     session._activeTransfers.discard(identity)
+
+
+class StartedClient:
+    isRunning = True
+
+    def __init__(self, executable, dataDir):
+        pass
+
+    async def start(self, settings):
+        return Snapshot(transfers=(), serverConnected=False, kadNodes=0)
+
+
+@pytest.mark.parametrize("version, isAccepted", [
+    ("v0.2.3", False),
+    ("v0.2.4", True),
+    ("dev", True),
+])
+async def test_open_rejects_an_outdated_goed2kd(monkeypatch, version, isAccepted):
+    async def probeVersion():
+        return VersionInfo(version)
+
+    monkeypatch.setattr(session_module.ed2kRuntime, "path", lambda: "/bin/goed2kd")
+    monkeypatch.setattr(session_module.ed2kRuntime, "probeVersion", probeVersion)
+    monkeypatch.setattr(session_module, "Client", StartedClient)
+    session = session_module.ED2kSession()
+
+    if isAccepted:
+        await session._open()
+        assert session._client is not None
+    else:
+        with pytest.raises(TaskError):
+            await session._open()
+        assert session._client is None

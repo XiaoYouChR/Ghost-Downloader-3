@@ -39,13 +39,16 @@ class ED2kTaskCard(TaskCard):
     def _refreshForStatus(self, task: ED2kTask):
         super()._refreshForStatus(task)
         if task.isSeeding and not self._isFileMissing:
-            parts = []
-            if task.seedingTimeSeconds > 0:
-                parts.append(self.tr("已共享 {0}").format(
-                    toReadableTime(task.seedingTimeSeconds)))
-            self._setStatus(self.tr("共享中") + ("  " + " · ".join(parts) if parts else ""))
-        elif task.status != TaskStatus.RUNNING and task.seedingTimeSeconds > 0:
-            self.statusLabel.setText(
-                self.statusLabel.text() + " · " + self.tr("已共享 {0}").format(
-                    toReadableTime(task.seedingTimeSeconds))
-            )
+            self._setStatus(self.tr("，").join([self.tr("做种中"), *self._toSeedingParts(task)]))
+        elif task.status != TaskStatus.RUNNING:
+            parts = self._toSeedingParts(task)
+            if parts and not self._isFileMissing:
+                self.statusLabel.setText(self.tr("，").join(parts))
+
+    def _toSeedingParts(self, task: ED2kTask) -> list[str]:
+        parts = []
+        if task.shareRatioPercent > 0:
+            parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
+        if task.seedingTimeSeconds > 0:
+            parts.append(self.tr("已做种 {0}").format(toReadableTime(task.seedingTimeSeconds)))
+        return parts

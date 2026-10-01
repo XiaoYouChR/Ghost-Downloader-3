@@ -281,7 +281,11 @@ class Client:
 
 def _toSnapshot(value: Any) -> Snapshot:
     try:
-        return Snapshot(transfers=tuple(_toTransfer(transfer) for transfer in value["transfers"]))
+        return Snapshot(
+            transfers=tuple(_toTransfer(transfer) for transfer in value["transfers"]),
+            serverConnected=value["serverConnected"],
+            kadNodes=value["kadNodes"],
+        )
     except (KeyError, TypeError, ValueError) as error:
         raise ProtocolError(f"invalid snapshot: {error}") from error
 
@@ -297,6 +301,7 @@ def _toSettings(settings: Settings) -> dict[str, Any]:
         "enableDht": settings.enableDht,
         "enableUpnp": settings.enableUpnp,
         "reconnectToServer": settings.reconnectToServer,
+        "enableDebugLog": settings.enableDebugLog,
     }
 
 
@@ -312,7 +317,8 @@ def _toTransfer(value: Any) -> Transfer:
             received=value["received"],
             downloadRate=value["downloadRate"],
             uploadRate=value["uploadRate"],
-            activePeers=value.get("activePeers"),
+            upload=value["upload"],
+            activePeers=value["activePeers"],
             peers=value["peers"],
         )
     except (KeyError, TypeError, ValueError) as error:

@@ -8,12 +8,13 @@ def taskFields(task) -> dict:
     active = task.activePeerCount
     return {
         "progressMode": "hidden" if task.isSeeding else "determinate",
-        "statusText": N("TaskState", "共享中") if task.isSeeding else "",
+        "statusText": N("TaskState", "做种中") if task.isSeeding else "",
         "secondarySpeed": task.uploadRate,
         "packFields": {
             "peers": None if active is None else {
                 "active": active, "total": max(active, task.totalPeerCount),
             },
+            "shareRatio": task.shareRatioPercent,
             "seedingSeconds": task.seedingTimeSeconds,
             "uploadSpeed": task.uploadRate,
         },

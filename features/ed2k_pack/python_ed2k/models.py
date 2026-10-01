@@ -22,6 +22,7 @@ class Settings:
     enableDht: bool = True
     enableUpnp: bool = True
     reconnectToServer: bool = True
+    enableDebugLog: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,10 +36,13 @@ class Transfer:
     received: int
     downloadRate: int
     uploadRate: int
-    activePeers: int | None
+    upload: int
+    activePeers: int
     peers: int
 
 
 @dataclass(frozen=True, slots=True)
 class Snapshot:
     transfers: tuple[Transfer, ...]
+    serverConnected: bool
+    kadNodes: int

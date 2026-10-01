@@ -19,11 +19,12 @@ ED2K_REPO = Repo("XiaoYouChR/Python-eD2k", mirrors={"gitcode": "XiaoYouChR/Pytho
 class ED2kConfig(PackConfig):
     associateUriSchemes = ConfigItem("ED2k", "AssociateUriSchemes", False, BoolValidator())
     installFolder = ConfigItem("ED2k", "InstallFolder", f"{APP_DATA_DIR}/goed2kd")
-    enableDht = ConfigItem("ED2k", "EnableDHT", True, BoolValidator())
-    enableUpnp = ConfigItem("ED2k", "EnableUPnP", True, BoolValidator())
-    listenPort = RangeConfigItem("ED2k", "ListenPort", 0, RangeValidator(0, 65535))
+    enableDht = ConfigItem("ED2k", "EnableDHT", True, BoolValidator(), restart=True)
+    enableUpnp = ConfigItem("ED2k", "EnableUPnP", True, BoolValidator(), restart=True)
+    listenPort = RangeConfigItem("ED2k", "ListenPort", 0, RangeValidator(0, 65535), restart=True)
     serverMetSource = ConfigItem("ED2k", "ServerMetSource", "http://upd.emule-security.org/server.met")
     nodesDatSource = ConfigItem("ED2k", "NodesDatSource", "http://upd.emule-security.org/nodes.dat")
+    seedingRatioLimit = RangeConfigItem("ED2k", "SeedRatioLimitPercent", 0, RangeValidator(0, 10000))
     seedingTimeLimit = RangeConfigItem("ED2k", "SharingTimeLimitMinutes", 0, RangeValidator(0, 43200))
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
@@ -71,8 +72,13 @@ class ED2kConfig(PackConfig):
                 self.listenPort, group, 1,
             ),
             SpinBoxSettingCard(
-                FluentIcon.STOP_WATCH, self.tr("自动停止共享时长"),
-                self.tr("0 表示不按共享时长自动停止"), " min",
+                FluentIcon.SHARE, self.tr("自动停止做种分享率"),
+                self.tr("0 表示不按分享率自动停止，100% 表示分享率 1.0"), " %",
+                self.seedingRatioLimit, group, 50,
+            ),
+            SpinBoxSettingCard(
+                FluentIcon.STOP_WATCH, self.tr("自动停止做种时长"),
+                self.tr("0 表示不按做种时长自动停止"), " min",
                 self.seedingTimeLimit, group, 10,
             ),
         ])
