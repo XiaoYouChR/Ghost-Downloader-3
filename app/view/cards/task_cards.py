@@ -5,9 +5,9 @@ from datetime import datetime
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QFileInfo, QPoint, QRectF, Signal, Qt, QT_TRANSLATE_NOOP as N
+from PySide6.QtCore import QFileInfo, QPoint, QRect, QRectF, Signal, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen
-from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QVBoxLayout, QApplication, QWidget, QSizePolicy
+from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QLabel, QVBoxLayout, QApplication, QWidget, QSizePolicy
 from qfluentwidgets import (
     Action, CardWidget, CheckBox, FluentIcon, ImageLabel,
     IndeterminateProgressBar, PrimaryToolButton, ProgressBar, ProgressRing,
@@ -211,6 +211,8 @@ class TaskCard(CardWidget):
         return bar
 
     def _initWidget(self) -> None:
+        for widget in (self, self.nameLabel, self.statusLabel, *(getattr(self, f"{f.name}Label") for f in self.infoFields)):
+            widget.setMouseTracking(True)
         self.iconLabel.setFixedSize(48, 48)
         self.checkBox.setFixedSize(23, 23)
         self.checkBox.setVisible(False)
@@ -472,7 +474,24 @@ class TaskCard(CardWidget):
             self._isDragPending = True
             self._dragStartPos = e.position().toPoint()
 
+    def _matchNameText(self, pos: QPoint) -> bool:
+        if self._isSelectionMode or not self.openFileButton.isEnabled():
+            return False
+        label = self.nameLabel
+        textWidth = label.fontMetrics().horizontalAdvance(QLabel.text(label))
+        return QRect(label.x() + label.indent(), label.y(), textWidth, label.height()).contains(pos)
+
+    def _matchInfoText(self, pos: QPoint) -> bool:
+        if self._isSelectionMode:
+            return False
+        labels = [getattr(self, f"{f.name}Label") for f in self.infoFields] + [self.statusLabel]
+        return any(label.isVisible() and label.geometry().contains(pos) for label in labels)
+
     def mouseMoveEvent(self, e) -> None:
+        if not e.buttons():
+            pos = e.position().toPoint()
+            isLink = self._matchNameText(pos) or self._matchInfoText(pos)
+            self.setCursor(Qt.CursorShape.PointingHandCursor if isLink else Qt.CursorShape.ArrowCursor)
         if self._isDragPending:
             if (e.position().toPoint() - self._dragStartPos).manhattanLength() >= QApplication.startDragDistance():
                 self._isDragPending = False
@@ -484,8 +503,15 @@ class TaskCard(CardWidget):
     def mouseReleaseEvent(self, e) -> None:
         self._isDragPending = False
         super().mouseReleaseEvent(e)
-        if e.button() == Qt.MouseButton.LeftButton and not self._hasDragged:
-            extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        if e.button() != Qt.MouseButton.LeftButton or self._hasDragged:
+            return
+        pos = e.position().toPoint()
+        extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        if not extend and self._matchNameText(pos):
+            openFile(self._task.outputPath)
+        elif not extend and self._matchInfoText(pos):
+            self._openDrawer()
+        else:
             checked = True if extend or not self._isSelectionMode else not self.isChecked()
             self.selectionChanged.emit(checked, extend)
 
