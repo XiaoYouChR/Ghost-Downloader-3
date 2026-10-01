@@ -292,6 +292,9 @@ class FeaturePack:
     def editCards(self, task: Task, parent=None) -> list[QWidget]:
         return self.optionCards(task, parent)
 
+    def detailCards(self, task: Task, parent=None) -> list[QWidget]:
+        return []
+
     def runtimes(self) -> list[BinaryRuntime]:
         return []
 

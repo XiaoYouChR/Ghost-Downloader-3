@@ -46,6 +46,11 @@ _Avoid_: merge、overwrite（覆盖指磁盘文件）
 **Pausable**:
 Task 的可暂停性，派生属性。取决于当前运行 Step 是否支持断点恢复。
 
+**Checksum**:
+用户为已完成成品按选定算法算出的校验值。每种算法各存一份，随 Task Record 持久化，重新下载时清空。
+计算 Checksum 不是 Task Run，不改变 Task 状态。
+_Avoid_: hash、digest、哈希值
+
 **Task Error**:
 任务执行过程中的已知失败——服务器错误、磁盘空间不足、运行时未安装等。Task 有单一错误边界。
 

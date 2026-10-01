@@ -206,6 +206,7 @@ class Task:
     files: list[TaskFile] | None = None
     category: str | None = None
     shouldSeed: bool = False
+    checksums: dict[str, str] = field(default_factory=dict)
     isSeeding: bool = field(default=False, init=False, repr=False)
 
     @property
@@ -386,6 +387,7 @@ class Task:
     def reset(self) -> TaskStatus:
         self.completedAt = 0
         self.shouldSeed = True
+        self.checksums = {}
         if not self.steps:
             self.status = TaskStatus.WAITING
             return self.status

@@ -5,18 +5,19 @@ from datetime import datetime
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QFileInfo, QPoint, Signal, Qt, QT_TRANSLATE_NOOP as N
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtCore import QFileInfo, QPoint, QRectF, Signal, Qt, QT_TRANSLATE_NOOP as N
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QVBoxLayout, QApplication, QWidget, QSizePolicy
 from qfluentwidgets import (
     Action, CardWidget, CheckBox, FluentIcon, ImageLabel,
-    IndeterminateProgressBar, PrimaryToolButton, ProgressBar,
+    IndeterminateProgressBar, PrimaryToolButton, ProgressBar, ProgressRing,
     RoundMenu, ToolButton, ToolTipFilter, TransparentToolButton,
     isDarkTheme, themeColor,
 )
 
 from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
+from app.models.checksum import COMMON_ALGORITHMS, toAlgorithms
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.platform.filesystem import isExisting, isFolder
@@ -87,7 +88,44 @@ TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, N("TaskCard", "暂停/继�
 SELECT_FILES_BUTTON = ButtonSpec("selectFiles", FluentIcon.LIBRARY, N("TaskCard", "选择文件"),
     states={None: lambda t: ButtonState(visible=bool(t.files) and len(t.files) > 1)})
 
-VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, N("TaskCard", "校验文件哈希"), states={
+RING_SIZE = 16
+STOP_SIZE = 6
+
+
+class ChecksumButton(ToolButton):
+    def __init__(self, icon, parent=None):
+        super().__init__(parent)
+        self.setIcon(icon)
+        self.ring = ProgressRing(self, useAni=False)
+        self._initWidget()
+        self._initLayout()
+
+    def _initWidget(self) -> None:
+        self.ring.setFixedSize(RING_SIZE, RING_SIZE)
+        self.ring.setStrokeWidth(2)
+        self.ring.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.ring.hide()
+
+    def _initLayout(self) -> None:
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.ring, 0, Qt.AlignmentFlag.AlignCenter)
+
+    def setProgress(self, progress: int | None) -> None:
+        self.ring.setVisible(progress is not None)
+        self.ring.setValue(progress or 0)
+        self.update()
+
+    def _drawIcon(self, icon, painter, rect, state=QIcon.Off):
+        if self.ring.isHidden():
+            return super()._drawIcon(icon, painter, rect, state)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(255, 255, 255) if isDarkTheme() else QColor(0, 0, 0))
+        center = rect.center()
+        painter.drawRoundedRect(QRectF(center.x() - STOP_SIZE / 2, center.y() - STOP_SIZE / 2, STOP_SIZE, STOP_SIZE), 1.5, 1.5)
+
+
+CHECKSUM_BUTTON = ButtonSpec("checksum", FluentIcon.FINGERPRINT, N("TaskCard", "计算校验值"), ChecksumButton, states={
     None: lambda t: ButtonState(visible=not (bool(t.files) and len(t.files) > 1), enabled=False),
     TaskStatus.COMPLETED: lambda t: ButtonState(
         visible=not (bool(t.files) and len(t.files) > 1),
@@ -112,7 +150,7 @@ class TaskCard(CardWidget):
     infoFields: list[FieldSpec] = [SPEED_FIELD, ETA_FIELD, SIZE_FIELD]
     nameFormats: dict[TaskStatus, Callable] = {}
     buttons: list[ButtonSpec] = [
-        TOGGLE_BUTTON, SELECT_FILES_BUTTON, VERIFY_HASH_BUTTON,
+        TOGGLE_BUTTON, SELECT_FILES_BUTTON, CHECKSUM_BUTTON,
         OPEN_FILE_BUTTON, OPEN_FOLDER_BUTTON, DELETE_BUTTON,
     ]
 
@@ -121,7 +159,7 @@ class TaskCard(CardWidget):
     sizeLabel: IconBodyLabel
     toggleButton: PrimaryToolButton
     selectFilesButton: ToolButton
-    verifyHashButton: ToolButton
+    checksumButton: ChecksumButton
     openFileButton: ToolButton
     openFolderButton: ToolButton
     deleteButton: TransparentToolButton
@@ -138,7 +176,6 @@ class TaskCard(CardWidget):
         self._hasDragged = False
         self._dragStartPos = QPoint()
         self._lastStatus: TaskStatus | None = None
-        self._hashDigest: str = ""
 
         self.setFixedHeight(self.ROW_HEIGHT)
 
@@ -206,7 +243,7 @@ class TaskCard(CardWidget):
 
     def _bind(self) -> None:
         self.toggleButton.clicked.connect(self._onToggleClicked)
-        self.verifyHashButton.clicked.connect(self._onVerifyHashClicked)
+        self.checksumButton.clicked.connect(self._onChecksumClicked)
         self.openFileButton.clicked.connect(lambda: openFile(self._task.outputPath))
         self.openFolderButton.clicked.connect(lambda: revealInFolder(self._task.outputPath))
         self.deleteButton.clicked.connect(self._onDeleteClicked)
@@ -216,9 +253,12 @@ class TaskCard(CardWidget):
         self._categoryService.categoriesChanged.connect(self._refreshCategoryIcon, owner=self)
 
     def refresh(self, force: bool = False) -> None:
+        checksumProgress = self._taskService.checksumProgress(self._task)
         if (not force and self._lastStatus == self._task.status
-                and self._task.status != TaskStatus.RUNNING and not self._task.isSeeding):
+                and self._task.status != TaskStatus.RUNNING and not self._task.isSeeding
+                and checksumProgress is None):
             return
+        self.checksumButton.setProgress(checksumProgress)
 
         task = self._task
         progress, speed, receivedBytes = task.currentSnapshot()
@@ -342,23 +382,32 @@ class TaskCard(CardWidget):
             cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
             self._taskService.delete(self._task, deleteFiles.isChecked())
 
-    def _onVerifyHashClicked(self) -> None:
+    def _onChecksumClicked(self) -> None:
+        if self._taskService.checksumProgress(self._task) is not None:
+            self._taskService.cancelChecksum(self._task)
+            return
         if isFolder(self._task.outputPath) or not isExisting(self._task.outputPath):
             self._setStatus(self.tr("文件不存在，无法校验"))
             return
-        from app.view.dialogs.file_hash import FileHashDialog
-        dialog = FileHashDialog(self._task.outputPath, self.window())
-        dialog.hashReady.connect(self._onHashReady)
-        dialog.exec()
-        dialog.deleteLater()
-
-    def _onHashReady(self, algorithm: str, digest: str) -> None:
-        self._hashDigest = f"{algorithm}: {digest}"
-        self._setStatus(self._hashDigest)
+        algorithms = toAlgorithms()
+        menu = RoundMenu(parent=self)
+        moreMenu = RoundMenu(self.tr("更多"), self)
+        for algorithm in algorithms:
+            action = Action(algorithm.upper(), self)
+            action.setCheckable(True)
+            action.setChecked(algorithm in self._task.checksums)
+            action.triggered.connect(lambda checked=False, a=algorithm: self._taskService.startChecksum(self._task, a))
+            (menu if algorithm in COMMON_ALGORITHMS else moreMenu).addAction(action)
+        menu.addMenu(moreMenu)
+        menu.exec(self.checksumButton.mapToGlobal(QPoint(0, self.checksumButton.height())))
 
     def _onEditClicked(self) -> None:
         self._featureService.createEditDialog(self._task, self.window()).exec()
         self.refresh()
+
+    def _openDrawer(self) -> None:
+        from app.view.dialogs.task_drawer import TaskDrawer
+        TaskDrawer(self._task, self._taskService, self._featureService, self._categoryService, self.window()).show()
 
     def setSelectionMode(self, enter: bool) -> None:
         self._isSelectionMode = enter
@@ -378,14 +427,14 @@ class TaskCard(CardWidget):
     def createContextMenu(self) -> RoundMenu:
         menu = RoundMenu(parent=self)
 
+        detail = Action(FluentIcon.INFO, self.tr("任务详情"), self)
+        detail.triggered.connect(self._openDrawer)
+        menu.addAction(detail)
+        menu.addSeparator()
+
         copyUrl = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
         copyUrl.triggered.connect(lambda: QApplication.instance().clipboardListener.setUrls([self._task.url]))
         menu.addAction(copyUrl)
-
-        if self._hashDigest:
-            copyHash = Action(FluentIcon.FINGERPRINT, self.tr("复制校验值"), self)
-            copyHash.triggered.connect(lambda: QApplication.clipboard().setText(self._hashDigest))
-            menu.addAction(copyHash)
 
         if self._task.canEdit and self._task.status != TaskStatus.COMPLETED:
             edit = Action(FluentIcon.EDIT, self.tr("编辑任务参数..."), self)

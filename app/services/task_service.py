@@ -22,6 +22,12 @@ if TYPE_CHECKING:
     from app.models.task import Task
 
 
+@dataclass
+class ChecksumWork:
+    workId: str = ""
+    progress: int = 0
+
+
 class NameConflictChoice(StrEnum):
     KEEP_BOTH = "keepBoth"
     OVERWRITE = "overwrite"
@@ -275,6 +281,9 @@ class TaskService:
     tasksAllCompleted = Signal()
     seedingStarted = Signal(object)
     seedingStopped = Signal(object)
+    checksumStarted = Signal(object)
+    checksumCompleted = Signal(object, str)
+    checksumStopped = Signal(object, object)
     queueChanged = Signal()
     fileDisappeared = Signal(object)
     fileDeleteDenied = Signal()
@@ -292,6 +301,7 @@ class TaskService:
         self._store = TaskStore(deleteRecoverably)
         self._queue = TaskQueue()
         self._seeding: dict[str, str] = {}
+        self._checksums: dict[str, ChecksumWork] = {}
         self._fileWatcher = fileWatcher
         self._watchedPaths: dict[str, str] = {}
         self._fileWatcher.fileChanged.connect(self._onWatchedFileChanged)
@@ -375,6 +385,27 @@ class TaskService:
         self._cancelWork(task)
         self._refreshSpeedMeter()
 
+    def checksumProgress(self, task: Task) -> int | None:
+        work = self._checksums.get(task.taskId)
+        return work.progress if work else None
+
+    def startChecksum(self, task: Task, algorithm: str) -> None:
+        from app.models.checksum import toChecksum
+        work = ChecksumWork()
+        self._checksums[task.taskId] = work
+        work.workId = self._coroutineRunner.submit(
+            toChecksum(Path(task.outputPath), algorithm, lambda p: setattr(work, "progress", p)),
+            done=lambda checksum: self._onChecksumDone(task, algorithm, checksum),
+            failed=lambda error: self._onChecksumFailed(task, error))
+        self.checksumStarted.emit(task)
+
+    def cancelChecksum(self, task: Task) -> None:
+        work = self._checksums.pop(task.taskId, None)
+        if work is None:
+            return
+        self._coroutineRunner.cancel(work.workId)
+        self.checksumStopped.emit(task, None)
+
     def pause(self, task: Task) -> None:
         from app.models.task import TaskStatus
         self._cancelWork(task)
@@ -384,6 +415,7 @@ class TaskService:
         self._pump()
 
     def delete(self, task: Task, shouldDeleteFiles: bool) -> None:
+        self.cancelChecksum(task)
         self._unwatchFile(task)
         canDelete = shouldDeleteFiles and self._canDeleteIn(task.outputFolder)
         if shouldDeleteFiles and not canDelete and not self._hasNotifiedDeleteDenied:
@@ -400,6 +432,7 @@ class TaskService:
         self._pump()
 
     def redownload(self, task: Task) -> None:
+        self.cancelChecksum(task)
         self._unwatchFile(task)
         def onStopped():
             task.deleteFiles()
@@ -409,6 +442,7 @@ class TaskService:
         self._cancelWork(task, finished=onStopped)
 
     def edit(self, task: Task, options: dict, newTask: Task | None = None) -> None:
+        self.cancelChecksum(task)
         needsDelete = newTask is not None and not task.canReuseProgress(newTask)
         def onStopped():
             if needsDelete:
@@ -559,6 +593,17 @@ class TaskService:
             return False
         except OSError:
             return True
+
+    def _onChecksumDone(self, task: Task, algorithm: str, checksum: str) -> None:
+        del self._checksums[task.taskId]
+        task.checksums[algorithm] = checksum
+        self._flushSoon()
+        self.checksumCompleted.emit(task, algorithm)
+
+    def _onChecksumFailed(self, task: Task, error: Exception) -> None:
+        from app.models.task import TaskError
+        del self._checksums[task.taskId]
+        self.checksumStopped.emit(task, TaskError("无法读取文件：{detail}", detail=str(error)))
 
     def _cancelWork(self, task: Task, finished: Callable = None) -> None:
         workId = self._queue.workIdOf(task.taskId) or self._seeding.pop(task.taskId, None)

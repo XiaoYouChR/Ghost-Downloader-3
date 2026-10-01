@@ -19,6 +19,7 @@ from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg
 from app.format import toReadableSize
+from app.i18n import toLocalizedError
 from app.models.task import TaskStatus
 from app.platform.filesystem import isExisting
 from app.view.cards.task_cards import TaskCard
@@ -284,8 +285,11 @@ class TaskPage(QWidget):
         self._taskService.taskPaused.connect(self._onTaskStopped, owner=self)
         self._taskService.taskCompleted.connect(self._onTaskStopped, owner=self)
         self._taskService.taskFailed.connect(self._onTaskStopped, owner=self)
-        self._taskService.seedingStarted.connect(self._onSeedingStarted, owner=self)
-        self._taskService.seedingStopped.connect(self._onSeedingStopped, owner=self)
+        self._taskService.seedingStarted.connect(self._onTickingStarted, owner=self)
+        self._taskService.seedingStopped.connect(self._onTickingStopped, owner=self)
+        self._taskService.checksumStarted.connect(self._onTickingStarted, owner=self)
+        self._taskService.checksumCompleted.connect(self._onChecksumCompleted, owner=self)
+        self._taskService.checksumStopped.connect(self._onChecksumStopped, owner=self)
         self._taskService.queueChanged.connect(self._onQueueChanged, owner=self)
         self._taskService.fileDisappeared.connect(self._onFileDisappeared, owner=self)
         self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied, owner=self)
@@ -747,7 +751,7 @@ class TaskPage(QWidget):
             self._cardRefreshTimer.stop()
         self._onQueueChanged()
 
-    def _onSeedingStarted(self, task: Task) -> None:
+    def _onTickingStarted(self, task: Task) -> None:
         self._tickingIds.add(task.taskId)
         card = self._liveCards.get(task.taskId)
         if card is not None:
@@ -755,13 +759,30 @@ class TaskPage(QWidget):
         if not self._cardRefreshTimer.isActive():
             self._cardRefreshTimer.start()
 
-    def _onSeedingStopped(self, task: Task) -> None:
+    def _onTickingStopped(self, task: Task) -> None:
         self._tickingIds.discard(task.taskId)
         card = self._liveCards.get(task.taskId)
         if card is not None:
             card.refresh(force=True)
         if not self._tickingIds:
             self._cardRefreshTimer.stop()
+
+    def _onChecksumCompleted(self, task: Task, _algorithm: str) -> None:
+        self._onTickingStopped(task)
+        if self.isVisible() and QApplication.activeModalWidget() is None:
+            from app.view.dialogs.task_drawer import TaskDrawer
+            TaskDrawer(task, self._taskService, self._featureService, self._categoryService, self.window()).show()
+
+    def _onChecksumStopped(self, task: Task, error) -> None:
+        self._onTickingStopped(task)
+        if error is not None:
+            InfoBar.error(
+                self.tr("校验失败"),
+                toLocalizedError(error),
+                duration=5000,
+                position=InfoBarPosition.TOP,
+                parent=self.window(),
+            )
 
     # ── band selection ──
 

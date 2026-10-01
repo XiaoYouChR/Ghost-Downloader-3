@@ -405,7 +405,8 @@ class MainWindow(MSFluentWindow):
                 )
 
             dialog.accepted.connect(onAccepted)
-            dialog.open()
+            dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+            dialog.show()
 
         self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)
 

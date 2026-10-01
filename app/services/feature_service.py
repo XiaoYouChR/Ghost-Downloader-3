@@ -133,6 +133,10 @@ class FeatureService:
         pack = self._packByPackId.get(task.packId)
         return pack.editCards(task, parent) if pack else []
 
+    def detailCards(self, task: Task, parent=None) -> list[QWidget]:
+        pack = self._packByPackId.get(task.packId)
+        return pack.detailCards(task, parent) if pack else []
+
     # ── RuntimeCard factory ──
 
     def _createRuntimeCard(self, runtime, parent):
