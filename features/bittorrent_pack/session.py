@@ -39,19 +39,7 @@ ALERT_MASK = (
 
 DHT_STATE_FILE = "bt_dht_state.dat"
 
-PROXY_TYPES = {
-    "http": lt.proxy_type_t.http,
-    "https": lt.proxy_type_t.http,
-    "socks4": lt.proxy_type_t.socks4,
-    "socks5": lt.proxy_type_t.socks5,
-    "socks5h": lt.proxy_type_t.socks5,
-}
-PROXY_TYPES_AUTH = {
-    "http": lt.proxy_type_t.http_pw,
-    "https": lt.proxy_type_t.http_pw,
-    "socks5": lt.proxy_type_t.socks5_pw,
-    "socks5h": lt.proxy_type_t.socks5_pw,
-}
+SOCKS5_SCHEMES = {"socks5", "socks5h"}
 
 _ERROR_ALERTS = (
     lt.file_error_alert,
@@ -597,19 +585,11 @@ class BTSession:
         if not url:
             return {}
         parsed = urlsplit(url)
-        scheme = parsed.scheme.lower()
-        if not parsed.hostname or not parsed.port:
+        if parsed.scheme.lower() not in SOCKS5_SCHEMES or not parsed.hostname or not parsed.port:
             return {}
         hasCredentials = bool(parsed.username or parsed.password)
-        proxyType = PROXY_TYPES_AUTH.get(scheme) if hasCredentials else None
-        if proxyType is None:
-            proxyType = PROXY_TYPES.get(scheme)
-        if proxyType is None:
-            return {}
-        if scheme == "socks4" and hasCredentials:
-            logger.warning("SOCKS4 不支持认证，凭据将被忽略")
         return {
-            "proxy_type": proxyType,
+            "proxy_type": lt.proxy_type_t.socks5_pw if hasCredentials else lt.proxy_type_t.socks5,
             "proxy_hostname": parsed.hostname,
             "proxy_port": parsed.port,
             "proxy_username": parsed.username or "",

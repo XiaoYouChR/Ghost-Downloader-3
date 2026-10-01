@@ -102,7 +102,7 @@ class TorrentParser(TaskParser):
 class BitTorrentPack(FeaturePack):
     packId = "bt"
     config = bittorrentConfig
-    proxySchemes = {"http", "https", "socks4", "socks5"}
+    proxySchemes = {"socks5"}
     parsers = [TorrentParser]
 
     def taskCardClass(self, task: Task) -> type | None:
