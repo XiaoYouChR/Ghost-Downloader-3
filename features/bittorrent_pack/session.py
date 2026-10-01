@@ -21,8 +21,8 @@ if TYPE_CHECKING:
     pass
 
 DHT_BOOTSTRAP_NODES = (
-    "router.bittorrent.com:6881, router.utorrent.com:6881, "
-    "dht.transmissionbt.com:6881, dht.libtorrent.org:25401"
+    "dht.transmissionbt.com:6881, router.bt.ouinet.work:6881, dht.libtorrent.org:25401, "
+    "router.bittorrent.com:6881, router.utorrent.com:6881"
 )
 
 ALERT_MASK = (
@@ -122,6 +122,7 @@ class BTSession:
         self._active: dict[str, ActiveTorrent] = {}
         self._metadataWaiters: dict[int, tuple[lt.torrent_handle, asyncio.Future]] = {}
         self._resumeCache: dict[str, bytes] = {}
+        self._statsWaiter: asyncio.Future | None = None
         for item in (
             bittorrentConfig.maxUploadSpeed,
             bittorrentConfig.maxConnections,
@@ -223,6 +224,17 @@ class BTSession:
                 self._session.remove_torrent(handle)
             except Exception:
                 pass
+
+    async def probeDhtNodes(self) -> int | None:
+        if self._session is None or not self._session.is_dht_running():
+            return None
+        if self._statsWaiter is None or self._statsWaiter.done():
+            self._statsWaiter = asyncio.get_running_loop().create_future()
+            self._session.post_session_stats()
+        try:
+            return await asyncio.wait_for(asyncio.shield(self._statsWaiter), timeout=5)
+        except TimeoutError:
+            return None
 
     def updatePriorities(self, taskId: str, priorities: list[int]) -> None:
         entry = self._active.get(taskId)
@@ -422,6 +434,11 @@ class BTSession:
             await asyncio.sleep(1)
 
     def _routeAlert(self, alert) -> None:
+        if isinstance(alert, lt.session_stats_alert):
+            if self._statsWaiter is not None and not self._statsWaiter.done():
+                self._statsWaiter.set_result(alert.values["dht.dht_nodes"])
+            return
+
         if isinstance(alert, lt.performance_alert):
             logger.warning("BitTorrent 性能警告: {}", alert.message())
             return

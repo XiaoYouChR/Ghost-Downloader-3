@@ -6,7 +6,6 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import libtorrent as lt
-from loguru import logger
 
 from app.i18n import N
 
@@ -17,7 +16,12 @@ from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import bittorrentConfig
 from .session import btSession
 from .task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
-from .web_tracker.service import trackerService
+from .trackers import mergedTrackers, trackerList
+
+
+def refreshTrackerListIfStale() -> None:
+    if bittorrentConfig.autoRefreshWebTrackers.value and trackerList.isStale():
+        asyncio.ensure_future(trackerList.refresh())
 
 
 class TorrentParser(TaskParser):
@@ -33,15 +37,8 @@ class TorrentParser(TaskParser):
         url = options.url.strip()
         outputFolder = options.outputFolder
 
-        if bittorrentConfig.enableWebTrackers.value:
-            if bittorrentConfig.autoRefreshWebTrackers.value and trackerService.isStale():
-                try:
-                    await trackerService.refresh()
-                except Exception as e:
-                    logger.opt(exception=e).warning("刷新 Web Tracker 失败,使用缓存")
-            webTrackers = trackerService.mergedTrackers()
-        else:
-            webTrackers = []
+        refreshTrackerListIfStale()
+        webTrackers = mergedTrackers() if bittorrentConfig.enableWebTrackers.value else []
 
         localPath = localFilePath(url, {".torrent"})
         if localPath is not None:
@@ -135,6 +132,7 @@ class BitTorrentPack(FeaturePack):
 
     async def activate(self):
         btSession.open()
+        refreshTrackerListIfStale()
 
     async def deactivate(self):
         await btSession.close()

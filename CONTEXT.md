@@ -89,6 +89,11 @@ _Avoid_: execution、session
 用户可随时开关；到达上限或用户关掉后不再自动恢复，否则随应用启动恢复。
 _Avoid_: 与 Seed（Pack 同步）混淆；sharing；第六个 Task 状态
 
+**Bootstrap List**:
+Pack 从订阅地址拉取、用来发现对等方的列表：BT 的 Tracker 列表，eD2k 的服务器列表和 KAD 节点列表。
+由应用拉取并缓存，Pack 自带内置快照，任何时候都有一份可用；刷新只在后台进行，Task 从不等它。
+_Avoid_: Source（指更新分发）、节点源、mirror
+
 **Task Step**:
 Task 内的一个可执行步骤。一个 Task 可能有一个或多个 Step。
 _Avoid_: stage、phase、action

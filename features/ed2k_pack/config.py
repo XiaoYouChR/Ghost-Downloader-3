@@ -4,7 +4,9 @@ import platform
 import sys
 from pathlib import Path
 
-from app.config.cfg import BoolValidator, ConfigItem, RangeConfigItem, RangeValidator
+from app.config.cfg import (
+    BoolValidator, ConfigItem, RangeConfigItem, RangeValidator, StringListValidator,
+)
 from app.i18n import N
 
 from app.config.paths import APP_DATA_DIR
@@ -14,6 +16,12 @@ from app.platform.filesystem import findExecutable
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
 
 ED2K_REPO = Repo("XiaoYouChR/Python-eD2k", mirrors={"gitcode": "XiaoYouChR/Python-eD2k"})
+DEFAULT_SERVER_LIST_SOURCES = [
+    "https://upd.emule-security.org/server.met",
+    "https://shortypower.org/server.met",
+    "http://www.gruk.org/server.met",
+]
+DEFAULT_NODE_LIST_SOURCES = ["https://upd.emule-security.org/nodes.dat"]
 
 
 class ED2kConfig(PackConfig):
@@ -22,17 +30,22 @@ class ED2kConfig(PackConfig):
     enableDht = ConfigItem("ED2k", "EnableDHT", True, BoolValidator(), restart=True)
     enableUpnp = ConfigItem("ED2k", "EnableUPnP", True, BoolValidator(), restart=True)
     listenPort = RangeConfigItem("ED2k", "ListenPort", 0, RangeValidator(0, 65535), restart=True)
-    serverMetSource = ConfigItem("ED2k", "ServerMetSource", "http://upd.emule-security.org/server.met")
-    nodesDatSource = ConfigItem("ED2k", "NodesDatSource", "http://upd.emule-security.org/nodes.dat")
+    serverListSources = ConfigItem(
+        "ED2k", "ServerListSources", DEFAULT_SERVER_LIST_SOURCES, StringListValidator(), restart=True,
+    )
+    nodeListSources = ConfigItem(
+        "ED2k", "NodeListSources", DEFAULT_NODE_LIST_SOURCES, StringListValidator(), restart=True,
+    )
+    shouldRefreshLists = ConfigItem("ED2k", "ShouldRefreshLists", True, BoolValidator())
     seedingRatioLimit = RangeConfigItem("ED2k", "SeedRatioLimitPercent", 0, RangeValidator(0, 10000))
     seedingTimeLimit = RangeConfigItem("ED2k", "SharingTimeLimitMinutes", 0, RangeValidator(0, 43200))
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
+        from app.view.components.bootstrap_list import BootstrapListCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from app.view.components.setting_cards import (
-            LineEditSettingCard, SelectFolderSettingCard, SpinBoxSettingCard,
-        )
+        from app.view.components.setting_cards import SelectFolderSettingCard, SpinBoxSettingCard
+        from .lists import nodeList, serverList
 
         group = CollapsibleSettingCardGroup(self.tr("eD2k 下载"), "ed2k", parent)
         installFolderCard = SelectFolderSettingCard(
@@ -46,15 +59,20 @@ class ED2kConfig(PackConfig):
         group.addSettingCards([
             installFolderCard,
             runtimeCard,
-            LineEditSettingCard(
-                FluentIcon.GLOBE, self.tr("服务器列表源"),
-                self.tr("eD2k server.met 文件的 URL，留空则不引导"),
-                self.serverMetSource, group,
+            SwitchSettingCard(
+                FluentIcon.SYNC, self.tr("自动更新订阅"),
+                self.tr("每天在后台更新一次服务器列表和 KAD 节点列表"),
+                self.shouldRefreshLists, group,
             ),
-            LineEditSettingCard(
-                FluentIcon.GLOBE, self.tr("DHT 节点源"),
-                self.tr("KAD nodes.dat 文件的 URL，留空则不引导"),
-                self.nodesDatSource, group,
+            BootstrapListCard(
+                FluentIcon.GLOBE, self.tr("服务器列表"), serverList,
+                self.serverListSources, self.submit, group,
+                probeNetworkText=self._probeServerText,
+            ),
+            BootstrapListCard(
+                FluentIcon.GLOBE, self.tr("KAD 节点列表"), nodeList,
+                self.nodeListSources, self.submit, group,
+                probeNetworkText=self._probeKadText,
             ),
             SwitchSettingCard(
                 FluentIcon.WIFI, self.tr("启用 DHT"),
@@ -84,6 +102,18 @@ class ED2kConfig(PackConfig):
         ])
         runtimeCard.refreshStatus()
         return [group]
+
+    async def _probeServerText(self) -> str:
+        from .session import ed2kSession
+        network = await ed2kSession.probeNetwork()
+        if network is None:
+            return ""
+        return self.tr("已连接服务器") if network.isServerConnected else self.tr("未连接服务器")
+
+    async def _probeKadText(self) -> str:
+        from .session import ed2kSession
+        network = await ed2kSession.probeNetwork()
+        return "" if network is None else self.tr("KAD 节点 {0}").format(network.kadNodes)
 
 
 ed2kConfig = ED2kConfig()

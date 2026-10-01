@@ -12,11 +12,18 @@ from app.config.paths import APP_DATA_DIR
 from app.models.task import TaskError
 from app.update import parseVersion
 from .config import ed2kConfig, ed2kRuntime
+from .lists import nodeList, serverList
 from .python_ed2k import Client, Settings, Transfer, TransferState
 from .python_ed2k.errors import ErrorCode, Error
 
 
 MIN_GOED2KD_VERSION = (0, 2, 4)
+
+
+@dataclass(frozen=True)
+class NetworkStatus:
+    isServerConnected: bool
+    kadNodes: int
 
 
 @dataclass(frozen=True)
@@ -158,6 +165,13 @@ class ED2kSession:
         finally:
             self._activeTransfers.discard(identity)
 
+    async def probeNetwork(self) -> NetworkStatus | None:
+        client = self._client
+        if client is None or not client.isRunning:
+            return None
+        snapshot = await client.snapshot()
+        return NetworkStatus(snapshot.serverConnected, snapshot.kadNodes)
+
     def remove(self, fileHash: str) -> None:
         if self.submit is None:
             return
@@ -194,8 +208,8 @@ class ED2kSession:
                 enableDht=ed2kConfig.enableDht.value,
                 enableUpnp=ed2kConfig.enableUpnp.value,
                 listenPort=ed2kConfig.listenPort.value,
-                serverMetSource=ed2kConfig.serverMetSource.value or None,
-                nodesDatSource=ed2kConfig.nodesDatSource.value or None,
+                serverMetSource=",".join(map(str, serverList.paths())),
+                nodesDatSource=",".join(map(str, nodeList.paths())),
             ))
             self._client = client
 

@@ -398,3 +398,34 @@ async def test_open_rejects_an_outdated_goed2kd(monkeypatch, version, isAccepted
         with pytest.raises(TaskError):
             await session._open()
         assert session._client is None
+
+
+def u32(value: int) -> bytes:
+    return value.to_bytes(4, "little")
+
+
+@pytest.mark.parametrize("data, count", [
+    (u32(2) + bytes(2 * 25), 2),
+    (u32(0) + u32(2) + u32(3) + bytes(3 * 34), 3),
+    (u32(0) + u32(3) + u32(1) + u32(4) + bytes(4 * 25), 4),
+])
+def test_count_nodes_reads_every_nodes_dat_version(data, count):
+    from ed2k_pack.lists import countNodes
+
+    assert countNodes(data) == count
+
+
+@pytest.mark.parametrize("data", [b"", u32(5) + bytes(25), u32(0) + u32(2) + u32(0)])
+def test_count_nodes_rejects_broken_files(data):
+    from ed2k_pack.lists import countNodes
+
+    with pytest.raises(ValueError):
+        countNodes(data)
+
+
+def test_count_servers_reads_the_header():
+    from ed2k_pack.lists import countServers
+
+    assert countServers(b"\xe0" + u32(13)) == 13
+    with pytest.raises(ValueError):
+        countServers(b"<html>")

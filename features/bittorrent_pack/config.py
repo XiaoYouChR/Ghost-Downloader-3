@@ -10,11 +10,12 @@ from app.config.cfg import (
 )
 from app.models.pack import PackConfig
 
-from .web_tracker.schema import (
-    DEFAULT_WEB_TRACKER_SOURCES,
-    SourceCacheSerializer,
-    SourceCacheValidator,
-)
+DEFAULT_TRACKER_LIST_SOURCES = [
+    "https://trackerslist.com/best.txt",
+    "https://cdn.jsdelivr.net/gh/XIU2/TrackersListCollection/best.txt",
+    "https://ngosang.github.io/trackerslist/trackers_best.txt",
+    "https://newtrackon.com/api/stable",
+]
 
 
 class StringListValidator:
@@ -46,10 +47,7 @@ class BitTorrentConfig(PackConfig):
     associateFileTypes = ConfigItem("BitTorrent", "AssociateFileTypes", False, BoolValidator())
     associateUriSchemes = ConfigItem("BitTorrent", "AssociateUriSchemes", False, BoolValidator())
     webTrackerSources = ConfigItem(
-        "BitTorrent", "WebTrackerSources", DEFAULT_WEB_TRACKER_SOURCES, StringListValidator(),
-    )
-    webTrackerSourceCache = ConfigItem(
-        "BitTorrent", "WebTrackerSourceCache", {}, SourceCacheValidator(), SourceCacheSerializer(),
+        "BitTorrent", "WebTrackerSources", DEFAULT_TRACKER_LIST_SOURCES, StringListValidator(),
     )
     webTrackerCustomList = ConfigItem("BitTorrent", "WebTrackerCustomList", "")
 
@@ -58,7 +56,8 @@ class BitTorrentConfig(PackConfig):
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, RangeSettingCard, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SpinBoxSettingCard
-        from .web_tracker.card import WebTrackerCard
+        from app.view.components.bootstrap_list import BootstrapListCard
+        from .trackers import trackerList
 
         btGroup = CollapsibleSettingCardGroup(self.tr("BitTorrent 下载"), "bittorrent", parent)
 
@@ -90,16 +89,23 @@ class BitTorrentConfig(PackConfig):
                 self.tr("允许通过 DHT 网络发现 peers"), self.enableDht, btGroup),
             SwitchSettingCard(FluentIcon.HOME, self.tr("启用 LSD"),
                 self.tr("在局域网中广播并发现同一 torrent 的 peers"), self.enableLsd, btGroup),
-            SwitchSettingCard(FluentIcon.LINK, self.tr("启用 Web Tracker"),
-                self.tr("把配置好的额外 Trackers 合并到新建 BT 任务中"),
+            SwitchSettingCard(FluentIcon.LINK, self.tr("附加 Tracker 列表"),
+                self.tr("把 Tracker 列表合并到新建的 BT 任务中"),
                 self.enableWebTrackers, btGroup),
-            SwitchSettingCard(FluentIcon.SYNC, self.tr("新建任务时刷新 Web Tracker"),
-                self.tr("创建新的 BT 任务时先从源地址拉取最新 Tracker"),
+            SwitchSettingCard(FluentIcon.SYNC, self.tr("自动更新订阅"),
+                self.tr("每天在后台更新一次 Tracker 列表"),
                 self.autoRefreshWebTrackers, btGroup),
-            WebTrackerCard(self.submit, btGroup),
+            BootstrapListCard(FluentIcon.GLOBE, self.tr("Tracker 列表"), trackerList,
+                self.webTrackerSources, self.submit, btGroup,
+                customItem=self.webTrackerCustomList, probeNetworkText=self._probeDhtText),
         ]
         btGroup.addSettingCards(cards)
         return [btGroup]
+
+    async def _probeDhtText(self) -> str:
+        from .session import btSession
+        nodes = await btSession.probeDhtNodes()
+        return "" if nodes is None else self.tr("DHT 节点 {0}").format(nodes)
 
 
 bittorrentConfig = BitTorrentConfig()

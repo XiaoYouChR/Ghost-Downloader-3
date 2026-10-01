@@ -35,15 +35,32 @@ def taskFields(task) -> dict:
     }
 
 
-def setWebTrackerSources(sources: str):
+async def trackerListState() -> dict:
+    from dataclasses import asdict
+    from .config import bittorrentConfig
+    from .session import btSession
+    from .trackers import trackerList
+
+    return {
+        "sources": list(bittorrentConfig.webTrackerSources.value),
+        "defaults": list(bittorrentConfig.webTrackerSources.defaultValue),
+        "custom": bittorrentConfig.webTrackerCustomList.value,
+        "statuses": [asdict(status) for status in trackerList.statuses()],
+        "isRefreshing": trackerList.isRefreshing,
+        "dhtNodes": await btSession.probeDhtNodes(),
+    }
+
+
+def setTrackerList(sources: str, custom: str):
     from app.config.cfg import cfg
     from .config import bittorrentConfig
 
-    urls = list(dict.fromkeys(u.strip() for u in sources.split("\n") if u.strip()))
-    cfg.set(bittorrentConfig.webTrackerSources, urls)
+    cfg.set(bittorrentConfig.webTrackerSources, list(dict.fromkeys(sources.split())))
+    cfg.set(bittorrentConfig.webTrackerCustomList, custom)
 
 
-async def refreshWebTrackers():
-    from .web_tracker.service import trackerService
+async def refreshTrackerList() -> dict:
+    from .trackers import trackerList
 
-    await trackerService.refresh()
+    await trackerList.refresh()
+    return await trackerListState()

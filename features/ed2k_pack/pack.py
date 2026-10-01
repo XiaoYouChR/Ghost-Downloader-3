@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+
 from app.models.pack import FeaturePack, TaskParser, UriScheme
 from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, ed2kRuntime
+from .lists import nodeList, serverList
 from .session import parseEd2kLink
 from .task import ED2kTask, ED2kTaskStep
 
@@ -51,6 +54,10 @@ class ED2kPack(FeaturePack):
     async def activate(self):
         from .session import ed2kSession
         ed2kSession.submit = self.submit
+        if ed2kConfig.shouldRefreshLists.value:
+            for bootstrapList in (serverList, nodeList):
+                if bootstrapList.isStale():
+                    asyncio.ensure_future(bootstrapList.refresh())
 
     async def deactivate(self):
         from .session import ed2kSession
