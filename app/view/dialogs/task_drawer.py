@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from math import ceil
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import (
-    QEasingCurve, QFileInfo, QParallelAnimationGroup, QPoint, QPointF, QPropertyAnimation, QSize, Qt, QTimer,
+    QEasingCurve, QFileInfo, QParallelAnimationGroup, QPoint, QPointF, QPropertyAnimation, Qt, QTimer,
 )
-from PySide6.QtGui import QColor, QPainter, QTextLayout, QTextOption
+from PySide6.QtGui import QColor, QFont, QTextOption
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QDialog, QFileIconProvider, QGraphicsOpacityEffect, QHBoxLayout,
-    QHeaderView, QTableWidgetItem, QVBoxLayout, QWidget,
+    QAbstractItemView, QApplication, QDialog, QFileIconProvider, QFrame, QGraphicsOpacityEffect, QHBoxLayout,
+    QHeaderView, QSizePolicy, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
     CaptionLabel, FluentIcon, ImageLabel, InfoBar, InfoBarIcon, InfoBarPosition, LineEdit, ProgressBar, ScrollArea,
@@ -17,6 +18,7 @@ from qfluentwidgets import (
     TransparentToolButton, isDarkTheme, setFont,
 )
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+from qfluentwidgets.components.widgets.menu import TextEditMenu
 
 from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
@@ -55,62 +57,45 @@ def toCaptionStyle(label: CaptionLabel) -> None:
     label.setTextColor(QColor(96, 96, 96), QColor(206, 206, 206))
 
 
-class WrapLabel(QWidget):
+class SelectableText(QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._text = ""
+        self.setReadOnly(True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setWordWrapMode(QTextOption.WrapMode.WrapAnywhere)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setStyleSheet(f"background: transparent; color: {'white' if isDarkTheme() else 'black'}")
+        self.document().setDocumentMargin(0)
+        self.document().documentLayout().documentSizeChanged.connect(
+            lambda size: self.setFixedHeight(ceil(size.height())))
         setFont(self, 14)
-        sizePolicy = self.sizePolicy()
-        sizePolicy.setHeightForWidth(True)
-        self.setSizePolicy(sizePolicy)
 
     def text(self) -> str:
-        return self._text
+        return self.toPlainText()
 
     def setText(self, text: str) -> None:
-        if text == self._text:
+        if text != self.toPlainText():
+            self.setPlainText(text)
+
+    def contextMenuEvent(self, e) -> None:
+        TextEditMenu(self).exec(e.globalPos())
+
+    def focusOutEvent(self, e) -> None:
+        super().focusOutEvent(e)
+        if e.reason() in (Qt.FocusReason.ActiveWindowFocusReason, Qt.FocusReason.PopupFocusReason):
             return
-        self._text = text
-        self.updateGeometry()
-        self.update()
-
-    def _buildLayout(self, width: int) -> QTextLayout:
-        layout = QTextLayout(self._text, self.font())
-        option = QTextOption()
-        option.setWrapMode(QTextOption.WrapMode.WrapAnywhere)
-        layout.setTextOption(option)
-        layout.beginLayout()
-        y = 0.0
-        while (line := layout.createLine()).isValid():
-            line.setLineWidth(width)
-            line.setPosition(QPointF(0, y))
-            y += line.height()
-        layout.endLayout()
-        return layout
-
-    def hasHeightForWidth(self) -> bool:
-        return True
-
-    def heightForWidth(self, width: int) -> int:
-        return int(self._buildLayout(max(width, 1)).boundingRect().height()) + 1
-
-    def sizeHint(self) -> QSize:
-        return QSize(self.fontMetrics().horizontalAdvance(self._text), self.heightForWidth(self.width()))
-
-    def minimumSizeHint(self) -> QSize:
-        return QSize(0, self.fontMetrics().height())
-
-    def paintEvent(self, e) -> None:
-        painter = QPainter(self)
-        painter.setPen(QColor(255, 255, 255) if isDarkTheme() else QColor(0, 0, 0))
-        self._buildLayout(self.width()).draw(painter, QPointF(0, 0))
+        cursor = self.textCursor()
+        cursor.clearSelection()
+        self.setTextCursor(cursor)
 
 
 class InfoRow(QWidget):
     def __init__(self, caption: str, parent=None):
         super().__init__(parent)
         self.captionLabel = CaptionLabel(caption, self)
-        self.valueLabel = WrapLabel(self)
+        self.valueText = SelectableText(self)
         self.buttonLayout = QHBoxLayout()
         self._initWidget()
         self._initLayout()
@@ -123,12 +108,12 @@ class InfoRow(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
         layout.addWidget(self.captionLabel, 0, Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(self.valueLabel, 1)
+        layout.addWidget(self.valueText, 1)
         layout.addLayout(self.buttonLayout)
         self.buttonLayout.setSpacing(2)
 
     def setValue(self, text: str) -> None:
-        self.valueLabel.setText(text)
+        self.valueText.setText(text)
 
     def addButton(self, icon, tooltip: str, onClick) -> None:
         button = TransparentToolButton(icon, self)
@@ -140,7 +125,7 @@ class InfoRow(QWidget):
 
     def addCopyButton(self) -> None:
         self.addButton(FluentIcon.COPY, self.tr("复制"),
-                       lambda: QApplication.clipboard().setText(self.valueLabel.text()))
+                       lambda: QApplication.clipboard().setText(self.valueText.text()))
 
 
 class DetailCard(QWidget):
@@ -169,20 +154,19 @@ class HeaderCard(QWidget):
         super().__init__(parent)
         self._task = task
         self.iconLabel = ImageLabel(self)
-        self.nameLabel = SubtitleLabel(task.name, self)
+        self.nameText = SelectableText(self)
         self.statusLabel = CaptionLabel(self)
         self.progressBar = ProgressBar(self)
         self._initWidget()
         self._initLayout()
 
     def _initWidget(self) -> None:
-        self.nameLabel.setWordWrap(True)
-        self.nameLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        setFont(self.nameText, 20, QFont.Weight.DemiBold)
 
     def _initLayout(self) -> None:
         textLayout = QVBoxLayout()
         textLayout.setSpacing(4)
-        textLayout.addWidget(self.nameLabel)
+        textLayout.addWidget(self.nameText)
         textLayout.addWidget(self.statusLabel)
         textLayout.addWidget(self.progressBar)
 
@@ -194,7 +178,7 @@ class HeaderCard(QWidget):
 
     def refresh(self) -> None:
         task = self._task
-        self.nameLabel.setText(task.name)
+        self.nameText.setText(task.name)
         self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(task.outputPath)).pixmap(48, 48))
         self.iconLabel.setFixedSize(48, 48)
         progress, speed, received = task.currentSnapshot()
@@ -460,6 +444,7 @@ class TaskDrawer(MaskDialogBase):
         self.setMaskColor(QColor(0, 0, 0, 128) if isDarkTheme() else QColor(0, 0, 0, 102))
         self.setShadowEffect(64, (0, 0), QColor(0, 0, 0, 61))
         self._hBoxLayout.removeWidget(self.widget)
+        self.widget.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         background = "rgb(41, 41, 41)" if isDarkTheme() else "rgb(255, 255, 255)"
         self.widget.setStyleSheet(f"#centerWidget {{ background-color: {background}; border: none; }}")
         self.scrollArea.setWidget(self.scrollWidget)

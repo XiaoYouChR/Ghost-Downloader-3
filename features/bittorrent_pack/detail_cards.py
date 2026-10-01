@@ -60,7 +60,7 @@ class TorrentCard(DetailCard):
         self.piecesRow.setValue(f"{meta.pieceCount} × {toReadableSize(meta.pieceSize)}"
                                 + (self.tr("（私有）") if meta.isPrivate else "") if meta else "")
         for row in (self.hashV1Row, self.hashV2Row, self.commentRow, self.creatorRow, self.createdRow, self.piecesRow):
-            row.setVisible(bool(row.valueLabel.text()))
+            row.setVisible(bool(row.valueText.text()))
         self._setSwarm(None)
 
     def _initLayout(self) -> None:
