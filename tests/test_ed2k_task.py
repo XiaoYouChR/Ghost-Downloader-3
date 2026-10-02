@@ -1003,7 +1003,8 @@ class FakeNetwork:
 async def test_server_text_explains_how_to_get_a_high_id(useKelpie, network, text):
     useKelpie().onNetwork(network)
 
-    assert await ed2kConfig._probeServerText() == text
+    template, params = await ed2kConfig._probeServerText()
+    assert template.format_map(params) == text
 
 
 @pytest.mark.parametrize("isKadEnabled, network, text", [
@@ -1017,4 +1018,5 @@ async def test_kad_text_says_when_kad_is_off(useKelpie, monkeypatch, isKadEnable
     monkeypatch.setattr(ed2kConfig.enableKad, "value", isKadEnabled)
     useKelpie().onNetwork(network)
 
-    assert await ed2kConfig._probeKadText() == text
+    template, params = await ed2kConfig._probeKadText()
+    assert template.format_map(params) == text
