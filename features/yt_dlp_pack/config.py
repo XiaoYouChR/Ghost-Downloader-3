@@ -4,6 +4,7 @@ import ast
 import platform
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.config.cfg import BoolValidator, ConfigItem, FolderValidator
 from app.i18n import N
@@ -13,9 +14,12 @@ from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
 from app.models.task import TaskError
-from app.install import installArchive
+from app.install import installArchive, installFile
 from app.sources import Repo, fetchLatestRelease, fetchPypiFile, fetchPypiReleases, fetchReleaseAsset
 from app.update import parseVersion
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
 COOKIE_DOMAIN = ".youtube.com"
@@ -212,9 +216,14 @@ class YouTubeRuntime(BinaryRuntime):
         if not IS_ANDROID:
             qjsTag = (await fetchLatestRelease(QJS_REPO)).version
             qjsPath = folder / ("qjs.exe" if sys.platform == "win32" else "qjs")
-            await fetchReleaseAsset(QJS_REPO, qjsTag, _qjsAssetName(), qjsPath)
-            if sys.platform != "win32":
-                qjsPath.chmod(qjsPath.stat().st_mode | 0o755)
+            downloadPath = qjsPath.with_name(f"{qjsPath.name}.download")
+            try:
+                await fetchReleaseAsset(QJS_REPO, qjsTag, _qjsAssetName(), downloadPath)
+                if sys.platform != "win32":
+                    downloadPath.chmod(downloadPath.stat().st_mode | 0o755)
+                installFile(downloadPath, qjsPath)
+            finally:
+                downloadPath.unlink(missing_ok=True)
 
         _, wheelUrl = await fetchNightlyWheel()
         archive = folder / "yt_dlp.whl"
