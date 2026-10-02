@@ -10,7 +10,7 @@
 .idea/
 
 # 忽略python缓存文件
-*/__pycache__
+__pycache__/
 *.py[cod]
 
 # 忽略日志文件
