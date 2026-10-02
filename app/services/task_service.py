@@ -390,7 +390,7 @@ class TaskService:
         return work.progress if work else None
 
     def startChecksum(self, task: Task, algorithm: str) -> None:
-        from app.models.checksum import toChecksum
+        from app.checksum import toChecksum
         work = ChecksumWork()
         self._checksums[task.taskId] = work
         work.workId = self._coroutineRunner.submit(

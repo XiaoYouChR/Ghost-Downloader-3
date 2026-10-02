@@ -17,7 +17,7 @@ from qfluentwidgets import (
 
 from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
-from app.models.checksum import COMMON_ALGORITHMS, toAlgorithms
+from app.checksum import ALGORITHMS, COMMON_ALGORITHMS
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.platform.filesystem import isExisting, isFolder
@@ -391,10 +391,9 @@ class TaskCard(CardWidget):
         if isFolder(self._task.outputPath) or not isExisting(self._task.outputPath):
             self._setStatus(self.tr("文件不存在，无法校验"))
             return
-        algorithms = toAlgorithms()
         menu = RoundMenu(parent=self)
         moreMenu = RoundMenu(self.tr("更多"), self)
-        for algorithm in algorithms:
+        for algorithm in ALGORITHMS:
             action = Action(algorithm.upper(), self)
             action.setCheckable(True)
             action.setChecked(algorithm in self._task.checksums)

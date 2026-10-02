@@ -1,6 +1,6 @@
 """Checksum 的计算与 TaskService 生命周期。
 
-Seam: toChecksum（真实临时文件）；TaskService.startChecksum/cancelChecksum（S7 stub runner）
+Seam: toChecksum（真实临时文件）；parseChecksum/matchChecksum（纯函数）；TaskService.startChecksum/cancelChecksum（S7 stub runner）
 """
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import hashlib
 
 import pytest
 
-from app.models.checksum import toAlgorithms, toChecksum
+from app.checksum import ALGORITHMS, matchChecksum, parseChecksum, toChecksum
 from app.models.task import Task, TaskStatus
 from tests.test_task_service import makeTask, service, platform, speedMeter  # noqa: F401
 
 
-@pytest.mark.parametrize("algorithm", toAlgorithms())
+@pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_every_listed_algorithm_matches_hashlib(tmp_path, algorithm):
     path = tmp_path / "blob.bin"
     path.write_bytes(bytes(range(256)) * 64)
@@ -26,7 +26,7 @@ def test_every_listed_algorithm_matches_hashlib(tmp_path, algorithm):
 
 
 def test_progress_reaches_100_for_multi_chunk_file(tmp_path, monkeypatch):
-    monkeypatch.setattr("app.models.checksum.CHUNK_SIZE", 1000)
+    monkeypatch.setattr("app.checksum.CHUNK_SIZE", 1000)
     path = tmp_path / "blob.bin"
     path.write_bytes(b"x" * 2500)
     progress: list[int] = []
@@ -116,16 +116,17 @@ class TestChecksumLifecycle:
 
 class TestMatchChecksum:
 
-    def test_match_ignores_case_and_surrounding_spaces(self, qapp):
-        from app.view.dialogs.task_drawer import matchChecksum
-        task = makeTask()
-        task.checksums = {"md5": "aa11", "sha256": "bb22"}
+    def test_match_ignores_case_and_surrounding_spaces(self):
+        assert matchChecksum({"md5": "aa11", "sha256": "bb22"}, "  BB22\n") == "sha256"
 
-        assert matchChecksum(task, "  BB22\n") == "sha256"
+    def test_mismatch_gives_none(self):
+        assert matchChecksum({"md5": "aa11"}, "cc33") is None
 
-    def test_mismatch_gives_none(self, qapp):
-        from app.view.dialogs.task_drawer import matchChecksum
-        task = makeTask()
-        task.checksums = {"md5": "aa11"}
 
-        assert matchChecksum(task, "cc33") is None
+class TestParseChecksum:
+
+    def test_sha256sum_line_gives_lowercase_hex(self):
+        assert parseChecksum("AB12  ffmpeg.tar.gz\n") == "ab12"
+
+    def test_blank_text_gives_empty(self):
+        assert parseChecksum("  \n") == ""

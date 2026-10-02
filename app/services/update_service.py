@@ -16,10 +16,10 @@ from typing import TYPE_CHECKING
 from app.signal import Signal
 from loguru import logger
 
+from app.checksum import parseChecksum, toChecksum
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, FEATURES_DIR, EXECUTABLE_DIR
 from app.platform.android import IS_ANDROID
-from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
 from app.models.task import TaskError, toTaskError
 from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
@@ -219,7 +219,7 @@ class UpdateService:
             await fetchReleaseAsset(APP_REPO, tag, patch["file"], outputPath,
                                     onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
-            if sha and not matchChecksum(outputPath, sha):
+            if sha and await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(sha):
                 outputPath.unlink(missing_ok=True)
                 self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
                 return
@@ -238,7 +238,7 @@ class UpdateService:
         await fetchReleaseAsset(APP_REPO, tag, full["file"], archivePath,
                                 onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
-        if sha and not matchChecksum(archivePath, sha):
+        if sha and await toChecksum(archivePath, "sha256", lambda _: None) != parseChecksum(sha):
             archivePath.unlink(missing_ok=True)
             self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
             return
@@ -266,7 +266,7 @@ class UpdateService:
                            onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))
 
         expectedSha = packData.get("sha256", "")
-        if expectedSha and not matchChecksum(outputPath, expectedSha):
+        if expectedSha and await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(expectedSha):
             outputPath.unlink(missing_ok=True)
             self._emit(packId, UpdateState.FAILED, error=TaskError("校验失败"))
             return

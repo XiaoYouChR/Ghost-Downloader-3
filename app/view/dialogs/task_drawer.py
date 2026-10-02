@@ -19,6 +19,7 @@ from qfluentwidgets import (
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 from qfluentwidgets.components.widgets.menu import TextEditMenu
 
+from app.checksum import matchChecksum
 from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
 from app.i18n import toLocalizedError
@@ -44,11 +45,6 @@ def toBezierCurve(x1: float, y1: float, x2: float, y2: float) -> QEasingCurve:
 
 def toTimeText(timestamp: int) -> str:
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
-
-
-def matchChecksum(task: Task, expected: str) -> str | None:
-    expected = expected.strip().lower()
-    return next((algorithm for algorithm, value in task.checksums.items() if value == expected), None)
 
 
 def toCaptionStyle(label: CaptionLabel) -> None:
@@ -296,7 +292,7 @@ class ChecksumCard(DetailCard):
 
     def _refreshMatch(self) -> None:
         expected = self.expectedEdit.text()
-        algorithm = matchChecksum(self._task, expected)
+        algorithm = matchChecksum(self._task.checksums, expected)
         self.expectedEdit.setError(bool(expected.strip()) and algorithm is None)
         if algorithm:
             self.expectedEdit.setCustomFocusedBorderColor(*MATCH_COLORS)

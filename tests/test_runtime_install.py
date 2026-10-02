@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import io
 import shutil
 import sys
@@ -11,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from app.install import deleteInstalled, installArchive, installFile, matchSha256
+from app.install import deleteInstalled, installArchive, installFile
 from app.models.pack import BinaryRuntime, VersionInfo
 from app.models.task import TaskError
 from app.services.coroutine_runner import CoroutineRunner
@@ -179,16 +178,6 @@ async def test_tar_replaces_a_locked_file_and_keeps_its_mode(tmp_path, lockRunni
     assert (tmp_path / "ffmpeg").read_bytes() == b"new"
     assert (tmp_path / "ffmpeg").stat().st_mode & 0o777 == 0o750
     assert sorted(p.name for p in tmp_path.iterdir() if not p.name.endswith(".old")) == ["ffmpeg"]
-
-
-@pytest.mark.parametrize("digestOf, expected", [(b"payload", True), (b"other", False)])
-async def test_match_sha256(tmp_path, digestOf, expected):
-    file = tmp_path / "ffmpeg.tar.gz"
-    file.write_bytes(b"payload")
-    sha256File = tmp_path / "ffmpeg.tar.gz.sha256"
-    sha256File.write_text(f"{hashlib.sha256(digestOf).hexdigest().upper()}  ffmpeg.tar.gz\n")
-
-    assert await matchSha256(file, sha256File) is expected
 
 
 class FakeRuntime(BinaryRuntime):

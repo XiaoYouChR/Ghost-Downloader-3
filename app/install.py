@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import glob
 import shutil
 import tarfile
@@ -78,11 +77,3 @@ async def installArchive(archive: Path, folder: Path, root: str = "", subtree: s
         await asyncio.to_thread(install)
     finally:
         deletePath(archive)
-
-
-async def matchSha256(file: Path, sha256File: Path) -> bool:
-    text = sha256File.read_text(encoding="utf-8", errors="ignore").strip()
-    expected = text.split()[0].lower() if text else ""
-    with file.open("rb") as source:
-        actual = (await asyncio.to_thread(hashlib.file_digest, source, "sha256")).hexdigest()
-    return expected == actual

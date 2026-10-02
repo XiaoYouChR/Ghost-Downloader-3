@@ -14,7 +14,8 @@ from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import deletePath, findExecutable
 from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
-from app.install import installArchive, matchSha256
+from app.checksum import parseChecksum, toChecksum
+from app.install import installArchive
 
 
 FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-FFmpeg"})
@@ -124,7 +125,8 @@ class FFmpegRuntime(BinaryRuntime):
         sha256File = folder / f"{asset}.sha256"
         await fetchReleaseAsset(FFMPEG_REPO, tag, asset, archive, onProgress)
         await fetchReleaseAsset(FFMPEG_REPO, tag, sha256File.name, sha256File)
-        isMatched = await matchSha256(archive, sha256File)
+        isMatched = (parseChecksum(sha256File.read_text(encoding="utf-8", errors="ignore"))
+                     == await toChecksum(archive, "sha256", lambda _: None))
         deletePath(sha256File)
         if not isMatched:
             deletePath(archive)
