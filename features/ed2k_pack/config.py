@@ -142,29 +142,29 @@ class ED2kConfig(PackConfig):
         runtimeCard.refreshStatus()
         return [group]
 
-    async def _probeServerText(self) -> str:
+    async def _probeServerText(self) -> tuple[str, dict]:
         from .session import ed2kSession
         network = ed2kSession.network
         if network is None:
-            return self.tr("未运行")
+            return N("BootstrapList", "未运行"), {}
         if not network.isServerConnected:
-            return self.tr("未连接服务器")
+            return N("BootstrapList", "未连接服务器"), {}
         if network.isHighId:
-            return self.tr("已连接服务器（HighID）")
+            return N("BootstrapList", "已连接服务器（HighID）"), {}
         if network.isBehindCarrierNat:
-            return self.tr("已连接服务器（LowID，运营商 NAT，无法获得 HighID）")
-        return self.tr("已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）")
+            return N("BootstrapList", "已连接服务器（LowID，运营商 NAT，无法获得 HighID）"), {}
+        return N("BootstrapList", "已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）"), {}
 
-    async def _probeKadText(self) -> str:
+    async def _probeKadText(self) -> tuple[str, dict]:
         if not self.enableKad.value:
-            return self.tr("KAD 已关闭")
+            return N("BootstrapList", "KAD 已关闭"), {}
         from .session import ed2kSession
         network = ed2kSession.network
         if network is None:
-            return self.tr("未运行")
+            return N("BootstrapList", "未运行"), {}
         if network.isKadFirewalled:
-            return self.tr("KAD 节点 {0}（处于防火墙后）").format(network.kadNodes)
-        return self.tr("KAD 节点 {0}").format(network.kadNodes)
+            return N("BootstrapList", "KAD 节点 {nodes}（处于防火墙后）"), {"nodes": network.kadNodes}
+        return N("BootstrapList", "KAD 节点 {nodes}"), {"nodes": network.kadNodes}
 
 
 ed2kConfig = ED2kConfig()

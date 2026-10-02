@@ -68,7 +68,7 @@ class BootstrapListCard(SettingCard):
         parent=None,
         *,
         customItem: ConfigItem | None = None,
-        probeNetworkText: Callable[[], Awaitable[str]] | None = None,
+        probeNetworkText: Callable[[], Awaitable[tuple[str, dict]]] | None = None,
     ):
         super().__init__(icon, title, "", parent)
         self._list = bootstrapList
@@ -130,8 +130,9 @@ class BootstrapListCard(SettingCard):
         if self._probeNetworkText is not None:
             self._submit(self._probeNetworkText(), done=self._onNetworkProbed, owner=self)
 
-    def _onNetworkProbed(self, text: str):
-        self._networkText = text
+    def _onNetworkProbed(self, probed: tuple[str, dict]):
+        text, params = probed
+        self._networkText = tr(text).format_map(params)
         self._refreshContent()
 
     def _startRefresh(self):

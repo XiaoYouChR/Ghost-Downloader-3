@@ -8,6 +8,7 @@ from app.config.cfg import (
     RangeConfigItem,
     RangeValidator,
 )
+from app.i18n import N
 from app.models.pack import PackConfig
 
 DEFAULT_TRACKER_LIST_SOURCES = [
@@ -102,10 +103,10 @@ class BitTorrentConfig(PackConfig):
         btGroup.addSettingCards(cards)
         return [btGroup]
 
-    async def _probeDhtText(self) -> str:
+    async def _probeDhtText(self) -> tuple[str, dict]:
         from .session import btSession
         nodes = await btSession.probeDhtNodes()
-        return "" if nodes is None else self.tr("DHT 节点 {0}").format(nodes)
+        return ("", {}) if nodes is None else (N("BootstrapList", "DHT 节点 {nodes}"), {"nodes": nodes})
 
 
 bittorrentConfig = BitTorrentConfig()
