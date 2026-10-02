@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from math import ceil
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import (
@@ -69,7 +68,7 @@ class SelectableText(QTextEdit):
         self.setStyleSheet(f"background: transparent; color: {'white' if isDarkTheme() else 'black'}")
         self.document().setDocumentMargin(0)
         self.document().documentLayout().documentSizeChanged.connect(
-            lambda size: self.setFixedHeight(ceil(size.height())))
+            lambda size: self.setFixedHeight(size.toSize().height()))
         setFont(self, 14)
 
     def text(self) -> str:
