@@ -266,7 +266,7 @@ class FeaturePack:
     packId: str = ""
     manifest: PackManifest | None = None
     config: PackConfig | None = None
-    proxySchemes: set[str] | None = None
+    proxySchemes: frozenset[str] | None = None
 
     parsers: list[type[TaskParser]] = []
     parse: Callable[[TaskOptions], Awaitable[Task]] | None = None

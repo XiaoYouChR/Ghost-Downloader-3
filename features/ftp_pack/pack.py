@@ -11,6 +11,7 @@ from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toPosixPath, toSafeFilename
 from .task import (
     FTP_DEFAULT_PORT,
+    PROXY_SCHEMES,
     FtpConnectionInfo,
     FtpFile,
     FtpStep,
@@ -122,7 +123,7 @@ class FtpParser(TaskParser):
 class FtpPack(FeaturePack):
     packId = "ftp"
     config = ftpConfig
-    proxySchemes = {"socks4", "socks5"}
+    proxySchemes = PROXY_SCHEMES
     parsers = [FtpParser]
 
     def taskCardClass(self, task: Task) -> type | None:

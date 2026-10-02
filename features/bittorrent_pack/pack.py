@@ -14,7 +14,7 @@ from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 
 from .config import bittorrentConfig
-from .session import btSession
+from .session import PROXY_SCHEMES, btSession
 from .task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
 from .trackers import mergedTrackers, trackerList
 
@@ -102,7 +102,7 @@ class TorrentParser(TaskParser):
 class BitTorrentPack(FeaturePack):
     packId = "bt"
     config = bittorrentConfig
-    proxySchemes = {"socks5"}
+    proxySchemes = PROXY_SCHEMES
     parsers = [TorrentParser]
 
     def taskCardClass(self, task: Task) -> type | None:

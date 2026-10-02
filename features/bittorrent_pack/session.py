@@ -39,7 +39,7 @@ ALERT_MASK = (
 
 DHT_STATE_FILE = "bt_dht_state.dat"
 
-SOCKS5_SCHEMES = {"socks5", "socks5h"}
+PROXY_SCHEMES = frozenset({"socks5", "socks5h"})
 
 _ERROR_ALERTS = (
     lt.file_error_alert,
@@ -581,11 +581,11 @@ class BTSession:
         return int(cfg.speedLimitation.value)
 
     def _proxySettings(self) -> dict:
-        url = proxy()
+        url = proxy(PROXY_SCHEMES)
         if not url:
             return {}
         parsed = urlsplit(url)
-        if parsed.scheme.lower() not in SOCKS5_SCHEMES or not parsed.hostname or not parsed.port:
+        if not parsed.hostname or not parsed.port:
             return {}
         hasCredentials = bool(parsed.username or parsed.password)
         return {

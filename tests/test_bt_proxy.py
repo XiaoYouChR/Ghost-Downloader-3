@@ -1,22 +1,26 @@
 """BT 只走 SOCKS5 代理：libtorrent 只有 SOCKS5 能转发 UDP（tracker、DHT）。
 
-Seam: BTSession._proxySettings（替换全局 proxy()）
+Seam: BTSession._proxySettings（设置全局代理）
 """
 from __future__ import annotations
 
 import libtorrent as lt
 import pytest
 
-from features.bittorrent_pack import session as sessionModule
+from app.config.cfg import cfg
 from features.bittorrent_pack.session import BTSession
 
 
 @pytest.fixture()
-def settingsFor(monkeypatch):
+def settingsFor():
+    saved = cfg.proxyServer.value
+
     def build(url):
-        monkeypatch.setattr(sessionModule, "proxy", lambda: url)
+        cfg.proxyServer.value = url or "Off"
+        assert cfg.proxyServer.value == (url or "Off")
         return BTSession()._proxySettings()
-    return build
+    yield build
+    cfg.proxyServer.value = saved
 
 
 @pytest.mark.parametrize("url", [None, "http://127.0.0.1:7890", "https://127.0.0.1:7890", "socks4://127.0.0.1:1080"])
@@ -33,7 +37,7 @@ def test_socks5_carries_all_bt_traffic(settingsFor):
 
 
 def test_socks5h_with_credentials_uses_password_auth(settingsFor):
-    settings = settingsFor("socks5h://user:pass@proxy.example:1080")
+    settings = settingsFor("socks5h://user:pass@proxy.local:1080")
 
     assert settings["proxy_type"] == lt.proxy_type_t.socks5_pw
     assert (settings["proxy_username"], settings["proxy_password"]) == ("user", "pass")

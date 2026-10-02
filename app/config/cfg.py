@@ -4,6 +4,7 @@ import json
 import sys
 from enum import Enum
 from re import compile
+from urllib.parse import urlsplit
 from urllib.request import getproxies
 
 from app.config.paths import DOWNLOAD_DIR
@@ -359,16 +360,15 @@ def toProxyUrl(url: str) -> str:
     return url
 
 
-def proxy() -> str | None:
+def proxy(schemes: frozenset[str] | None = None) -> str | None:
     if cfg.proxyServer.value == "Off":
         return None
     if cfg.proxyServer.value == "Auto":
         system = getproxies()
-        if not system:
-            return None
-        for key in ("http", "https", "socks"):
-            if url := system.get(key):
-                return toProxyUrl(url)
+        url = next((toProxyUrl(system[key]) for key in ("http", "https", "socks") if system.get(key)), None)
+    else:
+        server = str(cfg.proxyServer.value).strip()
+        url = toProxyUrl(server) if server else None
+    if url and schemes is not None and urlsplit(url).scheme not in schemes:
         return None
-    server = str(cfg.proxyServer.value).strip()
-    return toProxyUrl(server) if server else None
+    return url
