@@ -1,8 +1,9 @@
 from .errors import Error, ErrorCode
 from .kelpie import Kelpie, Run
-from .models import Link, Network, Progress, Settings, Source
+from .models import PROXY_SCHEMES, Link, Network, Progress, Settings, Source
 
 __all__ = [
+    "PROXY_SCHEMES",
     "Error",
     "ErrorCode",
     "Kelpie",

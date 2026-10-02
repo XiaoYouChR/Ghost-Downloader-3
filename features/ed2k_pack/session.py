@@ -6,11 +6,11 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import aclosing, asynccontextmanager
 from typing import TYPE_CHECKING
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, proxy
 from app.models.task import TaskError
 from app.signal import Signal
 from .config import ed2kConfig, kelpieRuntime
-from .kelpie import Error, ErrorCode, Kelpie, Link, Network, Progress, Run, Settings
+from .kelpie import PROXY_SCHEMES, Error, ErrorCode, Kelpie, Link, Network, Progress, Run, Settings
 from .lists import nodeList, serverList
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 LIVE_SETTINGS = (
     cfg.isSpeedLimitEnabled, cfg.speedLimitation,
-    ed2kConfig.uploadRateLimit, ed2kConfig.enableKad, ed2kConfig.enableUpnp,
+    ed2kConfig.uploadRateLimit, ed2kConfig.enableKad, ed2kConfig.enableUpnp, cfg.proxyServer,
 )
 
 
@@ -33,6 +33,7 @@ def buildSettings() -> Settings:
         nodeLists=tuple(nodeList.paths()),
         downloadRateLimit=cfg.speedLimitation.value if cfg.isSpeedLimitEnabled.value else 0,
         uploadRateLimit=ed2kConfig.uploadRateLimit.value,
+        proxy=proxy(PROXY_SCHEMES) or "",
     )
 
 

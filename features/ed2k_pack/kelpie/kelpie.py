@@ -13,7 +13,7 @@ from .errors import Error, ErrorCode
 from .models import Link, Network, Progress, Settings, Source
 
 PROTOCOL = 1
-MIN_ENGINE_VERSION = (0, 1, 0)
+MIN_ENGINE_VERSION = (0, 2, 0)
 CLOSE_TIMEOUT = 15
 HANDSHAKE_TIMEOUT = 30
 STREAM_LIMIT = 4 * 1024 * 1024
@@ -291,6 +291,7 @@ def toMessageFields(settings: Settings) -> dict[str, Any]:
             "serverLists": [str(path) for path in settings.serverLists],
             "nodeLists": [str(path) for path in settings.nodeLists],
             "traceFile": str(settings.traceFile) if settings.traceFile is not None else "",
+            "proxy": settings.proxy,
         },
         "rateLimits": {"download": settings.downloadRateLimit, "upload": settings.uploadRateLimit},
     }
@@ -366,6 +367,7 @@ def parseNetwork(message: dict[str, Any]) -> Network:
         isKadFirewalled=message["isKadFirewalled"],
         kadNodes=message["kadNodes"],
         isBehindCarrierNat=message["isBehindCarrierNat"],
+        proxyIssue=message["proxyIssue"],
     )
 
 
