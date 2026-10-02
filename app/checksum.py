@@ -29,5 +29,5 @@ def parseChecksum(text: str) -> str:
 
 
 def matchChecksum(checksums: dict[str, str], expected: str) -> str | None:
-    expected = expected.strip().lower()
+    expected = parseChecksum(expected)
     return next((algorithm for algorithm, value in checksums.items() if value == expected), None)

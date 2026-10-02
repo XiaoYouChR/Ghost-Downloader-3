@@ -119,6 +119,9 @@ class TestMatchChecksum:
     def test_match_ignores_case_and_surrounding_spaces(self):
         assert matchChecksum({"md5": "aa11", "sha256": "bb22"}, "  BB22\n") == "sha256"
 
+    def test_sha256sum_line_matches(self):
+        assert matchChecksum({"sha256": "bb22"}, "BB22  ubuntu.iso\n") == "sha256"
+
     def test_mismatch_gives_none(self):
         assert matchChecksum({"md5": "aa11"}, "cc33") is None
 
