@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.config.cfg import (
-    BoolValidator, ConfigItem, RangeConfigItem, RangeValidator, StringListValidator,
+    BoolValidator, ConfigItem, RangeConfigItem, RangeValidator, StringListValidator, proxy,
 )
 from app.i18n import N
 
@@ -16,6 +16,8 @@ from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.install import installFile
 from app.platform.filesystem import findExecutable
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
+
+from .kelpie import PROXY_SCHEMES
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
@@ -147,10 +149,14 @@ class ED2kConfig(PackConfig):
         network = ed2kSession.network
         if network is None:
             return N("BootstrapList", "未运行"), {}
+        if network.proxyIssue == "unreachable":
+            return N("BootstrapList", "无法连接代理"), {}
         if not network.isServerConnected:
             return N("BootstrapList", "未连接服务器"), {}
         if network.isHighId:
             return N("BootstrapList", "已连接服务器（HighID）"), {}
+        if proxy(PROXY_SCHEMES):
+            return N("BootstrapList", "已连接服务器（LowID，经代理连接时无法获得 HighID）"), {}
         if network.isBehindCarrierNat:
             return N("BootstrapList", "已连接服务器（LowID，运营商 NAT，无法获得 HighID）"), {}
         return N("BootstrapList", "已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）"), {}
@@ -162,6 +168,10 @@ class ED2kConfig(PackConfig):
         network = ed2kSession.network
         if network is None:
             return N("BootstrapList", "未运行"), {}
+        if network.proxyIssue == "unreachable":
+            return N("BootstrapList", "无法连接代理"), {}
+        if network.proxyIssue == "noUdp":
+            return N("BootstrapList", "代理不转发 UDP，KAD 无法使用"), {}
         if network.isKadFirewalled:
             return N("BootstrapList", "KAD 节点 {nodes}（处于防火墙后）"), {"nodes": network.kadNodes}
         return N("BootstrapList", "KAD 节点 {nodes}"), {"nodes": network.kadNodes}

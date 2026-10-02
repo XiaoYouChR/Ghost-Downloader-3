@@ -768,9 +768,30 @@ def test_settings_follow_the_global_speed_limit(monkeypatch, isEnabled, expected
     assert (settings.downloadRateLimit, settings.uploadRateLimit) == (expected, 1024)
 
 
+async def test_server_text_says_a_proxy_rules_out_a_high_id(useKelpie, monkeypatch):
+    monkeypatch.setattr(cfg.proxyServer, "value", "socks5://127.0.0.1:7890")
+    useKelpie().onNetwork(FakeNetwork())
+
+    template, params = await ed2kConfig._probeServerText()
+    assert template.format_map(params) == "已连接服务器（LowID，经代理连接时无法获得 HighID）"
+
+
+@pytest.mark.parametrize(("server", "expected"), [
+    ("Off", ""),
+    ("socks5://127.0.0.1:7890", "socks5://127.0.0.1:7890"),
+    ("socks5h://user:pass@proxy.example.com:1080", "socks5h://user:pass@proxy.example.com:1080"),
+    ("socks4://127.0.0.1:1080", ""),
+    ("http://127.0.0.1:7890", ""),
+])
+def test_settings_pass_only_a_socks5_proxy_to_kelpie(monkeypatch, server, expected):
+    monkeypatch.setattr(cfg.proxyServer, "value", server)
+
+    assert buildSettings().proxy == expected
+
+
 @pytest.mark.parametrize("item", [
     cfg.isSpeedLimitEnabled, cfg.speedLimitation,
-    ed2kConfig.uploadRateLimit, ed2kConfig.enableKad, ed2kConfig.enableUpnp,
+    ed2kConfig.uploadRateLimit, ed2kConfig.enableKad, ed2kConfig.enableUpnp, cfg.proxyServer,
 ])
 async def test_live_setting_change_updates_kelpie(useKelpie, item):
     kelpie = useKelpie()
@@ -992,12 +1013,14 @@ class FakeNetwork:
     isKadFirewalled: bool = False
     kadNodes: int = 0
     isBehindCarrierNat: bool = False
+    proxyIssue: str = ""
 
 
 @pytest.mark.parametrize("network, text", [
     (FakeNetwork(isHighId=True), "已连接服务器（HighID）"),
     (FakeNetwork(), "已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）"),
     (FakeNetwork(isBehindCarrierNat=True), "已连接服务器（LowID，运营商 NAT，无法获得 HighID）"),
+    (FakeNetwork(isServerConnected=False, proxyIssue="unreachable"), "无法连接代理"),
     (None, "未运行"),
 ])
 async def test_server_text_explains_how_to_get_a_high_id(useKelpie, network, text):
@@ -1013,6 +1036,8 @@ async def test_server_text_explains_how_to_get_a_high_id(useKelpie, network, tex
     (True, FakeNetwork(kadNodes=12), "KAD 节点 12"),
     (True, FakeNetwork(kadNodes=12, isKadFirewalled=True), "KAD 节点 12（处于防火墙后）"),
     (True, None, "未运行"),
+    (True, FakeNetwork(proxyIssue="unreachable"), "无法连接代理"),
+    (True, FakeNetwork(proxyIssue="noUdp"), "代理不转发 UDP，KAD 无法使用"),
 ])
 async def test_kad_text_says_when_kad_is_off(useKelpie, monkeypatch, isKadEnabled, network, text):
     monkeypatch.setattr(ed2kConfig.enableKad, "value", isKadEnabled)

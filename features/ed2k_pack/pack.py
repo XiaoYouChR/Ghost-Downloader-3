@@ -9,7 +9,7 @@ from app.models.pack import FeaturePack, TaskParser, UriScheme
 from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, kelpieRuntime
-from .kelpie import Error, Kelpie, Link, Network
+from .kelpie import PROXY_SCHEMES, Error, Kelpie, Link, Network
 from .lists import nodeList, serverList
 from .session import buildSettings, ed2kSession, toTaskError
 from .task import ED2kTask, ED2kTaskStep
@@ -48,6 +48,7 @@ class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
     parsers = [ED2kParser]
+    proxySchemes = PROXY_SCHEMES
 
     def __init__(self, services):
         super().__init__(services)

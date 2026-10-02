@@ -10,6 +10,8 @@ SIZE_PATTERN = re.compile(r"[0-9]+")
 SCHEME = "ed2k://"
 # eMule's MAX_EMULE_FILE_SIZE
 MAX_SIZE = 256 << 30
+# The engine refuses any other Proxy; ADR-0006 says why.
+PROXY_SCHEMES = frozenset({"socks5", "socks5h"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +57,8 @@ class Settings:
     traceFile: Path | None = None
     downloadRateLimit: int = 0
     uploadRateLimit: int = 0
+    # A URL with a scheme in PROXY_SCHEMES, or "" to go direct.
+    proxy: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,3 +95,4 @@ class Network:
     isKadFirewalled: bool
     kadNodes: int
     isBehindCarrierNat: bool
+    proxyIssue: str
