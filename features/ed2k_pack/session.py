@@ -1,258 +1,182 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
-from dataclasses import dataclass
-from pathlib import Path
-from urllib.parse import quote, unquote
+import math
+from collections.abc import AsyncIterator, Callable
+from contextlib import aclosing, asynccontextmanager
+from typing import TYPE_CHECKING
 
-from loguru import logger
-
-from app.config.paths import APP_DATA_DIR
+from app.config.cfg import cfg
 from app.models.task import TaskError
-from app.update import parseVersion
-from .config import ed2kConfig, ed2kRuntime
+from app.signal import Signal
+from .config import ed2kConfig, kelpieRuntime
+from .kelpie import Error, ErrorCode, Kelpie, Link, Network, Progress, Run, Settings
 from .lists import nodeList, serverList
-from .python_ed2k import Client, Settings, Transfer, TransferState
-from .python_ed2k.errors import ErrorCode, Error
+
+if TYPE_CHECKING:
+    from app.services.coroutine_runner import CoroutineRunner
+    from .task import ED2kTask
 
 
-MIN_GOED2KD_VERSION = (0, 2, 4)
+LIVE_SETTINGS = (
+    cfg.isSpeedLimitEnabled, cfg.speedLimitation,
+    ed2kConfig.uploadRateLimit, ed2kConfig.enableKad, ed2kConfig.enableUpnp,
+)
 
 
-@dataclass(frozen=True)
-class NetworkStatus:
-    isServerConnected: bool
-    kadNodes: int
-
-
-@dataclass(frozen=True)
-class RunResult:
-    fileHash: str
-    name: str
-    fileSize: int
+def buildSettings() -> Settings:
+    return Settings(
+        port=ed2kConfig.listenPort.value,
+        enableKad=ed2kConfig.enableKad.value,
+        enableUpnp=ed2kConfig.enableUpnp.value,
+        serverLists=tuple(serverList.paths()),
+        nodeLists=tuple(nodeList.paths()),
+        downloadRateLimit=cfg.speedLimitation.value if cfg.isSpeedLimitEnabled.value else 0,
+        uploadRateLimit=ed2kConfig.uploadRateLimit.value,
+    )
 
 
 class ED2kSession:
+    networkChanged = Signal()
+    runsChanged = Signal()
 
     def __init__(self):
-        self._client: Client | None = None
-        self._openLock = asyncio.Lock()
-        self._activeTransfers: set[tuple[str, int]] = set()
-        self.submit = None
+        self._runner: CoroutineRunner | None = None
+        self._kelpie: Kelpie | None = None
+        self._progresses: dict[str, Progress] = {}
+        self._network: Network | None = None
+        self._openRunCount = 0
+        self._stopping: asyncio.Task[None] | None = None
+        self._removals: set[asyncio.Task] = set()
 
-    def hasActiveTransfer(self, fileHash: str, fileSize: int) -> bool:
-        return toTransferKey(fileHash, fileSize) in self._activeTransfers
-
-    async def run(
-        self,
-        link: str,
-        fileHash: str,
-        name: str,
-        outputFolder: Path,
-        uploadedBytes: int,
-        onStarted: Callable[[RunResult], None],
-        onProgress: Callable[[Transfer, int], None],
+    def open(
+        self, coroutineRunner: CoroutineRunner, createKelpie: Callable[[Callable[[Network | None], None]], Kelpie],
     ) -> None:
-        _, linkSize, linkHash = parseEd2kLink(link)
-        identity = toTransferKey(linkHash, linkSize)
-        if identity in self._activeTransfers:
-            raise TaskError("该 eD2k 链接已在下载中")
-        self._activeTransfers.add(identity)
+        self._runner = coroutineRunner
+        self._kelpie = createKelpie(self._onNetwork)
+        for item in LIVE_SETTINGS:
+            item.valueChanged.connect(self._onSettingsChanged)
 
-        try:
-            await self._open()
-            client = self._client
+    @property
+    def network(self) -> Network | None:
+        return self._network
 
-            wasCancelled = False
-            if fileHash:
-                transfer = await client.resume(fileHash)
-            else:
-                try:
-                    addTask = asyncio.create_task(
-                        client.addLink(buildEd2kLink(link, name), outputFolder)
-                    )
-                    try:
-                        transfer = await asyncio.shield(addTask)
-                    except asyncio.CancelledError:
-                        wasCancelled = True
-                        transfer = await asyncio.wait_for(addTask, timeout=15)
-                except Error as e:
-                    if e.code == ErrorCode.TRANSFER_EXISTS:
-                        transfer = await client.resume(linkHash.upper())
-                    elif e.code == ErrorCode.OUTPUT_EXISTS:
-                        raise TaskError("goed2kd 版本过旧，请在设置中更新") from e
-                    elif wasCancelled:
-                        raise asyncio.CancelledError() from e
-                    else:
-                        raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
+    @property
+    def isIdle(self) -> bool:
+        return self._openRunCount == 0
 
-            fileHash = transfer.hash
-            onStarted(RunResult(
-                    fileHash=fileHash,
-                name=transfer.name or name,
-                fileSize=transfer.size,
-            ))
-            if wasCancelled:
-                raise asyncio.CancelledError()
+    def progressOf(self, task: ED2kTask) -> Progress | None:
+        return self._progresses.get(task.taskId)
 
-            firstUpload = None
-            async for snapshot in client.snapshots():
-                for t in snapshot.transfers:
-                    if t.hash != fileHash:
-                        continue
-                    if firstUpload is None:
-                        firstUpload = t.upload
-                    onProgress(t, uploadedBytes + t.upload - firstUpload)
-                    if t.state == TransferState.FINISHED:
-                        await client.pause(fileHash)
-                        return
-                    break
+    def isActive(self, task: ED2kTask) -> bool:
+        return self._kelpie is not None and self._kelpie.isActive(Link.parse(task.url).hash)
+
+    @asynccontextmanager
+    async def run(self, task: ED2kTask, isSeed: bool) -> AsyncIterator[AsyncIterator[Progress]]:
+        if self._kelpie is None:
             raise asyncio.CancelledError()
-        except asyncio.CancelledError:
-            if fileHash and self._client is not None:
-                try:
-                    await self._client.pause(fileHash)
-                except Exception as e:
-                    logger.opt(exception=e).warning("暂停 eD2k 传输失败")
-            raise
-        finally:
-            self._activeTransfers.discard(identity)
-
-    async def runSeeding(
-        self,
-        link: str,
-        fileHash: str,
-        seedingTimeSeconds: int,
-        uploadedBytes: int,
-        isManual: bool,
-        onProgress: Callable[[Transfer, int, int], None],
-    ) -> None:
-        _, linkSize, linkHash = parseEd2kLink(link)
-        identity = toTransferKey(linkHash, linkSize)
-        if identity in self._activeTransfers:
-            raise TaskError("该 eD2k 链接已在下载中")
-        self._activeTransfers.add(identity)
-
+        if not kelpieRuntime.path():
+            raise TaskError("{name} 未安装，请在设置中安装", name=kelpieRuntime.name)
+        start = self._kelpie.runSeed if isSeed else self._kelpie.runDownload
+        self._openRunCount += 1
+        self._runner.post(self.runsChanged.emit)
         try:
-            await self._open()
-            client = self._client
-            await client.resume(fileHash)
-            loop = asyncio.get_running_loop()
-            seedingStart = loop.time() - seedingTimeSeconds
-            firstUpload = None
-            async for snapshot in client.snapshots():
-                for t in snapshot.transfers:
-                    if t.hash != fileHash:
-                        continue
-                    if firstUpload is None:
-                        firstUpload = t.upload
-                    elapsed = int(loop.time() - seedingStart)
-                    uploaded = uploadedBytes + t.upload - firstUpload
-                    onProgress(t, elapsed, uploaded)
-                    if not isManual and isSeedingLimitReached(elapsed, uploaded, t.size):
-                        await client.pause(fileHash)
-                        return
-                    break
-            raise asyncio.CancelledError()
-        except asyncio.CancelledError:
-            if self._client is not None:
-                try:
-                    await self._client.pause(fileHash)
-                except Exception as e:
-                    logger.opt(exception=e).warning("暂停 eD2k 做种失败")
-            raise
+            if self._stopping is not None:
+                await asyncio.shield(self._stopping)
+            async with start(Link.parse(task.url), task.outputFolder / task.name) as transfer:
+                async with aclosing(self._record(task.taskId, transfer)) as recorded:
+                    yield recorded
+        except Error as error:
+            raise toTaskError(error) from error
         finally:
-            self._activeTransfers.discard(identity)
+            self._progresses.pop(task.taskId, None)
+            self._openRunCount -= 1
+            self._runner.post(self.runsChanged.emit)
 
-    async def probeNetwork(self) -> NetworkStatus | None:
-        client = self._client
-        if client is None or not client.isRunning:
-            return None
-        snapshot = await client.snapshot()
-        return NetworkStatus(snapshot.serverConnected, snapshot.kadNodes)
-
-    def remove(self, fileHash: str) -> None:
-        if self.submit is None:
+    def delete(self, task: ED2kTask) -> None:
+        if not kelpieRuntime.path():
             return
-        self.submit(self._remove(fileHash))
+        kelpie = self._kelpie
+        hash = Link.parse(task.url).hash
 
-    async def _remove(self, fileHash: str) -> None:
-        await self._open()
+        async def remove():
+            removal = asyncio.current_task()
+            self._removals.add(removal)
+            try:
+                if self._stopping is not None:
+                    await asyncio.shield(self._stopping)
+                await kelpie.remove(hash)
+            finally:
+                self._removals.discard(removal)
+
+        self._runner.submit(remove())
+
+    async def stop(self) -> None:
+        if not self.isIdle or self._stopping is not None:
+            return
+        self._stopping = asyncio.ensure_future(self._kelpie.close())
         try:
-            await self._client.remove(fileHash, deleteFile=False)
-        except Error as e:
-            if e.code != ErrorCode.TRANSFER_NOT_FOUND:
-                raise
-
-    async def _open(self) -> None:
-        async with self._openLock:
-            if self._client is not None and self._client.isRunning:
-                return
-
-            # Dead client caches EngineExited; drop so the next attempt starts fresh.
-            self._client = None
-
-            path = ed2kRuntime.path()
-            if not path:
-                raise TaskError(
-                    "{name} 未安装，请在设置中安装", name=ed2kRuntime.name
-                )
-            version = parseVersion((await ed2kRuntime.probeVersion()).version)
-            if version and version < MIN_GOED2KD_VERSION:
-                raise TaskError(
-                    "{name} 版本过旧，请在设置中更新", name=ed2kRuntime.name
-                )
-            client = Client(Path(path), APP_DATA_DIR / "ed2k_data")
-            await client.start(Settings(
-                enableDht=ed2kConfig.enableDht.value,
-                enableUpnp=ed2kConfig.enableUpnp.value,
-                listenPort=ed2kConfig.listenPort.value,
-                serverMetSource=",".join(map(str, serverList.paths())),
-                nodesDatSource=",".join(map(str, nodeList.paths())),
-            ))
-            self._client = client
+            await self._stopping
+        finally:
+            self._stopping = None
 
     async def close(self) -> None:
-        async with self._openLock:
-            client = self._client
-            self._client = None
-            if client is not None:
-                await client.close()
+        kelpie, self._kelpie = self._kelpie, None
+        if kelpie is None:
+            return
+        for item in LIVE_SETTINGS:
+            item.valueChanged.disconnect(self._onSettingsChanged)
+        if self._removals:
+            await asyncio.wait(self._removals)
+        await kelpie.close()
+
+    async def _record(self, taskId: str, transfer: Run) -> AsyncIterator[Progress]:
+        async for progress in transfer:
+            self._progresses[taskId] = progress
+            yield progress
+
+    def _onNetwork(self, network: Network | None) -> None:
+        self._network = network
+        self._runner.post(self.networkChanged.emit)
+
+    def _onSettingsChanged(self, *_) -> None:
+        kelpie = self._kelpie
+
+        async def update():
+            kelpie.update()
+
+        self._runner.submit(update())
+        self.networkChanged.emit()
+
+
+def toHeldMinutes(progress: Progress | None, now: int) -> int | None:
+    if progress is None or progress.heldSources == 0 or progress.heldUntil <= now:
+        return None
+    remaining = progress.heldUntil - now
+    return 0 if remaining < 60_000 else math.ceil(remaining / 60_000)
+
+
+def toTaskError(error: Error) -> TaskError:
+    name = kelpieRuntime.name
+    match error.code:
+        case ErrorCode.INVALID_LINK:
+            return TaskError("不是有效的 eD2k 链接")
+        case ErrorCode.OUTPUT_EXISTS:
+            return TaskError("目标文件已被占用")
+        case ErrorCode.TRANSFER_BUSY:
+            return TaskError("该 eD2k 链接已在下载中")
+        case ErrorCode.DISK_FULL:
+            return TaskError("磁盘空间不足")
+        case ErrorCode.FILE_ERROR:
+            return TaskError("无法读写文件：{detail}", detail=error.message)
+        case ErrorCode.OUTDATED:
+            return TaskError("{name} 版本过旧，请在设置中更新", name=name)
+        case ErrorCode.START_FAILED:
+            return TaskError("{name} 启动失败：{detail}", name=name, detail=error.message)
+        case ErrorCode.ENGINE_EXITED:
+            return TaskError("{name} 意外退出：{detail}", name=name, detail=error.message)
+        case _:
+            return TaskError("ED2k 错误：{detail}", detail=error.message)
 
 
 ed2kSession = ED2kSession()
-
-
-def isSeedingLimitReached(elapsed: int, uploaded: int, size: int) -> bool:
-    ratioLimit = ed2kConfig.seedingRatioLimit.value
-    if ratioLimit > 0 and size > 0 and uploaded * 100 >= ratioLimit * size:
-        return True
-    timeLimit = ed2kConfig.seedingTimeLimit.value
-    return timeLimit > 0 and elapsed >= timeLimit * 60
-
-
-def toTransferKey(fileHash: str, fileSize: int) -> tuple[str, int]:
-    return fileHash.upper(), fileSize
-
-
-def parseEd2kLink(link: str) -> tuple[str, int, str]:
-    link = link.strip()
-    if not link.lower().startswith("ed2k://"):
-        raise ValueError("不是有效的 eD2k 链接")
-    parts = link.strip("/").split("|")
-    if len(parts) < 5 or parts[1].lower() != "file":
-        raise ValueError("不支持的 eD2k 链接格式")
-    name = unquote(parts[2])
-    try:
-        size = int(parts[3])
-    except ValueError:
-        size = 0
-    fileHash = parts[4] if len(parts) > 4 else ""
-    return name, size, fileHash
-
-
-def buildEd2kLink(link: str, name: str) -> str:
-    parts = link.strip().split("|")
-    parts[2] = quote(name, safe="")
-    return "|".join(parts)

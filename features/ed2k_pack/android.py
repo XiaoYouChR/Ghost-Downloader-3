@@ -1,57 +1,72 @@
 """Android View adapter for ED2kPack."""
+import time
+from dataclasses import asdict
+
+from app.config.cfg import cfg
 from app.i18n import N
+from .config import ed2kConfig
+from .lists import nodeList, serverList
+from .session import ed2kSession, toHeldMinutes
 
 UI_CLASS = "com.xychr.ghostdownloader.features.ed2k_pack.Ed2kUi"
 
 
+def init(pack) -> dict:
+    return {"network": ed2kSession.networkChanged, "isIdle": ed2kSession.runsChanged}
+
+
+def network() -> dict | None:
+    network = ed2kSession.network
+    return None if network is None else asdict(network)
+
+
+def isIdle() -> bool:
+    return ed2kSession.isIdle
+
+
+async def stop() -> None:
+    await ed2kSession.stop()
+
+
 def taskFields(task) -> dict:
-    active = task.activePeerCount
+    progress = ed2kSession.progressOf(task)
+    heldMinutes = toHeldMinutes(progress, int(time.time() * 1000))
+    uploadRate = progress.uploadRate if progress is not None else 0
     return {
         "progressMode": "hidden" if task.isSeeding else "determinate",
         "statusText": N("TaskState", "做种中") if task.isSeeding else "",
-        "secondarySpeed": task.uploadRate,
+        "secondarySpeed": uploadRate,
         "packFields": {
-            "peers": None if active is None else {
-                "active": active, "total": max(active, task.totalPeerCount),
-            },
+            "peers": None if progress is None else {"active": progress.activePeers, "total": progress.peers},
+            "held": None if heldMinutes is None else {"sources": progress.heldSources, "minutes": heldMinutes},
             "shareRatio": task.shareRatioPercent,
             "seedingSeconds": task.seedingTimeSeconds,
-            "uploadSpeed": task.uploadRate,
+            "uploadSpeed": uploadRate,
         },
     }
 
 
 def bootstrapListByName(name: str):
-    from .lists import nodeList, serverList
-
     return {"servers": serverList, "nodes": nodeList}[name]
 
 
 def sourcesItemByName(name: str):
-    from .config import ed2kConfig
-
     return {"servers": ed2kConfig.serverListSources, "nodes": ed2kConfig.nodeListSources}[name]
 
 
 async def bootstrapListState(name: str) -> dict:
-    from dataclasses import asdict
-    from .session import ed2kSession
-
     bootstrapList = bootstrapListByName(name)
-    network = await ed2kSession.probeNetwork()
+    sourcesItem = sourcesItemByName(name)
     return {
-        "sources": list(sourcesItemByName(name).value),
-        "defaults": list(sourcesItemByName(name).defaultValue),
+        "sources": list(sourcesItem.value),
+        "defaults": list(sourcesItem.defaultValue),
         "statuses": [asdict(status) for status in bootstrapList.statuses()],
+        "entryCount": bootstrapList.entryCount(),
         "isRefreshing": bootstrapList.isRefreshing,
-        "serverConnected": None if network is None else network.isServerConnected,
-        "kadNodes": None if network is None else network.kadNodes,
     }
 
 
 def setBootstrapListSources(name: str, sources: str):
-    from app.config.cfg import cfg
-
     cfg.set(sourcesItemByName(name), list(dict.fromkeys(sources.split())))
 
 

@@ -1,19 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 
-from app.models.task import Task, TaskError, TaskStep, TaskStatus
-from .python_ed2k import Transfer
+from app.models.task import Task, TaskStep, TaskStatus
+from .config import ed2kConfig
+from .session import ed2kSession
 
 
 @dataclass(kw_only=True, eq=False)
 class ED2kTask(Task):
     packId: str = "ed2k"
     canSeed = True
-    fileHash: str = ""
-    activePeerCount: int | None = None
-    totalPeerCount: int = 0
-    uploadRate: int = 0
     uploadedBytes: int = 0
     seedingTimeSeconds: int = 0
 
@@ -22,66 +20,42 @@ class ED2kTask(Task):
         return self.uploadedBytes / self.fileSize * 100 if self.fileSize > 0 else 0.0
 
     def reset(self) -> TaskStatus:
-        self.fileHash = ""
-        self.activePeerCount = None
-        self.totalPeerCount = 0
-        self.uploadRate = 0
+        ed2kSession.delete(self)
         self.uploadedBytes = 0
         self.seedingTimeSeconds = 0
         return super().reset()
 
     async def runSeeding(self, isManual: bool) -> None:
-        from .session import ed2kSession
+        loop = asyncio.get_running_loop()
+        seedingStart = loop.time() - self.seedingTimeSeconds
+        async with ed2kSession.run(self, isSeed=True) as progresses:
+            async for progress in progresses:
+                self.uploadedBytes = progress.uploaded
+                self.seedingTimeSeconds = int(loop.time() - seedingStart)
+                if not isManual and isSeedingLimitReached(self.seedingTimeSeconds, progress.uploaded, progress.size):
+                    return
 
-        def onProgress(t: Transfer, elapsed: int, uploaded: int):
-            self.uploadRate = t.uploadRate
-            self.uploadedBytes = uploaded
-            self.activePeerCount = t.activePeers
-            self.totalPeerCount = t.peers
-            self.seedingTimeSeconds = elapsed
-
-        try:
-            await ed2kSession.runSeeding(
-                self.url, self.fileHash, self.seedingTimeSeconds, self.uploadedBytes,
-                isManual, onProgress)
-        finally:
-            self.uploadRate = 0
-
-    def deleteFiles(self):
-        if self.fileHash:
-            from .session import ed2kSession
-            ed2kSession.remove(self.fileHash)
-        super().deleteFiles()
+    def deletePlaceholders(self) -> None:
+        ed2kSession.delete(self)
+        super().deletePlaceholders()
 
 
 @dataclass(kw_only=True)
 class ED2kTaskStep(TaskStep):
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        from .session import RunResult, ed2kSession
-
         task: ED2kTask = self.task
+        async with ed2kSession.run(task, isSeed=False) as progresses:
+            async for progress in progresses:
+                task.uploadedBytes = progress.uploaded
+                reportSpeed(max(0, progress.received - self.receivedBytes))
+                self.receivedBytes = progress.received
+                self.speed = progress.downloadRate
+                self.progress = min(99.9, progress.received / progress.size * 100)
 
-        def onStarted(result: RunResult):
-            if result.name != task.name:
-                raise TaskError("该文件已由另一个任务在下载")
-            task.fileHash = result.fileHash
-            if result.fileSize:
-                task.fileSize = result.fileSize
 
-        def onProgress(t: Transfer, uploaded: int):
-            task.uploadRate = t.uploadRate
-            task.uploadedBytes = uploaded
-            task.activePeerCount = t.activePeers
-            task.totalPeerCount = t.peers
-            self.receivedBytes = t.received
-            self.speed = t.downloadRate
-            reportSpeed(t.downloadRate)
-            if t.size > 0:
-                task.fileSize = t.size
-                self.progress = min(99.9, t.received / t.size * 100)
-
-        await ed2kSession.run(
-            task.url, task.fileHash, task.name, task.outputFolder, task.uploadedBytes,
-            onStarted=onStarted,
-            onProgress=onProgress,
-        )
+def isSeedingLimitReached(elapsed: int, uploaded: int, size: int) -> bool:
+    ratioLimit = ed2kConfig.seedingRatioLimit.value
+    if ratioLimit > 0 and size > 0 and uploaded * 100 >= ratioLimit * size:
+        return True
+    timeLimit = ed2kConfig.seedingTimeLimit.value
+    return timeLimit > 0 and elapsed >= timeLimit * 60
