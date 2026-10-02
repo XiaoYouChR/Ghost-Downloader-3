@@ -5,7 +5,6 @@ import io
 import json
 import struct
 import zipfile
-from pathlib import Path
 
 import pytest
 import websockets
@@ -14,8 +13,7 @@ from websockets.exceptions import ConnectionClosed
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.models.task import Task, TaskStatus
-from app.services import browser_service
-from app.services.browser_service import PROTOCOL_VERSION, BrowserService, PairRequest, installExtension
+from app.services.browser_service import PROTOCOL_VERSION, BrowserService, PairRequest
 from app.services.coroutine_runner import CoroutineRunner
 from app.services.port_listener import ListenStatus, PortListener
 from app.signal import BoundSignal, Signal
@@ -100,11 +98,11 @@ async def waitClosed(ws) -> None:
 
 @pytest.fixture
 async def browser(monkeypatch, tmp_path):
-    async for harness in startBrowser(monkeypatch, tmp_path, loadCrx=None):
+    async for harness in startBrowser(monkeypatch, tmp_path):
         yield harness
 
 
-async def startBrowser(monkeypatch, tmp_path, loadCrx):
+async def startBrowser(monkeypatch, tmp_path):
     monkeypatch.setattr(cfg, "set", lambda item, value, save=True: monkeypatch.setattr(item, "value", value))
     monkeypatch.setattr(cfg.browserExtensionPairToken, "value", TOKEN)
     monkeypatch.setattr(cfg.shouldDraftTakenDownload, "value", False)
@@ -120,7 +118,9 @@ async def startBrowser(monkeypatch, tmp_path, loadCrx):
             raise ValueError("unreachable")
         return Task(name="video.mp4", url=options.url, packId="http_pack", outputFolder=options.outputFolder)
 
-    service = BrowserService(runner, taskService, speedChanged, parse=parse, loadCrx=loadCrx)
+    service = BrowserService(runner, taskService, speedChanged, parse=parse,
+                             loadCrx=lambda: buildCrx({"manifest.json": "{}", "js/background.js": "run()"}),
+                             extensionFolder=tmp_path / "ext")
     service.taskDraftRequested.connect(drafted.extend)
     service.extensionUpdated.connect(lambda version: events.append(("extensionUpdated", version)))
     service.connectionChanged.connect(lambda: events.append("connectionChanged"))
@@ -245,7 +245,8 @@ class TestToken:
         monkeypatch.setattr(cfg.browserExtensionPairToken, "value", "")
         loop = asyncio.get_running_loop()
 
-        BrowserService(CoroutineRunner(loop.call_soon, loop=loop), FakeTaskService(), BoundSignal(), parse=None, loadCrx=None)
+        BrowserService(CoroutineRunner(loop.call_soon, loop=loop), FakeTaskService(), BoundSignal(), parse=None,
+                       loadCrx=None, extensionFolder=None)
 
         assert len(cfg.browserExtensionPairToken.value) >= 16
 
@@ -446,32 +447,21 @@ def buildCrx(files: dict[str, str]) -> bytes:
 
 
 class TestExtensionInstall:
-    async def test_crx_is_unpacked_into_folder(self, tmp_path):
-        folder = await installExtension(buildCrx({"manifest.json": "{}", "js/background.js": "run()"}), tmp_path / "ext")
+    async def test_crx_is_unpacked_into_the_extension_folder(self, browser, tmp_path):
+        folder = await browser.service.install()
 
+        assert folder == tmp_path / "ext"
         assert (folder / "manifest.json").read_text() == "{}"
         assert (folder / "js/background.js").read_text() == "run()"
 
-    async def test_outdated_development_extension_is_updated_and_reloaded(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(browser_service, "EXTENSION_UNPACK_DIR", tmp_path / "ext")
-        crx = buildCrx({"manifest.json": "{}"})
-        async for browser in startBrowser(monkeypatch, tmp_path, loadCrx=lambda: crx):
-            async with browser.connect() as ws:
-                await self.helloFromOldDevelopmentBuild(ws)
-                reload = await receive(ws, "reload")
-
-            assert reload == {"type": "reload"}
-            assert (tmp_path / "ext/manifest.json").exists()
-            assert ("extensionUpdated", LATEST_EXTENSION_VERSION) in browser.events
-
-    async def test_no_update_without_bundled_extension(self, browser):
+    async def test_outdated_development_extension_is_updated_and_reloaded(self, browser, tmp_path):
         async with browser.connect() as ws:
             await self.helloFromOldDevelopmentBuild(ws)
-            await ws.send(json.dumps({"type": "subscribe_tasks"}))
-            snapshot = await receive(ws)
+            reload = await receive(ws, "reload")
 
-        assert snapshot["type"] == "task_snapshot"
-        assert not any(isinstance(e, tuple) and e[0] == "extensionUpdated" for e in browser.events)
+        assert reload == {"type": "reload"}
+        assert (tmp_path / "ext/manifest.json").exists()
+        assert ("extensionUpdated", LATEST_EXTENSION_VERSION) in browser.events
 
     @staticmethod
     async def helloFromOldDevelopmentBuild(ws) -> None:

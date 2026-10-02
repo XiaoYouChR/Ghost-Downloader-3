@@ -32,6 +32,7 @@ def createEngine(application):
     from PySide6.QtCore import QFileSystemWatcher, QTimer
     from shiboken6 import isValid
     from app.engine import Engine
+    from app.config.paths import APP_DATA_DIR
     from app.platform.desktop import deleteRecoverably, loadCrx
     from app.services.coroutine_runner import CoroutineRunner
 
@@ -45,7 +46,8 @@ def createEngine(application):
         loop=new_event_loop(),
     )
     coroutineRunner.start()
-    return Engine(coroutineRunner, QFileSystemWatcher(), loadCrx, deleteRecoverably)
+    return Engine(coroutineRunner, QFileSystemWatcher(), loadCrx, APP_DATA_DIR / "browser_extension",
+                  deleteRecoverably)
 
 
 def deleteBackupDir():

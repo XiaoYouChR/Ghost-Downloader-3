@@ -13,7 +13,7 @@ from app.services.task_service import NameConflictChoice, TaskService
 
 
 class Engine:
-    def __init__(self, coroutineRunner, fileWatcher, loadCrx, deleteRecoverably) -> None:
+    def __init__(self, coroutineRunner, fileWatcher, loadCrx, extensionFolder, deleteRecoverably) -> None:
         self.coroutineRunner = coroutineRunner
         self.categoryService = CategoryService()
         self.speedMeter = SpeedMeter(coroutineRunner)
@@ -27,7 +27,7 @@ class Engine:
                                              self.runtimeStatusService)
 
         self.browserService = BrowserService(coroutineRunner, self.taskService, self.speedMeter.speedChanged,
-                                             self.featureService.parse, loadCrx)
+                                             self.featureService.parse, loadCrx, extensionFolder)
         self.browserListener = PortListener(coroutineRunner, self.browserService.handle,
                                             isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
         self.aria2RpcService = Aria2RpcService(coroutineRunner, self.featureService.parse, self.taskService.add)

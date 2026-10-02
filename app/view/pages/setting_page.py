@@ -448,11 +448,8 @@ class SettingPage(ScrollArea):
                         duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onChromiumInstallClicked(self) -> None:
-        from app.platform.desktop import loadCrx
-        from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
-
         self._coroutineRunner.submit(
-            installExtension(loadCrx(), EXTENSION_UNPACK_DIR),
+            self._browserService.install(),
             done=self._onExtensionExtractDone,
             failed=self._onExtensionExtractFailed,
         )

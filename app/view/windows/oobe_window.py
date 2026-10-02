@@ -23,10 +23,9 @@ from qfluentwidgets.common.style_sheet import updateStyleSheet
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
-from app.platform.desktop import loadCrx, openChromiumUrl, revealInFolder
+from app.platform.desktop import openChromiumUrl, revealInFolder
 from app.platform.file_association import registerUrlScheme, unregisterUrlScheme
 from app.platform.run_at_login import setRunAtLogin
-from app.services.browser_service import EXTENSION_UNPACK_DIR, installExtension
 from app.services.port_listener import ListenStatus
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
@@ -540,7 +539,7 @@ class BrowserExtensionPage(QWidget):
 
     def _onManualInstallClicked(self) -> None:
         self._coroutineRunner.submit(
-            installExtension(loadCrx(), EXTENSION_UNPACK_DIR),
+            self._browserService.install(),
             done=self._onExtensionExtracted,
             failed=self._onExtensionExtractFailed,
             owner=self,

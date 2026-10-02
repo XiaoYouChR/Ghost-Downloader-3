@@ -15,7 +15,6 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
-from app.config.paths import APP_DATA_DIR
 from app.platform.filesystem import isExisting
 from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
@@ -25,20 +24,6 @@ from app.models.task import MergeTaskOptions, PageTaskOptions
 
 if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions, ResourceTaskOptions
-
-EXTENSION_UNPACK_DIR = APP_DATA_DIR / "browser_extension"
-
-
-async def installExtension(crx: bytes, folder: Path) -> Path:
-    def install() -> Path:
-        headerSize = struct.unpack_from("<I", crx, 8)[0]
-        folder.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(BytesIO(crx[12 + headerSize:])) as zf:
-            zf.extractall(folder)
-        return folder
-
-    return await asyncio.to_thread(install)
-
 
 @dataclass
 class BrowserClientSession:
@@ -190,11 +175,12 @@ class BrowserService:
     taskDraftRequested = Signal(list)
     extensionUpdated = Signal(str)
 
-    def __init__(self, coroutineRunner, taskService, speedChanged, parse, loadCrx):
+    def __init__(self, coroutineRunner, taskService, speedChanged, parse, loadCrx, extensionFolder: Path):
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService
         self._parse = parse
         self._loadCrx = loadCrx
+        self._extensionFolder = extensionFolder
         self._sessions: dict[WebSocketStream, BrowserClientSession] = {}
         self._pairRequest: PairRequest | None = None
         self._pairSession: BrowserClientSession | None = None
@@ -207,6 +193,17 @@ class BrowserService:
                        taskService.seedingStarted, taskService.seedingStopped,
                        taskService.queueChanged, taskService.fileDisappeared, speedChanged):
             signal.connect(self._onTasksChanged)
+
+    async def install(self) -> Path:
+        def unpack() -> Path:
+            crx = self._loadCrx()
+            headerSize = struct.unpack_from("<I", crx, 8)[0]
+            self._extensionFolder.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(BytesIO(crx[12 + headerSize:])) as zf:
+                zf.extractall(self._extensionFolder)
+            return self._extensionFolder
+
+        return await asyncio.to_thread(unpack)
 
     @property
     def connectionSummary(self) -> tuple[str, str]:
@@ -437,13 +434,12 @@ class BrowserService:
             },
         })
 
-        if (self._loadCrx is not None
-                and session.installType == "development"
+        if (session.installType == "development"
                 and isNewer(session.extensionVersion, LATEST_EXTENSION_VERSION)
                 and not self._isUpdatingExtension):
             self._isUpdatingExtension = True
             self._coroutineRunner.submit(
-                installExtension(self._loadCrx(), EXTENSION_UNPACK_DIR),
+                self.install(),
                 done=self._onExtensionExtracted,
                 failed=self._onExtensionExtractFailed,
                 session=session,

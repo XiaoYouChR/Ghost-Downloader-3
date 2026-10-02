@@ -11,8 +11,14 @@ from tests.helpers import StubFlows
 
 
 class StubBrowserService:
-    def __init__(self, summary=("", "")):
+    def __init__(self, summary=("", ""), installed=None):
         self.connectionSummary = summary
+        self._installed = installed
+
+    async def install(self):
+        if isinstance(self._installed, Exception):
+            raise self._installed
+        return self._installed
 
     def regenerateToken(self):
         cfg.browserExtensionPairToken.value = "regenerated"
@@ -52,12 +58,26 @@ def test_status_tells_the_view_why_the_extension_cannot_connect(engine, state, s
     assert payload["error"] == (state.error.toDict() if state.error else None)
 
 
-def test_connected_status_carries_the_extension_version(engine):
+def test_connected_status_carries_the_extension_version_and_install_type(engine):
     engine._browserService = StubBrowserService(summary=("development", "2.2.0"))
 
     payload = json.loads(engine.browserExtension())
 
-    assert payload["extensionVersion"] == "2.2.0"
+    assert (payload["installType"], payload["extensionVersion"]) == ("development", "2.2.0")
+
+
+async def test_install_returns_the_unpacked_folder(engine, tmp_path):
+    engine._browserService = StubBrowserService(installed=tmp_path / "ext")
+
+    assert json.loads(await engine.installBrowserExtension()) == {"folder": str(tmp_path / "ext")}
+
+
+async def test_install_failure_comes_back_as_a_localizable_error(engine):
+    engine._browserService = StubBrowserService(installed=PermissionError("denied"))
+
+    payload = json.loads(await engine.installBrowserExtension())
+
+    assert payload["error"]["params"] == {"detail": "denied"}
 
 
 def test_emit_pushes_under_the_key_the_view_observes(engine):
