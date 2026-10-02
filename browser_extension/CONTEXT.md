@@ -9,10 +9,14 @@ Chromium / Firefox 浏览器扩展。捕获页面中的可下载资源，通过�
 ### 上游依赖
 
 **cat-catch**:
-嵌入的第三方开源扩展，提供三个能力面：
-DOM 媒体发现（addMedia 通道）、媒体播放控制（getVideoState 协议）、功能脚本库（recorder、webrtc 等）。
-MSE Probe 参照 cat-catch 重写为独立实现，只发信号不缓存数据。
+嵌入的第三方开源扩展，提供两个能力面：媒体播放控制，以及按 tab 手动开启的页面工具（录制、缓存捕捉、Deep Search 等）。
+不参与 Download Button 的默认路径；MSE Probe 参照 cat-catch 重写为独立实现，只发信号不缓存数据。
 _Avoid_: 把 cat-catch 功能与自研 Page Media 系统混为一谈
+
+**Deep Search**:
+cat-catch 的页面工具：检查页面脚本处理的数据，找出不以媒体请求形式出现的媒体 URL 和 HLS 密钥。
+发现的媒体作为 Resource 进入 Resource Cache。
+_Avoid_: 深度嗅探
 
 ### 桌面连接
 
@@ -38,7 +42,7 @@ connected、unauthorized、disconnected。Popup UI 据此显示连接指示器�
 ### 资源捕获
 
 **Resource Bridge**:
-资源捕获器。从网络请求和页面脚本（cat-catch）两个途径捕获可下载资源，
+资源捕获器。从网络请求捕获可下载资源（开启 Deep Search 时也接收页面脚本发现的资源），
 缓存到 Resource Cache 后转换为桌面可理解的 Task Options。
 _Avoid_: resource manager
 
@@ -53,8 +57,9 @@ _Avoid_: resource store、resource map
 Content script 侧的媒体检测和归因系统。检测页面中正在播放的媒体，将网络 URL
 归因到具体的 video 元素，为用户提供下载按钮。由四个协作层组成：
 MSE Probe → Attribution Engine → Download Button，Resolution Strategy 提供按站点的解析逻辑。
-同一个 URL 可能同时存在于 Resource Cache（作为 Resource）和 Attribution Engine
-（作为 Video Session 的归因 URL）。Popup 资源面板走 Resource 路径，Download Button 走 Page Media 路径。
+Page Media 与 Resource 不是两条独立路径：Download Button 以本 tab 的 Resource 作为兜底候选，
+发送时复用 Resource 的请求头；Page Media 也为 Resource 补充时长、尺寸和封面。
+Download Button 失败时，Popup 资源面板是用户手动挑选的兜底。
 
 **MSE Probe**:
 观察浏览器媒体流内部机制，将事件通过 Attribution Signal 报告给 Attribution Engine。
