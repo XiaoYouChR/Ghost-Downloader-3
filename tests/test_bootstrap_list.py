@@ -7,11 +7,11 @@ import pytest
 from app.bootstrap_list import BootstrapList
 
 
-def countLines(data: bytes) -> int:
+def parseLines(data: bytes) -> list[str]:
     lines = data.decode().split()
     if not lines:
         raise ValueError("empty list")
-    return len(lines)
+    return lines
 
 
 def makeList(tmp_path, sources: list[str], bodies: dict[str, bytes], fetched: list[str] | None = None):
@@ -26,7 +26,7 @@ def makeList(tmp_path, sources: list[str], bodies: dict[str, bytes], fetched: li
             raise OSError("unreachable")
         return bodies[url]
 
-    return BootstrapList(tmp_path / "cache", snapshot, lambda: sources, countLines, fetch)
+    return BootstrapList(tmp_path / "cache", snapshot, lambda: sources, parseLines, fetch)
 
 
 def test_snapshot_is_used_until_anything_is_cached(tmp_path):
@@ -105,3 +105,15 @@ async def test_failed_refresh_is_not_retried_until_the_next_day(tmp_path):
     await bootstrapList.refresh()
 
     assert not bootstrapList.isStale()
+
+
+async def test_entries_shared_by_subscriptions_are_counted_once(tmp_path):
+    bootstrapList = makeList(tmp_path, ["https://a", "https://b"], {
+        "https://a": b"udp://a:1\nudp://shared:1\nudp://shared:1\n",
+        "https://b": b"udp://b:1\nudp://shared:1\n",
+    })
+
+    await bootstrapList.refresh()
+
+    assert [s.count for s in bootstrapList.statuses()] == [2, 2]
+    assert bootstrapList.entryCount() == 3

@@ -46,6 +46,7 @@ async def trackerListState() -> dict:
         "defaults": list(bittorrentConfig.webTrackerSources.defaultValue),
         "custom": bittorrentConfig.webTrackerCustomList.value,
         "statuses": [asdict(status) for status in trackerList.statuses()],
+        "entryCount": trackerList.entryCount(),
         "isRefreshing": trackerList.isRefreshing,
         "dhtNodes": await btSession.probeDhtNodes(),
     }
