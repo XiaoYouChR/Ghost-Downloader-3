@@ -83,6 +83,19 @@ _Avoid_: pending task、unconfirmed task
 浏览器扩展捕获的可下载物。由 Browser Service 转换为 Task Options 进入任务创建流程。
 _Avoid_: 与泛义"资源"混淆
 
+**Scheme Association**:
+让系统把某个链接协议（magnet、ed2k、ftp 等）交给 Ghost Downloader 打开。协议由 FeaturePack 声明。
+Windows、Linux 在运行时注册、用户可开关；macOS、Android 在安装时声明、常驻，只进入"打开方式"候选，不抢默认程序。
+_Avoid_: URL 注册、协议注册
+
+**File Association**:
+让系统把某类本地文件（.torrent、.m3u8 等）交给 Ghost Downloader 打开，进入任务创建流程。文件类型由 FeaturePack 声明；平台差异同 Scheme Association。
+_Avoid_: 文件注册
+
+**Wake Link**:
+浏览器扩展拉起 Ghost Downloader 的 `ghostdownloader://` 链接。launch 打开界面；wake 只让 Browser Service、Aria2 RPC Service 和任务运行起来，不打断用户。
+_Avoid_: URL Scheme（会和 Scheme Association 混淆）
+
 ### 任务执行
 
 **Task Run**:
@@ -123,6 +136,14 @@ _Avoid_: 密钥、密码、token
 
 ### 应用角色
 
+**Engine**:
+与平台无关的全部服务及其启动、关闭顺序。桌面和 Android 共用同一个 Engine，平台差异在构造时注入。
+_Avoid_: core、backend；不指 Android 的 Bridge
+
+**Bridge**:
+Android 上 Kotlin 与 Engine 之间的适配层：把 JVM 调用送进 Engine，把状态推给界面。
+_Avoid_: Engine（Bridge 不拥有服务）
+
 **Task Service**:
 拥有用户可见任务工作流的唯一公共入口。
 _Avoid_: 直接操作 Task 的状态转换
@@ -145,6 +166,18 @@ _Avoid_: 运行时目录、安装路径
 **Browser Service**:
 浏览器扩展的协议适配器：接收扩展消息，翻译为 Task Service 动词，返回结果。
 
+**Aria2 RPC Service**:
+aria2 JSON-RPC 的最小兼容协议适配器，只为接收网页和脚本投递的任务。行为以 aria2 原始实现为准。
+_Avoid_: aria2 服务（Ghost 不运行 aria2）；监听端口的是它的 Port Listener
+
+**Port Listener**:
+在本机回环地址的端口上按配置监听、并拥有全部连接的应用 actor。Browser Service 和 Aria2 RPC Service 各有一个。
+_Avoid_: Loopback Server、socket server
+
+**Listen State**:
+Port Listener 是否在监听的唯一事实：关闭、启动中、监听中、失败（附原因）。
+_Avoid_: 用绑定端口或任务句柄推断是否在监听
+
 **Clipboard Listener**:
 剪贴板监听器。监控剪贴板变化，过滤出 URL 后发出通知。
 
@@ -155,8 +188,12 @@ _Avoid_: group、tag、type
 **Coroutine Runner**:
 运行异步工作并桥接回 UI 线程的应用 actor。
 
+**Download Speed Limit**:
+全局下载速率上限，由是否启用和记住的速率组成。关掉启用时速率仍保留。
+_Avoid_: 上传限速、某个协议自己的最大速度
+
 **Speed Meter**:
-全局下载速度监视器与限速门控。
+全局下载速度监视器。按 Download Speed Limit 决定任务是否等待。
 
 **Signal Bus**:
 进程级事件总线。只承载跨模块的应用级事件，不承载任务或业务信号。
@@ -239,13 +276,6 @@ _Avoid_: source of truth 单独当术语；不叫 primary / 主镜像
 客户端竞速拉取更新元数据和资产的一个托管端点。当前集合是 github 与 gitcode。
 _Avoid_: Mirror、CDN、channel
 
-## Example dialogue
-
-> **Dev:** "用户按暂停时，我们删除 Task 吗？"
-> **Domain expert:** "不。Pause 停止 Task Run。Task Record 和 Task Files 保留。"
-
-> **Dev:** "用户按重新下载时，我们创建新 Task 吗？"
-> **Domain expert:** "不。Redownload 停止 Task Run、删除 Task Files、重置同一个 Task、启动新的 Task Run。"
 ### GitHub 加速
 
 **Proxy Site**:
@@ -256,3 +286,10 @@ _Avoid_: Mirror、Source、CDN
 选站方式之一：每个任务解析时让直连与全部 Proxy Site 竞速，取第一个合格响应。不跨任务记忆胜出者。
 _Avoid_: 测速、最快站（不比较全部结果）
 
+## Example dialogue
+
+> **Dev:** "用户按暂停时，我们删除 Task 吗？"
+> **Domain expert:** "不。Pause 停止 Task Run。Task Record 和 Task Files 保留。"
+
+> **Dev:** "用户按重新下载时，我们创建新 Task 吗？"
+> **Domain expert:** "不。Redownload 停止 Task Run、删除 Task Files、重置同一个 Task、启动新的 Task Run。"
