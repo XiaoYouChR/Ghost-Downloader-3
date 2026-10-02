@@ -156,7 +156,7 @@ Copyright © 2024-2026 XiaoYouChR.
 * [cat-catch](https://github.com/xifangczy/cat-catch) 猫抓 浏览器资源嗅探扩展
 * [desktop-notifier](https://github.com/samschott/desktop-notifier) Python library for cross-platform desktop notifications
 * [FFmpeg](https://ffmpeg.org/) A complete, cross-platform solution to record, convert and stream audio and video
-* [goed2k](https://github.com/monkeyWie/goed2k) The eD2k download daemon behind Ghost Downloader's eD2k support
+* [Kelpie](https://github.com/XiaoYouChR/Kelpie) Ghost Downloader 的 eD2k 下载引擎
 * [libtorrent](https://github.com/arvidn/libtorrent) An efficient feature complete C++ bittorrent implementation
 * [loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
 * [m3u8](https://github.com/globocom/m3u8) Python m3u8 parser
