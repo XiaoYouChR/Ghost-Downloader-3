@@ -14,7 +14,7 @@ sys.path[:0] = [str(REPO), str(REPO / "features")]
 from bittorrent_pack.config import DEFAULT_TRACKER_LIST_SOURCES  # noqa: E402
 from bittorrent_pack.trackers import parseTrackers  # noqa: E402
 from ed2k_pack.config import DEFAULT_NODE_LIST_SOURCES, DEFAULT_SERVER_LIST_SOURCES  # noqa: E402
-from ed2k_pack.lists import countNodes, countServers  # noqa: E402
+from ed2k_pack.lists import parseNodeList, parseServerList  # noqa: E402
 
 
 def fetch(url: str) -> bytes:
@@ -22,11 +22,11 @@ def fetch(url: str) -> bytes:
         return response.read()
 
 
-def fetchFirstValid(urls: list[str], count) -> bytes:
+def fetchFirstValid(urls: list[str], parse) -> bytes:
     for url in urls:
         try:
             data = fetch(url)
-            print(f"{url}: {count(data)}")
+            print(f"{url}: {len(parse(data))}")
             return data
         except Exception as e:
             print(f"{url}: {e}")
@@ -48,9 +48,9 @@ def main() -> None:
         "\n".join(dict.fromkeys(trackers)) + "\n", "utf-8")
 
     (REPO / "features/ed2k_pack/lists/server.met").write_bytes(
-        fetchFirstValid(DEFAULT_SERVER_LIST_SOURCES, countServers))
+        fetchFirstValid(DEFAULT_SERVER_LIST_SOURCES, parseServerList))
     (REPO / "features/ed2k_pack/lists/nodes.dat").write_bytes(
-        fetchFirstValid(DEFAULT_NODE_LIST_SOURCES, countNodes))
+        fetchFirstValid(DEFAULT_NODE_LIST_SOURCES, parseNodeList))
 
 
 if __name__ == "__main__":

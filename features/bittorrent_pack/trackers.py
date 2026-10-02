@@ -18,18 +18,18 @@ def parseTrackers(text: str) -> list[str]:
     ]
 
 
-def countTrackers(data: bytes) -> int:
-    count = len(parseTrackers(data.decode("utf-8", errors="ignore")))
-    if count == 0:
+def parseTrackerList(data: bytes) -> list[str]:
+    trackers = parseTrackers(data.decode("utf-8", errors="ignore"))
+    if not trackers:
         raise ValueError("没有有效的 Tracker")
-    return count
+    return trackers
 
 
 trackerList = BootstrapList(
     APP_DATA_DIR / "bt" / "trackers",
     Path(__file__).parent / "lists" / "trackers.txt",
     lambda: list(bittorrentConfig.webTrackerSources.value),
-    countTrackers,
+    parseTrackerList,
 )
 
 

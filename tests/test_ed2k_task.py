@@ -7,6 +7,7 @@ import pytest
 from app.models.pack import VersionInfo
 from app.models.task import TaskError, TaskOptions, TaskStatus
 from ed2k_pack import session as session_module
+from ed2k_pack.lists import parseNodeList, parseServerList
 from ed2k_pack.pack import ED2kParser
 from ed2k_pack.python_ed2k import Snapshot, Transfer, TransferState
 from ed2k_pack.python_ed2k.errors import Error, ErrorCode
@@ -404,28 +405,55 @@ def u32(value: int) -> bytes:
     return value.to_bytes(4, "little")
 
 
+def u16(value: int) -> bytes:
+    return value.to_bytes(2, "little")
+
+
+def buildContact(nodeId: int, size: int) -> bytes:
+    return nodeId.to_bytes(16, "little") + bytes(size - 16)
+
+
 @pytest.mark.parametrize("data, count", [
-    (u32(2) + bytes(2 * 25), 2),
-    (u32(0) + u32(2) + u32(3) + bytes(3 * 34), 3),
-    (u32(0) + u32(3) + u32(1) + u32(4) + bytes(4 * 25), 4),
+    (u32(2) + buildContact(1, 25) + buildContact(2, 25), 2),
+    (u32(0) + u32(2) + u32(3) + b"".join(buildContact(i, 34) for i in range(3)), 3),
+    (u32(0) + u32(3) + u32(1) + u32(4) + b"".join(buildContact(i, 25) for i in range(4)), 4),
+    (u32(0) + u32(3) + u32(0) + u32(2) + b"".join(buildContact(i, 34) for i in range(2)), 2),
 ])
-def test_count_nodes_reads_every_nodes_dat_version(data, count):
-    from ed2k_pack.lists import countNodes
-
-    assert countNodes(data) == count
+def test_parse_node_list_reads_every_nodes_dat_version(data, count):
+    assert len(set(parseNodeList(data))) == count
 
 
-@pytest.mark.parametrize("data", [b"", u32(5) + bytes(25), u32(0) + u32(2) + u32(0)])
-def test_count_nodes_rejects_broken_files(data):
-    from ed2k_pack.lists import countNodes
-
+@pytest.mark.parametrize("data", [b"", u32(5) + bytes(25), u32(0) + u32(2) + u32(0), u32(0) + u32(2) + u32(1) + bytes(25)])
+def test_parse_node_list_rejects_broken_files(data):
     with pytest.raises(ValueError):
-        countNodes(data)
+        parseNodeList(data)
 
 
-def test_count_servers_reads_the_header():
-    from ed2k_pack.lists import countServers
+def buildServer(ip: bytes, port: int) -> bytes:
+    tags = [
+        b"\x02" + u16(1) + b"\x01" + u16(4) + b"name",
+        b"\x83\x0c" + u32(50),
+        b"\x03" + u16(5) + b"users" + u32(1000),
+        b"\x89\x0e\x01",
+        b"\x94\x0b" + b"desc",
+        b"\x87\x99" + u32(2) + b"..",
+    ]
+    return ip + u16(port) + u32(len(tags)) + b"".join(tags)
 
-    assert countServers(b"\xe0" + u32(13)) == 13
+
+def test_parse_server_list_reads_every_endpoint_past_the_tags():
+    servers = [buildServer(b"\x01\x02\x03\x04", 4661), buildServer(b"\x05\x06\x07\x08", 4242)]
+    data = b"\x0e" + u32(2) + b"".join(servers)
+
+    assert parseServerList(data) == [b"\x01\x02\x03\x04" + u16(4661), b"\x05\x06\x07\x08" + u16(4242)]
+
+
+@pytest.mark.parametrize("data", [
+    b"<html>",
+    b"\xe0" + u32(0),
+    b"\xe0" + u32(2) + buildServer(b"\x01\x02\x03\x04", 4661),
+    b"\xe0" + u32(1) + buildServer(b"\x01\x02\x03\x04", 4661)[:-1],
+])
+def test_parse_server_list_rejects_broken_files(data):
     with pytest.raises(ValueError):
-        countServers(b"<html>")
+        parseServerList(data)

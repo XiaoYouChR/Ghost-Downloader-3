@@ -92,7 +92,7 @@ class BootstrapListCard(SettingCard):
             self._startRefresh()
         else:
             self._refreshContent()
-            self._probeNetwork()
+            self.probeNetwork()
 
     def _initLayout(self):
         self.hBoxLayout.addWidget(self.manageButton, 0)
@@ -110,22 +110,23 @@ class BootstrapListCard(SettingCard):
             return
         statuses = self._list.statuses()
         cached = [s for s in statuses if s.count is not None]
+        hasError = any(s.error for s in statuses)
         parts = [self.tr("{0} 个订阅").format(len(statuses))]
         if cached:
             newest = max(s.updatedAt for s in cached)
-            parts.append(self.tr("共 {0} 条").format(sum(s.count for s in cached)))
+            parts.append(self.tr("共 {0} 条").format(self._list.entryCount()))
             parts.append(self.tr("{0}更新").format(toAgoText(time.time() - newest)))
-            if any(s.error for s in statuses) and time.time() - newest > FAILURE_NOTICE_AGE:
+            if hasError and time.time() - newest > FAILURE_NOTICE_AGE:
                 parts.append(self.tr("更新失败"))
         else:
             parts.append(self.tr("使用内置列表"))
-            if any(s.error for s in statuses):
+            if hasError:
                 parts.append(self.tr("更新失败"))
         if self._networkText:
             parts.append(self._networkText)
         self.setContent(self.tr("，").join(parts))
 
-    def _probeNetwork(self):
+    def probeNetwork(self):
         if self._probeNetworkText is not None:
             self._submit(self._probeNetworkText(), done=self._onNetworkProbed, owner=self)
 
@@ -141,7 +142,7 @@ class BootstrapListCard(SettingCard):
     def _onRefreshed(self, _result=None):
         self.refreshButton.setEnabled(True)
         self._refreshContent()
-        self._probeNetwork()
+        self.probeNetwork()
 
     def _onManageClicked(self):
         dialog = BootstrapListDialog(self._list, self._sourcesItem, self._customItem, self.window())
@@ -250,9 +251,9 @@ class BootstrapListDialog(MessageBoxBase):
         return True
 
     def _addRow(self, url: str):
-        row = SubscriptionRow(url, toStatusText(self._statuses.get(url)), self._onRowRemoved, self.rowContainer)
-        error = self._statuses[url].error if url in self._statuses else ""
-        row.statusLabel.setToolTip(error)
+        status = self._statuses.get(url)
+        row = SubscriptionRow(url, toStatusText(status), self._onRowRemoved, self.rowContainer)
+        row.statusLabel.setToolTip(status.error if status is not None else "")
         self.rowLayout.addWidget(row)
         self._rows.append(row)
 

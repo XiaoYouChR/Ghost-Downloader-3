@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Hashable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,13 +36,13 @@ class BootstrapList:
         folder: Path,
         snapshot: Path,
         sources: Callable[[], list[str]],
-        count: Callable[[bytes], int],
+        parse: Callable[[bytes], list[Hashable]],
         fetch: Callable[[str], Awaitable[bytes]] = fetchBytes,
     ):
         self._folder = folder
         self._snapshot = snapshot
         self._sources = sources
-        self._count = count
+        self._parse = parse
         self._fetch = fetch
         self._errors: dict[str, str] = {}
         self._refreshing: asyncio.Task | None = None
@@ -72,11 +72,18 @@ class BootstrapList:
             isCached = path.is_file()
             statuses.append(SubscriptionStatus(
                 url,
-                self._count(path.read_bytes()) if isCached else None,
+                len(set(self._parse(path.read_bytes()))) if isCached else None,
                 path.stat().st_mtime if isCached else None,
                 self._errors.get(url, ""),
             ))
         return statuses
+
+    def entryCount(self) -> int:
+        entries = set()
+        for url in self._sources():
+            if (path := self._cachePath(url)).is_file():
+                entries.update(self._parse(path.read_bytes()))
+        return len(entries)
 
     async def refresh(self) -> None:
         if self._refreshing is None:
@@ -93,7 +100,7 @@ class BootstrapList:
     async def _fetchOne(self, url: str) -> None:
         try:
             data = await self._fetch(url)
-            self._count(data)
+            self._parse(data)
             path = self._cachePath(url)
             path.parent.mkdir(parents=True, exist_ok=True)
             partPath = path.with_suffix(".part")
