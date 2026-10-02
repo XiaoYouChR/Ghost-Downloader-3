@@ -173,10 +173,9 @@ class BTTaskStep(TaskStep):
                 task.fileSize = p.totalWanted
 
             self.speed = p.downloadRate
+            reportSpeed(max(0, p.receivedBytes - self.receivedBytes))
             self.receivedBytes = p.receivedBytes
             self.progress = p.progress
-
-            reportSpeed(p.downloadRate)
 
             for f in task.files:
                 if not f.selected:
