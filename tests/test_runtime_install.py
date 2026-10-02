@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import io
+import shutil
 import sys
 import tarfile
 import zipfile
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from app.install import installArchive, matchSha256
+from app.install import deleteInstalled, installArchive, installFile, matchSha256
 from app.models.pack import BinaryRuntime, VersionInfo
 from app.models.task import TaskError
 from app.services.coroutine_runner import CoroutineRunner
@@ -83,6 +84,101 @@ async def test_unsafe_member_is_rejected_and_archive_deleted(tmp_path):
 
     assert not (tmp_path / "escaped").exists()
     assert not archive.exists()
+
+
+@pytest.fixture
+def lockRunning(monkeypatch):
+    unlink, rmtree = Path.unlink, shutil.rmtree
+
+    def lockedUnlink(path, missing_ok=False):
+        if path.name.endswith(".old"):
+            raise PermissionError(f"{path} is running")
+        unlink(path, missing_ok=missing_ok)
+
+    def lockedRmtree(path, ignore_errors=False, **kwargs):
+        if Path(path).name.endswith(".old"):
+            if ignore_errors:
+                return
+            raise PermissionError(f"{path} is running")
+        rmtree(path, ignore_errors=ignore_errors, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", lockedUnlink)
+    monkeypatch.setattr(shutil, "rmtree", lockedRmtree)
+
+    def unlock():
+        monkeypatch.setattr(Path, "unlink", unlink)
+        monkeypatch.setattr(shutil, "rmtree", rmtree)
+
+    return unlock
+
+
+def test_install_file_replaces_a_running_file(tmp_path):
+    target = tmp_path / "ffmpeg"
+    target.write_bytes(b"old")
+    source = tmp_path / "ffmpeg.download"
+    source.write_bytes(b"new")
+
+    with target.open("rb") as running:
+        installFile(source, target)
+        assert running.read() == b"old"
+
+    assert target.read_bytes() == b"new"
+    assert [p.name for p in tmp_path.iterdir()] == ["ffmpeg"]
+
+
+def test_install_file_leaves_a_locked_old_file_until_next_install(tmp_path, lockRunning):
+    target = tmp_path / "ffmpeg"
+    target.write_bytes(b"old")
+    (tmp_path / "ffmpeg.download").write_bytes(b"new")
+
+    installFile(tmp_path / "ffmpeg.download", target)
+
+    assert target.read_bytes() == b"new"
+    oldFiles = sorted(tmp_path.glob("ffmpeg.*.old"))
+    assert [p.read_bytes() for p in oldFiles] == [b"old"]
+
+    lockRunning()
+    (tmp_path / "ffmpeg.download").write_bytes(b"newer")
+    installFile(tmp_path / "ffmpeg.download", target)
+
+    assert [p.name for p in tmp_path.iterdir()] == ["ffmpeg"]
+    assert target.read_bytes() == b"newer"
+
+
+def test_delete_installed_folder_keeps_neighbours(tmp_path):
+    (tmp_path / "yt_dlp").mkdir()
+    (tmp_path / "yt_dlp" / "__init__.py").write_bytes(b"init")
+    (tmp_path / "notes.txt").write_bytes(b"user")
+
+    deleteInstalled(tmp_path / "yt_dlp")
+
+    assert [p.name for p in tmp_path.iterdir()] == ["notes.txt"]
+
+
+def test_delete_installed_leaves_a_locked_folder_until_next_delete(tmp_path, lockRunning):
+    (tmp_path / "yt_dlp").mkdir()
+    (tmp_path / "yt_dlp" / "__init__.py").write_bytes(b"init")
+
+    deleteInstalled(tmp_path / "yt_dlp")
+
+    assert not (tmp_path / "yt_dlp").exists()
+    assert len(list(tmp_path.glob("yt_dlp.*.old"))) == 1
+
+    lockRunning()
+    deleteInstalled(tmp_path / "yt_dlp")
+
+    assert list(tmp_path.iterdir()) == []
+
+
+async def test_tar_replaces_a_locked_file_and_keeps_its_mode(tmp_path, lockRunning):
+    (tmp_path / "ffmpeg").write_bytes(b"old")
+    archive = writeTar(tmp_path / "ffmpeg.tar.gz", {"ffmpeg": b"new"}, mode=0o750)
+
+    await installArchive(archive, tmp_path)
+
+    assert (tmp_path / "ffmpeg").read_bytes() == b"new"
+    assert (tmp_path / "ffmpeg").stat().st_mode & 0o777 == 0o750
+    assert sorted(p.name for p in tmp_path.iterdir() if not p.name.endswith(".old")) == ["ffmpeg"]
 
 
 @pytest.mark.parametrize("digestOf, expected", [(b"payload", True), (b"other", False)])

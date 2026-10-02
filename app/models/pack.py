@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import shutil
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +11,7 @@ from loguru import logger
 
 
 from app.config.cfg import cfg, ConfigItem
+from app.install import deleteInstalled
 from app.platform.filesystem import findExecutable
 
 if TYPE_CHECKING:
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from app.services.speed_meter import SpeedMeter
     from PySide6.QtCore import Signal
     from PySide6.QtWidgets import QWidget
-    from qfluentwidgets import FluentIcon
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
@@ -178,10 +177,7 @@ class BinaryRuntime:
 
     def delete(self) -> None:
         for path in self.installedPaths():
-            if path.is_dir() and not path.is_symlink():
-                shutil.rmtree(path)
-            else:
-                path.unlink(missing_ok=True)
+            deleteInstalled(path)
 
 
 class PackPage:
