@@ -23,6 +23,7 @@ FTP_PATH_TIMEOUT = 30
 FTP_RETRY_DELAY = 5
 FTP_DEFAULT_PORT = 21
 FTPS_DEFAULT_PORT = 990
+PROXY_SCHEMES = frozenset({"socks4", "socks5", "socks5h"})
 
 
 @dataclass
@@ -54,10 +55,10 @@ class FtpConnectionInfo:
             "path_timeout": FTP_PATH_TIMEOUT,
         }
 
-        url = proxy()
+        url = proxy(PROXY_SCHEMES)
         if url:
             parsed = urlparse(url)
-            if parsed.scheme in {"socks4", "socks5", "socks5h"} and parsed.hostname and parsed.port:
+            if parsed.hostname and parsed.port:
                 kwargs.update({
                     "socks_host": parsed.hostname,
                     "socks_port": parsed.port,

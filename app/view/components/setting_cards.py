@@ -288,8 +288,6 @@ class ProxySettingCard(CollapsibleSettingCard):
         else:
             scheme = self.protocolCombo.currentText().lower()
 
-        if scheme == "socks5h":
-            scheme = "socks5"
         if scheme:
             incompatible = [
                 p.packId.upper() for p in self._featureService.packs
