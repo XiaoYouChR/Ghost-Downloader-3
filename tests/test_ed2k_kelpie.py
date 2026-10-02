@@ -273,7 +273,7 @@ async def test_session_lifecycle_round_trip_leaves_no_engine_process(engine):
         await running
     assert not isEngineAlive(executable)
 
-    await engine.pack.activate()
+    engine.pack = ED2kPack(SimpleNamespace(coroutineRunner=engine.runner))
     running = await startRun(buildTask(engine.folder))
     assert isEngineAlive(executable)
     await engine.pack.deactivate()
