@@ -15,7 +15,7 @@ from app.config.cfg import cfg
 from app.i18n import N
 
 from app.models.pack import FeaturePack, TaskParser, FileType
-from app.models.task import Task, TaskOptions
+from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
