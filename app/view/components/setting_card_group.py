@@ -11,7 +11,7 @@ from qfluentwidgets import (
     StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
-    ExpandBorderWidget, GroupSeparator, HeaderSettingCard,
+    ExpandBorderWidget, ExpandButton, GroupSeparator, HeaderSettingCard,
 )
 
 from app.config.cfg import cfg
@@ -115,7 +115,7 @@ class CollapsibleSettingCardGroup(CardWidget):
         self.titleLabel = StrongBodyLabel(title, self)
         self.moveUpButton = TransparentToolButton(FluentIcon.UP, self)
         self.moveDownButton = TransparentToolButton(FluentIcon.DOWN, self)
-        self.expandButton = TransparentToolButton(FluentIcon.CHEVRON_DOWN_MED, self)
+        self.expandButton = ExpandButton(self)
         self.cardContainer = QWidget(self)
         self._cardPaintFilter = CardPaintFilter(self)
         self._labelElideFilter = LabelElideFilter(self)
@@ -130,9 +130,9 @@ class CollapsibleSettingCardGroup(CardWidget):
         self._bind()
 
     def _initWidget(self) -> None:
-        for btn in (self.moveUpButton, self.moveDownButton, self.expandButton):
-            btn.setFixedSize(26, 26)
-            btn.setIconSize(QSize(12, 12))
+        for btn in (self.moveUpButton, self.moveDownButton):
+            btn.setFixedSize(30, 30)
+            btn.setIconSize(QSize(10, 10))
         self.moveUpButton.setVisible(False)
         self.moveDownButton.setVisible(False)
         self.titleLabel.setFixedHeight(26)
@@ -144,10 +144,10 @@ class CollapsibleSettingCardGroup(CardWidget):
 
         self._collapsed = self.objectName() not in cfg.expandedSettingGroups.value
         self.cardContainer.setMaximumHeight(0 if self._collapsed else QWIDGETSIZE_MAX)
-        self.expandButton.setIcon(FluentIcon.CHEVRON_RIGHT_MED if self._collapsed else FluentIcon.CHEVRON_DOWN_MED)
+        self.expandButton.setAngle(0 if self._collapsed else 180)
 
     def _initLayout(self) -> None:
-        self.headerLayout.setContentsMargins(16, 12, 8, 12)
+        self.headerLayout.setContentsMargins(16, 10, 8, 10)
         self.headerLayout.setSpacing(4)
         self.headerLayout.addWidget(self.titleLabel)
         self.headerLayout.addStretch(1)
@@ -197,6 +197,12 @@ class CollapsibleSettingCardGroup(CardWidget):
             self._onExpandClicked()
         super().mousePressEvent(event)
 
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if self.cardContainer.height() > 0:
+            with QPainter(self) as painter:
+                painter.fillRect(1, self.cardContainer.y() - 1, self.width() - 2, 1, QColor(0, 0, 0, 96 if isDarkTheme() else 24))
+
     def enterEvent(self, event) -> None:
         super().enterEvent(event)
         self.moveUpButton.setVisible(True)
@@ -222,7 +228,7 @@ class CollapsibleSettingCardGroup(CardWidget):
 
     def _setCollapsed(self, collapsed: bool) -> None:
         self._collapsed = collapsed
-        self.expandButton.setIcon(FluentIcon.CHEVRON_RIGHT_MED if collapsed else FluentIcon.CHEVRON_DOWN_MED)
+        self.expandButton.setExpand(not collapsed)
         self._collapseAnim.stop()
         self._collapseAnim.setStartValue(self.cardContainer.height())
         self._collapseAnim.setEndValue(0 if collapsed else self.cardContainer.sizeHint().height())
