@@ -5,7 +5,7 @@ from PySide6.QtCore import (
     QPropertyAnimation, QSize, Qt, Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     CardWidget, FluentIcon, FluentStyleSheet, SettingCard,
     StrongBodyLabel, TransparentToolButton, isDarkTheme,
@@ -145,7 +145,7 @@ class CollapsibleSettingCardGroup(CardWidget):
         self.expandButton.setIcon(FluentIcon.CHEVRON_RIGHT_MED if self._collapsed else FluentIcon.CHEVRON_DOWN_MED)
 
     def _initLayout(self) -> None:
-        self.headerLayout.setContentsMargins(16, 4, 8, 4)
+        self.headerLayout.setContentsMargins(16, 12, 8, 12)
         self.headerLayout.setSpacing(4)
         self.headerLayout.addWidget(self.titleLabel)
         self.headerLayout.addStretch(1)
@@ -159,6 +159,7 @@ class CollapsibleSettingCardGroup(CardWidget):
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.vBoxLayout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         self.vBoxLayout.addLayout(self.headerLayout)
         self.vBoxLayout.addWidget(self.cardContainer)
 
