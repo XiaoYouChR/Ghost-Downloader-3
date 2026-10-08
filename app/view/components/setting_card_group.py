@@ -62,6 +62,8 @@ class CollapsibleSettingCard(QWidget):
         self.view.setObjectName("view")
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.vBoxLayout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         self.vBoxLayout.addWidget(self.card)
         self.vBoxLayout.addWidget(self.view)
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
