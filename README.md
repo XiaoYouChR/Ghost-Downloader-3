@@ -173,7 +173,7 @@ Copyright © 2024-2026 XiaoYouChR.
 ## Acknowledgments
 
 * [@zhiyiYo](https://github.com/zhiyiYo/) is amazing and provided a lot of help for this project.
-* [@空糖_SuGar](https://github.com/SuGar0218/) created the project banner.
+* [@空糖_SuGar](https://github.com/SuGar0218/) designed the project banner (the current version is a 3D remake based on the original design).
 
 ## Star History
 

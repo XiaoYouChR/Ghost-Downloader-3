@@ -174,7 +174,7 @@ Copyright © 2024-2026 XiaoYouChR.
 ## 致谢
 
 * [@zhiyiYo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
-* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner！
+* [@空糖_SuGar](https://github.com/SuGar0218/) 设计了项目的 Banner！（现版本为基于原设计的 3D 重制）
 
 ## Star History
 
