@@ -105,6 +105,12 @@ class CollapsibleSettingCard(QWidget):
 
 
 
+def isSearchMatch(card: SettingCard | CollapsibleSettingCard, text: str) -> bool:
+    if isinstance(card, CollapsibleSettingCard):
+        card = card.card
+    return text in card.titleLabel.text().lower() or text in card.contentLabel.text().lower()
+
+
 class CollapsibleSettingCardGroup(CardWidget):
     orderChanged = Signal()
 
@@ -192,6 +198,20 @@ class CollapsibleSettingCardGroup(CardWidget):
         for card in cards:
             self.addSettingCard(card)
 
+    def setSearchText(self, text: str) -> None:
+        text = text.strip().lower()
+        hasMatch = False
+        for i in range(self.cardLayout.count()):
+            card = self.cardLayout.itemAt(i).widget()
+            if card is None:
+                continue
+            isMatch = not text or isSearchMatch(card, text)
+            card.setVisible(isMatch)
+            hasMatch = hasMatch or isMatch
+        self.setVisible(hasMatch or not text)
+        isExpand = (bool(text) and hasMatch) or self.objectName() in cfg.expandedSettingGroups.value
+        self._setCollapsed(not isExpand)
+
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton and event.position().y() < self.cardContainer.geometry().top():
             self._onExpandClicked()
@@ -227,6 +247,8 @@ class CollapsibleSettingCardGroup(CardWidget):
         cfg.set(cfg.expandedSettingGroups, items)
 
     def _setCollapsed(self, collapsed: bool) -> None:
+        if collapsed == self._collapsed:
+            return
         self._collapsed = collapsed
         self.expandButton.setExpand(not collapsed)
         self._collapseAnim.stop()

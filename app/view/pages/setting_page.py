@@ -23,9 +23,7 @@ from app.config.constants import (
     FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
 )
 from app.view.components.category_settings import CategoryRulesCard
-from app.view.components.setting_card_group import (
-    CollapsibleSettingCard, CollapsibleSettingCardGroup, QWIDGETSIZE_MAX,
-)
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import (
     HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
@@ -562,59 +560,18 @@ class SettingPage(ScrollArea):
         return self.tr("搜索设置")
 
     def setSearchText(self, text: str) -> None:
-        text = text.strip().lower()
-        if not text:
-            self._clearSearchFilter()
-            return
-
         hasMatch = False
         for i in range(self.vBoxLayout.count()):
             group = self.vBoxLayout.itemAt(i).widget()
             if not isinstance(group, CollapsibleSettingCardGroup):
                 continue
-            groupHasMatch = False
-            for j in range(group.cardLayout.count()):
-                card = group.cardLayout.itemAt(j).widget()
-                if card is None:
-                    continue
-                if self._isSearchMatch(card, text):
-                    card.show()
-                    groupHasMatch = True
-                else:
-                    card.hide()
-            if groupHasMatch:
-                group.show()
-                group.cardContainer.setMaximumHeight(QWIDGETSIZE_MAX)
-                hasMatch = True
-            else:
-                group.hide()
+            group.setSearchText(text)
+            hasMatch = hasMatch or not group.isHidden()
 
         self.emptyStatusWidget.setVisible(not hasMatch)
         if not hasMatch:
             self.emptyStatusWidget.adjustSize()
             self._refreshEmptyWidgetGeometry()
-
-    def _isSearchMatch(self, widget, text: str) -> bool:
-        if isinstance(widget, CollapsibleSettingCard):
-            widget = widget.card
-        title = widget.titleLabel.text().lower()
-        content = widget.contentLabel.text().lower()
-        return text in title or text in content
-
-    def _clearSearchFilter(self) -> None:
-        for i in range(self.vBoxLayout.count()):
-            group = self.vBoxLayout.itemAt(i).widget()
-            if not isinstance(group, CollapsibleSettingCardGroup):
-                continue
-            group.show()
-            for j in range(group.cardLayout.count()):
-                card = group.cardLayout.itemAt(j).widget()
-                if card is not None:
-                    card.show()
-            group.cardContainer.setMaximumHeight(
-                0 if group._collapsed else QWIDGETSIZE_MAX
-            )
-        self.emptyStatusWidget.hide()
 
     def _refreshEmptyWidgetGeometry(self) -> None:
         self.emptyStatusWidget.move(
