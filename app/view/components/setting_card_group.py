@@ -7,8 +7,8 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    BodyLabel, CardWidget, FluentIcon, FluentStyleSheet, SettingCard,
-    TransparentToolButton, isDarkTheme,
+    CardWidget, FluentIcon, FluentStyleSheet, SettingCard,
+    StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
     ExpandBorderWidget, ExpandButton, GroupSeparator, HeaderSettingCard,
@@ -118,7 +118,7 @@ class CollapsibleSettingCardGroup(CardWidget):
         super().__init__(parent)
         self.setObjectName(key)
 
-        self.titleLabel = BodyLabel(title, self)
+        self.titleLabel = StrongBodyLabel(title, self)
         self.moveUpButton = TransparentToolButton(FluentIcon.UP, self)
         self.moveDownButton = TransparentToolButton(FluentIcon.DOWN, self)
         self.expandButton = ExpandButton(self)
