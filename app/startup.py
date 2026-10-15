@@ -80,6 +80,16 @@ def loadPacks(featureService, coroutineRunner, speedMeter):
 
 def checkUpdateAtStartup(updateService):
     from app.config.cfg import cfg
+    from app.config.paths import IS_COMPILED, hasNoAutoUpdateMarker
+
+    if hasNoAutoUpdateMarker():
+        from loguru import logger
+        logger.info("Auto update disabled by gd_no_auto_update marker")
+        if cfg.shouldCheckUpdateAtStartup.value:
+            cfg.set(cfg.shouldCheckUpdateAtStartup, False)
+        return
+    if not IS_COMPILED:
+        return
     if not cfg.shouldCheckUpdateAtStartup.value:
         return
     updateService.check()
