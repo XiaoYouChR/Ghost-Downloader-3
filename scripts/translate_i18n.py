@@ -413,7 +413,7 @@ def escapeAndroidXml(text: str) -> str:
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     text = re.sub(r"(?<!\\)'", "\\'", text)
     text = re.sub(r'(?<!\\)"', '\\"', text)
-    return text
+    return text.replace("\n", "\\n")
 
 
 def translateAndroidLocale(locale: str, localeName: str) -> None:
