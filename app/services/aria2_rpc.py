@@ -169,26 +169,65 @@ class Aria2RpcService:
         if not isinstance(params, list):
             return buildError(rpcId, JSONRPC_INVALID_PARAMS, "Invalid params.")
 
+        if method == "system.multicall":
+            return await self._multicall(rpcId, params)
+
+        try:
+            result = await self._executeMethod(method, params)
+        except RpcError as e:
+            return buildError(rpcId, ARIA2_ERROR, str(e))
+        return {"jsonrpc": "2.0", "id": rpcId, "result": result}
+
+    async def _executeMethod(self, method: str, params: list) -> Any:
         token = ""
         if params and isinstance(params[0], str) and params[0].startswith("token:"):
             token, params = params[0].removeprefix("token:"), params[1:]
         if (secret := cfg.aria2RpcToken.value) and token != secret:
             await asyncio.sleep(UNAUTHORIZED_DELAY)
-            return buildError(rpcId, ARIA2_ERROR, "Unauthorized")
+            raise RpcError("Unauthorized")
 
-        try:
-            match method:
-                case "aria2.getVersion":
-                    result = {"version": VERSION, "enabledFeatures": ["HTTPS"]}
-                case "aria2.getGlobalOption":
-                    result = {"dir": cfg.downloadFolder.value}
-                case "aria2.addUri":
-                    result = self._addUri(params)
-                case _:
-                    raise RpcError(f"No such method: {method}")
-        except RpcError as e:
-            return buildError(rpcId, ARIA2_ERROR, str(e))
-        return {"jsonrpc": "2.0", "id": rpcId, "result": result}
+        match method:
+            case "aria2.getVersion":
+                return {"version": VERSION, "enabledFeatures": ["HTTPS"]}
+            case "aria2.getGlobalOption":
+                return {"dir": cfg.downloadFolder.value}
+            case "aria2.addUri":
+                return self._addUri(params)
+            case _:
+                raise RpcError(f"No such method: {method}")
+
+    async def _multicall(self, rpcId: Any, params: list) -> dict:
+        topToken = ""
+        if params and isinstance(params[0], str) and params[0].startswith("token:"):
+            topToken, params = params[0].removeprefix("token:"), params[1:]
+            if (secret := cfg.aria2RpcToken.value) and topToken != secret:
+                await asyncio.sleep(UNAUTHORIZED_DELAY)
+                return buildError(rpcId, ARIA2_ERROR, "Unauthorized")
+
+        calls = params[0] if params and isinstance(params[0], list) else []
+        results = []
+        for call in calls:
+            if not isinstance(call, dict):
+                results.append({"code": JSONRPC_INVALID_PARAMS, "message": "Invalid call struct."})
+                continue
+            subMethod = call.get("methodName")
+            subParams = list(call.get("params", []))
+            if not isinstance(subMethod, str) or not isinstance(subParams, list):
+                results.append({"code": JSONRPC_INVALID_PARAMS, "message": "Invalid call struct."})
+                continue
+
+            if topToken and not (subParams and isinstance(subParams[0], str) and subParams[0].startswith("token:")):
+                subParams.insert(0, f"token:{topToken}")
+
+            try:
+                subRes = await self._executeMethod(subMethod, subParams)
+                results.append([subRes])
+            except RpcError as e:
+                results.append({"code": ARIA2_ERROR, "message": str(e)})
+            except Exception as e:
+                results.append({"code": ARIA2_ERROR, "message": str(e)})
+
+        return {"jsonrpc": "2.0", "id": rpcId, "result": results}
 
     def _addUri(self, params: list) -> str:
         if not params:
