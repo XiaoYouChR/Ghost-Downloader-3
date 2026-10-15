@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 from pathlib import Path
 
 from app.config.cfg import Config
+
+desktopCfg = importlib.import_module("app.config.cfg")
 
 ANDROID_CFG_PATH = Path(__file__).parents[1] / "android/app/src/main/python/app/config/cfg.py"
 
@@ -28,11 +31,11 @@ DESKTOP_ONLY = {
 }
 
 
-def loadAndroidConfig():
+def loadAndroidCfg():
     spec = importlib.util.spec_from_file_location("android_cfg", ANDROID_CFG_PATH)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.AndroidConfig
+    return module
 
 
 def keysOf(configClass) -> set[tuple[str, str]]:
@@ -44,5 +47,19 @@ def keysOf(configClass) -> set[tuple[str, str]]:
 
 
 def test_android_config_covers_every_desktop_setting_except_desktop_only():
-    missing = keysOf(Config) - keysOf(loadAndroidConfig()) - DESKTOP_ONLY
+    missing = keysOf(Config) - keysOf(loadAndroidCfg().AndroidConfig) - DESKTOP_ONLY
     assert missing == set()
+
+
+def signaturesOf(module) -> dict[str, inspect.Signature]:
+    return {
+        name: inspect.signature(value)
+        for name, value in vars(module).items()
+        if inspect.isfunction(value) and value.__module__ == module.__name__ and not name.startswith("_")
+    }
+
+
+def test_android_cfg_functions_match_desktop_signatures():
+    desktop, android = signaturesOf(desktopCfg), signaturesOf(loadAndroidCfg())
+    mismatched = {name for name in desktop.keys() & android.keys() if desktop[name] != android[name]}
+    assert mismatched == set()
