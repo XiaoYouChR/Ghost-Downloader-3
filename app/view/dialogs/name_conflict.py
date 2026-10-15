@@ -12,24 +12,20 @@ from app.services.name_conflict_queue import NameConflict, NameConflictQueue
 from app.services.task_service import NameConflictChoice
 
 
-def tr(text: str) -> str:
-    return QCoreApplication.translate("NameConflictDialog", text)
-
-
 def toContentText(conflict: NameConflict) -> str:
     modified = datetime.fromtimestamp(conflict.modifiedAt).strftime("%Y-%m-%d %H:%M")
     if conflict.isFolder:
-        existing = tr("现有文件夹：{0} 修改").format(modified)
+        existing = QCoreApplication.translate("NameConflictDialog", "现有文件夹：{0} 修改").format(modified)
     else:
-        existing = tr("现有文件：{0}，{1} 修改").format(toReadableSize(conflict.existingSize), modified)
-    newSize = toReadableSize(conflict.task.fileSize) if conflict.task.fileSize > 0 else tr("未知大小")
-    return "\n".join([existing, tr("新文件：{0}").format(newSize), tr("覆盖时，旧文件会移到回收站。")])
+        existing = QCoreApplication.translate("NameConflictDialog", "现有文件：{0}，{1} 修改").format(toReadableSize(conflict.existingSize), modified)
+    newSize = toReadableSize(conflict.task.fileSize) if conflict.task.fileSize > 0 else QCoreApplication.translate("NameConflictDialog", "未知大小")
+    return "\n".join([existing, QCoreApplication.translate("NameConflictDialog", "新文件：{0}").format(newSize), QCoreApplication.translate("NameConflictDialog", "覆盖时，旧文件会移到回收站。")])
 
 
 class NameConflictDialog(Dialog):
 
     def __init__(self, conflict: NameConflict, queue: NameConflictQueue):
-        super().__init__(tr("下载目录中已有 {0}").format(conflict.takenPath.name), toContentText(conflict))
+        super().__init__(QCoreApplication.translate("NameConflictDialog", "下载目录中已有 {0}").format(conflict.takenPath.name), toContentText(conflict))
         self._conflict = conflict
         self._queue = queue
         self._choice = NameConflictChoice.KEEP_BOTH
@@ -40,10 +36,10 @@ class NameConflictDialog(Dialog):
 
     def _initWidget(self) -> None:
         self.setTitleBarVisible(False)
-        self.yesButton.setText(tr("保留两者"))
-        self.cancelButton.setText(tr("取消"))
-        self.overwriteButton = PushButton(tr("覆盖"), self.buttonGroup)
-        self.restCheckBox = CheckBox(tr("对其余 {0} 个冲突执行相同操作").format(self._conflict.restCount), self)
+        self.yesButton.setText(QCoreApplication.translate("NameConflictDialog", "保留两者"))
+        self.cancelButton.setText(QCoreApplication.translate("NameConflictDialog", "取消"))
+        self.overwriteButton = PushButton(QCoreApplication.translate("NameConflictDialog", "覆盖"), self.buttonGroup)
+        self.restCheckBox = CheckBox(QCoreApplication.translate("NameConflictDialog", "对其余 {0} 个冲突执行相同操作").format(self._conflict.restCount), self)
         self.restCheckBox.setVisible(self._conflict.restCount > 0)
 
     def _initLayout(self) -> None:

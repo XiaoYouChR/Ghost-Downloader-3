@@ -29,27 +29,23 @@ FAILURE_NOTICE_AGE = 7 * 86400
 CARD_HEIGHT = 70
 
 
-def tr(text: str) -> str:
-    return QCoreApplication.translate("BootstrapList", text)
-
-
 def toAgoText(seconds: float) -> str:
     if seconds < 60:
-        return tr("刚刚")
+        return QCoreApplication.translate("BootstrapList", "刚刚")
     if seconds < 3600:
-        return tr("{0} 分钟前").format(int(seconds // 60))
+        return QCoreApplication.translate("BootstrapList", "{0} 分钟前").format(int(seconds // 60))
     if seconds < 86400:
-        return tr("{0} 小时前").format(int(seconds // 3600))
-    return tr("{0} 天前").format(int(seconds // 86400))
+        return QCoreApplication.translate("BootstrapList", "{0} 小时前").format(int(seconds // 3600))
+    return QCoreApplication.translate("BootstrapList", "{0} 天前").format(int(seconds // 86400))
 
 
 def toStatusText(status: SubscriptionStatus | None) -> str:
     if status is None or status.count is None:
-        return tr("更新失败") if status is not None and status.error else tr("未拉取")
-    parts = [tr("{0} 条").format(status.count), tr("{0}更新").format(toAgoText(time.time() - status.updatedAt))]
+        return QCoreApplication.translate("BootstrapList", "更新失败") if status is not None and status.error else QCoreApplication.translate("BootstrapList", "未拉取")
+    parts = [QCoreApplication.translate("BootstrapList", "{0} 条").format(status.count), QCoreApplication.translate("BootstrapList", "{0}更新").format(toAgoText(time.time() - status.updatedAt))]
     if status.error:
-        parts.append(tr("更新失败"))
-    return tr("，").join(parts)
+        parts.append(QCoreApplication.translate("BootstrapList", "更新失败"))
+    return QCoreApplication.translate("BootstrapList", "，").join(parts)
 
 
 def isSubscriptionUrl(url: str) -> bool:
@@ -132,7 +128,7 @@ class BootstrapListCard(SettingCard):
 
     def _onNetworkProbed(self, probed: tuple[str, dict]):
         text, params = probed
-        self._networkText = tr(text).format_map(params)
+        self._networkText = QCoreApplication.translate("BootstrapList", text).format_map(params)
         self._refreshContent()
 
     def _startRefresh(self):

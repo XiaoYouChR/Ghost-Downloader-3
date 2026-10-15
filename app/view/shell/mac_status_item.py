@@ -19,10 +19,6 @@ from app.format import toReadableSize
 from app.signal_bus import signalBus
 
 
-def tr(text: str) -> str:
-    return QCoreApplication.translate("SystemTrayIcon", text)
-
-
 class MenuTarget(NSObject):
     owner = None
 
@@ -79,10 +75,10 @@ class MacStatusItem:
         menu.setAutoenablesItems_(False)
         menu.setDelegate_(self._target)
         for title, selector, key, symbol in (
-            (tr("仪表盘"), "showDashboard:", "", "gauge.open.with.lines.needle.33percent"),
-            (tr("全部开始"), "startAll:", "", "play.fill"),
-            (tr("全部暂停"), "pauseAll:", "", "pause.fill"),
-            (tr("退出程序"), "quitApp:", "q", "power"),
+            (QCoreApplication.translate("SystemTrayIcon", "仪表盘"), "showDashboard:", "", "gauge.open.with.lines.needle.33percent"),
+            (QCoreApplication.translate("SystemTrayIcon", "全部开始"), "startAll:", "", "play.fill"),
+            (QCoreApplication.translate("SystemTrayIcon", "全部暂停"), "pauseAll:", "", "pause.fill"),
+            (QCoreApplication.translate("SystemTrayIcon", "退出程序"), "quitApp:", "q", "power"),
         ):
             item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, selector, key)
             item.setTarget_(self._target)
