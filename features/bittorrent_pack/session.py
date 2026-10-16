@@ -306,6 +306,8 @@ class BTSession:
                     f"[::]:{bittorrentConfig.listenPort.value}"
                 ),
                 "connections_limit": bittorrentConfig.maxConnections.value,
+                # libtorrent high_performance_seed 预设值，默认 500 会把单个 peer 限制在约 2.7 MB/s
+                "max_out_request_queue": 1500,
                 "download_rate_limit": self._downloadLimit(),
                 "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
                 "enable_dht": bittorrentConfig.enableDht.value,
