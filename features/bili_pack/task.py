@@ -187,18 +187,15 @@ class BilibiliTask(Task):
 
     def __post_init__(self) -> None:
         super().__post_init__()
+        if self.isOutputFolder:
+            self._baseName = self._baseName or Path(self.name).stem
+            self.name = self._baseName
         if any(not f.relativePath.endswith((".mp4", ".m4a", ".ass", ".xml")) for f in self.files or []):
             self._baseName = self._baseName or Path(self.name).stem
             if self.status == TaskStatus.COMPLETED:
                 self.updateNames()
             else:
                 self.update()
-
-    @property
-    def outputPath(self) -> str:
-        if self.isOutputFolder:
-            return str(self.outputFolder / Path(self.name).stem)
-        return super().outputPath
 
     @property
     def hasManyVideos(self) -> bool:
@@ -259,13 +256,14 @@ class BilibiliTask(Task):
             extension = self.danmakuFormat
         else:
             extension = "m4a"
+        stem = self.name if self.isOutputFolder else Path(self.name).stem
         for page in self.files or []:
-            stem = f"{Path(self.name).stem}{self._pageSuffix(page)}"
-            page.relativePath = toSafeFilename(f"{stem}.{extension}", fallback=f"P{page.pageNumber}.{extension}")
+            name = f"{stem}{self._pageSuffix(page)}.{extension}"
+            page.relativePath = toSafeFilename(name, fallback=f"P{page.pageNumber}.{extension}")
 
     def setName(self, name: str) -> None:
         super().setName(name)
-        self._baseName = Path(self.name).stem
+        self._baseName = self.name if self.isOutputFolder else Path(self.name).stem
         self.updateNames()
 
     def setVideoQuality(self, qn: int, codecid: int) -> None:
@@ -313,11 +311,19 @@ class BilibiliTask(Task):
         self.steps.clear()
         files: list[BiliPage] = self.files or []
 
+        if not (self.hasMedia or self.danmakuFormat or self.isCoverEnabled):
+            for file in files:
+                file.size = 0
+            self.fileSize = 0
+            return
+
         timeSuffix = ""
         if len(files) == 1 and (files[0].startTime or files[0].endTime):
             timeSuffix = f" {buildTimeSuffix(files[0].startTime, files[0].endTime)}"
 
-        if self.isVideoEnabled:
+        if self.isOutputFolder:
+            self.name = self._baseName
+        elif self.isVideoEnabled:
             self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.mp4", fallback="video.mp4")
         elif self.isAudioEnabled:
             self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.m4a", fallback="audio.m4a")
@@ -326,13 +332,8 @@ class BilibiliTask(Task):
                 f"{self._baseName}{timeSuffix}.{self.danmakuFormat}",
                 fallback=f"danmaku.{self.danmakuFormat}",
             )
-        elif self.isCoverEnabled:
-            self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
         else:
-            for file in files:
-                file.size = 0
-            self.fileSize = 0
-            return
+            self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
         self.updateNames()
 
         for file in files:
