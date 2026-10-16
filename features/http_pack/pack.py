@@ -235,17 +235,20 @@ class HttpParser(TaskParser):
 
 
 def buildOptionCards(task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+    from .cards import SingleSubworkerCard
     from app.view.components.option_cards import (
         ClientProfileCard, HeadersEditCard, OutputFolderCard, SubworkerCountCard,
     )
     step = task.steps[0] if task.steps else None
     if not isinstance(step, HttpTaskStep):
         return []
+    subworkerCountCard = SubworkerCountCard(parent, initial=step.subworkerCount)
     return [
         OutputFolderCard(parent, initial=task.outputFolder),
         HeadersEditCard(parent, initial=step.headers),
         ClientProfileCard(parent, initial=step.clientProfile, initialUserAgent=step.userAgent),
-        SubworkerCountCard(parent, initial=step.subworkerCount),
+        subworkerCountCard,
+        SingleSubworkerCard(subworkerCountCard, parent, initial=step.isSingleSubworker),
     ]
 
 
