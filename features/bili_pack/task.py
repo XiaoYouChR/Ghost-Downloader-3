@@ -266,6 +266,12 @@ class BilibiliTask(Task):
         self._baseName = Path(self.name).stem
         self.updateNames()
 
+    def setOptions(self, options: dict) -> None:
+        if "subworkerCount" in options:
+            for page in self.files or []:
+                page.subworkerCount = options["subworkerCount"]
+        super().setOptions(options)
+
     def setVideoQuality(self, qn: int, codecid: int) -> None:
         self.requestedQn = qn
         self.requestedCodecid = codecid
