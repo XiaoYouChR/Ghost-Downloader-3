@@ -41,14 +41,12 @@ DHT_STATE_FILE = "bt_dht_state.dat"
 
 PROXY_SCHEMES = frozenset({"socks5", "socks5h"})
 
-_ERROR_ALERTS = (
+ERROR_ALERTS = (
     lt.file_error_alert,
-    lt.metadata_failed_alert,
     lt.torrent_error_alert,
-    lt.hash_failed_alert,
 )
 
-_RESUME_SAVE_INTERVAL = 30
+RESUME_SAVE_INTERVAL = 30
 
 
 @dataclass(frozen=True)
@@ -473,7 +471,11 @@ class BTSession:
                 self._resumeCache.pop(taskId, None)
                 return
 
-            if isinstance(alert, _ERROR_ALERTS):
+            if isinstance(alert, lt.hash_failed_alert):
+                logger.debug("BitTorrent 分片校验失败，将重新下载: {}", alert.message())
+                return
+
+            if isinstance(alert, ERROR_ALERTS):
                 if not entry.done.done():
                     entry.done.set_exception(
                         TaskError("BitTorrent 错误：{detail}", detail=alert.message())
@@ -539,7 +541,7 @@ class BTSession:
             entry.done.set_result(None)
 
         entry.pollCount += 1
-        if entry.pollCount % _RESUME_SAVE_INTERVAL == 0:
+        if entry.pollCount % RESUME_SAVE_INTERVAL == 0:
             try:
                 entry.handle.save_resume_data(
                     lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
