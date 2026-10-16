@@ -80,6 +80,7 @@ class HttpTaskStep(TaskStep):
     httpByteOffset: int = 0
     lastModified: str = ""
     isAccelerated: bool = False
+    isSingleSubworker: bool = False
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
     @property
@@ -93,7 +94,11 @@ class HttpTaskStep(TaskStep):
             self.clientProfile = options["clientProfile"]
         if "userAgent" in options:
             self.userAgent = options["userAgent"]
-        if "subworkerCount" in options:
+        if "isSingleSubworker" in options:
+            self.isSingleSubworker = options["isSingleSubworker"]
+        if self.isSingleSubworker:
+            self.subworkerCount = 1
+        elif "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
     @property
@@ -169,7 +174,7 @@ class HttpTaskStep(TaskStep):
         return None
 
     def _reassignSubworker(self) -> None:
-        if self.fileSize <= 0:
+        if self.isSingleSubworker or self.fileSize <= 0:
             return
         slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
         if slowest.end - slowest.position + 1 < cfg.maxReassignSize.value * 1024:
@@ -178,7 +183,7 @@ class HttpTaskStep(TaskStep):
             self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
     def _autoSpeedUp(self) -> None:
-        if self.isAccelerated or not cfg.autoSpeedUp.value:
+        if self.isSingleSubworker or self.isAccelerated or not cfg.autoSpeedUp.value:
             return
 
         self._speedHistory.append(self.speed)
@@ -374,7 +379,7 @@ class HttpTaskStep(TaskStep):
                             if not matchRange(bytes(response.headers.get("content-range") or b""), httpPos, httpEnd, total):
                                 raise RangeNotSupportedError()
                         self._effectiveUrl = str(response.url)
-                        if len(self.subworkers) == 1 and self.canUseRangeRequests:
+                        if not self.isSingleSubworker and len(self.subworkers) == 1 and self.canUseRangeRequests:
                             for newSw in self._splitSlowest(self.subworkerCount):
                                 self._taskGroup.create_task(self._runSubworker(newSw, fd))
                         async for chunk in response.stream():
@@ -460,11 +465,15 @@ class HttpTaskStep(TaskStep):
                 try:
                     self._taskGroup = TaskGroup()
                     async with self._taskGroup:
-                        for subworker in list(self.subworkers):
-                            self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
-                        if isResuming:
-                            for newSw in self._splitSlowest(self.subworkerCount - len(self.subworkers) + 1):
-                                self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
+                        if self.isSingleSubworker:
+                            for subworker in self.subworkers:
+                                await self._runSubworker(subworker, self._fd)
+                        else:
+                            for subworker in list(self.subworkers):
+                                self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+                            if isResuming:
+                                for newSw in self._splitSlowest(self.subworkerCount - len(self.subworkers) + 1):
+                                    self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
                     shouldDeleteRecord = True
                     break
