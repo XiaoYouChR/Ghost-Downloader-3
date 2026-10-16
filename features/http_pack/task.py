@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import errno
 import os
-import time
 from asyncio import TaskGroup, CancelledError
 from contextlib import suppress
 from dataclasses import field, dataclass
@@ -18,7 +17,6 @@ from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSi
 from app.platform.sysio import ftruncate, pwrite
 
 STREAM_READ_TIMEOUT = 30
-SPLIT_START_INTERVAL = 0.2
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO, 39, 112})
 
@@ -165,10 +163,7 @@ class HttpTaskStep(TaskStep):
             return
         newSw = self._splitSlowest()
         if newSw:
-            now = time.monotonic()
-            startAt = max(now, self._nextSplitStartAt)
-            self._nextSplitStartAt = startAt + SPLIT_START_INTERVAL
-            self._taskGroup.create_task(self._runSubworker(newSw, self._fd, delay=startAt - now))
+            self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
     def _autoSpeedUp(self) -> None:
         if self.isAccelerated or not cfg.autoSpeedUp.value:
@@ -244,8 +239,7 @@ class HttpTaskStep(TaskStep):
             if recordFile is not None:
                 recordFile.close()
 
-    async def _runSubworker(self, subworker: HttpSubworker, fd: int, delay: float = 0) -> None:
-        await asyncio.sleep(delay)
+    async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
@@ -376,7 +370,6 @@ class HttpTaskStep(TaskStep):
         self._waitForSpeedLimit = waitForSpeedLimit
         self._speedHistory: list[int] = []
         self._accelCheckTime = 0
-        self._nextSplitStartAt = 0
         shouldDeleteRecord = False
 
         self._effectiveHeaders = {**self.headers}
