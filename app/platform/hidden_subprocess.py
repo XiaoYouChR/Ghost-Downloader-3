@@ -38,17 +38,14 @@ class _StdinWriter:
     def __init__(self, pipe: io.BufferedWriter):
         self._pipe = pipe
 
+    # asyncio's StreamWriter hands data to the pipe on write(), so callers
+    # that never drain() must not be left with it stuck in Popen's buffer.
     def write(self, data: bytes) -> None:
         self._pipe.write(data)
-
-    async def drain(self) -> None:
         self._pipe.flush()
 
     def close(self) -> None:
         self._pipe.close()
-
-    async def wait_closed(self) -> None:
-        pass
 
 
 class _HiddenProcess:
