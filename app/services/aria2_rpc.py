@@ -76,8 +76,8 @@ def buildError(rpcId: Any, code: int, message: str) -> dict:
     return {"jsonrpc": "2.0", "id": rpcId, "error": {"code": code, "message": message}}
 
 
-def toHttpStatus(response: dict) -> int:
-    if "error" not in response:
+def toHttpStatus(response: dict | list) -> int:
+    if isinstance(response, list) or "error" not in response:
         return 200
     return 400 if response["error"]["code"] in (ARIA2_ERROR, JSONRPC_INVALID_REQUEST) else 500
 
@@ -154,41 +154,65 @@ class Aria2RpcService:
         async for message in stream.messages():
             await stream.send(json.dumps(await self._run(message), ensure_ascii=False))
 
-    async def _run(self, body: bytes) -> dict:
+    async def _run(self, message: bytes) -> dict | list:
         try:
-            data = json.loads(body)
+            data = json.loads(message)
         except ValueError:
             return buildError(None, JSONRPC_PARSE_ERROR, "Parse error.")
+        if isinstance(data, list):
+            return [await self._runRequest(request) for request in data if isinstance(request, dict)]
         if not isinstance(data, dict):
             return buildError(None, JSONRPC_INVALID_REQUEST, "Invalid Request.")
-        rpcId = data.get("id")
-        method = data.get("method")
-        params = data.get("params", [])
-        if "id" not in data or not isinstance(method, str):
+        return await self._runRequest(data)
+
+    async def _runRequest(self, request: dict) -> dict:
+        rpcId = request.get("id")
+        method = request.get("method")
+        params = request.get("params", [])
+        if "id" not in request or not isinstance(method, str):
             return buildError(rpcId, JSONRPC_INVALID_REQUEST, "Invalid Request.")
         if not isinstance(params, list):
             return buildError(rpcId, JSONRPC_INVALID_PARAMS, "Invalid params.")
 
+        try:
+            if method == "system.multicall":
+                result = await self._runMulticall(params)
+            else:
+                result = await self._runMethod(method, params)
+        except RpcError as e:
+            return buildError(rpcId, ARIA2_ERROR, str(e))
+        return {"jsonrpc": "2.0", "id": rpcId, "result": result}
+
+    async def _runMulticall(self, params: list) -> list:
+        if not params or not isinstance(params[0], list):
+            raise RpcError("The parameter at 0 has wrong type.")
+        results = []
+        for call in params[0]:
+            call = call if isinstance(call, dict) else {}
+            callParams = call.get("params")
+            try:
+                results.append([await self._runMethod(call.get("methodName"), callParams if isinstance(callParams, list) else [])])
+            except RpcError as e:
+                results.append({"code": ARIA2_ERROR, "message": str(e)})
+        return results
+
+    async def _runMethod(self, method: Any, params: list) -> Any:
         token = ""
         if params and isinstance(params[0], str) and params[0].startswith("token:"):
             token, params = params[0].removeprefix("token:"), params[1:]
         if (secret := cfg.aria2RpcToken.value) and token != secret:
             await asyncio.sleep(UNAUTHORIZED_DELAY)
-            return buildError(rpcId, ARIA2_ERROR, "Unauthorized")
+            raise RpcError("Unauthorized")
 
-        try:
-            match method:
-                case "aria2.getVersion":
-                    result = {"version": VERSION, "enabledFeatures": ["HTTPS"]}
-                case "aria2.getGlobalOption":
-                    result = {"dir": cfg.downloadFolder.value}
-                case "aria2.addUri":
-                    result = self._addUri(params)
-                case _:
-                    raise RpcError(f"No such method: {method}")
-        except RpcError as e:
-            return buildError(rpcId, ARIA2_ERROR, str(e))
-        return {"jsonrpc": "2.0", "id": rpcId, "result": result}
+        match method:
+            case "aria2.getVersion":
+                return {"version": VERSION, "enabledFeatures": ["HTTPS"]}
+            case "aria2.getGlobalOption":
+                return {"dir": cfg.downloadFolder.value}
+            case "aria2.addUri":
+                return self._addUri(params)
+            case _:
+                raise RpcError(f"No such method: {method}")
 
     def _addUri(self, params: list) -> str:
         if not params:

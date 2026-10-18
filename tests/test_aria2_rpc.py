@@ -168,7 +168,7 @@ class TestTransport:
 class TestRequestErrors:
     @pytest.mark.parametrize("body, status, code", [
         (b"{not json", 500, -32700),
-        (b"[]", 400, -32600),
+        (b'"x"', 400, -32600),
         (b'{"jsonrpc":"2.0","method":"aria2.getVersion"}', 400, -32600),
         (b'{"jsonrpc":"2.0","id":"x","method":"aria2.getVersion","params":{}}', 500, -32602),
     ])
@@ -283,3 +283,58 @@ class TestAddUri:
         assert url == "https://fail.test/f"
         assert isinstance(error, TaskError)
         assert (error.message, error.params) == ("发生了意外错误：{detail}", {"detail": "unreachable"})
+
+
+class TestMulticall:
+    async def test_each_call_returns_its_result_in_a_list(self, aria2):
+        result = await aria2.call("system.multicall", [[
+            {"methodName": "aria2.addUri", "params": [["https://a.test/1.zip"]]},
+            {"methodName": "aria2.addUri", "params": [["https://a.test/2.zip"]]},
+        ]])
+
+        [[first], [second]] = result["result"]
+        assert isGid(first) and isGid(second)
+        await waitFor(lambda: len(aria2.added) == 2)
+
+    async def test_token_is_checked_per_call(self, aria2, monkeypatch):
+        monkeypatch.setattr(cfg.aria2RpcToken, "value", "secret")
+        response = await aria2.post({"jsonrpc": "2.0", "id": "x", "method": "system.multicall", "params": [[
+            {"methodName": "aria2.getVersion", "params": ["token:secret"]},
+            {"methodName": "aria2.getVersion", "params": []},
+        ]]})
+
+        assert response.status == 200
+        [[version], fault] = response.json()["result"]
+        assert version["version"] == VERSION
+        assert fault == {"code": 1, "message": "Unauthorized"}
+
+    async def test_nested_multicall_is_a_fault(self, aria2):
+        result = await aria2.call("system.multicall", [[{"methodName": "system.multicall", "params": [[]]}]])
+
+        assert result["result"] == [{"code": 1, "message": "No such method: system.multicall"}]
+
+
+class TestBatch:
+    async def test_each_request_gets_its_own_response(self, aria2):
+        response = await aria2.post([
+            {"jsonrpc": "2.0", "id": "a", "method": "aria2.getVersion"},
+            {"jsonrpc": "2.0", "id": "b", "method": "aria2.tellStatus", "params": ["g"]},
+        ])
+
+        assert response.status == 200
+        version, error = response.json()
+        assert (version["id"], version["result"]["version"]) == ("a", VERSION)
+        assert (error["id"], error["error"]) == ("b", {"code": 1, "message": "No such method: aria2.tellStatus"})
+
+    @pytest.mark.parametrize("batch, expected", [([], []), ([1, "x"], [])])
+    async def test_non_object_items_are_skipped(self, aria2, batch, expected):
+        response = await aria2.post(batch)
+
+        assert (response.status, response.json()) == (200, expected)
+
+    async def test_batch_over_websocket(self, aria2):
+        async with aria2.connect() as ws:
+            await ws.send(json.dumps([{"jsonrpc": "2.0", "id": "a", "method": "aria2.getVersion"}]))
+            [response] = json.loads(await ws.recv())
+
+        assert response["result"]["version"] == VERSION
