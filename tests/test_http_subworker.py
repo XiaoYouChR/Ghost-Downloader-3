@@ -17,7 +17,7 @@ from aiohttp import web
 
 from app.client import buildClient as realBuildClient
 from features.http_pack.task import HttpTask, HttpTaskStep, HttpSubworker, PermanentDownloadError, RangeNotSupportedError
-from app.models.task import TaskStatus, TaskError
+from app.models.task import Task, TaskStatus, TaskError
 from tests.helpers import buildFileContent, buildRangeHandler, runStep
 
 
@@ -452,6 +452,58 @@ class TestResume:
 
         task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2,
                               canUseRangeRequests=True)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert filepath.read_bytes() == content
+
+
+# ── File Size correction (#923) ──
+
+
+class TestFileSizeCorrection:
+
+    async def test_browser_compressed_size_is_corrected(self, server, tmp_path):
+        """浏览器报来 gzip 后的长度，成品仍须是完整的 identity 字节。"""
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=990, subworkerCount=4)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        assert step.fileSize == 1000
+        assert task.fileSize == 1000
+
+    async def test_segment_step_keeps_its_size(self, server, tmp_path):
+        """分段下载只要文件中的一段，不按服务器总长校正。"""
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
+        step = HttpTaskStep(stepIndex=0, url=url, fileSize=300, httpByteOffset=200,
+                            subworkerCount=2, canUseRangeRequests=True, clientProfile="raw")
+        task = Task(name="test.bin", url=url, packId="ffmpeg", outputFolder=tmp_path, fileSize=300, steps=[step])
+        step._bindTask(task)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmp_path / "test.bin").read_bytes() == content[200:500]
+        assert step.fileSize == 300
+
+    async def test_record_with_wrong_size_starts_fresh(self, server, tmp_path):
+        from struct import pack as struct_pack
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
+
+        filepath = tmp_path / "test.bin"
+        filepath.write_bytes(content[:450] + b'\x00' * 540)
+        with open(str(filepath) + ".ghd", "wb") as f:
+            f.write(struct_pack("<QQQ", 0, 450, 494))
+            f.write(struct_pack("<QQQ", 495, 495, 989))
+
+        task, step = makeStep(url, tmp_path, fileSize=990, subworkerCount=2)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)

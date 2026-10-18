@@ -383,9 +383,15 @@ class HttpTaskStep(TaskStep):
         try:
             response = await client.get(self.url, headers=probeHeaders)
             self._effectiveUrl = str(response.url)
+            total = (response.headers.get("content-range") or b"").rpartition(b"/")[2]
             response.close()
         finally:
             client.close()
+
+        # 浏览器报来的可能是 gzip 后的长度 #923
+        if isinstance(self.task, HttpTask) and total.isdigit() and int(total) != self.fileSize:
+            self.fileSize = self.task.fileSize = int(total)
+            self._deleteRecord()
 
         restored = False
         if self.canUseRangeRequests:
