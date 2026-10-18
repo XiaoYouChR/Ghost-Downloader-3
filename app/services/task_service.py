@@ -279,6 +279,7 @@ class TaskService:
     taskCompleted = Signal(object)
     taskFailed = Signal(object)
     tasksAllCompleted = Signal()
+    runningCountChanged = Signal(int)
     seedingStarted = Signal(object)
     seedingStopped = Signal(object)
     checksumStarted = Signal(object)
@@ -615,6 +616,7 @@ class TaskService:
             self._coroutineRunner.cancel(workId, finished=finished)
         elif finished is not None:
             finished()
+        self.runningCountChanged.emit(self._queue.runningCount())
 
     def _rebalance(self, *_args) -> None:
         from app.models.task import TaskStatus
@@ -635,6 +637,7 @@ class TaskService:
             if task is not None:
                 self._dispatch(task)
         self._refreshSpeedMeter()
+        self.runningCountChanged.emit(self._queue.runningCount())
 
     def _refreshSpeedMeter(self) -> None:
         if self._queue.runningCount() or self._seeding:
