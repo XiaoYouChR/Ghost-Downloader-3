@@ -616,7 +616,6 @@ class TaskService:
             self._coroutineRunner.cancel(workId, finished=finished)
         elif finished is not None:
             finished()
-        self.runningCountChanged.emit(self._queue.runningCount())
 
     def _rebalance(self, *_args) -> None:
         from app.models.task import TaskStatus
