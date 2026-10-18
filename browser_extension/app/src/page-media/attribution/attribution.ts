@@ -523,7 +523,7 @@ class MediaAttribution {
     } else {
       this.notifyResolveListener(session, session.state, `attributed ${url}`);
     }
-    console.log(`${LOG_PREFIX} ${session.id} += ${url}`, { hint: contentType, count: session.attributedUrls.size, tier, locked, state: session.state });
+    console.log(`${LOG_PREFIX} ${session.id} +=`, url, { hint: contentType, count: session.attributedUrls.size, tier, locked, state: session.state });
   }
 
   private isMediaUrl(url: string, contentType: string): boolean {

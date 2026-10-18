@@ -45,7 +45,7 @@ def extractZip(archivePath: Path, targetDir: Path) -> None:
 
 def extractTarXz(archivePath: Path, targetDir: Path) -> None:
     with tarfile.open(archivePath, "r:xz") as tf:
-        tf.extractall(targetDir)
+        tf.extractall(targetDir, filter="data")
 
 
 async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
@@ -219,7 +219,7 @@ class UpdateService:
             await fetchReleaseAsset(APP_REPO, tag, patch["file"], outputPath,
                                     onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
-            if sha and await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(sha):
+            if not sha or await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(sha):
                 outputPath.unlink(missing_ok=True)
                 self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
                 return
@@ -238,7 +238,7 @@ class UpdateService:
         await fetchReleaseAsset(APP_REPO, tag, full["file"], archivePath,
                                 onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
-        if sha and await toChecksum(archivePath, "sha256", lambda _: None) != parseChecksum(sha):
+        if not sha or await toChecksum(archivePath, "sha256", lambda _: None) != parseChecksum(sha):
             archivePath.unlink(missing_ok=True)
             self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
             return
@@ -266,7 +266,7 @@ class UpdateService:
                            onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))
 
         expectedSha = packData.get("sha256", "")
-        if expectedSha and await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(expectedSha):
+        if not expectedSha or await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(expectedSha):
             outputPath.unlink(missing_ok=True)
             self._emit(packId, UpdateState.FAILED, error=TaskError("校验失败"))
             return
