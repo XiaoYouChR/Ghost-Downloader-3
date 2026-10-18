@@ -3,16 +3,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import (
-    QEasingCurve, QFileInfo, QParallelAnimationGroup, QPoint, QPointF, QPropertyAnimation, Qt, QTimer,
-)
+from PySide6.QtCore import QFileInfo, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QTextOption
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QDialog, QFileIconProvider, QFrame, QGraphicsOpacityEffect, QHBoxLayout,
+    QAbstractItemView, QApplication, QFileIconProvider, QFrame, QHBoxLayout,
     QHeaderView, QSizePolicy, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
-    CaptionLabel, FluentIcon, ImageLabel, InfoBar, InfoBarIcon, InfoBarPosition, LineEdit, ProgressBar, ScrollArea,
+    CaptionLabel, FluentIcon, ImageLabel, InfoBar, InfoBarIcon, InfoBarPosition, LineEdit, ProgressBar,
     SimpleCardWidget, StrongBodyLabel, SubtitleLabel, TableWidget, ToolTipFilter,
     TransparentToolButton, isDarkTheme, setFont,
 )
@@ -26,21 +24,15 @@ from app.i18n import toLocalizedError
 from app.models.task import TaskStatus
 from app.platform.desktop import revealInFolder
 from app.view.components.category_settings import toCategoryName
+from app.view.components.scroll_area import FastScrollArea
 
 if TYPE_CHECKING:
     from app.models.task import Task
 
 DRAWER_WIDTH = 592
-SLIDE_DURATION = 300
 CAPTION_WIDTH = 88
 MATCH_COLORS = ("#0F7B0F", "#6CCB5F")
 ROW_BUTTON_SIZE = 28
-
-
-def toBezierCurve(x1: float, y1: float, x2: float, y2: float) -> QEasingCurve:
-    curve = QEasingCurve(QEasingCurve.Type.BezierSpline)
-    curve.addCubicBezierSegment(QPointF(x1, y1), QPointF(x2, y2), QPointF(1, 1))
-    return curve
 
 
 def toTimeText(timestamp: int) -> str:
@@ -63,8 +55,6 @@ class SelectableText(QTextEdit):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setStyleSheet(f"background: transparent; color: {'white' if isDarkTheme() else 'black'}")
         self.document().setDocumentMargin(0)
-        self.document().documentLayout().documentSizeChanged.connect(
-            lambda size: self.setFixedHeight(size.toSize().height()))
         setFont(self, 14)
 
     def text(self) -> str:
@@ -73,6 +63,18 @@ class SelectableText(QTextEdit):
     def setText(self, text: str) -> None:
         if text != self.toPlainText():
             self.setPlainText(text)
+            self._refreshHeight()
+
+    def resizeEvent(self, e) -> None:
+        super().resizeEvent(e)
+        if e.size().width() != e.oldSize().width():
+            self._refreshHeight()
+
+    def _refreshHeight(self) -> None:
+        # 当场排版，开场截图才不会截到排了一半的文字
+        document = self.document()
+        document.setTextWidth(self.viewport().width())
+        self.setFixedHeight(document.size().toSize().height())
 
     def contextMenuEvent(self, e) -> None:
         TextEditMenu(self).exec(e.globalPos())
@@ -404,13 +406,15 @@ class FileListCard(DetailCard):
 
 
 class TaskDrawer(MaskDialogBase):
+    slideEdge = Qt.Edge.RightEdge
+
     def __init__(self, task: Task, taskService, featureService, categoryService, parent):
         super().__init__(parent)
         self._task = task
         self._taskService = taskService
         self.titleLabel = SubtitleLabel(self.tr("任务详情"), self.widget)
         self.closeButton = TransparentToolButton(FluentIcon.CLOSE, self.widget)
-        self.scrollArea = ScrollArea(self.widget)
+        self.scrollArea = FastScrollArea(self.widget)
         self.scrollWidget = QWidget()
         self.cards: list[QWidget] = [
             HeaderCard(task, self.scrollWidget),
@@ -421,12 +425,6 @@ class TaskDrawer(MaskDialogBase):
             *featureService.detailCards(task, self.scrollWidget),
         ]
         self.refreshTimer = QTimer(self)
-        self.slideAnimation = QPropertyAnimation(self.widget, b"pos", self)
-        self.maskEffect = QGraphicsOpacityEffect(self.windowMask)
-        self.closeAnimation = QParallelAnimationGroup(self)
-        self.slideOutAnimation = QPropertyAnimation(self.widget, b"pos", self.closeAnimation)
-        self.maskFadeAnimation = QPropertyAnimation(self.maskEffect, b"opacity", self.closeAnimation)
-        self._resultCode = 0
         self._initWidget()
         self._initLayout()
         self._bind()
@@ -448,14 +446,6 @@ class TaskDrawer(MaskDialogBase):
         self.scrollArea.enableTransparentBackground()
         self.scrollWidget.setStyleSheet("background: transparent")
         self.refreshTimer.setInterval(1000)
-        self.slideAnimation.setDuration(SLIDE_DURATION)
-        self.slideAnimation.setEasingCurve(toBezierCurve(0, 0, 0, 1))
-        self.maskEffect.setOpacity(1)
-        self.windowMask.setGraphicsEffect(self.maskEffect)
-        self.slideOutAnimation.setDuration(SLIDE_DURATION)
-        self.slideOutAnimation.setEasingCurve(toBezierCurve(0.8, 0, 0.78, 1))
-        self.maskFadeAnimation.setDuration(SLIDE_DURATION)
-        self.maskFadeAnimation.setEndValue(0)
 
     def _initLayout(self) -> None:
         titleLayout = QHBoxLayout()
@@ -465,7 +455,8 @@ class TaskDrawer(MaskDialogBase):
         titleLayout.addWidget(self.closeButton)
 
         scrollLayout = QVBoxLayout(self.scrollWidget)
-        scrollLayout.setContentsMargins(24, 8, 24, 24)
+        # 扣掉视口给滚动条让出的宽度，和标题栏对齐
+        scrollLayout.setContentsMargins(24, 8, 24 - self.scrollArea.viewportMargins().right(), 24)
         scrollLayout.setSpacing(20)
         for card in self.cards:
             scrollLayout.addWidget(card)
@@ -480,7 +471,6 @@ class TaskDrawer(MaskDialogBase):
     def _bind(self) -> None:
         self.closeButton.clicked.connect(self.reject)
         self.refreshTimer.timeout.connect(self._refresh)
-        self.closeAnimation.finished.connect(lambda: QDialog.done(self, self._resultCode))
         self._taskService.taskRemoved.connect(self._onTaskRemoved, owner=self)
 
     def _refresh(self) -> None:
@@ -497,27 +487,12 @@ class TaskDrawer(MaskDialogBase):
     def showEvent(self, e) -> None:
         super().showEvent(e)
         self.refreshTimer.start()
-        width = self._toDrawerWidth()
-        self.widget.setGeometry(self.width(), 0, width, self.height())
-        self.slideAnimation.setStartValue(QPoint(self.width(), 0))
-        self.slideAnimation.setEndValue(QPoint(self.width() - width, 0))
-        self.slideAnimation.start()
 
     def done(self, code: int) -> None:
-        if self.closeAnimation.state() == QParallelAnimationGroup.State.Running:
-            return
-        self._resultCode = code
         self.refreshTimer.stop()
-        self.slideAnimation.stop()
-        self.slideOutAnimation.setStartValue(self.widget.pos())
-        self.slideOutAnimation.setEndValue(QPoint(self.width(), 0))
-        self.maskFadeAnimation.setStartValue(self.maskEffect.opacity())
-        self.closeAnimation.start()
+        super().done(code)
 
     def resizeEvent(self, e) -> None:
         super().resizeEvent(e)
-        if self.closeAnimation.state() == QParallelAnimationGroup.State.Running:
-            return
         width = self._toDrawerWidth()
-        self.slideAnimation.stop()
         self.widget.setGeometry(self.width() - width, 0, width, self.height())

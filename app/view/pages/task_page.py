@@ -15,7 +15,7 @@ from qfluentwidgets import (
 )
 
 from app.view.components.band_selector import BandSelector
-from app.view.components.scroll_area import ScrollArea
+from app.view.components.scroll_area import FastScrollArea
 
 from app.config.cfg import cfg
 from app.format import toReadableSize
@@ -161,7 +161,7 @@ class TaskPage(QWidget):
         self._cardRefreshTimer.setInterval(1000)
         self._cardRefreshTimer.timeout.connect(self._refreshTickingCards)
 
-        self.scrollArea = ScrollArea(self)
+        self.scrollArea = FastScrollArea(self)
         self.scrollWidget = QWidget(self)
         self.emptyStatusWidget = EmptyStatusWidget(FluentIcon.EMOJI_TAB_SYMBOLS, self.tr("暂无下载任务"), self)
 
@@ -691,6 +691,8 @@ class TaskPage(QWidget):
 
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         width = self.scrollWidget.width()
+        # 视口给滚动条让出的位置也算右侧留白，和工具栏对齐
+        rightPadding = max(0, self.SIDE_PADDING - self.scrollArea.viewportMargins().right())
         count = len(self._displayOrder)
         if count:
             top = self.scrollArea.verticalScrollBar().value()
@@ -724,7 +726,7 @@ class TaskPage(QWidget):
                 card.dragRequested.connect(self._onCardDragRequested)
                 self._liveCards[taskId] = card
                 card.refresh()
-            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
+            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - self.SIDE_PADDING - rightPadding), TaskCard.ROW_HEIGHT)
             card.show()
 
     def _refreshTickingCards(self) -> None:

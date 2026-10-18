@@ -193,6 +193,8 @@ class MainWindow(MSFluentWindow):
         if page is None:
             page = self._createPage(pageClass)
             page.setObjectName(routeKey)
+            # addSubInterface 会设这个属性，懒创建绕过了它；不设时每次切页都会重刷整个内容区的样式
+            page.setProperty("isStackedTransparent", False)
             self.stackedWidget.addWidget(page)
             self._pages[routeKey] = page
             if self.stackedWidget.count() == 1:

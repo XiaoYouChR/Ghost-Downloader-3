@@ -11,7 +11,7 @@ from qfluentwidgets import (
     RangeSettingCard, SwitchSettingCard, ToolButton, ToolTipFilter,
 )
 
-from app.view.components.scroll_area import ScrollArea
+from app.view.components.scroll_area import FastScrollArea
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
@@ -30,8 +30,7 @@ from app.view.components.setting_cards import (
 )
 from app.view.components.editors import FolderPicker, addRecentFolder
 
-
-class SettingPage(ScrollArea):
+class SettingPage(FastScrollArea):
 
     def __init__(self, featureService, browserService, browserListener, aria2RpcListener, coroutineRunner, categoryService, taskService, updateService, parent=None):
         super().__init__(parent)
@@ -77,7 +76,10 @@ class SettingPage(ScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setObjectName("SettingPage")
         self.enableTransparentBackground()
-        self.setProperty("isStackedTransparent", False)
+        # 扣掉视口给滚动条让出的宽度，左右留白对称
+        margins = self.vBoxLayout.contentsMargins()
+        margins.setRight(max(0, margins.right() - self.viewportMargins().right()))
+        self.vBoxLayout.setContentsMargins(margins)
 
     def _initCards(self) -> None:
         self.speedLimitationCard = SpinBoxSettingCard(

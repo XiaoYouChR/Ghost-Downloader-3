@@ -28,10 +28,11 @@ def setupEnvironment():
     if sys.platform == "win32":
         setupHiddenSubprocess()
 
-    from app.view.qfw_patch import patchFluentLabelThemeChanged, patchStackedWidgetAnimation
+    from app.view.qfw_patch import patchFluentLabelThemeChanged, patchMaskDialogAnimation, patchStackedWidgetAnimation
     from app.view.components.labels import IconBodyLabel
     patchFluentLabelThemeChanged()
     patchStackedWidgetAnimation()
+    patchMaskDialogAnimation()
     qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
@@ -73,6 +74,10 @@ def startApp(application, isSilent=False):
     locale = QLocale() if localeName == "Auto" else QLocale(localeName)
     cfg.set(cfg.fontFamilies, buildFontFamilies(locale, application.font().defaultFamily()), save=False)
     application.setQuitOnLastWindowClosed(False)
+
+    if sys.platform == "win32":
+        from app.platform.windows import setAnimationFrameRate
+        setAnimationFrameRate(application.primaryScreen().refreshRate())
 
     if sys.platform == "darwin":
         from app.view.shell.dock import setDockIconVisible

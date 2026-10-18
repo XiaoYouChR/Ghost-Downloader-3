@@ -67,6 +67,17 @@ def patchFluentLabelThemeChanged() -> None:
     FluentLabelBase._applyThemeColor = _applyThemeColor
 
 
+def patchMaskDialogAnimation() -> None:
+    from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+
+    from app.view.components import dialog_animation
+
+    # 子类设成 Qt.Edge 时，面板从这条边滑入滑出
+    MaskDialogBase.slideEdge = None
+    MaskDialogBase.showEvent = dialog_animation.showEvent
+    MaskDialogBase.done = dialog_animation.done
+
+
 def unregisterRouter(stacked: QStackedWidget) -> None:
     from qfluentwidgets.common.router import qrouter
 
