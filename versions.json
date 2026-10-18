@@ -77,9 +77,9 @@
       "gdMinVersion": "4.4.0"
     },
     "http_pack": {
-      "version": "1.1.1",
+      "version": "1.1.2",
       "file": "http_pack.zip",
-      "sha256": "07ed29b19051ac3ce922046dcb3e920850c6371044ba64d5d16971e7b01963b5",
+      "sha256": "2a0449a2fdd4e3419daf885ed2c7f4f287542d363dc4f3bc25688d7cbbb48b60",
       "gdMinVersion": "4.4.0"
     },
     "huggingface_pack": {
