@@ -4,6 +4,11 @@ from PySide6.QtCore import QCoreApplication, QResource
 from PySide6.QtWidgets import QApplication
 
 from AppKit import (
+    NSApplication,
+    NSEventMaskLeftMouseUp,
+    NSEventMaskRightMouseUp,
+    NSEventModifierFlagControl,
+    NSEventTypeRightMouseUp,
     NSObject,
     NSStatusBar,
     NSVariableStatusItemLength,
@@ -25,6 +30,17 @@ class MenuTarget(NSObject):
     def menuNeedsUpdate_(self, menu):
         if self.owner is not None:
             self.owner._refreshMenuItems()
+
+    def menuDidClose_(self, menu):
+        self.owner._statusItem.setMenu_(None)
+
+    def onClicked_(self, sender):
+        event = NSApplication.sharedApplication().currentEvent()
+        if event.type() == NSEventTypeRightMouseUp or event.modifierFlags() & NSEventModifierFlagControl:
+            self.owner._statusItem.setMenu_(self.owner._menu)
+            self.owner._button.performClick_(None)
+        else:
+            signalBus.activationRequested.emit()
 
     def showDashboard_(self, sender):
         signalBus.activationRequested.emit()
@@ -54,10 +70,13 @@ class MacStatusItem:
         self._target = MenuTarget.alloc().init()
         self._target.owner = self
 
-        menu = self._buildMenu()
-        self._startAllItem = menu.itemAtIndex_(1)
-        self._pauseAllItem = menu.itemAtIndex_(2)
-        self._statusItem.setMenu_(menu)
+        self._menu = self._buildMenu()
+        self._startAllItem = self._menu.itemAtIndex_(1)
+        self._pauseAllItem = self._menu.itemAtIndex_(2)
+
+        self._button.setTarget_(self._target)
+        self._button.setAction_("onClicked:")
+        self._button.sendActionOn_(NSEventMaskLeftMouseUp | NSEventMaskRightMouseUp)
 
         cfg.shouldShowMenuBarSpeed.valueChanged.connect(self._onShowSpeedChanged)
 
