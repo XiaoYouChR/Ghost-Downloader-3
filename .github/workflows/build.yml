@@ -894,7 +894,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Build pack zips
-        run: uv run --no-project python3 scripts/build_pack.py --all
+        run: uv run --no-project python3 scripts/build_pack.py --bumped
 
       - name: Generate versions.json
         env:
@@ -958,12 +958,6 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update versions.json for v${VERSION} [skip ci]"
           git pull --rebase
           git push
-
-      - name: Purge jsDelivr cache
-        run: |
-          for f in versions.json dist/packs/*.zip; do
-            curl -s "https://purge.jsdelivr.net/gh/XiaoYouChR/Ghost-Downloader-3@main/${f}" || true
-          done
 
       - name: Push to CNB
         continue-on-error: true

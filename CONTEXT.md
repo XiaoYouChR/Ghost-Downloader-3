@@ -289,6 +289,10 @@ _Avoid_: source of truth 单独当术语；不叫 primary / 主镜像
 客户端竞速拉取更新元数据和资产的一个托管端点。当前集合是 github 与 gitcode。
 _Avoid_: Mirror、CDN、channel
 
+**Publish**:
+把一个 Pack 的新版本放到 Origin，客户端从此能收到它。只在 Pack 版本号变化时发生，与 App 的发版无关。
+_Avoid_: 发版、打包、release（指 App）
+
 ### GitHub 加速
 
 **Proxy Site**:

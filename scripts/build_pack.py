@@ -3,7 +3,7 @@
 
 Usage:
     python scripts/build_pack.py http_pack [bili_pack ...]
-    python scripts/build_pack.py --all
+    python scripts/build_pack.py --bumped
 """
 import argparse
 import hashlib
@@ -57,29 +57,30 @@ def readManifest(packId: str) -> dict:
         return tomllib.load(f).get("pack", {})
 
 
-def allPackIds() -> list[str]:
+def bumpedPackIds(packs: dict) -> list[str]:
     return [
         d.name for d in sorted(FEATURES_DIR.iterdir())
         if d.is_dir() and d.name not in EXCLUDED_PACKS and (d / "manifest.toml").is_file()
+        and readManifest(d.name).get("version", "") != packs.get(d.name, {}).get("version")
     ]
 
 
 def main():
     parser = argparse.ArgumentParser(description="Build pack zips and update versions.json")
     parser.add_argument("packs", nargs="*", help="Pack IDs to build")
-    parser.add_argument("--all", action="store_true", help="Build all packs")
+    parser.add_argument("--bumped", action="store_true", help="Build packs whose version differs from versions.json")
     args = parser.parse_args()
-
-    if args.all:
-        packIds = allPackIds()
-    elif args.packs:
-        packIds = args.packs
-    else:
-        parser.error("Specify pack IDs or --all")
-        return
 
     versions = json.loads(VERSIONS_FILE.read_text()) if VERSIONS_FILE.is_file() else {"app": {}, "packs": {}}
     packs = versions.setdefault("packs", {})
+
+    if args.bumped:
+        packIds = bumpedPackIds(packs)
+    elif args.packs:
+        packIds = args.packs
+    else:
+        parser.error("Specify pack IDs or --bumped")
+        return
 
     for packId in packIds:
         print(f"Building {packId}...")
