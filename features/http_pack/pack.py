@@ -86,7 +86,7 @@ async def probe(options: TaskOptions) -> RemoteFile:
                 response.raise_for_status()
             return (
                 status,
-                {k.decode().lower(): v.decode() for k, v in response.headers},
+                {bytes(k).decode().lower(): bytes(v).decode() for k, v in response.headers},
                 str(response.url),
             )
         finally:

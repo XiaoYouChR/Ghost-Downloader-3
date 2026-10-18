@@ -87,7 +87,7 @@ class HuggingFaceParser(TaskParser):
                 fileSize = 0
                 cl = response.headers.get("content-length")
                 if cl:
-                    fileSize = int(cl.decode() if isinstance(cl, bytes) else cl)
+                    fileSize = int(cl)
                 canUseRange = response.headers.contains_key("accept-ranges")
             finally:
                 client.close()

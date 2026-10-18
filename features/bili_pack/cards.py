@@ -642,7 +642,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
                         imgUrl = "https:" + imgUrl
                     resp = await client.get(imgUrl)
                     try:
-                        imgData = await resp.bytes()
+                        imgData = bytes(await resp.bytes())
                     finally:
                         resp.close()
                     pm = QPixmap()

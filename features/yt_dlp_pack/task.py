@@ -424,7 +424,7 @@ class YouTubeExtractStep(TaskStep):
                 headers = {**step.headers, "range": "bytes=0-4095", "accept-encoding": "identity"}
                 response = await client.get(step.url, headers=headers)
                 try:
-                    headerData = await response.bytes()
+                    headerData = bytes(await response.bytes())
                 finally:
                     response.close()
             finally:

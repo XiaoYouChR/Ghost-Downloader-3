@@ -98,7 +98,7 @@ class BilibiliParser(TaskParser):
                     headResponse = await client.head(coverUrl)
                     cl = headResponse.headers.get("content-length")
                     if cl:
-                        coverSize = int(cl.decode() if isinstance(cl, bytes) else cl)
+                        coverSize = int(cl)
                 except Exception:
                     pass
 

@@ -62,7 +62,7 @@ class M3U8Parser(TaskParser):
                 response = await client.get(url)
                 response.raise_for_status()
                 body = await response.text()
-                responseHeaders = {k.decode().lower(): v.decode() for k, v in response.headers}
+                responseHeaders = {bytes(k).decode().lower(): bytes(v).decode() for k, v in response.headers}
                 manifestUrl = str(response.url)
             finally:
                 client.close()

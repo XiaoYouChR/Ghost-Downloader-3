@@ -25,7 +25,7 @@ async def fetchBytes(url: str) -> bytes:
     try:
         response = await client.get(url)
         response.raise_for_status()
-        return await response.bytes()
+        return bytes(await response.bytes())
     finally:
         client.close()
 

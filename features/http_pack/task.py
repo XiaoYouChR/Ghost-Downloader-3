@@ -383,7 +383,7 @@ class HttpTaskStep(TaskStep):
         try:
             response = await client.get(self.url, headers=probeHeaders)
             self._effectiveUrl = str(response.url)
-            total = (response.headers.get("content-range") or b"").rpartition(b"/")[2]
+            total = bytes(response.headers.get("content-range") or b"").rpartition(b"/")[2]
             response.close()
         finally:
             client.close()

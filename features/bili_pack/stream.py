@@ -52,7 +52,7 @@ async def probeSize(url: str, headers: dict | None = None) -> int:
             raw = response.headers.get("content-range")
             if raw is None:
                 return 0
-            cr = raw.decode() if isinstance(raw, (bytes, bytearray)) else str(raw)
+            cr = bytes(raw).decode()
             if "/" not in cr:
                 return 0
             total = cr.rsplit("/", 1)[-1].strip()

@@ -261,7 +261,7 @@ class BilibiliAccount:
                 "gourl": "https://www.bilibili.com/",
             })
             response.raise_for_status()
-            contentType = (response.headers.get("content-type") or b"").decode().lower()
+            contentType = bytes(response.headers.get("content-type") or b"").decode().lower()
             if "application/json" not in contentType:
                 return True
 

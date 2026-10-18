@@ -484,7 +484,7 @@ class YtDlpDraftCard(DraftCard):
                         continue
                     response = await client.get(url)
                     try:
-                        data = await response.bytes()
+                        data = bytes(await response.bytes())
                     finally:
                         response.close()
                     pm = QPixmap()

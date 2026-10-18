@@ -482,7 +482,7 @@ class BilibiliVideoStep(HttpTaskStep):
             headers = {**self.headers, "range": f"bytes=0-{endByte}", "accept-encoding": "identity"}
             response = await client.get(self.url, headers=headers)
             try:
-                headerData = await response.bytes()
+                headerData = bytes(await response.bytes())
             finally:
                 response.close()
         finally:
@@ -548,7 +548,7 @@ class BilibiliAudioStep(HttpTaskStep):
             headers = {**self.headers, "range": f"bytes=0-{endByte}", "accept-encoding": "identity"}
             response = await client.get(self.url, headers=headers)
             try:
-                headerData = await response.bytes()
+                headerData = bytes(await response.bytes())
             finally:
                 response.close()
         finally:
