@@ -92,15 +92,10 @@ class OutputFolderCard(OptionCard):
         self.iconWidget = IconWidget(FluentIcon.DOWNLOAD, self)
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("选择下载路径"), self)
-        self.folderPicker = FolderPicker(self)
+        self.folderPicker = FolderPicker(lambda: cfg.downloadFolder.value, self.tr("默认"), self)
         self.folderPicker.setPath(str(initial) if initial else cfg.downloadFolder.value)
 
-        self._initWidget()
         self._initLayout()
-        self._bind()
-
-    def _initWidget(self) -> None:
-        self.folderPicker.refreshHistory()
 
     def _initLayout(self) -> None:
         layout = QHBoxLayout(self)
@@ -110,9 +105,6 @@ class OutputFolderCard(OptionCard):
         layout.addWidget(self.titleLabel)
         layout.addStretch(1)
         layout.addWidget(self.folderPicker, stretch=3)
-
-    def _bind(self) -> None:
-        self.folderPicker.pathChanged.connect(self.folderPicker.saveHistory)
 
     def options(self) -> dict:
         return {"outputFolder": Path(self.folderPicker.path())}

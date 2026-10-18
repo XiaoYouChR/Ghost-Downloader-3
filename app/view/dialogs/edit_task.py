@@ -10,6 +10,7 @@ from qfluentwidgets import (
 
 from app.format import toReadableSize
 from app.view.components.card_groups import OptionCardGroup
+from app.view.components.editors import addRecentFolder
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 
@@ -61,6 +62,8 @@ class LiveEditDialog(EditTaskDialog):
 
         options = self.cardGroup.options()
         newUrl = options.pop("url", "").strip()
+        if "outputFolder" in options:
+            addRecentFolder(str(options["outputFolder"]))
 
         if not newUrl or newUrl == self._task.url:
             self._taskService.edit(self._task, options)

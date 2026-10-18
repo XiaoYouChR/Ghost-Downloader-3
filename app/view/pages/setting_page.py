@@ -28,7 +28,7 @@ from app.view.components.setting_cards import (
     HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
-from app.view.components.editors import FolderPicker
+from app.view.components.editors import FolderPicker, addRecentFolder
 
 
 class SettingPage(ScrollArea):
@@ -88,15 +88,11 @@ class SettingPage(ScrollArea):
         )
         from qfluentwidgets import SettingCard
         self.downloadFolderCard = SettingCard(FluentIcon.FOLDER, self.tr("下载路径"), self.tr("文件默认保存位置"))
-        self.downloadFolderPicker = FolderPicker(self.downloadFolderCard)
-        self.downloadRestoreButton = ToolButton(FluentIcon.CANCEL, self.downloadFolderCard)
-        self.downloadRestoreButton.setToolTip(self.tr("恢复默认路径"))
-        self.downloadRestoreButton.installEventFilter(ToolTipFilter(self.downloadRestoreButton))
-        self.downloadFolderPicker.refreshHistory()
+        self.downloadFolderPicker = FolderPicker(
+            lambda: cfg.downloadFolder.defaultValue, self.tr("系统默认"), self.downloadFolderCard
+        )
         self.downloadFolderPicker.setPath(cfg.downloadFolder.value)
         self.downloadFolderCard.hBoxLayout.addWidget(self.downloadFolderPicker, 0, Qt.AlignmentFlag.AlignRight)
-        self.downloadFolderCard.hBoxLayout.addSpacing(8)
-        self.downloadFolderCard.hBoxLayout.addWidget(self.downloadRestoreButton, 0, Qt.AlignmentFlag.AlignRight)
         self.downloadFolderCard.hBoxLayout.addSpacing(16)
         self.clientProfileCard = IdentitySettingCard()
 
@@ -404,10 +400,6 @@ class SettingPage(ScrollArea):
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
         self.downloadFolderPicker.pathChanged.connect(self._onDownloadFolderChanged)
-        self.downloadRestoreButton.clicked.connect(
-            lambda: (self.downloadFolderPicker.setPath(cfg.downloadFolder.defaultValue),
-                     cfg.set(cfg.downloadFolder, cfg.downloadFolder.defaultValue))
-        )
 
         self.browserPairTokenCard.clicked.connect(self._onCopyTokenClicked)
         self.regenerateTokenButton.clicked.connect(self._onRegenerateTokenClicked)
@@ -425,7 +417,7 @@ class SettingPage(ScrollArea):
 
     def _onDownloadFolderChanged(self, path: str) -> None:
         cfg.set(cfg.downloadFolder, path)
-        self.downloadFolderPicker.saveHistory(path)
+        addRecentFolder(cfg.downloadFolder.value)
 
     def _showRestartTooltip(self) -> None:
         InfoBar.success(self.tr("已配置"), self.tr("重启软件后生效"), duration=1500, parent=self)

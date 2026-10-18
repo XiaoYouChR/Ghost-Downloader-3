@@ -16,7 +16,7 @@ from qfluentwidgets import (
 
 from app.platform.android import IS_ANDROID
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
-from app.view.components.editors import AutoSizingEdit
+from app.view.components.editors import AutoSizingEdit, addRecentFolder
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
 from app.i18n import toLocalizedError
 
@@ -147,6 +147,9 @@ class TaskDraftDialog(MessageBoxBase):
     def showStandalone(self) -> None:
         from app.platform.desktop import raiseWindow
 
+        if not self.isActive:
+            self.optionGroup.reset()
+
         if self._isStandalone and self._standaloneWrapper.isVisible():
             raiseWindow(self._standaloneWrapper)
             self.urlEdit.setFocus()
@@ -171,6 +174,8 @@ class TaskDraftDialog(MessageBoxBase):
         self.urlEdit.moveCursor(QTextCursor.MoveOperation.End)
 
     def showMask(self) -> int:
+        if not self.isActive:
+            self.optionGroup.reset()
         if self._isStandalone:
             self._toMask()
 
@@ -212,11 +217,11 @@ class TaskDraftDialog(MessageBoxBase):
     def done(self, code: int, autoStart=True) -> None:
         if code == QDialog.DialogCode.Accepted:
             self._draft.confirm(autoStart=autoStart)
+            addRecentFolder(str(self.optionGroup.options()["outputFolder"]))
         else:
             self._draft.clear()
 
         self.urlEdit.clear()
-        self.optionGroup.reset()
         self._parseTimer.stop()
         self.draftGroup.clear()
         self.draftGroup.updateStats(0, 0, 0)

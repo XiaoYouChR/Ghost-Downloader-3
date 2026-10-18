@@ -30,6 +30,15 @@ Task 加入时为它将产出的每个最终路径（成品和 Side File）创�
 任一路径被占用即为 Name Conflict。Task 存在期间一直持有，Task 被移除时释放。
 _Avoid_: 占位符文件、lock file
 
+**Default Folder**:
+新 Task 的 Output Folder 初始值，由用户在设置中指定。
+_Avoid_: 下载路径、默认目录
+
+**Recent Folders**:
+用户最近作为 Output Folder 真正使用过的文件夹列表，供快速选择；用户可逐条移除。
+Task 加入时、Default Folder 被改为某文件夹时记入。
+_Avoid_: 历史路径、memory folders
+
 **Side File**:
 随成品一起产出、以成品 Name 为前缀的附属文件——字幕、封面、种子文件。
 _Avoid_: side product、sidecar；与 Selectable File 混淆

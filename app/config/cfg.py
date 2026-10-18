@@ -236,9 +236,7 @@ class Config(QConfig):
         "/storage/emulated/0/Download" if IS_ANDROID else str(DOWNLOAD_DIR),
         FolderValidator(),
     )
-    memoryDownloadFolders = ConfigItem(
-        "GeneralDownload", "HistoryDownloadFolder", [], FolderListValidator()
-    )
+    recentFolders = ConfigItem("GeneralDownload", "RecentFolders", [], FolderListValidator())
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
     nameConflict = OptionsConfigItem(
         "GeneralDownload", "NameConflict", "keepBoth", OptionsValidator(["keepBoth", "overwrite", "ask"])
