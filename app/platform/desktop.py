@@ -110,8 +110,7 @@ def _revealInFolderShell(path: Path) -> bool:
 
 
 def deleteRecoverably(path: Path) -> bool:
-    isMoved, _ = QFile.moveToTrash(str(path))
-    return isMoved
+    return QFile.moveToTrash(str(path))
 
 
 def loadCrx() -> bytes:
