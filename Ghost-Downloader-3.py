@@ -20,6 +20,9 @@ sys.excepthook = _exceptionHook
 
 
 def setupEnvironment():
+    from app.nuitka_patch import patchSignalWorkaround
+    patchSignalWorkaround()
+
     from app.config.cfg import cfg
     from app.config.constants import VERSION
     from app.platform.hidden_subprocess import setupHiddenSubprocess

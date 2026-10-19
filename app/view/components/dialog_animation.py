@@ -58,8 +58,7 @@ class AnimationLayer(QWidget):
                 layer._animation.stop()
         self._backdrop = self._buildBackdrop()
         self._animation.valueChanged.connect(self.update)
-        # Nuitka 编译后会永久持有连到信号上的绑定方法，用 lambda 这一层和截图才能释放
-        self._animation.stateChanged.connect(lambda state: self._onAnimationStateChanged(state))
+        self._animation.stateChanged.connect(self._onAnimationStateChanged)
         # 对话框声明不透明，Qt 就不再重画底下的页面
         dialog.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent)
         # 关闭时当场截图，窗口最小化时也能关掉
