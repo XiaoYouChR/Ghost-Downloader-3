@@ -1,38 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
+import asyncio
+import socket
 import sys
-from pathlib import Path
-from types import ModuleType
+from collections.abc import Callable
 
+import pytest
 from aiohttp import web
 
-BRIDGE_PATH = Path(__file__).parents[1] / "android/app/src/main/python/bridge.py"
-
-
-class StubFlows:
-    def __init__(self):
-        self.states: dict[str, str] = {}
-        self.history: list[str] = []
-        self.events: list[tuple[str, str]] = []
-
-    def setState(self, key, value):
-        self.states[key] = value
-        self.history.append(key)
-
-    def sendEvent(self, key, value):
-        self.events.append((key, value))
-
-
-def loadBridge():
-    stub = ModuleType("app.platform.file_watcher")
-    stub.InotifyFileWatcher = object
-    sys.modules["app.platform.file_watcher"] = stub
-
-    spec = importlib.util.spec_from_file_location("android_bridge", BRIDGE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+EXE_SUFFIX = ".exe" if sys.platform == "win32" else ""
 
 
 def buildFileContent(size: int) -> bytes:
@@ -77,3 +53,23 @@ async def runStep(step) -> list[int]:
         step.task.setStatus(TaskStatus.RUNNING)
     await step.task.run(reportSpeed, waitForSpeedLimit)
     return speeds
+
+
+async def waitUntil(isDone: Callable[[], bool], timeout: float = 5) -> None:
+    async with asyncio.timeout(timeout):
+        while not isDone():
+            await asyncio.sleep(0.01)
+
+
+def probeFreePort() -> int:
+    for _ in range(20):
+        with socket.socket(socket.AF_INET) as v4:
+            v4.bind(("127.0.0.1", 0))
+            port = v4.getsockname()[1]
+            with socket.socket(socket.AF_INET6) as v6:
+                try:
+                    v6.bind(("::1", port))
+                except OSError:
+                    continue
+        return port
+    pytest.skip("本机没有可用的 IPv6 回环地址")

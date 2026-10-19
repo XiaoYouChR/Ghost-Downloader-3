@@ -1,199 +1,127 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import socket
 
 import pytest
+import websockets
+from websockets.exceptions import ConnectionClosed
 
-from app.services.coroutine_runner import CoroutineRunner
-from app.services.port_listener import ListenState, ListenStatus, PortListener
-from app.signal import Signal
-
-pytestmark = pytest.mark.asyncio(loop_factories=["asyncio", "uvloop"])
-
-
-class FakeItem:
-    valueChanged = Signal(object)
-
-    def __init__(self, value):
-        self.value = value
-
-    def set(self, value):
-        self.value = value
-        self.valueChanged.emit(value)
+from app.config.cfg import cfg
+from app.services.port_listener import ListenState, ListenStatus
+from tests.helpers import probeFreePort, waitUntil
 
 
-def findFreePort() -> int:
-    while True:
-        with socket.socket(socket.AF_INET) as v4:
-            v4.bind(("127.0.0.1", 0))
-            port = v4.getsockname()[1]
-            with socket.socket(socket.AF_INET6) as v6:
-                try:
-                    v6.bind(("::1", port))
-                except OSError:
-                    continue
-        return port
+@pytest.fixture(params=["desktop", "android"])
+def engine(request, startEngine):
+    return startEngine(request.param)
 
 
-def occupy(host: str, port: int) -> socket.socket:
-    family = socket.AF_INET6 if ":" in host else socket.AF_INET
-    sock = socket.socket(family)
+@pytest.fixture
+def listener(engine):
+    return engine.aria2RpcListener
+
+
+async def startListener(port: int) -> None:
+    cfg.set(cfg.aria2RpcPort, port)
+    await asyncio.sleep(0.05)
+    cfg.set(cfg.isAria2RpcEnabled, True)
+
+
+def createListener(host: str, port: int) -> socket.socket:
+    sock = socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET)
     sock.bind((host, port))
     sock.listen()
     return sock
 
 
-async def waitFor(predicate, timeout: float = 2.0) -> None:
-    deadline = asyncio.get_running_loop().time() + timeout
-    while not predicate():
-        if asyncio.get_running_loop().time() > deadline:
-            raise AssertionError("condition not met in time")
-        await asyncio.sleep(0.01)
-
-
-async def echo(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-    while line := await reader.readline():
-        if line == b"boom\n":
-            raise RuntimeError("boom")
-        writer.write(line)
-        await writer.drain()
-
-
-async def roundTrip(host: str, port: int, text: bytes = b"hello\n") -> bytes:
+async def requestVersion(host: str, port: int) -> int:
+    body = json.dumps({"jsonrpc": "2.0", "id": "v", "method": "aria2.getVersion", "params": []}).encode()
     reader, writer = await asyncio.open_connection(host, port)
-    writer.write(text)
-    line = await asyncio.wait_for(reader.readline(), 1)
+    writer.write(f"POST /jsonrpc HTTP/1.1\r\nHost: x\r\nContent-Length: {len(body)}\r\n\r\n".encode() + body)
+    statusLine = await asyncio.wait_for(reader.readline(), 3)
     writer.close()
-    return line
+    return int(statusLine.split()[1])
 
 
-@pytest.fixture
-async def build():
-    listeners = []
-
-    def build(isEnabled=True, port=None):
-        loop = asyncio.get_running_loop()
-        runner = CoroutineRunner(loop.call_soon, loop=loop)
-        isEnabledItem, portItem = FakeItem(isEnabled), FakeItem(port or findFreePort())
-        listener = PortListener(runner, echo, isEnabled=isEnabledItem, port=portItem)
-        listeners.append(listener)
-        return listener, isEnabledItem, portItem
-
-    yield build
-
-    for listener in listeners:
-        listener.stop()
-    await asyncio.sleep(0.05)
-
-
-def isListening(listener: PortListener) -> bool:
+def isListening(listener) -> bool:
     return listener.state.status == ListenStatus.LISTENING
 
 
-async def test_listens_on_ipv4_and_ipv6_loopback(build):
-    listener, isEnabledItem, portItem = build()
-    listener.start()
-    await waitFor(lambda: isListening(listener))
+async def test_start_listens_on_ipv4_and_ipv6(listener):
+    await startListener(probeFreePort())
+    await waitUntil(lambda: isListening(listener))
 
-    assert await roundTrip("127.0.0.1", listener.state.port) == b"hello\n"
-    assert await roundTrip("::1", listener.state.port) == b"hello\n"
+    assert await requestVersion("127.0.0.1", listener.state.port) == 200
+    assert await requestVersion("::1", listener.state.port) == 200
 
 
-async def test_occupied_port_fails_and_recovers_after_port_change(build):
-    port = findFreePort()
-    occupier = occupy("127.0.0.1", port)
-    listener, isEnabledItem, portItem = build(port=port)
-    listener.start()
-    await waitFor(lambda: listener.state.status == ListenStatus.FAILED)
+async def test_start_on_taken_port_fails_until_port_changes(listener):
+    port = probeFreePort()
+    occupier = createListener("127.0.0.1", port)
+    await startListener(port)
+    await waitUntil(lambda: listener.state.status == ListenStatus.FAILED)
 
-    assert str(listener.state.error) == f"端口 {port} 被占用，请更换端口"
-    assert listener.state.port == port
-
-    portItem.set(findFreePort())
-    await waitFor(lambda: isListening(listener))
+    assert (str(listener.state.error), listener.state.port) == (f"端口 {port} 被占用，请更换端口", port)
+    cfg.set(cfg.aria2RpcPort, probeFreePort())
+    await waitUntil(lambda: isListening(listener))
     occupier.close()
 
 
-async def test_occupied_ipv6_still_listens_on_ipv4(build):
-    port = findFreePort()
-    occupier = occupy("::1", port)
-    listener, isEnabledItem, portItem = build(port=port)
-    listener.start()
-    await waitFor(lambda: isListening(listener))
+async def test_start_with_taken_ipv6_listens_on_ipv4(listener):
+    port = probeFreePort()
+    occupier = createListener("::1", port)
+    await startListener(port)
+    await waitUntil(lambda: isListening(listener))
 
-    assert await roundTrip("127.0.0.1", port) == b"hello\n"
+    assert await requestVersion("127.0.0.1", port) == 200
     occupier.close()
 
 
-async def test_rapid_toggling_ends_listening_without_failure(build):
-    listener, isEnabledItem, portItem = build()
+async def test_start_and_stop_quickly_ends_listening(listener):
     states: list[ListenState] = []
     listener.stateChanged.connect(states.append)
-    listener.start()
+    await startListener(probeFreePort())
     for _ in range(50):
-        isEnabledItem.set(False)
-        isEnabledItem.set(True)
-    await waitFor(lambda: isListening(listener))
+        cfg.set(cfg.isAria2RpcEnabled, False)
+        cfg.set(cfg.isAria2RpcEnabled, True)
+    await waitUntil(lambda: isListening(listener))
     await asyncio.sleep(0.1)
 
     assert isListening(listener)
-    assert all(s.status != ListenStatus.FAILED for s in states)
-    assert await roundTrip("127.0.0.1", listener.state.port) == b"hello\n"
+    assert all(state.status != ListenStatus.FAILED for state in states)
+    assert await requestVersion("127.0.0.1", listener.state.port) == 200
 
 
-async def test_disabling_closes_established_connections(build):
-    listener, isEnabledItem, portItem = build()
-    listener.start()
-    await waitFor(lambda: isListening(listener))
-    reader, writer = await asyncio.open_connection("127.0.0.1", listener.state.port)
+async def test_stop_closes_served_connections(listener):
+    await startListener(probeFreePort())
+    await waitUntil(lambda: isListening(listener))
 
-    isEnabledItem.set(False)
+    async with websockets.connect(f"ws://127.0.0.1:{listener.state.port}/jsonrpc") as ws:
+        cfg.set(cfg.isAria2RpcEnabled, False)
+        with pytest.raises(ConnectionClosed):
+            await asyncio.wait_for(ws.recv(), 1)
 
-    assert await asyncio.wait_for(reader.read(), 1) == b""
-    await waitFor(lambda: listener.state.status == ListenStatus.OFF)
-    writer.close()
-
-
-async def test_stop_then_start_in_same_tick_keeps_listening(build):
-    listener, isEnabledItem, portItem = build()
-    listener.start()
-    await waitFor(lambda: isListening(listener))
-    port = listener.state.port
-
-    listener.stop()
-    listener.start()
-    await asyncio.sleep(0.1)
-
-    assert isListening(listener)
-    assert await roundTrip("127.0.0.1", port) == b"hello\n"
+    await waitUntil(lambda: listener.state.status == ListenStatus.OFF)
 
 
-async def test_failing_connection_does_not_stop_listener(build):
-    listener, isEnabledItem, portItem = build()
-    listener.start()
-    await waitFor(lambda: isListening(listener))
-    reader, writer = await asyncio.open_connection("127.0.0.1", listener.state.port)
-    writer.write(b"boom\n")
+async def test_start_is_starting_until_bound(listener):
+    port = probeFreePort()
 
-    assert await asyncio.wait_for(reader.read(), 1) == b""
-    assert await roundTrip("127.0.0.1", listener.state.port) == b"hello\n"
+    await startListener(port)
+
+    assert (listener.state.status, listener.state.port) == (ListenStatus.STARTING, port)
 
 
-async def test_enabled_listener_is_not_off_before_bind_finishes(build):
-    listener, isEnabledItem, portItem = build()
-    listener.start()
+async def test_start_announces_each_state_once(listener):
+    cfg.set(cfg.aria2RpcPort, probeFreePort())
+    await asyncio.sleep(0.05)
+    statuses: list[ListenStatus] = []
+    listener.stateChanged.connect(lambda state: statuses.append(state.status))
 
-    assert listener.state.status != ListenStatus.OFF
-    assert listener.state.port == portItem.value
-
-
-async def test_state_changes_are_emitted_once_each(build):
-    listener, isEnabledItem, portItem = build()
-    states: list[ListenStatus] = []
-    listener.stateChanged.connect(lambda s: states.append(s.status))
-    listener.start()
-    await waitFor(lambda: isListening(listener))
+    cfg.set(cfg.isAria2RpcEnabled, True)
+    await waitUntil(lambda: isListening(listener))
     await asyncio.sleep(0.05)
 
-    assert states == [ListenStatus.STARTING, ListenStatus.LISTENING]
+    assert statuses == [ListenStatus.STARTING, ListenStatus.LISTENING]

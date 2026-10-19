@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import time
 
 import pytest
+from aiohttp import web
 
 from app.bootstrap_list import BootstrapList
 
@@ -14,106 +17,115 @@ def parseLines(data: bytes) -> list[str]:
     return lines
 
 
-def makeList(tmp_path, sources: list[str], bodies: dict[str, bytes], fetched: list[str] | None = None):
+class Source:
+    def __init__(self, body: bytes | None):
+        self.body = body
+        self.hits = 0
+        self.url = ""
+
+    async def onRequest(self, request: web.Request) -> web.Response:
+        self.hits += 1
+        await asyncio.sleep(0)
+        if self.body is None:
+            return web.Response(status=503)
+        return web.Response(body=self.body)
+
+
+@pytest.fixture
+def startSource(config, startServer):
+    async def start(body: bytes | None) -> Source:
+        source = Source(body)
+        source.url = await startServer(source.onRequest)
+        return source
+    return start
+
+
+def buildList(tmp_path, *sources: Source) -> BootstrapList:
     snapshot = tmp_path / "snapshot.txt"
     snapshot.write_bytes(b"udp://snapshot:1\n")
-
-    async def fetch(url: str) -> bytes:
-        if fetched is not None:
-            fetched.append(url)
-        await asyncio.sleep(0)
-        if url not in bodies:
-            raise OSError("unreachable")
-        return bodies[url]
-
-    return BootstrapList(tmp_path / "cache", snapshot, lambda: sources, parseLines, fetch)
+    return BootstrapList(tmp_path / "cache", snapshot, lambda: [source.url for source in sources], parseLines)
 
 
-def test_snapshot_is_used_until_anything_is_cached(tmp_path):
-    bootstrapList = makeList(tmp_path, ["https://a"], {})
+async def test_load_snapshot_until_cached(tmp_path, startSource):
+    bootstrapList = buildList(tmp_path, await startSource(None))
 
     assert bootstrapList.paths() == [tmp_path / "snapshot.txt"]
 
 
-async def test_refresh_caches_every_source_in_order(tmp_path):
-    bootstrapList = makeList(tmp_path, ["https://a", "https://b"], {
-        "https://a": b"udp://a:1\nudp://a:2\n",
-        "https://b": b"udp://b:1\n",
-    })
+async def test_refresh_caches_every_source_in_order(tmp_path, startSource):
+    a, b = await startSource(b"udp://a:1\nudp://a:2\n"), await startSource(b"udp://b:1\n")
+    bootstrapList = buildList(tmp_path, a, b)
 
     await bootstrapList.refresh()
 
-    paths = bootstrapList.paths()
-    assert [p.read_bytes() for p in paths] == [b"udp://a:1\nudp://a:2\n", b"udp://b:1\n"]
+    assert [path.read_bytes() for path in bootstrapList.paths()] == [b"udp://a:1\nudp://a:2\n", b"udp://b:1\n"]
     statuses = bootstrapList.statuses()
-    assert [(s.url, s.count, s.error) for s in statuses] == [("https://a", 2, ""), ("https://b", 1, "")]
-    assert all(s.updatedAt is not None for s in statuses)
+    assert [(status.url, status.count, status.error) for status in statuses] == [(a.url, 2, ""), (b.url, 1, "")]
+    assert all(status.updatedAt is not None for status in statuses)
 
 
-async def test_failed_source_keeps_its_cache_and_reports_why(tmp_path):
-    bodies = {"https://a": b"udp://a:1\n", "https://b": b"udp://b:1\n"}
-    bootstrapList = makeList(tmp_path, ["https://a", "https://b"], bodies)
+async def test_refresh_failure_keeps_cache_and_shows_why(tmp_path, startSource):
+    a, b = await startSource(b"udp://a:1\n"), await startSource(b"udp://b:1\n")
+    bootstrapList = buildList(tmp_path, a, b)
     await bootstrapList.refresh()
 
-    del bodies["https://a"]
+    a.body = None
     await bootstrapList.refresh()
 
     assert bootstrapList.paths()[0].read_bytes() == b"udp://a:1\n"
     status = bootstrapList.statuses()[0]
     assert status.count == 1
-    assert "unreachable" in status.error
+    assert "503" in status.error
 
 
-async def test_invalid_content_never_replaces_the_cache(tmp_path):
-    bodies = {"https://a": b"udp://a:1\n"}
-    bootstrapList = makeList(tmp_path, ["https://a"], bodies)
+async def test_refresh_with_invalid_content_keeps_cache(tmp_path, startSource):
+    a = await startSource(b"udp://a:1\n")
+    bootstrapList = buildList(tmp_path, a)
     await bootstrapList.refresh()
 
-    bodies["https://a"] = b"   "
+    a.body = b"   "
     await bootstrapList.refresh()
 
     assert bootstrapList.paths()[0].read_bytes() == b"udp://a:1\n"
     assert "empty list" in bootstrapList.statuses()[0].error
 
 
-async def test_concurrent_refreshes_fetch_once(tmp_path):
-    fetched: list[str] = []
-    bootstrapList = makeList(tmp_path, ["https://a"], {"https://a": b"udp://a:1\n"}, fetched)
+async def test_refresh_twice_at_once_fetches_once(tmp_path, startSource):
+    a = await startSource(b"udp://a:1\n")
+    bootstrapList = buildList(tmp_path, a)
 
     await asyncio.gather(bootstrapList.refresh(), bootstrapList.refresh())
 
-    assert fetched == ["https://a"]
+    assert a.hits == 1
     assert not bootstrapList.isRefreshing
 
 
-async def test_list_is_stale_only_when_a_source_is_missing_or_old(tmp_path):
-    bodies = {"https://a": b"udp://a:1\n"}
-    assert makeList(tmp_path, ["https://a"], bodies).isStale()
+async def test_refresh_needed_only_for_missing_or_old_sources(tmp_path, startSource):
+    a = await startSource(b"udp://a:1\n")
+    assert buildList(tmp_path, a).isStale()
 
-    await makeList(tmp_path, ["https://a"], bodies).refresh()
-    assert not makeList(tmp_path, ["https://a"], bodies).isStale()
+    await buildList(tmp_path, a).refresh()
+    assert not buildList(tmp_path, a).isStale()
 
-    cached = makeList(tmp_path, ["https://a"], bodies).paths()[0]
     old = time.time() - 2 * 86400
-    os.utime(cached, (old, old))
-    assert makeList(tmp_path, ["https://a"], bodies).isStale()
+    os.utime(buildList(tmp_path, a).paths()[0], (old, old))
+    assert buildList(tmp_path, a).isStale()
 
 
-async def test_failed_refresh_is_not_retried_until_the_next_day(tmp_path):
-    bootstrapList = makeList(tmp_path, ["https://a"], {})
+async def test_refresh_after_failure_waits_until_next_day(tmp_path, startSource):
+    bootstrapList = buildList(tmp_path, await startSource(None))
 
     await bootstrapList.refresh()
 
     assert not bootstrapList.isStale()
 
 
-async def test_entries_shared_by_subscriptions_are_counted_once(tmp_path):
-    bootstrapList = makeList(tmp_path, ["https://a", "https://b"], {
-        "https://a": b"udp://a:1\nudp://shared:1\nudp://shared:1\n",
-        "https://b": b"udp://b:1\nudp://shared:1\n",
-    })
+async def test_refresh_counts_shared_entries_once(tmp_path, startSource):
+    a = await startSource(b"udp://a:1\nudp://shared:1\nudp://shared:1\n")
+    b = await startSource(b"udp://b:1\nudp://shared:1\n")
+    bootstrapList = buildList(tmp_path, a, b)
 
     await bootstrapList.refresh()
 
-    assert [s.count for s in bootstrapList.statuses()] == [2, 2]
+    assert [status.count for status in bootstrapList.statuses()] == [2, 2]
     assert bootstrapList.entryCount() == 3

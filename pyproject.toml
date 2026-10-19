@@ -41,6 +41,7 @@ asyncio_mode = "auto"
 qt_api = "pyside6"
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
+faulthandler_timeout = 60
 filterwarnings = [
     "error",
     "ignore::pytest.PytestUnraisableExceptionWarning",

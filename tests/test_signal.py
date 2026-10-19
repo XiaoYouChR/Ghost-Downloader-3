@@ -22,33 +22,33 @@ class Receiver(QObject):
         self.received.append(value)
 
 
-def destroy(obj: QObject) -> None:
+def remove(obj: QObject) -> None:
     obj.deleteLater()
     QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
-def test_slot_is_disconnected_when_owner_is_destroyed(qapp):
+def test_remove_owner_disconnects_slot(qapp):
     source, receiver = Source(), Receiver()
     source.changed.connect(receiver.onChanged, owner=receiver)
     source.changed.emit(1)
 
-    destroy(receiver)
+    remove(receiver)
     source.changed.emit(2)
 
     assert receiver.received == [1]
 
 
-def test_function_slot_is_disconnected_with_its_owner(qapp):
+def test_remove_owner_disconnects_function_slot(qapp):
     source, owner, received = Source(), QObject(), []
     source.changed.connect(received.append, owner=owner)
 
-    destroy(owner)
+    remove(owner)
     source.changed.emit(1)
 
     assert received == []
 
 
-def test_owner_is_not_kept_alive_by_the_connection(qapp):
+def test_remove_last_reference_frees_owner(qapp):
     source, receiver = Source(), Receiver()
     source.changed.connect(receiver.onChanged, owner=receiver)
     ref = weakref.ref(receiver)

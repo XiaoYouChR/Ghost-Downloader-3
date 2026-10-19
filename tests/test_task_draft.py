@@ -1,374 +1,171 @@
-"""TaskDraft parse→review→confirm 流程的逐分支测试。
-
-Seam S9: TaskDraft — 批量解析、确认、取消的生命周期。
-"""
 from __future__ import annotations
-
-from dataclasses import dataclass, field
-from uuid import uuid4
 
 import pytest
 
-from app.models.task import Task, TaskStep, TaskStatus
+from app.models.task import TaskOptions, TaskStatus
+from tests.helpers import waitUntil
 
-
-# ── Stubs ──
-
-
-@dataclass(kw_only=True)
-class StubStep(TaskStep):
-    stepIndex: int = 0
-
-    async def run(self, reportSpeed, waitForSpeedLimit):
-        pass
-
-
-def stubTask(url: str = "http://example.com/file.zip") -> Task:
-    step = StubStep(stepIndex=0)
-    task = Task(name="file.zip", url=url, packId="http", steps=[step])
-    step._bindTask(task)
-    return task
-
-
-class StubCoroutineRunner:
-    def __init__(self):
-        self._pending: dict[str, dict] = {}
-        self._cancelled: list[str] = []
-
-    def submit(self, coro, *, done=None, failed=None, **kwargs):
-        workId = f"work_{uuid4().hex[:8]}"
-        self._pending[workId] = {"coro": coro, "done": done, "failed": failed, "kwargs": kwargs}
-        return workId
-
-    def cancel(self, workId, finished=None):
-        self._cancelled.append(workId)
-        self._pending.pop(workId, None)
-        if finished:
-            finished()
-
-    def resolve(self, workId, result):
-        entry = self._pending.pop(workId)
-        if entry["done"]:
-            entry["done"](result, **entry["kwargs"])
-
-    def reject(self, workId, error: str):
-        entry = self._pending.pop(workId)
-        if entry["failed"]:
-            entry["failed"](error, **entry["kwargs"])
-
-
-class StubFeatureService:
-    async def parse(self, options):
-        return stubTask(url=options.url)
+A, B, C = "http://test/a.zip", "http://test/b.zip", "http://test/c.zip"
 
 
 @pytest.fixture
-def runner():
-    return StubCoroutineRunner()
+def pack(engine):
+    return engine.featureService.packById("test")
 
 
-@pytest.fixture
-def draft(qapp, runner):
-    from app.services.task_draft import TaskDraft
-    return TaskDraft(runner, StubFeatureService())
 
 
-# ── Tests ──
+async def test_parse_pasted_links(draft):
+    parsed = []
+    draft.parseSucceeded.connect(lambda url, task: parsed.append((url, task.name)))
+
+    draft.setUrls([A, B])
+
+    await waitUntil(lambda: sorted(parsed) == [(A, "a.zip"), (B, "b.zip")])
 
 
-class TestSetUrls:
+async def test_update_links_keeps_unchanged(draft, pack):
+    parsed = []
+    draft.parseSucceeded.connect(lambda url, task: parsed.append(url))
+    pack.heldUrls.add(A)
+    draft.setUrls([A, B])
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [B]))
 
-    def test_submits_parse_for_each_url(self, draft, runner):
-        draft.setUrls(["http://a.com/1", "http://b.com/2"])
-        assert len(runner._pending) == 2
+    draft.setUrls([B, C])
+    pack.heldUrls.clear()
 
-    def test_removes_old_urls_cancels_parse(self, draft, runner):
-        draft.setUrls(["http://a.com/1", "http://b.com/2"])
-        oldIds = list(runner._pending.keys())
-        draft.setUrls(["http://c.com/3"])
-        assert all(wid in runner._cancelled for wid in oldIds)
-        assert len(runner._pending) == 1
-
-    def test_keeps_equal_urls(self, draft, runner):
-        draft.setUrls(["http://a.com/1", "http://b.com/2"])
-        firstIds = set(runner._pending.keys())
-        draft.setUrls(["http://a.com/1", "http://b.com/2"])
-        assert set(runner._pending.keys()) == firstIds
-
-    def test_parsingBusyChanged_emitted(self, draft, runner):
-        signals = []
-        draft.parsingBusyChanged.connect(signals.append)
-        draft.setUrls(["http://a.com/1"])
-        assert True in signals
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [C]))
+    assert draft.urls() == [B, C]
+    assert sorted(parsed) == [B, C]
 
 
-class TestParseCallbacks:
+async def test_parse_failure_shows_error(draft, pack):
+    failures = []
+    draft.parseFailed.connect(lambda url, error: failures.append((url, str(error))))
+    pack.failingUrls.add(A)
+    pack.heldUrls.add(A)
+    draft.setUrls([A])
 
-    def test_success_emits_parseSucceeded(self, draft, runner):
-        received = []
-        draft.parseSucceeded.connect(lambda url, task: received.append((url, task)))
-        draft.setUrls(["http://a.com/file.zip"])
-        workId = list(runner._pending.keys())[0]
-        task = stubTask("http://a.com/file.zip")
-        runner.resolve(workId, task)
-        assert len(received) == 1
-        assert received[0][0] == "http://a.com/file.zip"
-        assert received[0][1] is task
+    assert draft.failCount() == 0
+    pack.heldUrls.clear()
 
-    def test_failure_emits_parseFailed(self, draft, runner):
-        errors = []
-        draft.parseFailed.connect(lambda url, err: errors.append((url, err)))
-        draft.setUrls(["http://a.com/file.zip"])
-        workId = list(runner._pending.keys())[0]
-        runner.reject(workId, "network error")
-        assert len(errors) == 1
-        assert errors[0][0] == "http://a.com/file.zip"
-        assert "network error" in str(errors[0][1])
-
-    def test_success_clears_parsing_busy(self, draft, runner):
-        states = []
-        draft.parsingBusyChanged.connect(states.append)
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        runner.resolve(workId, stubTask("http://a.com/1"))
-        assert states[-1] is False
-
-    def test_failure_records_error_on_item(self, draft, runner):
-        draft.setUrls(["http://a.com/file.zip"])
-        workId = list(runner._pending.keys())[0]
-        runner.reject(workId, "network error")
-        assert draft.failCount() == 1
-
-    def test_failure_emits_itemsChanged(self, draft, runner):
-        changed = []
-        draft.itemsChanged.connect(lambda: changed.append(True))
-        draft.setUrls(["http://a.com/file.zip"])
-        changed.clear()
-        workId = list(runner._pending.keys())[0]
-        runner.reject(workId, "network error")
-        assert changed == [True]
-
-    def test_submit_failure_records_error_on_item(self, draft, runner):
-        def boom(*args, **kwargs):
-            raise RuntimeError("submit failed")
-
-        runner.submit = boom
-        draft.setUrls(["http://a.com/file.zip"])
-        assert draft.failCount() == 1
-        assert draft.taskByUrl("http://a.com/file.zip") is None
-
-    def test_parsing_item_is_not_counted_as_failed(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        assert draft.failCount() == 0
+    await waitUntil(lambda: failures == [(A, "network error")])
+    assert draft.failCount() == 1
 
 
-class TestConfirm:
+async def test_parse_failed_link_again(draft, pack):
+    pack.failingUrls.add(A)
+    draft.setUrls([A])
+    await waitUntil(lambda: draft.failCount() == 1)
 
-    def test_emits_taskConfirmed_for_completed(self, draft, runner):
-        confirmed = []
-        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        task = stubTask("http://a.com/1")
-        runner.resolve(workId, task)
-        draft.confirm()
-        assert len(confirmed) == 1
-        assert confirmed[0] is task
+    pack.failingUrls.clear()
+    draft.refresh(A)
 
-    def test_pending_parse_auto_confirms_on_completion(self, draft, runner):
-        confirmed = []
-        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        draft.confirm()
-        assert len(confirmed) == 0
-        task = stubTask("http://a.com/1")
-        runner.resolve(workId, task)
-        assert len(confirmed) == 1
-        assert confirmed[0] is task
-
-    def test_confirm_skips_items_without_task_or_parse(self, draft, runner):
-        confirmed = []
-        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
-        draft.confirm()
-        assert len(confirmed) == 0
-
-    def test_confirm_applies_base_options(self, draft, runner):
-        confirmed = []
-        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
-        draft.setBaseOptions({"subworkerCount": 8})
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        task = stubTask("http://a.com/1")
-        runner.resolve(workId, task)
-        draft.confirm()
-        assert len(confirmed) == 1
-
-    def test_deferred_confirm_emits_autoStart_false(self, draft, runner):
-        received = []
-        draft.taskConfirmed.connect(lambda task, autoStart: received.append((task, autoStart)))
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        task = stubTask("http://a.com/1")
-        runner.resolve(workId, task)
-        draft.confirm(autoStart=False)
-        assert len(received) == 1
-        assert received[0] == (task, False)
-
-    def test_deferred_pending_parse_emits_autoStart_false(self, draft, runner):
-        received = []
-        draft.taskConfirmed.connect(lambda task, autoStart: received.append((task, autoStart)))
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        draft.confirm(autoStart=False)
-        task = stubTask("http://a.com/1")
-        runner.resolve(workId, task)
-        assert len(received) == 1
-        assert received[0][1] is False
-
-    def test_confirm_applies_category_override(self, draft, runner):
-        confirmed = []
-        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        task = stubTask("http://a.com/1")
-        runner.resolve(workId, task)
-        draft.setUrlCategory("http://a.com/1", "video")
-        draft.confirm()
-        assert confirmed[0].category == "video"
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [A]))
+    assert draft.failCount() == 0
 
 
-class TestClear:
+async def test_parse_busy_only_while_parsing(draft):
+    busy = []
+    draft.parsingBusyChanged.connect(busy.append)
 
-    def test_cancels_all_in_flight(self, draft, runner):
-        draft.setUrls(["http://a.com/1", "http://b.com/2"])
-        workIds = list(runner._pending.keys())
-        draft.clear()
-        assert all(wid in runner._cancelled for wid in workIds)
+    draft.setUrls([A])
 
-    def test_emits_itemsCleared(self, draft, runner):
-        cleared = []
-        draft.itemsCleared.connect(lambda: cleared.append(True))
-        draft.setUrls(["http://a.com/1"])
-        draft.clear()
-        assert len(cleared) == 1
-
-    def test_urls_empty_after_clear(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        draft.clear()
-        assert draft.urls() == []
+    await waitUntil(lambda: busy == [True, False])
 
 
-class TestCanConfirm:
+async def test_add_parsed_tasks_on_confirm(engine, draft):
+    draft.setUrls([A, B])
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [A, B]))
 
-    def test_false_when_empty(self, draft):
-        assert draft.canConfirm() is False
+    draft.confirm()
 
-    def test_true_when_parsing(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        assert draft.canConfirm() is True
-
-    def test_true_when_task_parsed(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        workId = list(runner._pending.keys())[0]
-        runner.resolve(workId, stubTask("http://a.com/1"))
-        assert draft.canConfirm() is True
+    assert sorted(task.name for task in engine.taskService.tasks) == ["a.zip", "b.zip"]
 
 
-class TestMutationsNotify:
-    """TaskDraft 的每个变更入口都必须通知——View 持的是投影副本，不是对象引用。"""
+@pytest.mark.parametrize(("autoStart", "status"), [(True, TaskStatus.COMPLETED), (False, TaskStatus.WAITING)])
+async def test_add_link_confirmed_while_parsing(engine, draft, pack, autoStart, status):
+    pack.heldUrls.add(A)
+    draft.setUrls([A])
 
-    def _resolved(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        runner.resolve(list(runner._pending.keys())[0], stubTask("http://a.com/1"))
+    draft.confirm(autoStart=autoStart)
+    assert engine.taskService.tasks == []
+    pack.heldUrls.clear()
 
-    def test_set_base_options_emits(self, draft, runner):
-        self._resolved(draft, runner)
-        changed = []
-        draft.itemsChanged.connect(lambda: changed.append(True))
-        draft.setBaseOptions({"outputFolder": "/tmp"})
-        assert changed == [True]
-
-    def test_set_url_category_emits(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        changed = []
-        draft.itemsChanged.connect(lambda: changed.append(True))
-        draft.setUrlCategory("http://a.com/1", "video")
-        assert changed == [True]
-
-    def test_update_emits(self, draft, runner):
-        self._resolved(draft, runner)
-        changed = []
-        draft.itemsChanged.connect(lambda: changed.append(True))
-        draft.update("http://a.com/1", lambda task: task.setName("renamed"))
-        assert changed == [True]
-
-    def test_update_skips_unknown_and_unparsed_urls(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        changed = []
-        draft.itemsChanged.connect(lambda: changed.append(True))
-        draft.update("http://a.com/1", lambda task: task.setName("too early"))
-        draft.update("http://nope", lambda task: task.setName("nope"))
-        assert changed == []
+    await waitUntil(lambda: [task.status for task in engine.taskService.tasks] == [status])
 
 
-class TestRefresh:
+async def test_add_applies_chosen_folder_and_category(engine, draft, downloadFolder):
+    draft.setUrls([A])
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [A]))
+    draft.setBaseOptions({"outputFolder": str(downloadFolder / "chosen")})
+    draft.setUrlCategory(A, "cat_video")
 
-    def _failed(self, draft, runner, url="http://a.com/file.zip"):
-        draft.setUrls([url])
-        runner.reject(list(runner._pending)[0], "network error")
-        assert draft.failCount() == 1
+    draft.confirm(autoStart=False)
 
-    def _workId(self, runner, url):
-        return next(w for w, e in runner._pending.items() if e["kwargs"]["item"].url == url)
-
-    def test_reissues_parse_and_clears_error(self, draft, runner):
-        self._failed(draft, runner)
-        draft.refresh("http://a.com/file.zip")
-        assert draft.failCount() == 0
-        assert len(runner._pending) == 1
-
-    def test_skips_parsing_resolved_and_unknown(self, draft, runner):
-        draft.setUrls(["http://a.com/1", "http://b.com/2"])
-        runner.resolve(self._workId(runner, "http://b.com/2"), stubTask("http://b.com/2"))
-        pendingBefore = set(runner._pending)
-        draft.refresh("http://a.com/1")
-        draft.refresh("http://b.com/2")
-        draft.refresh("http://c.com/3")
-        assert set(runner._pending) == pendingBefore
-
-    def test_success_emits_parseSucceeded(self, draft, runner):
-        self._failed(draft, runner)
-        received = []
-        draft.parseSucceeded.connect(lambda url, task: received.append(url))
-        draft.refresh("http://a.com/file.zip")
-        runner.resolve(list(runner._pending)[0], stubTask("http://a.com/file.zip"))
-        assert received == ["http://a.com/file.zip"]
-
-    def test_submit_failure_keeps_item_failed(self, draft, runner):
-        self._failed(draft, runner)
-
-        def boom(*args, **kwargs):
-            raise RuntimeError("submit failed")
-
-        runner.submit = boom
-        errors = []
-        draft.parseFailed.connect(lambda url, err: errors.append(url))
-        draft.refresh("http://a.com/file.zip")
-        assert draft.failCount() == 1
-        assert errors == ["http://a.com/file.zip"]
+    [task] = engine.taskService.tasks
+    assert (task.category, task.outputFolder) == ("cat_video", downloadFolder / "chosen")
 
 
-class TestAddParsedTasks:
+async def test_clear_drops_links_being_parsed(draft, pack):
+    parsed = []
+    draft.parseSucceeded.connect(lambda url, task: parsed.append(url))
+    pack.heldUrls.add(A)
+    draft.setUrls([A])
 
-    def test_clears_stale_error(self, draft, runner):
-        draft.setUrls(["http://a.com/1"])
-        runner.reject(list(runner._pending)[0], "network error")
-        assert draft.failCount() == 1
-        draft.addParsedTasks([stubTask("http://a.com/1")])
-        assert draft.failCount() == 0
-        assert draft.taskByUrl("http://a.com/1") is not None
+    draft.clear()
+    pack.heldUrls.clear()
+    draft.setUrls([B])
+
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [B]))
+    assert parsed == [B]
+    assert draft.urls() == [B]
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v", "--tb=short"])
+def test_add_allowed_once_links_exist(draft):
+    assert not draft.canConfirm()
+
+    draft.setUrls([A])
+
+    assert draft.canConfirm()
+
+
+@pytest.mark.parametrize("change", [
+    lambda draft: draft.setBaseOptions({"outputFolder": "/tmp"}),
+    lambda draft: draft.setUrlCategory(A, "cat_video"),
+    lambda draft: draft.update(A, lambda task: task.setName("renamed.zip")),
+])
+async def test_update_announces_every_link_change(draft, change):
+    draft.setUrls([A])
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [A]))
+    changes = []
+    draft.itemsChanged.connect(lambda: changes.append(True))
+
+    change(draft)
+
+    assert changes == [True]
+
+
+async def test_update_ignores_link_not_yet_parsed(draft, pack):
+    pack.heldUrls.add(A)
+    draft.setUrls([A])
+    changes = []
+    draft.itemsChanged.connect(lambda: changes.append(True))
+
+    draft.update(A, lambda task: task.setName("too early.zip"))
+    draft.update("http://test/unknown.zip", lambda task: task.setName("unknown.zip"))
+
+    assert changes == []
+
+
+async def test_parse_success_clears_earlier_error(engine, draft, pack):
+    pack.failingUrls.add(A)
+    draft.setUrls([A])
+    await waitUntil(lambda: draft.failCount() == 1)
+    pack.failingUrls.clear()
+    task = await engine.featureService.parse(TaskOptions(url=A))
+
+    draft.addParsedTasks([task])
+
+    assert draft.failCount() == 0
+    assert draft.taskByUrl(A) is task

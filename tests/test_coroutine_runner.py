@@ -5,7 +5,7 @@ import asyncio
 from app.services.coroutine_runner import CoroutineRunner
 
 
-async def test_work_cancelled_before_it_is_scheduled_never_runs():
+async def test_cancel_before_start_never_runs():
     loop = asyncio.get_running_loop()
     runner = CoroutineRunner(loop.call_soon, loop=loop)
     started = []

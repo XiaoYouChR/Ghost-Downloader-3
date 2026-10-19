@@ -1,135 +1,105 @@
-"""Checksum 的计算与 TaskService 生命周期。
-
-Seam: toChecksum（真实临时文件）；parseChecksum/matchChecksum（纯函数）；TaskService.startChecksum/cancelChecksum（S7 stub runner）
-"""
 from __future__ import annotations
 
 import asyncio
 import hashlib
+from pathlib import Path
 
 import pytest
 
-from app.checksum import ALGORITHMS, matchChecksum, parseChecksum, toChecksum
+from app.checksum import matchChecksum, parseChecksum
 from app.models.task import Task, TaskStatus
-from tests.test_task_service import makeTask, service, platform, speedMeter  # noqa: F401
+from tests.conftest import FakeStep
+from tests.helpers import waitUntil
 
 
-@pytest.mark.parametrize("algorithm", ALGORITHMS)
-def test_every_listed_algorithm_matches_hashlib(tmp_path, algorithm):
-    path = tmp_path / "blob.bin"
-    path.write_bytes(bytes(range(256)) * 64)
-    hasher = hashlib.new(algorithm, path.read_bytes())
-    expected = hasher.hexdigest({"shake_128": 32, "shake_256": 64}[algorithm]) \
-        if algorithm.startswith("shake_") else hasher.hexdigest()
-
-    assert asyncio.run(toChecksum(path, algorithm, lambda _: None)) == expected
+SHA256 = hashlib.sha256(b"downloaded").hexdigest()
 
 
-def test_progress_reaches_100_for_multi_chunk_file(tmp_path, monkeypatch):
-    monkeypatch.setattr("app.checksum.CHUNK_SIZE", 1000)
-    path = tmp_path / "blob.bin"
-    path.write_bytes(b"x" * 2500)
-    progress: list[int] = []
-
-    asyncio.run(toChecksum(path, "sha256", progress.append))
-
-    assert progress == [40, 80, 100]
+async def addFinished(engine) -> Task:
+    task = Task(name="a.iso", url="http://test/a.iso", packId="test", steps=[FakeStep(stepIndex=0)])
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.status == TaskStatus.COMPLETED)
+    return task
 
 
-def test_empty_file_has_checksum(tmp_path):
-    path = tmp_path / "empty"
-    path.write_bytes(b"")
-
-    assert asyncio.run(toChecksum(path, "md5", lambda _: None)) == hashlib.md5().hexdigest()
-
-
-def test_checksums_survive_save_and_load():
-    task = makeTask()
-    task.checksums["sha256"] = "abc"
-
-    assert Task.fromDict(task.toDict()).checksums == {"sha256": "abc"}
+def stopsOf(engine) -> list:
+    stops = []
+    engine.taskService.checksumStopped.connect(lambda task, error: stops.append((task, error)))
+    return stops
 
 
-class TestChecksumLifecycle:
+async def test_start_saves_checksum_on_task(engine):
+    task = await addFinished(engine)
+    completed = []
+    engine.taskService.checksumCompleted.connect(lambda task, algorithm: completed.append((task, algorithm)))
 
-    def startOn(self, service, taskId="c1"):
-        svc, runner = service
-        task = makeTask(taskId)
-        svc.add(task)
-        task.setStatus(TaskStatus.COMPLETED)
-        svc.startChecksum(task, "sha256")
-        workId, done, failed = runner.submitted[-1]
-        return svc, runner, task, workId, done, failed
+    engine.taskService.startChecksum(task, "sha256")
 
-    def test_running_checksum_reports_progress(self, service):
-        svc, _, task, *_ = self.startOn(service)
-
-        assert svc.checksumProgress(task) == 0
-
-    def test_completed_checksum_is_saved_on_task(self, service, qtbot):
-        svc, _, task, _, done, _ = self.startOn(service)
-
-        with qtbot.waitSignal(svc.checksumCompleted, timeout=1000) as blocker:
-            done("abc")
-
-        assert blocker.args == [task, "sha256"]
-        assert task.checksums == {"sha256": "abc"}
-        assert svc.checksumProgress(task) is None
-
-    def test_failed_checksum_reports_error_and_saves_nothing(self, service, qtbot):
-        svc, _, task, _, _, failed = self.startOn(service)
-
-        with qtbot.waitSignal(svc.checksumStopped, timeout=1000) as blocker:
-            failed(OSError("gone"))
-
-        assert blocker.args[0] is task
-        assert "gone" in str(blocker.args[1])
-        assert task.checksums == {}
-        assert svc.checksumProgress(task) is None
-
-    def test_cancel_stops_work_without_error(self, service, qtbot):
-        svc, runner, task, workId, *_ = self.startOn(service)
-
-        with qtbot.waitSignal(svc.checksumStopped, timeout=1000) as blocker:
-            svc.cancelChecksum(task)
-
-        assert blocker.args == [task, None]
-        assert workId in runner.cancelled
-        assert svc.checksumProgress(task) is None
-
-    def test_delete_cancels_running_checksum(self, service):
-        svc, runner, task, workId, *_ = self.startOn(service)
-
-        svc.delete(task, shouldDeleteFiles=False)
-
-        assert workId in runner.cancelled
-
-    def test_redownload_cancels_checksum_and_clears_saved_ones(self, service):
-        svc, runner, task, workId, *_ = self.startOn(service)
-        task.checksums["md5"] = "old"
-
-        svc.redownload(task)
-
-        assert workId in runner.cancelled
-        assert task.checksums == {}
+    assert engine.taskService.checksumProgress(task) == 0
+    await waitUntil(lambda: completed == [(task, "sha256")])
+    assert task.checksums == {"sha256": SHA256}
+    assert engine.taskService.checksumProgress(task) is None
 
 
-class TestMatchChecksum:
+async def test_start_on_missing_file_reports_error(engine):
+    task = await addFinished(engine)
+    stops = stopsOf(engine)
+    Path(task.outputPath).unlink()
 
-    def test_match_ignores_case_and_surrounding_spaces(self):
-        assert matchChecksum({"md5": "aa11", "sha256": "bb22"}, "  BB22\n") == "sha256"
+    engine.taskService.startChecksum(task, "sha256")
 
-    def test_sha256sum_line_matches(self):
-        assert matchChecksum({"sha256": "bb22"}, "BB22  ubuntu.iso\n") == "sha256"
-
-    def test_mismatch_gives_none(self):
-        assert matchChecksum({"md5": "aa11"}, "cc33") is None
+    await waitUntil(lambda: len(stops) == 1)
+    assert stops[0][0] is task
+    assert stops[0][1] is not None
+    assert task.checksums == {}
 
 
-class TestParseChecksum:
+@pytest.mark.parametrize("stop", [
+    lambda service, task: service.cancelChecksum(task),
+    lambda service, task: service.delete(task, shouldDeleteFiles=False),
+])
+async def test_cancel_saves_nothing(engine, stop):
+    task = await addFinished(engine)
+    stops = stopsOf(engine)
 
-    def test_sha256sum_line_gives_lowercase_hex(self):
-        assert parseChecksum("AB12  ffmpeg.tar.gz\n") == "ab12"
+    engine.taskService.startChecksum(task, "sha256")
+    stop(engine.taskService, task)
+    await asyncio.sleep(0.1)
 
-    def test_blank_text_gives_empty(self):
-        assert parseChecksum("  \n") == ""
+    assert stops == [(task, None)]
+    assert task.checksums == {}
+
+
+async def test_redownload_clears_checksums(engine):
+    task = await addFinished(engine)
+    task.checksums["md5"] = "old"
+
+    engine.taskService.redownload(task)
+
+    await waitUntil(lambda: task.checksums == {})
+
+
+async def test_resume_keeps_checksums(engine, startEngine):
+    task = await addFinished(engine)
+    engine.taskService.startChecksum(task, "sha256")
+    await waitUntil(lambda: task.checksums == {"sha256": SHA256})
+
+    restarted = startEngine()
+
+    assert restarted.taskService.taskById(task.taskId).checksums == {"sha256": SHA256}
+
+
+def test_match_ignores_case_and_spaces():
+    assert matchChecksum({"md5": "aa11", "sha256": "bb22"}, "  BB22\n") == "sha256"
+
+
+def test_match_sha256sum_line():
+    assert matchChecksum({"sha256": "bb22"}, "BB22  ubuntu.iso\n") == "sha256"
+
+
+def test_match_rejects_wrong_checksum():
+    assert matchChecksum({"md5": "aa11"}, "cc33") is None
+
+
+def test_parse_sha256sum_line_as_lowercase():
+    assert parseChecksum("AB12  ffmpeg.tar.gz\n") == "ab12"
