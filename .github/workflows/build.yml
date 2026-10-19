@@ -56,7 +56,15 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/test.yml
+    secrets:
+      ANDROID_REPO_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
+
   prepare:
+    needs: [test]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -155,7 +163,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install dependencies
         run: |
@@ -354,7 +362,7 @@ jobs:
           brew cleanup openssl@3
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install dependencies
         run: |
@@ -571,7 +579,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install dependencies
         run: |
@@ -925,7 +933,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install Python
         run: uv python install 3.13
