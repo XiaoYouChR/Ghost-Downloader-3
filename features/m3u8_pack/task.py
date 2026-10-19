@@ -288,7 +288,7 @@ class M3U8TaskStep(TaskStep):
 
         return args
 
-    def _parseOutputLine(self, line: str):
+    def parseOutputLine(self, line: str):
         text = line.strip()
         if not text:
             return
@@ -342,13 +342,13 @@ class M3U8TaskStep(TaskStep):
             lines = buffer.split("\n")
             buffer = lines.pop()
             for line in lines:
-                self._parseOutputLine(line)
+                self.parseOutputLine(line)
             # NonAnsiWriter 可能剥掉换行符，进度更新堆积在 buffer 里
-            self._parseOutputLine(buffer)
+            self.parseOutputLine(buffer)
             if len(buffer) > 8192:
                 buffer = buffer[-4096:]
         if buffer.strip():
-            self._parseOutputLine(buffer)
+            self.parseOutputLine(buffer)
         self._processOutput = "".join(rawChunks)
 
     def _findOutputFile(self) -> bool:
