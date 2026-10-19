@@ -500,6 +500,7 @@ class TaskService:
 
     def stop(self) -> None:
         from app.models.task import TaskStatus
+        cfg.maxTaskNum.valueChanged.disconnect(self._rebalance)
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 task.setStatus(TaskStatus.PAUSED)
