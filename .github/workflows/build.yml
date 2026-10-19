@@ -38,14 +38,19 @@ on:
         options:
           - 'true'
           - 'false'
-      generate_delta:
-        description: 'Generate Delta Patch'
+      generate_patch:
+        description: 'Generate Patch'
         required: true
         default: 'true'
         type: choice
         options:
           - 'true'
           - 'false'
+      patch_base:
+        description: 'Patch Base (e.g. 4.4.0, empty = previous release)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -55,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      patch_base: ${{ steps.patch_base.outputs.patch_base }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -67,6 +73,42 @@ jobs:
           VERSION=$(python3 -c "exec(open('app/config/constants.py').read()); print(VERSION)")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "VERSION=$VERSION"
+
+      - name: Find previous release
+        id: previous
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          PREV_TAG=$(gh release list --json tagName --jq "[.[].tagName | select(. != \"$TAG\")][0] // empty")
+          echo "tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "PREV_TAG=$PREV_TAG"
+
+      - name: Resolve patch base
+        id: patch_base
+        if: ${{ github.event.inputs.create_release == 'true' && github.event.inputs.generate_patch == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED: ${{ github.event.inputs.patch_base }}
+          PREV_TAG: ${{ steps.previous.outputs.tag }}
+        run: |
+          if [ -n "$REQUESTED" ]; then
+            BASE_TAG="v$REQUESTED"
+          elif [ -n "$PREV_TAG" ]; then
+            BASE_TAG="$PREV_TAG"
+          else
+            echo "No previous release, skipping patch"; exit 0
+          fi
+
+          ASSET_COUNT=$(gh release view "$BASE_TAG" --json assets --jq '[.assets[].name | select(test("(Windows-x86_64\\.zip|macOS-(arm64|x86_64)\\.dmg)$"))] | length')
+          if [ "$ASSET_COUNT" != 3 ]; then
+            if [ -n "$REQUESTED" ]; then echo "::error::$BASE_TAG is missing desktop assets"; exit 1; fi
+            echo "$BASE_TAG is missing desktop assets, skipping patch"; exit 0
+          fi
+
+          echo "patch_base=${BASE_TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "PATCH_BASE=${BASE_TAG#v}"
 
       - name: Create tag and release
         if: ${{ github.event.inputs.create_release == 'true' }}
@@ -85,7 +127,7 @@ jobs:
           fi
 
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            PREV_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+            PREV_TAG="${{ steps.previous.outputs.tag }}"
             BODY=""
             if [ -n "$PREV_TAG" ]; then
               BODY="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
@@ -230,20 +272,18 @@ jobs:
           Pop-Location
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
-      - name: Generate delta patch
-        if: ${{ github.event.inputs.create_release == 'true' && github.event.inputs.generate_delta == 'true' }}
+      - name: Generate patch
+        if: ${{ needs.prepare.outputs.patch_base != '' }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $prevTag = gh release list --limit 2 --json tagName --jq '.[1].tagName'
-          if (-not $prevTag) { Write-Output "No previous release, skipping delta"; exit 0 }
-          $prevVer = $prevTag -replace '^v', ''
+          $baseVer = "${{ needs.prepare.outputs.patch_base }}"
 
           New-Item -ItemType Directory -Path prev -Force
-          gh release download $prevTag -p "*Windows-${{ matrix.architecture }}.zip" -D prev/ 2>$null
+          gh release download "v$baseVer" -p "*Windows-${{ matrix.architecture }}.zip" -D prev/
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $prevZip = Get-ChildItem prev/*.zip | Select-Object -First 1
-          if (-not $prevZip) { Write-Output "No previous asset for this architecture"; exit 0 }
 
           New-Item -ItemType Directory -Path prev-extracted -Force
           Push-Location prev-extracted
@@ -256,7 +296,7 @@ jobs:
             $oldDir = "prev-extracted"
           }
 
-          $patchFile = "patch-Windows-${{ matrix.architecture }}-${prevVer}-to-${{ env.VERSION }}.hdiff"
+          $patchFile = "patch-Windows-${{ matrix.architecture }}-${baseVer}-to-${{ env.VERSION }}.hdiff"
           & "hdiffpatch/windows64/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
           echo "PATCH_FILE=$patchFile" >> $env:GITHUB_ENV
 
@@ -456,20 +496,17 @@ jobs:
         if: ${{ always() && env.HAS_APPLE_CERT == 'true' }}
         run: security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
 
-      - name: Generate delta patch
-        if: ${{ github.event.inputs.create_release == 'true' && github.event.inputs.generate_delta == 'true' }}
+      - name: Generate patch
+        if: ${{ needs.prepare.outputs.patch_base != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           chmod +x macos/hdiffz
-          PREV_TAG=$(gh release list --limit 2 --json tagName --jq '.[1].tagName')
-          if [ -z "$PREV_TAG" ]; then echo "No previous release, skipping delta"; exit 0; fi
-          PREV_VER=${PREV_TAG#v}
+          BASE_VER="${{ needs.prepare.outputs.patch_base }}"
 
           mkdir -p prev-download
-          gh release download "$PREV_TAG" -p "*macOS-${{ matrix.architecture }}.dmg" -D prev-download/ 2>/dev/null || true
-          PREV_DMG=$(ls prev-download/*.dmg 2>/dev/null | head -1)
-          if [ -z "$PREV_DMG" ]; then echo "No previous asset for this architecture"; exit 0; fi
+          gh release download "v$BASE_VER" -p "*macOS-${{ matrix.architecture }}.dmg" -D prev-download/
+          PREV_DMG=$(ls prev-download/*.dmg | head -1)
 
           mkdir -p prev-mount
           hdiutil attach "$PREV_DMG" -mountpoint prev-mount -nobrowse -quiet
@@ -484,7 +521,7 @@ jobs:
           find "$OLD_COPY/Contents/MacOS" -type l -delete 2>/dev/null || true
           find "$NEW_COPY/Contents/MacOS" -type l -delete 2>/dev/null || true
 
-          PATCH_FILE="patch-macOS-${{ matrix.architecture }}-${PREV_VER}-to-${{ env.VERSION }}.hdiff"
+          PATCH_FILE="patch-macOS-${{ matrix.architecture }}-${BASE_VER}-to-${{ env.VERSION }}.hdiff"
           HDIFF_FLAGS="-f"
           # Transition: exclude old features/ to avoid corruption from hot-updated packs
           if [ ! -d "$OLD_COPY/Contents/Resources/features" ]; then
@@ -900,10 +937,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.prepare.outputs.version }}
+          PREV_VER: ${{ needs.prepare.outputs.patch_base }}
         run: |
-          PREV_TAG=$(gh release list --repo ${{ github.repository }} --limit 2 --json tagName --jq '.[1].tagName' 2>/dev/null || echo "")
-          export PREV_VER=${PREV_TAG#v}
-
           mkdir -p assets
           gh release download "v${VERSION}" --repo ${{ github.repository }} -p "*.hdiff" -p "*.zip" -p "*.dmg" -p "*.tar.xz" -p "*.deb" -p "*.AppImage" -p "*.apk" -p "*.exe" -D assets/ 2>/dev/null || true
 
