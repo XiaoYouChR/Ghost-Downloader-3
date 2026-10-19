@@ -1,6 +1,6 @@
 """BT 只走 SOCKS5 代理：libtorrent 只有 SOCKS5 能转发 UDP（tracker、DHT）。
 
-Seam: BTSession._proxySettings（设置全局代理）
+Seam: BTSession.buildProxySettings（设置全局代理）
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def settingsFor():
     def build(url):
         cfg.proxyServer.value = url or "Off"
         assert cfg.proxyServer.value == (url or "Off")
-        return BTSession()._proxySettings()
+        return BTSession().buildProxySettings()
     yield build
     cfg.proxyServer.value = saved
 

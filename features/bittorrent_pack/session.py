@@ -323,7 +323,7 @@ class BTSession:
                 "enable_upnp": True,
                 "enable_natpmp": True,
                 "alert_mask": ALERT_MASK,
-                **self._proxySettings(),
+                **self.buildProxySettings(),
             }
             self._session = lt.session(params)
         if self._poller is None or self._poller.done():
@@ -574,7 +574,7 @@ class BTSession:
     def _onProxyChanged(self, _value=None) -> None:
         if self._session is None:
             return
-        settings = self._proxySettings()
+        settings = self.buildProxySettings()
         self._session.apply_settings(
             settings or {"proxy_type": lt.proxy_type_t.none}
         )
@@ -584,7 +584,7 @@ class BTSession:
             return 0
         return int(cfg.speedLimitation.value)
 
-    def _proxySettings(self) -> dict:
+    def buildProxySettings(self) -> dict:
         url = proxy(PROXY_SCHEMES)
         if not url:
             return {}
