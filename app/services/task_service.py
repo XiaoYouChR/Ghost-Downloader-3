@@ -61,12 +61,7 @@ class TaskStore:
         isOverwriteFailed = False
         stem, ext = splitStemExt(task.name)
         index = 0
-        while True:
-            try:
-                self._createPlaceholders(task)
-                break
-            except FileExistsError as error:
-                takenPath = Path(error.filename)
+        while (takenPath := self._createPlaceholders(task)) is not None:
             isUnfinished = self._isUnfinishedPlaceholder(takenPath)
             if not isUnfinished and choice == NameConflictChoice.ASK:
                 return None
@@ -96,13 +91,9 @@ class TaskStore:
         task.outputFolder.mkdir(parents=True, exist_ok=True)
         stem, ext = splitStemExt(task.name)
         index = 0
-        while True:
-            try:
-                self._createPlaceholders(task)
-                break
-            except FileExistsError:
-                index += 1
-                task.setName(f"{stem}({index}){ext}")
+        while self._createPlaceholders(task) is not None:
+            index += 1
+            task.setName(f"{stem}({index}){ext}")
         newPaths = task.placeholderPaths
         if (task.outputFolder, task.name) != (placeholders.outputFolder, placeholders.name):
             oldPaths = task.placeholderPathsAt(placeholders.outputFolder, placeholders.name)
@@ -131,26 +122,20 @@ class TaskStore:
         task = self._taskByPlaceholder.get(path)
         return task is not None and task.status != TaskStatus.COMPLETED
 
-    def _createPlaceholders(self, task: Task) -> None:
-        from app.models.task import deletePlaceholder
+    def _createPlaceholders(self, task: Task) -> Path | None:
         placeholders = self._placeholders.get(task.taskId)
         existingPaths = placeholders.paths if placeholders else []
-        created: list[Path] = []
-        try:
-            for path in task.placeholderPaths:
-                if path in existingPaths:
-                    continue
-                if task.isOutputFolder and path == Path(task.outputPath):
-                    path.mkdir()
-                else:
-                    path.touch(exist_ok=False)
-                created.append(path)
-        except FileExistsError:
-            for path in created:
-                deletePlaceholder(path)
-            raise
-        for path in created:
+        newPaths = [path for path in task.placeholderPaths if path not in existingPaths]
+        takenPath = next((path for path in newPaths if isExisting(path)), None)
+        if takenPath is not None:
+            return takenPath
+        for path in newPaths:
+            if task.isOutputFolder and path == Path(task.outputPath):
+                path.mkdir()
+            else:
+                path.touch(exist_ok=False)
             deletePath(Path(f"{path}.ghd"))
+        return None
 
     def _setPlaceholders(self, task: Task) -> None:
         self._removePlaceholders(task.taskId)
