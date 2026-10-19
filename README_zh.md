@@ -139,7 +139,7 @@
 
 根据 GPL v3.0 许可证分发。打开 `LICENSE` 查看更多内容。
 
-Copyright © 2024-2026 XiaoYouChR.
+Copyright © 2023-2026 XiaoYouChR.
 
 <!-- CONTACT -->
 ## 联系

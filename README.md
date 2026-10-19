@@ -138,7 +138,7 @@ Thanks to all contributors who have participated in this project!
 
 Distributed under the GPL v3.0 License. Open `LICENSE` for more details.
 
-Copyright © 2024-2026 XiaoYouChR.
+Copyright © 2023-2026 XiaoYouChR.
 
 <!-- CONTACT -->
 ## Contact
