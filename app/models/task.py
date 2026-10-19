@@ -469,13 +469,20 @@ class Task:
             raise
 
     def deletePlaceholders(self) -> None:
+        completedPaths = {
+            Path(step.outputPath) for step in self.steps
+            if step.outputPath and step.status == TaskStatus.COMPLETED
+        }
+        if self.hasOutputFile and self.status == TaskStatus.COMPLETED:
+            completedPaths.add(Path(self.outputPath))
         for step in self.steps:
             outputPath = step.outputPath
             if outputPath and step.status != TaskStatus.COMPLETED:
                 deletePath(Path(outputPath))
                 deletePath(Path(f"{outputPath}.ghd"))
         for path in self.placeholderPaths:
-            deletePlaceholder(path)
+            if path not in completedPaths:
+                deletePlaceholder(path)
             deletePath(Path(f"{path}.ghd"))
 
     async def runSeeding(self, isManual: bool) -> None:

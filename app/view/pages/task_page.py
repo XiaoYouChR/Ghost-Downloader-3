@@ -239,6 +239,11 @@ class TaskPage(QWidget):
 
         self.categoryFilterButton.setMenu(self.categoryFilterMenu)
         self.categoryFilterButton.setVisible(cfg.isCategoryEnabled.value)
+        self.clearHistoryButton = PushButton(
+            FluentIcon.DELETE,
+            self.tr("清空下载历史"),
+            self.toolBar,
+        )
 
         self.rateLimitButton.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._onSpeedLimitChanged()
@@ -263,6 +268,7 @@ class TaskPage(QWidget):
         toolBarLayout.addWidget(self.filterSegment)
         toolBarLayout.addWidget(self.startAllButton)
         toolBarLayout.addWidget(self.pauseAllButton)
+        toolBarLayout.addWidget(self.clearHistoryButton)
         toolBarLayout.addWidget(self.selectButton)
         toolBarLayout.addWidget(self.planButton)
         toolBarLayout.addWidget(self.rateLimitButton)
@@ -299,6 +305,7 @@ class TaskPage(QWidget):
 
         self.startAllButton.clicked.connect(self.startAll)
         self.pauseAllButton.clicked.connect(self.pauseAll)
+        self.clearHistoryButton.clicked.connect(self._onClearHistoryRequested)
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self._isSelectionMode))
         self.planButton.clicked.connect(self._onPlanButtonClicked)
         self.rateLimitButton.clicked.connect(self._onRateLimitToggled)
@@ -560,6 +567,19 @@ class TaskPage(QWidget):
         if dialog.exec():
             cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
             self._onDeleteConfirmed(deleteFiles.isChecked())
+
+    def _onClearHistoryRequested(self) -> None:
+        from qfluentwidgets import MessageBox
+        dialog = MessageBox(
+            self.tr("清空下载历史"),
+            self.tr(
+                "确定清空所有已完成和失败的下载记录吗？\n"
+                "已完成的成品文件将保留，失败任务的未完成文件和续传数据将被清理。"
+            ),
+            self.window(),
+        )
+        if dialog.exec():
+            self._taskService.clearHistory()
 
     def _onMoveCategorySelected(self) -> None:
         targets = [

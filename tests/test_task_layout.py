@@ -216,14 +216,27 @@ def test_deletePlaceholders_releases_names_of_unfinished_task(tmp_path: Path):
     assert list(tmp_path.iterdir()) == []
 
 
-async def test_deletePlaceholders_keeps_completed_products(tmp_path: Path):
-    task = makeTask(tmp_path)
+@pytest.mark.parametrize("content", [b"product", b""])
+async def test_deletePlaceholders_keeps_completed_products(tmp_path: Path, content: bytes):
+    task = makeTask(tmp_path, steps=[ProductStep(content=content)])
     holdNames(task)
     await runTask(task)
 
     task.deletePlaceholders()
 
-    assert (tmp_path / "a.zip").read_bytes() == b"product"
+    assert (tmp_path / "a.zip").read_bytes() == content
+
+
+def test_deletePlaceholders_keeps_empty_completed_side_file_of_failed_task(tmp_path: Path):
+    task = makeTask(tmp_path, name="a.mp4", steps=[ProductStep(), SideFileStep()])
+    holdNames(task)
+    task.steps[1].setStatus(TaskStatus.COMPLETED)
+    task.steps[0].setStatus(TaskStatus.FAILED)
+
+    task.deletePlaceholders()
+
+    assert (tmp_path / "a.en.srt").read_bytes() == b""
+    assert not (tmp_path / "a.mp4").exists()
 
 
 @dataclass(kw_only=True)

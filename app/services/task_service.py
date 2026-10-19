@@ -415,6 +415,8 @@ class TaskService:
         self._pump()
 
     def delete(self, task: Task, shouldDeleteFiles: bool) -> None:
+        from app.models.task import deletePlaceholder
+
         self.cancelChecksum(task)
         self._unwatchFile(task)
         canDelete = shouldDeleteFiles and self._canDeleteIn(task.outputFolder)
@@ -424,6 +426,8 @@ class TaskService:
         def onStopped():
             if canDelete:
                 task.deleteFiles()
+                for path in task.placeholderPaths:
+                    deletePlaceholder(path)
             task.deletePlaceholders()
         self._cancelWork(task, finished=onStopped)
         self._store.remove(task.taskId)
@@ -500,6 +504,12 @@ class TaskService:
         for task in list(self._store.tasks.values()):
             if self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId):
                 self.pause(task)
+
+    def clearHistory(self) -> None:
+        from app.models.task import TaskStatus
+        for task in list(self._store.tasks.values()):
+            if task.status in {TaskStatus.COMPLETED, TaskStatus.FAILED}:
+                self.delete(task, shouldDeleteFiles=False)
 
     def resumeSaved(self) -> None:
         from app.models.task import TaskStatus

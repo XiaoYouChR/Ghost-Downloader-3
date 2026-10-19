@@ -536,23 +536,25 @@ class TestDelete:
 
         assert list(tmp_path.iterdir()) == []
 
-    def test_delete_without_files_keeps_completed_product(self, service, tmp_path):
+    @pytest.mark.parametrize("content", [b"product", b""])
+    def test_delete_without_files_keeps_completed_product(self, service, tmp_path, content):
         svc, _ = service
         task = makeTask("d4", name="a.zip")
         svc.add(task)
         task.setStatus(TaskStatus.COMPLETED)
-        (tmp_path / "a.zip").write_bytes(b"product")
+        (tmp_path / "a.zip").write_bytes(content)
 
         svc.delete(task, shouldDeleteFiles=False)
 
-        assert (tmp_path / "a.zip").read_bytes() == b"product"
+        assert (tmp_path / "a.zip").read_bytes() == content
 
-    def test_delete_with_files_removes_product_and_placeholder(self, service, tmp_path):
+    @pytest.mark.parametrize("content", [b"product", b""])
+    def test_delete_with_files_removes_product_and_placeholder(self, service, tmp_path, content):
         svc, _ = service
         task = makeTask("d5", name="a.zip")
         svc.add(task)
         task.setStatus(TaskStatus.COMPLETED)
-        (tmp_path / "a.zip").write_bytes(b"product")
+        (tmp_path / "a.zip").write_bytes(content)
 
         svc.delete(task, shouldDeleteFiles=True)
 
@@ -564,6 +566,57 @@ class TestDelete:
         svc.add(task)
         svc.delete(task, shouldDeleteFiles=False)
         assert svc.taskById("d2") is None
+
+
+class TestClearHistory:
+
+    @pytest.mark.parametrize("content", [b"product", b""])
+    def test_clear_removes_history_and_preserves_active_tasks_and_products(self, service, tmp_path, content):
+        svc, _ = service
+        removed = []
+        svc.taskRemoved.connect(removed.append)
+        tasks = {}
+        for status in TaskStatus:
+            task = makeTask(status.name, name=f"{status.name}.bin")
+            svc.add(task, autoStart=False)
+            task.setStatus(status)
+            tasks[status] = task
+        completed = Path(tasks[TaskStatus.COMPLETED].outputPath)
+        completed.write_bytes(content)
+        failed = Path(tasks[TaskStatus.FAILED].outputPath)
+        failed.write_bytes(b"partial")
+        part = Path(f"{failed}.ghd")
+        part.write_bytes(b"offsets")
+
+        svc.clearHistory()
+
+        assert set(removed) == {"COMPLETED", "FAILED"}
+        assert {task.taskId for task in svc.tasks} == {"RUNNING", "WAITING", "PAUSED"}
+        for status in (TaskStatus.RUNNING, TaskStatus.WAITING, TaskStatus.PAUSED):
+            assert tasks[status].status == status
+            assert Path(tasks[status].outputPath).exists()
+        assert completed.read_bytes() == content
+        assert not failed.exists()
+        assert not part.exists()
+
+    def test_cleared_history_stays_removed_after_loading_saved_records(self, service, tmp_path):
+        from app.services.task_service import TaskStore
+
+        svc, _ = service
+        svc._store._path = tmp_path / "data" / "tasks.jsonl"
+        svc._store.loadSaved()
+        for status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.PAUSED):
+            task = makeTask(status.name, name=f"{status.name}.bin")
+            svc.add(task, autoStart=False)
+            task.setStatus(status)
+        svc.flush()
+
+        svc.clearHistory()
+        svc.flush()
+
+        store = TaskStore(deleteRecoverably=lambda path: False)
+        store._path = svc._store._path
+        assert [task.taskId for task in store.loadSaved()] == ["PAUSED"]
 
 
 class TestQueue:
