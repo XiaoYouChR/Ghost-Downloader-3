@@ -18,7 +18,7 @@ from app.platform.sysio import ftruncate, pwrite
 
 STREAM_READ_TIMEOUT = 30
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
-FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO, 39, 112})
+FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO})
 
 
 class PermanentDownloadError(Exception):

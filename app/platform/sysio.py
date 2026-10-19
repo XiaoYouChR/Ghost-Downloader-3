@@ -5,70 +5,44 @@ from sys import platform
 
 if platform == "win32":
     import msvcrt
-    from ctypes import wintypes, Structure, Union, c_void_p, POINTER, windll, WinError, cast, c_char_p, byref, \
+    from ctypes import wintypes, Structure, c_void_p, POINTER, WinDLL, WinError, get_last_error, c_char_p, byref, \
         c_longlong
 
-    INVALID_HANDLE_VALUE = -1
-
-    def _check_error(msg: str):
-        def _check(result, func, arg):
-            if not result:
-                err = WinError()
-                raise OSError(err.winerror, f"{msg}: {err.strerror}")
-            return result
-
-        return _check
-
-    class _dummy_s(Structure):
-        _fields_ = [("Offset", wintypes.DWORD), ("OffsetHigh", wintypes.DWORD)]
-
-    class _dummy_u(Union):
-        _fields_ = [("DUMMYSTRUCTNAME", _dummy_s), ("Pointer", c_void_p)]
+    # 独立实例，不改全局 windll 上的 argtypes
+    kernel32 = WinDLL("kernel32", use_last_error=True)
 
     class OVERLAPPED(Structure):
         _fields_ = [
-            ("Internal", POINTER(wintypes.ULONG)),
-            ("InternalHigh", POINTER(wintypes.ULONG)),
-            ("DUMMYUNIONNAME", _dummy_u),
+            ("Internal", c_void_p),
+            ("InternalHigh", c_void_p),
+            ("Offset", wintypes.DWORD),
+            ("OffsetHigh", wintypes.DWORD),
             ("hEvent", wintypes.HANDLE),
         ]
-        _anonymous_ = ("DUMMYUNIONNAME",)
 
-    WriteFile = windll.kernel32.WriteFile
+    WriteFile = kernel32.WriteFile
     WriteFile.argtypes = [
         wintypes.HANDLE,
-        wintypes.LPCVOID,
+        c_char_p,
         wintypes.DWORD,
         wintypes.LPDWORD,
         POINTER(OVERLAPPED),
     ]
     WriteFile.restype = wintypes.BOOL
-    WriteFile.errcheck = _check_error("WriteFile failed")
 
-    def pwrite(fd: int | wintypes.HANDLE, data: bytes, offset: int) -> int:
-        if isinstance(fd, int):
-            handle = wintypes.HANDLE(
-                msvcrt.get_osfhandle(fd)
-            )
-        else:
-            handle = fd
-        written = wintypes.DWORD(0)
-        overlapped = OVERLAPPED()
-        overlapped.DUMMYSTRUCTNAME.OffsetHigh = wintypes.DWORD(offset >> 32)
-        overlapped.DUMMYSTRUCTNAME.Offset = wintypes.DWORD(offset)
-        WriteFile(
-            handle,
-            cast(c_char_p(data), wintypes.LPCVOID),
-            len(data),
-            byref(written),
-            byref(overlapped),
-        )
-        return written.value
+    def pwrite(fd: int, data: bytes | memoryview, offset: int) -> int:
+        # 实测比 PyObject_GetBuffer 零拷贝快
+        buffer = bytes(data)
+        overlapped = OVERLAPPED(Offset=offset & 0xFFFFFFFF, OffsetHigh=offset >> 32)
+        # 同步写文件要么全部写完要么失败，所以不取实际写入字节数
+        if not WriteFile(msvcrt.get_osfhandle(fd), buffer, len(buffer), None, byref(overlapped)):
+            raise WinError(get_last_error())
+        return len(buffer)
 
     FSCTL_SET_SPARSE = 0x000900C4
     FILE_BEGIN = 0
 
-    DeviceIoControl = windll.kernel32.DeviceIoControl
+    DeviceIoControl = kernel32.DeviceIoControl
     DeviceIoControl.argtypes = [
         wintypes.HANDLE,
         wintypes.DWORD,
@@ -80,9 +54,8 @@ if platform == "win32":
         wintypes.LPVOID,
     ]
     DeviceIoControl.restype = wintypes.BOOL
-    DeviceIoControl.errcheck = _check_error("FSCTL_SET_SPARSE failed")
 
-    SetFilePointerEx = windll.kernel32.SetFilePointerEx
+    SetFilePointerEx = kernel32.SetFilePointerEx
     SetFilePointerEx.argtypes = [
         wintypes.HANDLE,
         c_longlong,
@@ -90,41 +63,19 @@ if platform == "win32":
         wintypes.DWORD,
     ]
     SetFilePointerEx.restype = wintypes.BOOL
-    SetFilePointerEx.errcheck = _check_error("SetFilePointerEx failed")
 
-    SetEndOfFile = windll.kernel32.SetEndOfFile
+    SetEndOfFile = kernel32.SetEndOfFile
     SetEndOfFile.argtypes = [wintypes.HANDLE]
     SetEndOfFile.restype = wintypes.BOOL
-    SetEndOfFile.errcheck = _check_error("SetEndOfFile failed")
 
-    def ftruncate(fd: int | wintypes.HANDLE, size: int) -> None:
-        if isinstance(fd, int):
-            handle = wintypes.HANDLE(
-                msvcrt.get_osfhandle(fd)
-            )
-        else:
-            handle = fd
-
-        returned = wintypes.DWORD(0)
-        try:
-            DeviceIoControl(
-                handle,
-                FSCTL_SET_SPARSE,
-                None,
-                0,
-                None,
-                0,
-                byref(returned),
-                None,
-            )
-        except OSError:
+    # 不用 os.ftruncate：它在 Windows 上扩展文件时会逐块写零，预分配大文件很慢
+    def ftruncate(fd: int, size: int) -> None:
+        handle = msvcrt.get_osfhandle(fd)
+        if not DeviceIoControl(handle, FSCTL_SET_SPARSE, None, 0, None, 0, byref(wintypes.DWORD()), None):
             from loguru import logger
             logger.debug("文件系统不支持稀疏文件，使用常规预分配")
-
-        newPos = c_longlong()
-        SetFilePointerEx(handle, size, byref(newPos), FILE_BEGIN)
-
-        SetEndOfFile(handle)
+        if not SetFilePointerEx(handle, size, None, FILE_BEGIN) or not SetEndOfFile(handle):
+            raise WinError(get_last_error())
 
 else:
     # noinspection PyUnresolvedReferences
