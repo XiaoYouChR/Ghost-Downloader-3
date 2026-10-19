@@ -560,6 +560,7 @@ class TaskPage(QWidget):
         if dialog.exec():
             cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
             self._onDeleteConfirmed(deleteFiles.isChecked())
+        dialog.deleteLater()
 
     def _onMoveCategorySelected(self) -> None:
         targets = [

@@ -542,7 +542,9 @@ class SettingPage(FastScrollArea):
             self.tr("确定要切换到{0}吗？\n\n数据将被复制到新位置，程序随后退出。请手动重新打开。").format(mode),
             self.window(),
         )
-        if not dialog.exec():
+        isConfirmed = dialog.exec()
+        dialog.deleteLater()
+        if not isConfirmed:
             return
 
         QApplication.instance().aboutToQuit.connect(lambda: migrate(target))
@@ -552,6 +554,7 @@ class SettingPage(FastScrollArea):
         from app.view.dialogs.pack_info import PackInfoDialog
         dialog = PackInfoDialog(self._featureService.packs, self._updateService, self.window())
         dialog.exec()
+        dialog.deleteLater()
 
     def _onAboutCardClicked(self) -> None:
         from app.services.update_service import UpdateState

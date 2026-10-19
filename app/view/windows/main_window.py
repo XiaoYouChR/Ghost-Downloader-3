@@ -308,6 +308,7 @@ class MainWindow(MSFluentWindow):
             self._browserService.approvePair(request.requestId)
         else:
             self._browserService.rejectPair(request.requestId)
+        dialog.deleteLater()
 
     def onBrowserListenFailed(self, error: TaskError) -> None:
         self._onListenFailed(self.tr("浏览器扩展服务无法启动"), error)
@@ -435,6 +436,7 @@ class MainWindow(MSFluentWindow):
         if dialog.exec():
             QApplication.clipboard().setText(message)
             QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
+        dialog.deleteLater()
 
     def _openLogFolder(self) -> None:
         revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
@@ -471,6 +473,7 @@ class MainWindow(MSFluentWindow):
             mode = CloseMode.QUIT if dialog.exec() else CloseMode.BACKGROUND
             if checkbox.isChecked():
                 cfg.set(cfg.closeMode, mode)
+            dialog.deleteLater()
 
         self.close()
         if mode == CloseMode.QUIT:

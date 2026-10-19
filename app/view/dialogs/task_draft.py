@@ -295,6 +295,7 @@ class TaskDraftDialog(MessageBoxBase):
             return
         dialog = DraftEditDialog(task, self._featureService.optionCards(task, self.window()), self.window())
         dialog.exec()
+        dialog.deleteLater()
 
     def _onParseFailed(self, url: str, error: TaskError) -> None:
         self._refreshStats()

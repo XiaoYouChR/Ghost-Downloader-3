@@ -625,6 +625,7 @@ class IdentitySettingCard(CollapsibleSettingCard):
             self._reload()
             if not self.isExpand:
                 self.setExpand(True)
+        dialog.deleteLater()
 
     def _onEditClicked(self, index: int) -> None:
         presets = list(cfg.identityPresets.value)
@@ -636,6 +637,7 @@ class IdentitySettingCard(CollapsibleSettingCard):
             presets[index] = dialog.preset()
             cfg.set(cfg.identityPresets, presets)
             self._reload()
+        dialog.deleteLater()
 
     def _onToggled(self, index: int, checked: bool) -> None:
         presets = list(cfg.identityPresets.value)
@@ -655,7 +657,9 @@ class IdentitySettingCard(CollapsibleSettingCard):
             self.tr("确定要删除 {0} 吗？").format(name),
             self.window(),
         )
-        if not dialog.exec():
+        isConfirmed = dialog.exec()
+        dialog.deleteLater()
+        if not isConfirmed:
             return
         row = self._rowWidgets.pop(index)
         self.viewLayout.removeWidget(row)
@@ -777,6 +781,7 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
             self._reload()
             if not self.isExpand:
                 self.setExpand(True)
+        dialog.deleteLater()
 
     def _onEditClicked(self, index: int) -> None:
         from app.view.dialogs.headers_preset_edit import HeadersPresetEditDialog
@@ -786,6 +791,7 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
             presets[index] = dialog.preset()
             cfg.set(cfg.headersPresets, presets)
             self._reload()
+        dialog.deleteLater()
 
     def _onRemoveClicked(self, index: int) -> None:
         from qfluentwidgets import MessageBox
@@ -796,7 +802,9 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
             self.tr("确定要删除 {0} 吗？").format(name),
             self.window(),
         )
-        if not dialog.exec():
+        isConfirmed = dialog.exec()
+        dialog.deleteLater()
+        if not isConfirmed:
             return
         row = self._rowWidgets.pop(index)
         self.viewLayout.removeWidget(row)
@@ -988,7 +996,9 @@ class RuntimeCard(SettingCard):
             self.tr("确定要卸载 {0} 吗？").format(self._runtime.name),
             self.window(),
         )
-        if not dialog.exec():
+        isConfirmed = dialog.exec()
+        dialog.deleteLater()
+        if not isConfirmed:
             return
         try:
             self._runtime.delete()

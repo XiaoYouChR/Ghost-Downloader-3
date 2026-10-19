@@ -383,6 +383,7 @@ class TaskCard(CardWidget):
         if dialog.exec():
             cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
             self._taskService.delete(self._task, deleteFiles.isChecked())
+        dialog.deleteLater()
 
     def _onChecksumClicked(self) -> None:
         if self._taskService.checksumProgress(self._task) is not None:
@@ -403,7 +404,9 @@ class TaskCard(CardWidget):
         menu.exec(self.checksumButton.mapToGlobal(QPoint(0, self.checksumButton.height())))
 
     def _onEditClicked(self) -> None:
-        self._featureService.createEditDialog(self._task, self.window()).exec()
+        dialog = self._featureService.createEditDialog(self._task, self.window())
+        dialog.exec()
+        dialog.deleteLater()
         self.refresh()
 
     def _openDrawer(self) -> None:

@@ -131,6 +131,7 @@ class CategoryRulesCard(CollapsibleSettingCard):
         dialog = CategoryEditDialog(self.window())
         if dialog.exec():
             self._categoryService.addCategory(dialog.category())
+        dialog.deleteLater()
 
     def _onEditClicked(self, categoryId: str) -> None:
         category = self._categoryService.categoryById(categoryId)
@@ -140,6 +141,7 @@ class CategoryRulesCard(CollapsibleSettingCard):
         dialog = CategoryEditDialog(self.window(), category=category)
         if dialog.exec():
             self._categoryService.updateCategory(dialog.category())
+        dialog.deleteLater()
 
     def _onRemoveClicked(self, categoryId: str) -> None:
         self._categoryService.removeCategory(categoryId)
