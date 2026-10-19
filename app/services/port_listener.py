@@ -132,6 +132,9 @@ class PortListener:
             await server.wait_closed()
 
     async def _onConnection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        if not self._servers:
+            writer.close()
+            return
         task = asyncio.current_task()
         self._connections.add(task)
         try:
