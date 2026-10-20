@@ -2,24 +2,22 @@ import os
 import sys
 import traceback
 
-from loguru import logger
-
 from app.config.paths import APP_DATA_DIR
-
-logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=5)
 
 
 def _exceptionHook(exceptionType, value, tb):
+    from loguru import logger
     info = (exceptionType, value, tb)
     logger.opt(exception=info).error("Unhandled application exception")
     if "__compiled__" not in globals():
         sys.__excepthook__(*info)
 
 
-sys.excepthook = _exceptionHook
-
-
 def setupEnvironment():
+    from loguru import logger
+    logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=5)
+    sys.excepthook = _exceptionHook
+
     from app.nuitka_patch import patchSignalWorkaround
     patchSignalWorkaround()
 
@@ -53,7 +51,7 @@ def setupEnvironment():
     logger.info("Ghost Downloader v{} launched", VERSION)
 
 
-def startApp(application, isSilent=False):
+def startApp(application, primaryInstance, isSilent=False):
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
     from app.view.dialogs.name_conflict import NameConflictPrompt
@@ -196,7 +194,6 @@ def startApp(application, isSilent=False):
 
     if sys.platform != "darwin":
         signalBus.activationRequested.connect(show)
-    signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().onExceptionCaught(msg))
     browserService.pairRequestChanged.connect(lambda request: request and show().onPairRequested(request))
     engine.browserListener.stateChanged.connect(
@@ -263,14 +260,27 @@ def startApp(application, isSilent=False):
 
     application.aboutToQuit.connect(onAboutToQuit)
 
+    from app.cli import Cli
+    cli = Cli(taskService, featureService.parse, coroutineRunner.submit,
+              open=lambda uris: show().addUrls(uris), activate=show)
+    primaryInstance.start(cli.run)
+
 
 if __name__ == "__main__":
-    from app.config.constants import DESKTOP_ID
-    from app.platform.application import SingletonApplication
-    from app.platform.url_scheme import isWakeUri
+    from app.platform import instance
+
+    if (exitCode := instance.request(sys.argv, os.getcwd())) is not None:
+        sys.exit(exitCode)
+
+    from app.cli import isSilent
+    from app.platform.application import Application
 
     setupEnvironment()
-    app = SingletonApplication(sys.argv, DESKTOP_ID)
-    isSilent = "--silence" in sys.argv or any(isWakeUri(arg) for arg in sys.argv[1:])
-    startApp(app, isSilent=isSilent)
-    sys.exit(app.exec())
+    app = Application(sys.argv)
+    primaryInstance = instance.open(app, sys.argv, os.getcwd())
+    if primaryInstance is None:
+        sys.exit(0)
+    startApp(app, primaryInstance, isSilent=isSilent(sys.argv[1:]))
+    exitCode = app.exec()
+    primaryInstance.close()
+    sys.exit(exitCode)

@@ -153,6 +153,14 @@ _Avoid_: 密钥、密码、token
 
 ### 应用角色
 
+**Primary Instance**:
+桌面上唯一持有任务和服务的 Ghost Downloader 进程。之后启动的进程把自己的命令行（argv 与工作目录）交给它执行，转达它的回复后退出；没有 Primary Instance 时，由启动的进程或它拉起的进程成为 Primary Instance。
+_Avoid_: 主进程、running instance、server
+
+**Command Line Tool**:
+放在 PATH 上的 `ghd` 命令，供终端和 AI Agent 控制 Ghost Downloader。由用户在设置中安装和卸载。
+_Avoid_: CLI 插件、shell command
+
 **Engine**:
 与平台无关的全部服务及其启动、关闭顺序。桌面和 Android 共用同一个 Engine，平台差异在构造时注入。
 _Avoid_: core、backend；不指 Android 的 Bridge
