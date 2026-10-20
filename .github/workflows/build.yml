@@ -183,6 +183,14 @@ jobs:
           cmake --build build-updater --config Release
           Copy-Item build-updater/Release/updater.exe dist/Ghost-Downloader-3.dist/
 
+      - name: Build ghd
+        shell: pwsh
+        run: |
+          cmake -B build-ghd -G "Visual Studio 17 2022" -A x64 tools/ghd
+          cmake --build build-ghd --config Release
+          New-Item -ItemType Directory -Force dist/Ghost-Downloader-3.dist/bin
+          Copy-Item build-ghd/Release/ghd.exe dist/Ghost-Downloader-3.dist/bin/
+
       - name: Download HDiffPatch
         shell: pwsh
         run: |

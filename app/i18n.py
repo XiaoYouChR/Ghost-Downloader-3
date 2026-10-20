@@ -28,6 +28,8 @@ N("TaskErrors", "{name} 未安装，请在设置中安装")
 N("TaskErrors", "无法获取版本信息")
 N("TaskErrors", "校验失败")
 N("TaskErrors", "当前平台无可用更新")
+N("TaskErrors", "{path} 已被其他文件占用")
+N("TaskErrors", "未获得管理员授权")
 N("TaskErrors", "DMG 中未找到 .app")
 
 N("TaskErrors", "端口 {port} 被占用，请更换端口")

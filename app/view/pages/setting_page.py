@@ -16,7 +16,6 @@ from app.view.components.scroll_area import FastScrollArea
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
-from app.platform.android import IS_ANDROID
 from app.services.port_listener import ListenStatus
 from app.config.constants import (
     AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
@@ -327,26 +326,26 @@ class SettingPage(FastScrollArea):
                 self.tr("当前为用户模式，数据保存在: {0}").format(APP_DATA_DIR),
             )
 
+        self.commandLineToolCard = PushSettingCard(
+            "", FluentIcon.COMMAND_PROMPT, self.tr("命令行工具"),
+            self.tr("安装后可在终端中使用 ghd 命令添加和管理任务"),
+        )
+        self._refreshCommandLineToolCard()
         softwareCards = [
             SwitchSettingCard(FluentIcon.UPDATE, self.tr("在应用程序启动时检查更新"),
                               self.tr("新版本将更稳定，并具有更多功能"),
                               cfg.shouldCheckUpdateAtStartup),
             self.autoRunCard,
-        ]
-        if not IS_ANDROID:
-            softwareCards.append(
-                ComboBoxSettingCard(
-                    cfg.closeMode, FluentIcon.POWER_BUTTON,
-                    self.tr("关闭主窗口时"),
-                    self.tr("设置关闭主窗口后程序继续在后台运行还是退出"),
-                    texts=[self.tr("关闭时询问"), self.tr("继续在后台运行"), self.tr("退出程序")],
-                ),
-            )
-        softwareCards.append(
+            self.commandLineToolCard,
+            ComboBoxSettingCard(
+                cfg.closeMode, FluentIcon.POWER_BUTTON,
+                self.tr("关闭主窗口时"),
+                self.tr("设置关闭主窗口后程序继续在后台运行还是退出"),
+                texts=[self.tr("关闭时询问"), self.tr("继续在后台运行"), self.tr("退出程序")],
+            ),
             ClipboardSettingCard(self._featureService.packs),
-        )
-        if not IS_ANDROID:
-            softwareCards.append(self.migrateCard)
+            self.migrateCard,
+        ]
         self.softwareGroup.addSettingCards(softwareCards)
 
         self.feedbackCard = PrimaryPushSettingCard(
@@ -408,12 +407,12 @@ class SettingPage(FastScrollArea):
         if sys.platform != "darwin":
             self.urlSchemeCard.checkedChanged.connect(self._onUrlSchemeChanged)
         self.autoRunCard.checkedChanged.connect(self._onRunAtLoginChanged)
+        self.commandLineToolCard.clicked.connect(self._onCommandLineToolClicked)
         self.packInfoCard.clicked.connect(self._onPackInfoClicked)
         self.aboutCard.clicked.connect(self._onAboutCardClicked)
         self.feedbackCard.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
         self.openLogButton.clicked.connect(self._onOpenLogClicked)
-        if not IS_ANDROID:
-            self.migrateCard.clicked.connect(self._onMigrateClicked)
+        self.migrateCard.clicked.connect(self._onMigrateClicked)
 
     def _onDownloadFolderChanged(self, path: str) -> None:
         cfg.set(cfg.downloadFolder, path)
@@ -499,6 +498,38 @@ class SettingPage(FastScrollArea):
     def _onRunAtLoginChanged(self, enabled: bool) -> None:
         from app.platform.run_at_login import setRunAtLogin
         setRunAtLogin(enabled)
+
+    def _refreshCommandLineToolCard(self) -> None:
+        from app.platform import cli_install
+        self.commandLineToolCard.button.setEnabled(True)
+        self.commandLineToolCard.button.setText(
+            self.tr("卸载") if cli_install.isInstalled() else self.tr("安装"))
+
+    def _onCommandLineToolClicked(self) -> None:
+        from app.platform import cli_install
+        work = cli_install.delete() if cli_install.isInstalled() else cli_install.install()
+        self.commandLineToolCard.button.setEnabled(False)
+        self._coroutineRunner.submit(work, done=self._onCommandLineToolDone, failed=self._onCommandLineToolFailed)
+
+    def _onCommandLineToolDone(self, _) -> None:
+        from app.platform import cli_install
+        self._refreshCommandLineToolCard()
+        if not cli_install.isInstalled():
+            InfoBar.success(self.tr("已卸载命令行工具"), "", duration=2000,
+                            position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
+            return
+        content = self.tr("新打开的终端即可使用 ghd")
+        if sys.platform == "linux":
+            content = self.tr("新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH")
+        InfoBar.success(self.tr("已安装命令行工具"), content, duration=5000,
+                        position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
+
+    def _onCommandLineToolFailed(self, error) -> None:
+        from app.platform import cli_install
+        self._refreshCommandLineToolCard()
+        title = self.tr("卸载命令行工具失败") if cli_install.isInstalled() else self.tr("安装命令行工具失败")
+        InfoBar.error(title, toLocalizedError(toTaskError(error)),
+                      duration=5000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onMigrateClicked(self) -> None:
         from app.config.paths import isPortable, migrate, PORTABLE_DIR, USER_DATA_DIR

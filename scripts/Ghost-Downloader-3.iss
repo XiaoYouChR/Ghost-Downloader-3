@@ -32,6 +32,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 LicenseFile=LICENSE
 PrivilegesRequired=lowest
+ChangesEnvironment=yes
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=dist
 OutputBaseFilename=Ghost-Downloader-v{#MyAppVersion}-Windows-Setup
@@ -82,3 +83,19 @@ Type: filesandordirs; Name: "{localappdata}\GhostDownloader"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Path, Entry: string;
+  Index: Integer;
+begin
+  if CurUninstallStep <> usUninstall then Exit;
+  if not RegQueryStringValue(HKCU, 'Environment', 'Path', Path) then Exit;
+  Entry := ';' + ExpandConstant('{app}\bin') + ';';
+  Path := ';' + Path + ';';
+  Index := Pos(Lowercase(Entry), Lowercase(Path));
+  if Index = 0 then Exit;
+  Delete(Path, Index, Length(Entry) - 1);
+  RegWriteExpandStringValue(HKCU, 'Environment', 'Path', Copy(Path, 2, Length(Path) - 2));
+end;
