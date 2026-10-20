@@ -39,6 +39,8 @@ class TextRequested(Exception):
 
 
 class CommandParser(ArgumentParser):
+    """argparse 的 sys.exit 会结束 Primary Instance，所以改为抛出异常。"""
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, allow_abbrev=False, **kwargs)
 
