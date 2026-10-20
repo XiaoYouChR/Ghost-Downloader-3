@@ -33,7 +33,7 @@
 * **快在刀刃。** 好网快是本分，烂网快才是本事。智能分块无需合并文件，自动适配带宽。真实浏览器 TLS 指纹，不触发风控。
 * **合而不同。** 集大成，而不失其专。`HTTP`、`磁力/BT`、`FTP`、`M3U8`、`MPEG-DASH`、`eD2k` 全协议通吃。`YouTube` 与 `Bilibili` 框选片段、任意画质与字幕、播放列表与合集分 P。`GitHub` 与 `HuggingFace` 镜像加速。
 * **一触即发。** 下载按钮跟随视频画面，任意画质随心选。扩展窗口列出页面上所有媒体，在扩展中点一下，或者仅是照常下载，桌面端无缝接管。链接不用复制，而且带着验证状态。
-* **始终如一。** 细节见真章。同一个软件，四个系统，体验处处原生。
+* **始终如一。** 细节见真章。同一个软件，四个系统，体验处处原生。Android 端同样支持直播录制与后台下载。
 * **尽在掌控。** 游刃有余。兼容 `aria2` RPC API，第三方工具直接推送。下载途中改链接、改请求头、改代理，进度不丢失。
 
 <!-- ABOUT THE PROJECT -->
@@ -58,6 +58,21 @@
 ## 截图
 
 ![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-recording-dark.webp" />
+    <img src=".github/assets/android-recording-light.webp" width="30%" alt="Android 端录制直播" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-tasks-dark.webp" />
+    <img src=".github/assets/android-tasks-light.webp" width="30%" alt="Android 端下载列表" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-notification-dark.webp" />
+    <img src=".github/assets/android-notification-light.webp" width="30%" alt="Android 端下载完成通知" />
+  </picture>
+</p>
 
 <!-- ROADMAP -->
 ## 计划

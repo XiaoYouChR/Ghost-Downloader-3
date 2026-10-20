@@ -32,7 +32,7 @@
 * **Fast where it matters.** Every downloader is fast on a good connection. The real test is a bad one. Smart chunking without file merging. Auto-detects bandwidth. Real-browser TLS fingerprints, invisible to anti-bot checks.
 * **One app instead of five.** Everything in one place, nothing watered down. `HTTP`, `Magnet/BT`, `FTP`, `M3U8`, `MPEG-DASH`, `eD2k`. `YouTube` and `Bilibili` with clip selection, any quality and subtitles, playlists and multi-part episodes. `GitHub` and `HuggingFace` with mirror acceleration.
 * **See it. Sniff it. Download it.** A download button follows the video, any quality you want. The extension popup lists every medium on the page. Click it there, or just download as you normally would, the desktop app takes over seamlessly. No copying links, and authentication state carries over.
-* **Native on every platform.** It shows in the details. One app, four systems, native experience everywhere.
+* **Native on every platform.** It shows in the details. One app, four systems, native experience everywhere. On Android, it records live M3U8 streams and keeps downloading in the background.
 * **Always in control** Effortlessly. `aria2`-compatible RPC API for third-party tools. Change the URL, headers, or proxy mid-download. Progress is never lost.
 
 <!-- ABOUT THE PROJECT -->
@@ -57,6 +57,21 @@ Started as a passion project to help a Bilibili creator manage resources. Now it
 ## Screenshots
 
 ![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-recording-dark.webp" />
+    <img src=".github/assets/android-recording-light.webp" width="30%" alt="Recording a live stream on Android" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-tasks-dark.webp" />
+    <img src=".github/assets/android-tasks-light.webp" width="30%" alt="Download list on Android" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-notification-dark.webp" />
+    <img src=".github/assets/android-notification-light.webp" width="30%" alt="Download complete notification on Android" />
+  </picture>
+</p>
 
 <!-- ROADMAP -->
 ## Roadmap
