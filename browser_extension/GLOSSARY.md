@@ -2,7 +2,7 @@
 
 Chromium / Firefox 浏览器扩展。捕获页面中的可下载资源，通过持久连接发送到桌面应用。
 
-与桌面应用共享 **Resource** 和 **Task Options** 的定义（见根目录 CONTEXT.md）。
+与桌面应用共享 **Resource** 和 **Task Options** 的定义（见根目录 GLOSSARY.md）。
 
 ## Language
 

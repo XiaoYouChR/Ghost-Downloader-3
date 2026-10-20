@@ -16,7 +16,7 @@
 - 函数名用动词前缀（PowerShell 风格）：`taskService.add()`、`featureService.parse()`
 - 选短词、常见词，第一次读代码的人也能看懂
 - 类名提供了上下文后，去掉冗余名词：`taskService.add()` 不写 `addTask()`
-- 名词锁定到 CONTEXT.md，不用近义词：`task` 不写 `download`，`name` 不写 `title`
+- 名词锁定到 GLOSSARY.md，不用近义词：`task` 不写 `download`，`name` 不写 `title`
 - 不用 `_` 前缀标记模块内部函数——模块边界本身就是封装
 - Actor 以它拥有的业务概念命名，禁用 manager、controller、coordinator、provider、repository、facade、pipeline、context
 - 布尔值用 `is*` / `has*` / `can*` / `should*` 前缀

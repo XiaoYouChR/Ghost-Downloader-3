@@ -2,9 +2,9 @@
 
 ## 命名
 
-测试文件对应一个概念，文件名取 [CONTEXT.md](../CONTEXT.md) 的术语，如 `test_task.py`；没有对应术语时，取被测模块的文件名，如 `test_sysio.py`。FeaturePack 的测试文件置于 `tests/<pack>/`，其余置于 `tests/`；真实样本置于 `tests/samples/`。
+测试文件对应一个概念，文件名取 [GLOSSARY.md](../GLOSSARY.md) 的术语，如 `test_task.py`；没有对应术语时，取被测模块的文件名，如 `test_sysio.py`。FeaturePack 的测试文件置于 `tests/<pack>/`，其余置于 `tests/`；真实样本置于 `tests/samples/`。
 
-用例名是"动作 + 结果"的 snake_case 短句。主语由文件名给出，用例名从动作写起，如 `test_task.py` 中的 `test_delete_finished_keeps_file`。动作取自[根目录 CLAUDE.md](../CLAUDE.md) 的动词表或被测公开接口的方法（如 `redownload`、`edit`），结果写用户可见的变化，名词取 CONTEXT.md 的术语。用例平铺在测试文件中；一组用例须共享 fixture 或参数时，才放进测试类。
+用例名是"动作 + 结果"的 snake_case 短句。主语由文件名给出，用例名从动作写起，如 `test_task.py` 中的 `test_delete_finished_keeps_file`。动作取自[根目录 CLAUDE.md](../CLAUDE.md) 的动词表或被测公开接口的方法（如 `redownload`、`edit`），结果写用户可见的变化，名词取 GLOSSARY.md 的术语。用例平铺在测试文件中；一组用例须共享 fixture 或参数时，才放进测试类。
 
 ## 第三个平台
 
