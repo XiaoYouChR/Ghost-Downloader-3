@@ -267,6 +267,7 @@ class FeaturePack:
     manifest: PackManifest | None = None
     config: PackConfig | None = None
     proxySchemes: frozenset[str] | None = None
+    capturedLinks: str | None = None
 
     parsers: list[type[TaskParser]] = []
     parse: Callable[[TaskOptions], Awaitable[Task]] | None = None

@@ -33,6 +33,7 @@ DESKTOP_ONLY = {
     ("Personalization", "ShowMenuBarSpeed"),
     ("Personalization", "ThemeMode"),
     ("Software", "AutoRun"),
+    ("Software", "ClipboardIgnoredPacks"),
     ("Software", "ClipboardListener"),
     ("Software", "CloseMode"),
     ("Software", "Geometry"),

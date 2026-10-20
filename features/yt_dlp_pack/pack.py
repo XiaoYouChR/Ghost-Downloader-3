@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import urlparse, parse_qs, quote
 
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
@@ -59,6 +60,7 @@ class YouTubeParser(TaskParser):
 
 class YouTubePack(FeaturePack):
     packId = "ytdlp"
+    capturedLinks = N("YouTubePack", "YouTube 视频")
     parsers = [YouTubeParser]
 
     def taskCardClass(self, task: Task) -> type | None:

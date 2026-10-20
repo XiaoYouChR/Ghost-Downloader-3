@@ -5,6 +5,7 @@ from urllib.parse import unquote, urlparse
 
 from loguru import logger
 
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser, UriScheme
 from .config import ftpConfig
 from app.models.task import Task, TaskOptions, SpecialFileSize
@@ -122,6 +123,7 @@ class FtpParser(TaskParser):
 
 class FtpPack(FeaturePack):
     packId = "ftp"
+    capturedLinks = N("FtpPack", "FTP / FTPS 链接")
     config = ftpConfig
     proxySchemes = PROXY_SCHEMES
     parsers = [FtpParser]

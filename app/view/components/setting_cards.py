@@ -3,7 +3,7 @@ from __future__ import annotations
 from re import compile
 from urllib.parse import urlsplit
 
-from PySide6.QtCore import Qt, QEvent, QRectF, Signal
+from PySide6.QtCore import QCoreApplication, Qt, QEvent, QRectF, Signal
 from PySide6.QtGui import QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QButtonGroup, QHBoxLayout, QLineEdit,
@@ -14,7 +14,7 @@ from qfluentwidgets import (
     ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
     PrimaryPushButton, InfoBar, InfoBarPosition,
-    IconWidget,
+    IconWidget, CheckBox, SwitchButton, IndicatorPosition,
 )
 
 from app.view.components.setting_card_group import CollapsibleSettingCard
@@ -337,6 +337,58 @@ class ProxySettingCard(CollapsibleSettingCard):
             url = self._buildProxyUrl()
             if cfg.proxyServer.validator.validate(url):
                 cfg.set(self._configItem, url)
+
+
+class ClipboardSettingCard(CollapsibleSettingCard):
+
+    def __init__(self, packs: list, parent=None):
+        super().__init__(FluentIcon.PASTE, self.tr("剪贴板监听"),
+                         self.tr("剪贴板监听器将自动检测剪贴板中的链接并添加下载任务"), parent=parent)
+        self._packs = [pack for pack in packs if pack.capturedLinks]
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self.switchButton = SwitchButton(self, IndicatorPosition.RIGHT)
+        self.switchButton.setOnText(QCoreApplication.translate("SwitchSettingCard", "On"))
+        self.switchButton.setOffText(QCoreApplication.translate("SwitchSettingCard", "Off"))
+        self.switchButton.setChecked(cfg.isClipboardListenerEnabled.value)
+
+        self.packWidget = QWidget(self.view)
+        self.packWidget.setEnabled(cfg.isClipboardListenerEnabled.value)
+        self.packLayout = QVBoxLayout(self.packWidget)
+        self.checkBoxes = {}
+        for pack in self._packs:
+            checkBox = CheckBox(QCoreApplication.translate(type(pack).__name__, pack.capturedLinks), self.packWidget)
+            checkBox.setChecked(pack.packId not in cfg.clipboardIgnoredPacks.value)
+            self.checkBoxes[pack.packId] = checkBox
+
+    def _initLayout(self) -> None:
+        self.addWidget(self.switchButton)
+        self.packLayout.setSpacing(19)
+        self.packLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.packLayout.setContentsMargins(48, 18, 0, 18)
+        for checkBox in self.checkBoxes.values():
+            self.packLayout.addWidget(checkBox)
+        self.addGroupWidget(self.packWidget)
+
+    def _bind(self) -> None:
+        self.switchButton.checkedChanged.connect(self._onSwitchCheckedChanged)
+        cfg.isClipboardListenerEnabled.valueChanged.connect(self._onEnabledChanged)
+        for checkBox in self.checkBoxes.values():
+            checkBox.toggled.connect(self._onPackToggled)
+
+    def _onSwitchCheckedChanged(self, isChecked: bool) -> None:
+        cfg.set(cfg.isClipboardListenerEnabled, isChecked)
+
+    def _onEnabledChanged(self, isEnabled: bool) -> None:
+        self.switchButton.setChecked(isEnabled)
+        self.packWidget.setEnabled(isEnabled)
+
+    def _onPackToggled(self) -> None:
+        cfg.set(cfg.clipboardIgnoredPacks,
+                [packId for packId, checkBox in self.checkBoxes.items() if not checkBox.isChecked()])
 
 
 class SelectFolderSettingCard(SettingCard):

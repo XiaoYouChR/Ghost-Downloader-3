@@ -5,6 +5,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from app.config.paths import APP_DATA_DIR
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser, UriScheme
 from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
@@ -46,6 +47,7 @@ class ED2kParser(TaskParser):
 
 class ED2kPack(FeaturePack):
     packId = "ed2k"
+    capturedLinks = N("ED2kPack", "eD2k 链接")
     config = ed2kConfig
     parsers = [ED2kParser]
     proxySchemes = PROXY_SCHEMES

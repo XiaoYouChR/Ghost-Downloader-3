@@ -12,6 +12,7 @@ from loguru import logger
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import (
     Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
@@ -229,6 +230,7 @@ class HttpParser(TaskParser):
 
 class HttpPack(FeaturePack):
     packId = "http"
+    capturedLinks = N("HttpPack", "文件直链（视频、音频、压缩包、安装包、镜像、文档）")
     parsers = [HttpParser]
 
     def taskCardClass(self, task: Task) -> type | None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from app.client import buildClient
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
@@ -154,6 +155,7 @@ async def fetchView(client, biliUrl) -> dict:
 
 class BilibiliPack(FeaturePack):
     packId = "bili"
+    capturedLinks = N("BilibiliPack", "哔哩哔哩视频、番剧")
     config = bilibiliConfig
     parsers = [BilibiliParser]
 

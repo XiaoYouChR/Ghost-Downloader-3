@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 from loguru import logger
 
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
 from http_pack.pack import buildTask
@@ -117,6 +118,7 @@ class GitHubParser(TaskParser):
 
 class GitHubPack(FeaturePack):
     packId = "github"
+    capturedLinks = N("GitHubPack", "GitHub 发布文件与仓库文件")
     config = githubConfig
     parsers = [GitHubParser]
 

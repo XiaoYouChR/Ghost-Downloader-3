@@ -101,6 +101,7 @@ class TorrentParser(TaskParser):
 
 class BitTorrentPack(FeaturePack):
     packId = "bt"
+    capturedLinks = N("BitTorrentPack", "磁力链接")
     config = bittorrentConfig
     proxySchemes = PROXY_SCHEMES
     parsers = [TorrentParser]

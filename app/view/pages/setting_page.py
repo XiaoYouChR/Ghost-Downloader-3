@@ -25,7 +25,7 @@ from app.config.constants import (
 from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import (
-    HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
+    ClipboardSettingCard, HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
 from app.view.components.editors import FolderPicker, addRecentFolder
@@ -343,9 +343,7 @@ class SettingPage(FastScrollArea):
                 ),
             )
         softwareCards.append(
-            SwitchSettingCard(FluentIcon.PASTE, self.tr("剪贴板监听"),
-                              self.tr("剪贴板监听器将自动检测剪贴板中的链接并添加下载任务"),
-                              cfg.isClipboardListenerEnabled),
+            ClipboardSettingCard(self._featureService.packs),
         )
         if not IS_ANDROID:
             softwareCards.append(self.migrateCard)

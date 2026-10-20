@@ -6,6 +6,7 @@ from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
 from app.client import buildClient
+from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskFile, TaskOptions
 from app.platform.filesystem import toSafeFilename
@@ -199,6 +200,7 @@ class HuggingFaceParser(TaskParser):
 
 class HuggingFacePack(FeaturePack):
     packId = "huggingface"
+    capturedLinks = N("HuggingFacePack", "Hugging Face 模型与数据集文件")
     config = huggingFaceConfig
     parsers = [HuggingFaceParser]
 

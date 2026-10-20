@@ -105,6 +105,10 @@ _Avoid_: URL 注册、协议注册
 让系统把某类本地文件（.torrent、.m3u8 等）交给 Ghost Downloader 打开，进入任务创建流程。文件类型由 FeaturePack 声明；平台差异同 Scheme Association。
 _Avoid_: 文件注册
 
+**Passive Capture**:
+用户没有主动添加任务时（目前只有剪贴板），把一条链接识别为可下载链接。由最终负责解析它的 FeaturePack 判断；用户可以按 FeaturePack 关掉。
+_Avoid_: 自动识别、协议过滤
+
 **Wake Link**:
 浏览器扩展拉起 Ghost Downloader 的 `ghostdownloader://` 链接。launch 打开界面；wake 只让 Browser Service、Aria2 RPC Service 和任务运行起来，不打断用户。
 _Avoid_: URL Scheme（会和 Scheme Association 混淆）
@@ -192,7 +196,7 @@ Port Listener 是否在监听的唯一事实：关闭、启动中、监听中、
 _Avoid_: 用绑定端口或任务句柄推断是否在监听
 
 **Clipboard Listener**:
-剪贴板监听器。监控剪贴板变化，过滤出 URL 后发出通知。
+剪贴板监听器。监控剪贴板变化，把其中符合 Passive Capture 的链接通知出去。
 
 **Category**:
 下载分类和目标目录规则。将文件扩展名匹配到分类并解析下载目录。

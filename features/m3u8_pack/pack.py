@@ -251,6 +251,7 @@ class M3U8Parser(TaskParser):
 
 class M3U8Pack(FeaturePack):
     packId = "m3u8"
+    capturedLinks = N("M3U8Pack", "M3U8 / DASH 流媒体")
     parsers = [M3U8Parser]
 
     def taskCardClass(self, task: Task) -> type | None:

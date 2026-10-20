@@ -309,6 +309,7 @@ class Config(QConfig):
         OptionsValidator(CloseMode), EnumSerializer(CloseMode),
     )
     isClipboardListenerEnabled = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
+    clipboardIgnoredPacks = ConfigItem("Software", "ClipboardIgnoredPacks", [], StringListValidator())
     geometry = ConfigItem(
         "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),
     )

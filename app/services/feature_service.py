@@ -5,6 +5,7 @@ from threading import Event
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+from app.config.cfg import cfg
 from app.config.paths import FEATURES_DIR
 from app.models.task import TaskOptions
 from app.platform import file_association
@@ -100,7 +101,10 @@ class FeatureService:
 
     def matchPassive(self, url: str) -> bool:
         options = TaskOptions(url=url)
-        return any(parser.matchPassive(options) for parser in self._parsers)
+        parser = next((parser for parser in self._parsers if parser.match(options)), None)
+        return (parser is not None
+                and parser.pack.packId not in cfg.clipboardIgnoredPacks.value
+                and parser.matchPassive(options))
 
     # ── Card construction (the seam) ──
 
@@ -198,7 +202,6 @@ class FeatureService:
         )
 
     def setFileAssociation(self, isEnabled: bool) -> None:
-        from app.config.cfg import cfg
         for pack in self._packs:
             if pack.config and pack.config.associateFileTypes is not None:
                 cfg.set(pack.config.associateFileTypes, isEnabled)
