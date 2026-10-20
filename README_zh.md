@@ -74,6 +74,31 @@
   </picture>
 </p>
 
+<!-- COMMAND LINE -->
+## 命令行
+
+在 **设置 -> 命令行工具** 中安装 `ghd` 后即可使用。
+
+| 命令 | 作用 |
+|:--|:--|
+| `ghd probe <url>` | 预览链接，不添加任务 |
+| `ghd add <url>...` | 添加并开始任务 |
+| `ghd tasks` | 列出任务 |
+| `ghd task <taskId>` | 查看任务详情 |
+| `ghd pause <taskId>...` | 暂停任务 |
+| `ghd start <taskId>...` | 继续任务 |
+| `ghd remove <taskId>...` | 移除任务，并删除未完成的文件 |
+| `ghd wait <taskId>...` | 等待任务结束 |
+
+```sh
+# 查看种子包含哪些文件
+ghd probe "https://example.com/a.torrent"
+# 只下载其中第 0、3 个文件，保存到 ./downloads
+ghd add "https://example.com/a.torrent" --select 0,3 -o ./downloads
+# 等待下载完成
+ghd wait tsk_0123
+```
+
 <!-- ROADMAP -->
 ## 计划
 

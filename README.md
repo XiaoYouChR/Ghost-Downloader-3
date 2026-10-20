@@ -73,6 +73,31 @@ Started as a passion project to help a Bilibili creator manage resources. Now it
   </picture>
 </p>
 
+<!-- COMMAND LINE -->
+## Command Line
+
+Install `ghd` from **Settings -> Command Line Tool**.
+
+| Command | Description |
+|:--|:--|
+| `ghd probe <url>` | Preview a URL without adding a task |
+| `ghd add <url>...` | Add and start tasks |
+| `ghd tasks` | List tasks |
+| `ghd task <taskId>` | Show task details |
+| `ghd pause <taskId>...` | Pause tasks |
+| `ghd start <taskId>...` | Resume tasks |
+| `ghd remove <taskId>...` | Remove tasks and delete unfinished files |
+| `ghd wait <taskId>...` | Wait for tasks to finish |
+
+```sh
+# see which files the torrent contains
+ghd probe "https://example.com/a.torrent"
+# download only files 0 and 3 into ./downloads
+ghd add "https://example.com/a.torrent" --select 0,3 -o ./downloads
+# wait until the download finishes
+ghd wait tsk_0123
+```
+
 <!-- ROADMAP -->
 ## Roadmap
 

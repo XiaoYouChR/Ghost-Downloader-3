@@ -31,6 +31,12 @@ Ghost Downloader 欢迎使用 AI 工具辅助开发，但请在提交 PR 时如�
 
 只改 `app/view/` 的 PR 不会进入移动端，不签也可以合并。
 
+## 从源码运行 cli
+
+```sh
+uv run Ghost-Downloader-3.py ghd --help
+```
+
 ---
 
 ## AI Tool Usage Policy
@@ -63,3 +69,9 @@ Yes. Code in the public repository is always available under GPL v3, as promised
 ### Do I need to sign for desktop UI changes only?
 
 PRs that only touch `app/view/` never reach the mobile app and can be merged without signing.
+
+## Running the cli from source
+
+```sh
+uv run Ghost-Downloader-3.py ghd --help
+```
