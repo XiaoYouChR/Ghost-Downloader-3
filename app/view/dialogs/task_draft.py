@@ -14,7 +14,6 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
-from app.platform.android import IS_ANDROID
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit, addRecentFolder
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
@@ -64,7 +63,6 @@ class StandaloneWrapper(FramelessDialog):
 class TaskDraftDialog(MessageBoxBase):
 
     def __init__(self, draft: TaskDraft, featureService, categoryService, parent=None):
-        self._isDragEnabled = not IS_ANDROID
         super().__init__(parent)
         self._draft = draft
         self._featureService = featureService
@@ -237,7 +235,7 @@ class TaskDraftDialog(MessageBoxBase):
         return self._draft.canConfirm()
 
     def eventFilter(self, obj, event: QEvent):
-        if obj is not self.windowMask or not self._isDragEnabled:
+        if obj is not self.windowMask:
             return super().eventFilter(obj, event)
 
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:

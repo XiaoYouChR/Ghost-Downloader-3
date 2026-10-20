@@ -29,6 +29,7 @@ from app.view.components.setting_cards import (
 )
 from app.view.components.editors import FolderPicker, addRecentFolder
 
+
 class SettingPage(FastScrollArea):
 
     def __init__(self, featureService, browserService, browserListener, aria2RpcListener, coroutineRunner, categoryService, taskService, updateService, parent=None):
@@ -328,7 +329,7 @@ class SettingPage(FastScrollArea):
 
         self.commandLineToolCard = PushSettingCard(
             "", FluentIcon.COMMAND_PROMPT, self.tr("命令行工具"),
-            self.tr("安装后可在终端中使用 ghd 命令添加和管理任务"),
+            self.tr("在终端中通过 ghd 命令控制 Ghost Downloader，适用于脚本与 AI Agent"),
         )
         self._refreshCommandLineToolCard()
         softwareCards = [
@@ -525,10 +526,8 @@ class SettingPage(FastScrollArea):
                         position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onCommandLineToolFailed(self, error) -> None:
-        from app.platform import cli_install
         self._refreshCommandLineToolCard()
-        title = self.tr("卸载命令行工具失败") if cli_install.isInstalled() else self.tr("安装命令行工具失败")
-        InfoBar.error(title, toLocalizedError(toTaskError(error)),
+        InfoBar.error(self.tr("命令行工具操作失败"), toLocalizedError(toTaskError(error)),
                       duration=5000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onMigrateClicked(self) -> None:
