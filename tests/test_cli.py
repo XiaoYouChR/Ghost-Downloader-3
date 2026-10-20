@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import pytest
 
 from app.cli import Cli
+from app.config.constants import VERSION
 from app.platform.instance import Invocation
 from app.models.task import Task, TaskStatus
 from tests.conftest import FakeStep
@@ -93,6 +94,16 @@ def test_help_lists_commands(cli):
     assert reply.exitCode == 0
     assert "add" in reply.output and "wait" in reply.output
 
+
+
+def test_version_replies_running_version(cli):
+    replies = []
+
+    cli.run(Invocation(["ghd", "--version"], ".", replies.append))
+
+    [reply] = replies
+    assert reply.exitCode == 0
+    assert VERSION in reply.output
 
 async def test_wait_returns_when_task_completes(cli, engine):
     task = buildTask("complete")

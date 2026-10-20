@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from app.config.cfg import cfg, currentHeaders
+from app.config.constants import VERSION
 from app.models.task import Task, TaskOptions, TaskStatus, toTaskError
 from app.platform.instance import Invocation, Reply
 from app.platform.url_scheme import isLaunchUri, isWakeUri
@@ -33,7 +34,7 @@ class UsageError(Exception):
     pass
 
 
-class HelpRequested(Exception):
+class TextRequested(Exception):
     pass
 
 
@@ -41,8 +42,8 @@ class CommandParser(ArgumentParser):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, allow_abbrev=False, **kwargs)
 
-    def print_help(self, file=None) -> None:
-        raise HelpRequested(self.format_help())
+    def _print_message(self, message: str, file=None) -> None:
+        raise TextRequested(message)
 
     def error(self, message: str):
         raise UsageError(f"{message}. Run `{self.prog} --help` for details.")
@@ -52,6 +53,7 @@ def buildParser() -> CommandParser:
     parser = CommandParser(prog="ghd", description="Control Ghost Downloader from the terminal. "
                                                    "Starts it in the background if it is not running.",
                            epilog=OUTPUT_CONTRACT, formatter_class=RawDescriptionHelpFormatter)
+    parser.add_argument("--version", action="version", version=f"ghd {VERSION}")
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     add = commands.add_parser("add", help="add tasks and start them; prints task IDs")
@@ -155,8 +157,8 @@ class Cli:
             return
         try:
             args = self._parser.parse_args(argv[1:])
-        except HelpRequested as help:
-            reply(Reply(str(help), 0))
+        except TextRequested as text:
+            reply(Reply(str(text), 0))
             return
         except UsageError as error:
             reply(toError("usage", str(error), 2))
