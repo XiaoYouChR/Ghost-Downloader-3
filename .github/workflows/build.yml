@@ -341,6 +341,7 @@ jobs:
     needs: [prepare]
     if: ${{ github.event.inputs.build_target == 'macos' || github.event.inputs.build_target == 'all' }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - architecture: arm64
@@ -505,7 +506,15 @@ jobs:
             echo "Retrying in 30s..."
             sleep 30
           done
-          xcrun stapler staple "$DMG_NAME"
+          for attempt in 1 2 3; do
+            echo "Stapling attempt $attempt"
+            if xcrun stapler staple -v "$DMG_NAME"; then
+              break
+            fi
+            [ "$attempt" -eq 3 ] && exit 1
+            echo "Retrying in 30s..."
+            sleep 30
+          done
           echo "Notarization complete."
 
       - name: Cleanup keychain
@@ -569,6 +578,7 @@ jobs:
     needs: [prepare]
     if: ${{ github.event.inputs.build_target == 'linux' || github.event.inputs.build_target == 'all' }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - architecture: x86_64
