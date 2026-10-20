@@ -629,6 +629,14 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
 </context>
 <context>
+    <name>BilibiliPack</name>
+    <message>
+        <location filename="../../../features/bili_pack/pack.py" line="158"/>
+        <source>哔哩哔哩视频、番剧</source>
+        <translation>Видео и аниме Bilibili</translation>
+    </message>
+</context>
+<context>
     <name>BilibiliTaskCard</name>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="735"/>
@@ -916,7 +924,12 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation type="obsolete">种子文件</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="129"/>
+        <location filename="../../../features/bittorrent_pack/pack.py" line="104"/>
+        <source>磁力链接</source>
+        <translation>Magnet-ссылки</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/pack.py" line="130"/>
         <source>BitTorrent 种子文件</source>
         <translation>Торрент-файл BitTorrent</translation>
     </message>
@@ -1606,32 +1619,32 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>ChecksumCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="243"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="245"/>
         <source>校验值</source>
         <translation>Хеш</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="247"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="249"/>
         <source>比对</source>
         <translation>Сравнить</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="256"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="258"/>
         <source>粘贴期望值</source>
         <translation>Вставить ожидаемое значение</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="260"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="262"/>
         <source>粘贴</source>
         <translation>Вставить</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="299"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="301"/>
         <source>与 {0} 一致</source>
         <translation>Совпадает с {0}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="302"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="304"/>
         <source>与已计算的校验值都不一致</source>
         <translation>Не совпадает ни с одним из вычисленных хешей</translation>
     </message>
@@ -1654,7 +1667,7 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>{0} (последняя)</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="177"/>
+        <location filename="../../view/components/option_cards.py" line="169"/>
         <source>模拟身份</source>
         <translation>Эмулировать идентификатор</translation>
     </message>
@@ -1668,6 +1681,19 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <source>浏览器 TLS 指纹与 User-Agent</source>
         <translation type="vanished">TLS-отпечаток браузера и User-Agent</translation>
+    </message>
+</context>
+<context>
+    <name>ClipboardSettingCard</name>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="345"/>
+        <source>剪贴板监听</source>
+        <translation>Буфер обмена</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="346"/>
+        <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
+        <translation>Слушатель буфера обмена находит ссылки и добавляет задачи</translation>
     </message>
 </context>
 <context>
@@ -2018,6 +2044,14 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
 </context>
 <context>
+    <name>ED2kPack</name>
+    <message>
+        <location filename="../../../features/ed2k_pack/pack.py" line="50"/>
+        <source>eD2k 链接</source>
+        <translation>Ссылки eD2k</translation>
+    </message>
+</context>
+<context>
     <name>ED2kSourceCard</name>
     <message>
         <location filename="../../../features/ed2k_pack/detail_cards.py" line="35"/>
@@ -2188,17 +2222,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>EditTaskDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="26"/>
+        <location filename="../../view/dialogs/edit_task.py" line="27"/>
         <source>编辑任务参数</source>
         <translation>Редактировать параметры задачи</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="32"/>
+        <location filename="../../view/dialogs/edit_task.py" line="33"/>
         <source>应用</source>
         <translation>Приложение</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="33"/>
+        <location filename="../../view/dialogs/edit_task.py" line="34"/>
         <source>取消</source>
         <translation>Отмена</translation>
     </message>
@@ -2222,12 +2256,12 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>ErrorBar</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="330"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="332"/>
         <source>下载失败</source>
         <translation>Загрузка не удалась</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="336"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="338"/>
         <source>复制</source>
         <translation>Копировать</translation>
     </message>
@@ -2438,28 +2472,28 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>FileListCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="380"/>
-        <location filename="../../view/dialogs/task_drawer.py" line="383"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="382"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="385"/>
         <source>文件</source>
         <translation>Файл</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="383"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="385"/>
         <source>大小</source>
         <translation>Размер</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="383"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="385"/>
         <source>状态</source>
         <translation>Статус</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="400"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="402"/>
         <source>未选择</source>
         <translation>Не выбрано</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="402"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="404"/>
         <source>已完成</source>
         <translation>Завершено</translation>
     </message>
@@ -2541,7 +2575,12 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>FolderPicker</name>
     <message>
-        <location filename="../../view/components/editors.py" line="73"/>
+        <location filename="../../view/components/editors.py" line="77"/>
+        <source>常用文件夹</source>
+        <translation>Избранные папки</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/editors.py" line="88"/>
         <source>浏览文件夹</source>
         <translation>Обзор папок</translation>
     </message>
@@ -2549,6 +2588,11 @@ http://example.com/{mp4,mkv}/video</translation>
         <location filename="../../view/components/editors.py" line="120"/>
         <source>选择文件夹</source>
         <translation>Выбрать папку</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/editors.py" line="142"/>
+        <source>从常用文件夹中移除</source>
+        <translation>Удалить из избранных папок</translation>
     </message>
 </context>
 <context>
@@ -2560,6 +2604,14 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <source>{0}/{1} 个文件 · {2}</source>
         <translation type="vanished">Файлов: {0}/{1} · {2}</translation>
+    </message>
+</context>
+<context>
+    <name>FtpPack</name>
+    <message>
+        <location filename="../../../features/ftp_pack/pack.py" line="126"/>
+        <source>FTP / FTPS 链接</source>
+        <translation>Ссылки FTP / FTPS</translation>
     </message>
 </context>
 <context>
@@ -2642,6 +2694,14 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
 </context>
 <context>
+    <name>GitHubPack</name>
+    <message>
+        <location filename="../../../features/github_pack/pack.py" line="121"/>
+        <source>GitHub 发布文件与仓库文件</source>
+        <translation>Файлы релизов и репозиториев GitHub</translation>
+    </message>
+</context>
+<context>
     <name>GitHubProxySiteCard</name>
     <message>
         <location filename="../../../features/github_pack/setting_cards.py" line="17"/>
@@ -2683,27 +2743,27 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HeaderCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="195"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="197"/>
         <source>做种中</source>
         <translation>Раздача</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="195"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="197"/>
         <source>已完成</source>
         <translation>Завершено</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="197"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="199"/>
         <source>失败</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="199"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="201"/>
         <source>已暂停</source>
         <translation>Приостановлено</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="200"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="202"/>
         <source>等待中</source>
         <translation>Ожидание</translation>
     </message>
@@ -2728,7 +2788,7 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation type="obsolete">插入 User-Agent 预设</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="270"/>
+        <location filename="../../view/components/option_cards.py" line="262"/>
         <source>请求标头</source>
         <translation>Заголовки запроса</translation>
     </message>
@@ -2828,17 +2888,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HeadersPresetRow</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="631"/>
+        <location filename="../../view/components/setting_cards.py" line="683"/>
         <source>{0} 条标头</source>
         <translation>{0} заголовков</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="641"/>
+        <location filename="../../view/components/setting_cards.py" line="693"/>
         <source>编辑</source>
         <translation>Редактировать</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="643"/>
+        <location filename="../../view/components/setting_cards.py" line="695"/>
         <source>删除</source>
         <translation>Удалить</translation>
     </message>
@@ -2846,34 +2906,42 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HeadersPresetSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="666"/>
+        <location filename="../../view/components/setting_cards.py" line="718"/>
         <source>请求标头预设</source>
         <translation>Пресеты заголовков запроса</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="667"/>
+        <location filename="../../view/components/setting_cards.py" line="719"/>
         <source>新建任务的标头起点</source>
         <translation>Начальные заголовки для новых задач</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="674"/>
+        <location filename="../../view/components/setting_cards.py" line="726"/>
         <source>添加预设</source>
         <translation>Добавить пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="741"/>
+        <location filename="../../view/components/setting_cards.py" line="793"/>
         <source>未命名预设</source>
         <translation>Безымянный пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="743"/>
+        <location filename="../../view/components/setting_cards.py" line="795"/>
         <source>删除预设</source>
         <translation>Удалить пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="744"/>
+        <location filename="../../view/components/setting_cards.py" line="796"/>
         <source>确定要删除 {0} 吗？</source>
         <translation>Вы уверены, что хотите удалить {0}?</translation>
+    </message>
+</context>
+<context>
+    <name>HttpPack</name>
+    <message>
+        <location filename="../../../features/http_pack/pack.py" line="233"/>
+        <source>文件直链（视频、音频、压缩包、安装包、镜像、文档）</source>
+        <translation>Прямые ссылки на файлы (видео, аудио, архивы, установщики, образы дисков, документы)</translation>
     </message>
 </context>
 <context>
@@ -2903,6 +2971,14 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <source>{0}/{1} 个文件 · {2}</source>
         <translation type="vanished">Файлов: {0}/{1} · {2}</translation>
+    </message>
+</context>
+<context>
+    <name>HuggingFacePack</name>
+    <message>
+        <location filename="../../../features/huggingface_pack/pack.py" line="203"/>
+        <source>Hugging Face 模型与数据集文件</source>
+        <translation>Файлы моделей и датасетов Hugging Face</translation>
     </message>
 </context>
 <context>
@@ -2957,42 +3033,42 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>IdentitySettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="473"/>
+        <location filename="../../view/components/setting_cards.py" line="525"/>
         <source>模拟身份</source>
         <translation>Эмулировать идентификатор</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="474"/>
+        <location filename="../../view/components/setting_cards.py" line="526"/>
         <source>TLS 指纹与 User-Agent 预设</source>
         <translation>Пресеты TLS-отпечатков и User-Agent</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="488"/>
+        <location filename="../../view/components/setting_cards.py" line="540"/>
         <source>全局默认</source>
         <translation>Глобальные по умолчанию</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="489"/>
+        <location filename="../../view/components/setting_cards.py" line="541"/>
         <source>未被预设匹配时使用</source>
         <translation>Использовать, если не подошёл ни один пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="494"/>
+        <location filename="../../view/components/setting_cards.py" line="546"/>
         <source>添加预设</source>
         <translation>Добавить пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="600"/>
+        <location filename="../../view/components/setting_cards.py" line="652"/>
         <source>未命名预设</source>
         <translation>Безымянный пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="602"/>
+        <location filename="../../view/components/setting_cards.py" line="654"/>
         <source>删除预设</source>
         <translation>Удалить пресет</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="603"/>
+        <location filename="../../view/components/setting_cards.py" line="655"/>
         <source>确定要删除 {0} 吗？</source>
         <translation>Вы уверены, что хотите удалить {0}?</translation>
     </message>
@@ -3000,47 +3076,47 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>InfoCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="205"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="207"/>
         <source>信息</source>
         <translation>Информация</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="208"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="210"/>
         <source>下载链接</source>
         <translation>Ссылка для загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="209"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="211"/>
         <source>保存位置</source>
         <translation>Расположение</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="210"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="212"/>
         <source>大小</source>
         <translation>Размер</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="211"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="213"/>
         <source>分类</source>
         <translation>Категория</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="212"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="214"/>
         <source>创建时间</source>
         <translation>Время создания</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="213"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="215"/>
         <source>完成时间</source>
         <translation>Время завершения</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="220"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="222"/>
         <source>在文件夹中显示</source>
         <translation>Показать в папке</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="235"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="237"/>
         <source>未分类</source>
         <translation>Без категории</translation>
     </message>
@@ -3048,7 +3124,7 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>InfoRow</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="122"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="124"/>
         <source>复制</source>
         <translation>Копировать</translation>
     </message>
@@ -3082,17 +3158,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>LiveEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="105"/>
+        <location filename="../../view/dialogs/edit_task.py" line="108"/>
         <source>确认更换链接</source>
         <translation>Подтвердить смену ссылки</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="106"/>
+        <location filename="../../view/dialogs/edit_task.py" line="109"/>
         <source>新链接与原链接的内容不一致，将清除已下载的 {0} 数据，是否继续？</source>
         <translation>Новая ссылка не совпадает по содержимому, будут удалены данные {0}. Продолжить?</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="122"/>
+        <location filename="../../view/dialogs/edit_task.py" line="125"/>
         <source>链接解析失败</source>
         <translation>Ошибка разбора ссылки</translation>
     </message>
@@ -3453,12 +3529,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>M3U8Pack</name>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="318"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="254"/>
+        <source>M3U8 / DASH 流媒体</source>
+        <translation>Потоки M3U8 / DASH</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/pack.py" line="319"/>
         <source>M3U8 播放列表</source>
         <translation>Плейлист M3U8</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="324"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="325"/>
         <source>DASH 清单</source>
         <translation>Манифест DASH</translation>
     </message>
@@ -3554,7 +3635,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="415"/>
+        <location filename="../../view/windows/main_window.py" line="417"/>
         <source>程序发生异常</source>
         <translation>В программе произошло исключение</translation>
     </message>
@@ -3582,17 +3663,17 @@ FFmpeg: {2}</translation>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="298"/>
+        <location filename="../../view/windows/main_window.py" line="300"/>
         <source>未知</source>
         <translation>Неизвестно</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="297"/>
+        <location filename="../../view/windows/main_window.py" line="299"/>
         <source>浏览器扩展</source>
         <translation>Расширение браузера</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="294"/>
+        <location filename="../../view/windows/main_window.py" line="296"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -3609,62 +3690,62 @@ FFmpeg: {2}</translation>
 Разрешайте только если вы только что нажали «Автосопряжение» в расширении.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="300"/>
+        <location filename="../../view/windows/main_window.py" line="302"/>
         <source>浏览器扩展配对请求</source>
         <translation>Запрос сопряжения расширения</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="301"/>
+        <location filename="../../view/windows/main_window.py" line="303"/>
         <source>允许配对</source>
         <translation>Разрешить сопряжение</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="302"/>
+        <location filename="../../view/windows/main_window.py" line="304"/>
         <source>拒绝</source>
         <translation>Отклонить</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="311"/>
+        <location filename="../../view/windows/main_window.py" line="313"/>
         <source>浏览器扩展服务无法启动</source>
         <translation>Не удалось запустить службу расширения браузера</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="314"/>
+        <location filename="../../view/windows/main_window.py" line="316"/>
         <source>Aria2 RPC 兼容服务无法启动</source>
         <translation>Не удалось запустить службу совместимости с Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="327"/>
+        <location filename="../../view/windows/main_window.py" line="329"/>
         <source>前往设置</source>
         <translation>Перейти к настройкам</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="353"/>
+        <location filename="../../view/windows/main_window.py" line="355"/>
         <source>查看详情</source>
         <translation>Подробнее</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="461"/>
+        <location filename="../../view/windows/main_window.py" line="463"/>
         <source>是否完全退出程序？</source>
         <translation>Полностью выйти из программы?</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="462"/>
+        <location filename="../../view/windows/main_window.py" line="464"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation>При работе в фоне программу можно снова открыть через значок в системном трее.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="465"/>
+        <location filename="../../view/windows/main_window.py" line="467"/>
         <source>退出程序</source>
         <translation>Выйти</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="466"/>
+        <location filename="../../view/windows/main_window.py" line="468"/>
         <source>继续在后台运行</source>
         <translation>Продолжить работу в фоне</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="467"/>
+        <location filename="../../view/windows/main_window.py" line="469"/>
         <source>记住我的选择</source>
         <translation>Запомнить мой выбор</translation>
     </message>
@@ -3673,7 +3754,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Пожалуйста, выберите вручную в информации о версии</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="416"/>
+        <location filename="../../view/windows/main_window.py" line="418"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -3682,7 +3763,7 @@ FFmpeg: {2}</translation>
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="420"/>
+        <location filename="../../view/windows/main_window.py" line="422"/>
         <source>查看日志</source>
         <translation>Просмотреть журнал</translation>
     </message>
@@ -3711,17 +3792,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Текущая версия {0}, последняя версия {1}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="339"/>
+        <location filename="../../view/windows/main_window.py" line="341"/>
         <source>检测到新版本</source>
         <translation>Обнаружена новая версия</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="340"/>
+        <location filename="../../view/windows/main_window.py" line="342"/>
         <source>最新版本: {0}</source>
         <translation>Последняя версия: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="347"/>
+        <location filename="../../view/windows/main_window.py" line="349"/>
         <source>立即下载</source>
         <translation>Скачать сейчас</translation>
     </message>
@@ -3730,7 +3811,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Подробнее о версии</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="356"/>
+        <location filename="../../view/windows/main_window.py" line="358"/>
         <source>请作者喝咖啡</source>
         <translation>Угостить автора кофе</translation>
     </message>
@@ -4052,6 +4133,11 @@ FFmpeg: {2}</translation>
         <source>选择下载路径</source>
         <translation>Выбрать путь загрузки</translation>
     </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="95"/>
+        <source>默认</source>
+        <translation>По умолчанию</translation>
+    </message>
 </context>
 <context>
     <name>PackInfoDialog</name>
@@ -4334,12 +4420,12 @@ FFmpeg: {2}</translation>
 <context>
     <name>PresetRowWidget</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <location filename="../../view/components/setting_cards.py" line="456"/>
         <source>编辑</source>
         <translation>Редактировать</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="406"/>
+        <location filename="../../view/components/setting_cards.py" line="458"/>
         <source>删除</source>
         <translation>Удалить</translation>
     </message>
@@ -4533,39 +4619,39 @@ FFmpeg: {2}</translation>
 <context>
     <name>RuntimeCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="809"/>
-        <location filename="../../view/components/setting_cards.py" line="880"/>
+        <location filename="../../view/components/setting_cards.py" line="861"/>
+        <location filename="../../view/components/setting_cards.py" line="932"/>
         <source>正在检测运行时...</source>
         <translation>Проверка рантайма...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="823"/>
-        <location filename="../../view/components/setting_cards.py" line="908"/>
+        <location filename="../../view/components/setting_cards.py" line="875"/>
+        <location filename="../../view/components/setting_cards.py" line="960"/>
         <source>一键安装</source>
         <translation>Установить в один клик</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="864"/>
+        <location filename="../../view/components/setting_cards.py" line="916"/>
         <source>正在准备...</source>
         <translation>Подготовка...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="866"/>
+        <location filename="../../view/components/setting_cards.py" line="918"/>
         <source>正在下载... {0}%</source>
         <translation>Загрузка... {0}%</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="871"/>
+        <location filename="../../view/components/setting_cards.py" line="923"/>
         <source>取消安装</source>
         <translation>Отменить установку</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="826"/>
+        <location filename="../../view/components/setting_cards.py" line="878"/>
         <source>卸载</source>
         <translation>Удалить</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="828"/>
+        <location filename="../../view/components/setting_cards.py" line="880"/>
         <source>刷新</source>
         <translation>Обновить</translation>
     </message>
@@ -4574,7 +4660,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Установка... {0}%</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="868"/>
+        <location filename="../../view/components/setting_cards.py" line="920"/>
         <source>正在安装...</source>
         <translation>Установка...</translation>
     </message>
@@ -4583,17 +4669,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Не удалось проверить рантайм</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="892"/>
+        <location filename="../../view/components/setting_cards.py" line="944"/>
         <source>版本: {0}（最新: {1}）</source>
         <translation>Версия: {0} (последняя: {1})</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="894"/>
+        <location filename="../../view/components/setting_cards.py" line="946"/>
         <source>版本: {0}</source>
         <translation>Версия: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="896"/>
+        <location filename="../../view/components/setting_cards.py" line="948"/>
         <source>最新版本: {0}</source>
         <translation>Последняя версия: {0}</translation>
     </message>
@@ -4606,17 +4692,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Перейдите на страницу задач, чтобы следить за ходом установки</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="935"/>
+        <location filename="../../view/components/setting_cards.py" line="987"/>
         <source>确认卸载</source>
         <translation>Подтвердить удаление</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="936"/>
+        <location filename="../../view/components/setting_cards.py" line="988"/>
         <source>确定要卸载 {0} 吗？</source>
         <translation>Вы уверены, что хотите удалить {0}?</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="945"/>
+        <location filename="../../view/components/setting_cards.py" line="997"/>
         <source>卸载失败</source>
         <translation>Не удалось удалить</translation>
     </message>
@@ -4627,17 +4713,17 @@ FFmpeg: {2}</translation>
 Путь: {1}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="899"/>
+        <location filename="../../view/components/setting_cards.py" line="951"/>
         <source>路径: {0}</source>
         <translation>Путь: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="902"/>
+        <location filename="../../view/components/setting_cards.py" line="954"/>
         <source>未检测到可用的 {0}</source>
         <translation>Рабочий {0} не найден</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="905"/>
+        <location filename="../../view/components/setting_cards.py" line="957"/>
         <source>更新到 {0}</source>
         <translation>Обновить до {0}</translation>
     </message>
@@ -4833,13 +4919,13 @@ FFmpeg: {2}</translation>
 <context>
     <name>SelectFileCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="778"/>
-        <location filename="../../view/components/setting_cards.py" line="792"/>
+        <location filename="../../view/components/setting_cards.py" line="830"/>
+        <location filename="../../view/components/setting_cards.py" line="844"/>
         <source>选择文件</source>
         <translation>Выбрать файл</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="780"/>
+        <location filename="../../view/components/setting_cards.py" line="832"/>
         <source>清除路径</source>
         <translation>Очистить путь</translation>
     </message>
@@ -4851,17 +4937,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Путь загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="353"/>
+        <location filename="../../view/components/setting_cards.py" line="405"/>
         <source>浏览文件夹</source>
         <translation>Выбрать папку</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="355"/>
+        <location filename="../../view/components/setting_cards.py" line="407"/>
         <source>恢复默认路径</source>
         <translation>Восстановить путь по умолчанию</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="367"/>
+        <location filename="../../view/components/setting_cards.py" line="419"/>
         <source>选择文件夹</source>
         <translation>Выбрать папку</translation>
     </message>
@@ -4869,68 +4955,68 @@ FFmpeg: {2}</translation>
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="50"/>
+        <location filename="../../view/pages/setting_page.py" line="49"/>
         <source>综合下载设置</source>
         <translation>Общие настройки загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="51"/>
+        <location filename="../../view/pages/setting_page.py" line="50"/>
         <source>下载分类</source>
         <translation>Категории загрузок</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="53"/>
+        <location filename="../../view/pages/setting_page.py" line="52"/>
         <source>关联设置</source>
         <translation>Настройки ассоциаций</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="54"/>
+        <location filename="../../view/pages/setting_page.py" line="53"/>
         <source>浏览器扩展</source>
         <translation>Расширение браузера</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="56"/>
+        <location filename="../../view/pages/setting_page.py" line="55"/>
         <source>个性化</source>
         <translation>Персонализация</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="57"/>
+        <location filename="../../view/pages/setting_page.py" line="56"/>
         <source>应用</source>
         <translation>Приложение</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="58"/>
-        <location filename="../../view/pages/setting_page.py" line="372"/>
+        <location filename="../../view/pages/setting_page.py" line="57"/>
+        <location filename="../../view/pages/setting_page.py" line="368"/>
         <source>关于</source>
         <translation>О программе</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="104"/>
+        <location filename="../../view/pages/setting_page.py" line="102"/>
         <source>最大任务数</source>
         <translation>Максимум задач</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="105"/>
+        <location filename="../../view/pages/setting_page.py" line="103"/>
         <source>最多能同时进行的任务数量</source>
         <translation>Максимальное число одновременных задач</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="106"/>
+        <location filename="../../view/pages/setting_page.py" line="104"/>
         <source>预分配线程数</source>
         <translation>Предвыделенные потоки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="107"/>
+        <location filename="../../view/pages/setting_page.py" line="105"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
         <translation>Больше потоков - быстрее. При &gt;64 возможна антибот-защита и порча файла</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="108"/>
+        <location filename="../../view/pages/setting_page.py" line="106"/>
         <source>自动提速</source>
         <translation>Автоускорение</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="109"/>
+        <location filename="../../view/pages/setting_page.py" line="107"/>
         <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
         <translation>AI оценивает потоки и автоматически увеличивает их число для ускорения</translation>
     </message>
@@ -4939,27 +5025,27 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Макс. размер перераспределения (МБ)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="112"/>
+        <location filename="../../view/pages/setting_page.py" line="110"/>
         <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
         <translation>Если остаток у потока больше этого значения, при завершении или автоускорении идет перераспределение</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="84"/>
+        <location filename="../../view/pages/setting_page.py" line="86"/>
         <source>下载限速</source>
         <translation>Ограничение скорости</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="85"/>
+        <location filename="../../view/pages/setting_page.py" line="87"/>
         <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
         <translation>Когда на странице задач включён переключатель ограничения скорости, для всех задач применяется это значение</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="118"/>
+        <location filename="../../view/pages/setting_page.py" line="116"/>
         <source>下载时验证 SSL 证书</source>
         <translation>Проверять SSL при загрузке</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="119"/>
+        <location filename="../../view/pages/setting_page.py" line="117"/>
         <source>文件无法下载时，可尝试关闭该选项</source>
         <translation>Если файл не скачивается, попробуйте отключить</translation>
     </message>
@@ -4968,22 +5054,22 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Настроить HTTP-заголовки по умолчанию</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="135"/>
+        <location filename="../../view/pages/setting_page.py" line="133"/>
         <source>启用下载分类</source>
         <translation>Включить категории загрузок</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="136"/>
+        <location filename="../../view/pages/setting_page.py" line="134"/>
         <source>根据扩展名将下载任务归类，便于筛选与分发到指定文件夹</source>
         <translation>Группировать задачи по расширениям для удобной фильтрации и распределения по папкам</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="193"/>
+        <location filename="../../view/pages/setting_page.py" line="191"/>
         <source>启用浏览器扩展</source>
         <translation>Включить расширение браузера</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="467"/>
+        <location filename="../../view/pages/setting_page.py" line="459"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>Для получения загрузок из браузера установите расширение</translation>
     </message>
@@ -4996,17 +5082,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Показывать окно для настройки параметров</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="142"/>
+        <location filename="../../view/pages/setting_page.py" line="140"/>
         <source>复制令牌</source>
         <translation>Копировать токен</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="142"/>
+        <location filename="../../view/pages/setting_page.py" line="140"/>
         <source>配对令牌</source>
         <translation>Токен сопряжения</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="146"/>
+        <location filename="../../view/pages/setting_page.py" line="144"/>
         <source>重新生成令牌</source>
         <translation>Сгенерировать токен заново</translation>
     </message>
@@ -5043,78 +5129,77 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Решение проблем установки расширения</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="267"/>
+        <location filename="../../view/pages/setting_page.py" line="265"/>
         <source>应用主题</source>
         <translation>Тема приложения</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="268"/>
+        <location filename="../../view/pages/setting_page.py" line="266"/>
         <source>更改应用程序的外观</source>
         <translation>Изменение внешнего вида приложения</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="267"/>
         <source>浅色</source>
         <translation>Светлая</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="267"/>
         <source>深色</source>
         <translation>Тёмная</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="267"/>
         <source>跟随系统设置</source>
         <translation>Следовать системным настройкам</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="274"/>
-        <location filename="../../view/pages/setting_page.py" line="281"/>
+        <location filename="../../view/pages/setting_page.py" line="272"/>
+        <location filename="../../view/pages/setting_page.py" line="279"/>
         <source>窗口背景透明材质</source>
         <translation>Материал прозрачности окна</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="275"/>
-        <location filename="../../view/pages/setting_page.py" line="282"/>
+        <location filename="../../view/pages/setting_page.py" line="273"/>
+        <location filename="../../view/pages/setting_page.py" line="280"/>
         <source>设置窗口背景透明效果和透明材质</source>
         <translation>Настройка прозрачности окна</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="261"/>
+        <location filename="../../view/pages/setting_page.py" line="259"/>
         <source>界面缩放</source>
         <translation>Масштаб интерфейса</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="55"/>
+        <location filename="../../view/pages/setting_page.py" line="54"/>
         <source>Aria2 RPC 兼容</source>
         <translation>Совместимость с Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="90"/>
+        <location filename="../../view/pages/setting_page.py" line="92"/>
         <source>下载路径</source>
         <translation>Путь загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="90"/>
+        <location filename="../../view/pages/setting_page.py" line="92"/>
         <source>文件默认保存位置</source>
         <translation>Расположение сохранения по умолчанию</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="93"/>
         <source>恢复默认路径</source>
-        <translation>Восстановить путь по умолчанию</translation>
+        <translation type="vanished">Восстановить путь по умолчанию</translation>
     </message>
     <message>
         <source>最小再分配大小 (KB)</source>
         <translation type="vanished">Мин. размер перераспределения (КБ)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="115"/>
+        <location filename="../../view/pages/setting_page.py" line="113"/>
         <source>保留文件修改时间</source>
         <translation>Сохранять время изменения файла</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="116"/>
+        <location filename="../../view/pages/setting_page.py" line="114"/>
         <source>下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值</source>
         <translation>Устанавливать время изменения файла равным Last-Modified с сервера после загрузки</translation>
     </message>
@@ -5127,32 +5212,32 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Настройте HTTP-заголовки по умолчанию, User-Agent управляется эмулируемым идентификатором (кроме режима «отправлять как есть»)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="159"/>
+        <location filename="../../view/pages/setting_page.py" line="157"/>
         <source>Edge 商店</source>
         <translation>Магазин Edge</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="155"/>
+        <location filename="../../view/pages/setting_page.py" line="153"/>
         <source>从商店安装扩展</source>
         <translation>Установить расширение из магазина</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="156"/>
+        <location filename="../../view/pages/setting_page.py" line="154"/>
         <source>商店版扩展需等待审核后才能获得更新</source>
         <translation>Версия из магазина получает обновления после проверки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="167"/>
+        <location filename="../../view/pages/setting_page.py" line="165"/>
         <source>Chrome 商店</source>
         <translation>Магазин Chrome</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="154"/>
+        <location filename="../../view/pages/setting_page.py" line="152"/>
         <source>Firefox 商店</source>
         <translation>Магазин Firefox</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="61"/>
+        <location filename="../../view/pages/setting_page.py" line="60"/>
         <source>未找到匹配的设置项</source>
         <translation>Не найдено подходящих настроек</translation>
     </message>
@@ -5165,298 +5250,353 @@ FFmpeg: {2}</translation>
         <translation type="vanished">По умолчанию в диалоге подтверждения удаления задачи ставить галочку на удаление скачанных файлов</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="175"/>
+        <location filename="../../view/pages/setting_page.py" line="173"/>
         <source>一键安装</source>
         <translation>Установить в один клик</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="176"/>
+        <location filename="../../view/pages/setting_page.py" line="174"/>
         <source>安装到 Chromium 浏览器</source>
         <translation>Установить в браузер на основе Chromium</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="177"/>
+        <location filename="../../view/pages/setting_page.py" line="175"/>
         <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
         <translation>Автоматическая распаковка и загрузка расширения (Chrome, Brave и т.п.), расширение обновляется вместе с клиентом</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="180"/>
+        <location filename="../../view/pages/setting_page.py" line="178"/>
         <source>导出 CRX</source>
         <translation>Экспорт CRX</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="187"/>
+        <location filename="../../view/pages/setting_page.py" line="185"/>
         <source>服务端口</source>
         <translation>Порт службы</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="188"/>
+        <location filename="../../view/pages/setting_page.py" line="186"/>
         <source>浏览器扩展连接使用的端口</source>
         <translation>Порт для подключения расширения браузера</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="198"/>
+        <location filename="../../view/pages/setting_page.py" line="196"/>
         <source>接管下载时进入草稿模式</source>
         <translation>При перехвате загрузки переходить в режим черновика</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="199"/>
+        <location filename="../../view/pages/setting_page.py" line="197"/>
         <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
         <translation>При автоматическом перехвате загрузок из браузера сначала открывать черновик, чтобы вы могли настроить путь и имя файла</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="210"/>
+        <location filename="../../view/pages/setting_page.py" line="208"/>
         <source>允许浏览器扩展唤醒</source>
         <translation>Разрешить расширению браузера пробуждать приложение</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="211"/>
+        <location filename="../../view/pages/setting_page.py" line="209"/>
         <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
         <translation>Расширение браузера может запускать клиент через протокол ghostdownloader://</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="222"/>
+        <location filename="../../view/pages/setting_page.py" line="220"/>
         <source>关联 {0} 文件</source>
         <translation>Ассоциировать файлы {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="223"/>
+        <location filename="../../view/pages/setting_page.py" line="221"/>
         <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
         <translation>Автоматически открывать {0} файлы в Ghost Downloader при двойном щелчке</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="230"/>
+        <location filename="../../view/pages/setting_page.py" line="228"/>
         <source>处理 {0} 链接</source>
         <translation>Обрабатывать ссылки {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="231"/>
+        <location filename="../../view/pages/setting_page.py" line="229"/>
         <source>点击 {0} 链接时唤起 Ghost Downloader</source>
         <translation>Запускать Ghost Downloader при клике на ссылки {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="237"/>
+        <location filename="../../view/pages/setting_page.py" line="235"/>
         <source>启用 Aria2 RPC 兼容</source>
         <translation>Включить совместимость с Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="481"/>
+        <location filename="../../view/pages/setting_page.py" line="473"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
         <translation>Совместимость с протоколом Aria2 JSON-RPC, принимать ссылки от внешних инструментов</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="242"/>
+        <location filename="../../view/pages/setting_page.py" line="240"/>
         <source>监听端口</source>
         <translation>Порт</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="122"/>
+        <location filename="../../view/pages/setting_page.py" line="94"/>
+        <source>系统默认</source>
+        <translation>Системная по умолчанию</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="120"/>
         <source>同名文件</source>
         <translation>Файлы с одинаковым именем</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="123"/>
+        <location filename="../../view/pages/setting_page.py" line="121"/>
         <source>下载目录中已有同名文件时的处理方式</source>
         <translation>Как обрабатывать файлы с одинаковым именем в папке загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="124"/>
+        <location filename="../../view/pages/setting_page.py" line="122"/>
         <source>保留两者</source>
         <translation>Сохранить оба</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="124"/>
+        <location filename="../../view/pages/setting_page.py" line="122"/>
         <source>覆盖</source>
         <translation>Перезаписать</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="124"/>
+        <location filename="../../view/pages/setting_page.py" line="122"/>
         <source>询问</source>
         <translation>Спрашивать</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="243"/>
+        <location filename="../../view/pages/setting_page.py" line="241"/>
         <source>Aria2 RPC 默认端口为 16800</source>
         <translation>Порт по умолчанию Aria2 RPC: 16800</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="247"/>
+        <location filename="../../view/pages/setting_page.py" line="245"/>
         <source>令牌</source>
         <translation>Токен</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="248"/>
+        <location filename="../../view/pages/setting_page.py" line="246"/>
         <source>若设置，客户端需传入 token 才可创建任务</source>
         <translation>Если задан, клиент должен передавать токен для создания задач</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="250"/>
+        <location filename="../../view/pages/setting_page.py" line="248"/>
         <source>可选</source>
         <translation>Опционально</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="254"/>
+        <location filename="../../view/pages/setting_page.py" line="252"/>
         <source>模拟浏览器指纹</source>
         <translation>Эмулировать отпечаток браузера</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="255"/>
+        <location filename="../../view/pages/setting_page.py" line="253"/>
         <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
         <translation>Добавлять TLS-отпечаток браузера и заголовки запроса для задач, полученных через Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="262"/>
+        <location filename="../../view/pages/setting_page.py" line="260"/>
         <source>改变应用程序界面的缩放比例, 0% 为自动</source>
         <translation>Масштаб интерфейса, 0% — авто</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="288"/>
+        <location filename="../../view/pages/setting_page.py" line="286"/>
         <source>在 Dock 栏中显示程序</source>
         <translation>Показывать значок приложения в Dock</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="289"/>
+        <location filename="../../view/pages/setting_page.py" line="287"/>
         <source>关闭后可通过菜单栏图标继续使用程序</source>
         <translation>Программа продолжит работу в системном трее после закрытия</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="293"/>
+        <location filename="../../view/pages/setting_page.py" line="291"/>
         <source>在 Dock 图标上显示实时速度</source>
         <translation>Показывать скорость на иконке Dock</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="294"/>
+        <location filename="../../view/pages/setting_page.py" line="292"/>
         <source>下载时在程序坞图标上叠加当前速度</source>
         <translation>Накладывать текущую скорость на иконку в доке при загрузке</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="301"/>
+        <location filename="../../view/pages/setting_page.py" line="299"/>
         <source>在菜单栏显示实时速度</source>
         <translation>Показывать скорость в строке меню</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="302"/>
+        <location filename="../../view/pages/setting_page.py" line="300"/>
         <source>下载时在菜单栏图标旁显示当前速度</source>
         <translation>Показывать текущую скорость рядом с иконкой в строке меню при загрузке</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="306"/>
+        <location filename="../../view/pages/setting_page.py" line="304"/>
         <source>语言</source>
         <translation>Язык</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="307"/>
+        <location filename="../../view/pages/setting_page.py" line="305"/>
         <source>设置界面的首选语言</source>
         <translation>Предпочитаемый язык интерфейса</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="308"/>
+        <location filename="../../view/pages/setting_page.py" line="306"/>
         <source>使用系统设置</source>
         <translation>Следовать системе</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="321"/>
+        <location filename="../../view/pages/setting_page.py" line="319"/>
         <source>切换到用户模式</source>
         <translation>Переключиться в пользовательский режим</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="322"/>
-        <location filename="../../view/pages/setting_page.py" line="328"/>
+        <location filename="../../view/pages/setting_page.py" line="320"/>
+        <location filename="../../view/pages/setting_page.py" line="326"/>
         <source>数据存储模式</source>
         <translation>Режим хранения данных</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
+        <location filename="../../view/pages/setting_page.py" line="321"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation>Текущий режим: Portable, данные рядом с программой: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="327"/>
+        <location filename="../../view/pages/setting_page.py" line="325"/>
         <source>切换到 Portable 模式</source>
         <translation>Переключиться в режим Portable</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="329"/>
+        <location filename="../../view/pages/setting_page.py" line="327"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation>Текущий режим: пользовательский, данные в: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="331"/>
+        <source>命令行工具</source>
+        <translation>Инструмент командной строки</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="332"/>
+        <source>安装后可在终端中使用 ghd 命令添加和管理任务</source>
+        <translation>После установки используйте команду ghd в терминале для добавления и управления задачами</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="336"/>
         <source>在应用程序启动时检查更新</source>
         <translation>Проверять обновления при запуске</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="334"/>
+        <location filename="../../view/pages/setting_page.py" line="337"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>Новые версии стабильнее и с большим числом функций</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="342"/>
+        <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>关闭主窗口时</source>
         <translation>При закрытии главного окна</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
+        <location filename="../../view/pages/setting_page.py" line="344"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation>Настройка поведения при закрытии главного окна: продолжать работу в фоне или выйти</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="344"/>
+        <location filename="../../view/pages/setting_page.py" line="345"/>
         <source>关闭时询问</source>
         <translation>Спрашивать при закрытии</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="344"/>
+        <location filename="../../view/pages/setting_page.py" line="345"/>
         <source>继续在后台运行</source>
         <translation>Продолжить работу в фоне</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="344"/>
+        <location filename="../../view/pages/setting_page.py" line="345"/>
         <source>退出程序</source>
         <translation>Выйти</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="359"/>
+        <location filename="../../view/pages/setting_page.py" line="355"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Помогите нам улучшить Ghost Downloader, отправляя отзывы. Вы также можете просмотреть логи для устранения неполадок.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="368"/>
+        <location filename="../../view/pages/setting_page.py" line="364"/>
         <source>查看详情</source>
         <translation>Подробнее</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="368"/>
+        <location filename="../../view/pages/setting_page.py" line="364"/>
         <source>功能包</source>
         <translation>Пакет функций</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="369"/>
+        <location filename="../../view/pages/setting_page.py" line="365"/>
         <source>管理已安装的功能包</source>
         <translation>Управление установленными пакетами функций</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="485"/>
+        <location filename="../../view/pages/setting_page.py" line="477"/>
         <source>正在端口 {} 上监听</source>
         <translation>Прослушивание порта {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="515"/>
+        <location filename="../../view/pages/setting_page.py" line="507"/>
+        <source>卸载</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="507"/>
+        <source>安装</source>
+        <translation>Установить</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="519"/>
+        <source>已卸载命令行工具</source>
+        <translation>Инструмент командной строки удалён</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <source>新打开的终端即可使用 ghd</source>
+        <translation>ghd доступен в новых окнах терминала</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="524"/>
+        <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
+        <translation>ghd доступен в новых окнах терминала; если команда не найдена, добавьте ~/.local/bin в PATH</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="525"/>
+        <source>已安装命令行工具</source>
+        <translation>Инструмент командной строки установлен</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="531"/>
+        <source>卸载命令行工具失败</source>
+        <translation>Не удалось удалить инструмент командной строки</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="531"/>
+        <source>安装命令行工具失败</source>
+        <translation>Не удалось установить инструмент командной строки</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="539"/>
         <source>用户模式</source>
         <translation>Пользовательский режим</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="515"/>
+        <location filename="../../view/pages/setting_page.py" line="539"/>
         <source>Portable 模式</source>
         <translation>Режим Portable</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="517"/>
+        <location filename="../../view/pages/setting_page.py" line="541"/>
         <source>切换数据存储模式</source>
         <translation>Переключить режим хранения данных</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="518"/>
+        <location filename="../../view/pages/setting_page.py" line="542"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -5465,12 +5605,12 @@ FFmpeg: {2}</translation>
 Данные будут скопированы в новое расположение, программа закроется. Пожалуйста, перезапустите вручную.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="535"/>
+        <location filename="../../view/pages/setting_page.py" line="559"/>
         <source>正在检查更新...</source>
         <translation>Проверка обновлений...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="547"/>
+        <location filename="../../view/pages/setting_page.py" line="571"/>
         <source>当前已是最新版本</source>
         <translation>Уже установлена последняя версия</translation>
     </message>
@@ -5479,73 +5619,71 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Текущая версия {0}, последняя версия {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="544"/>
+        <location filename="../../view/pages/setting_page.py" line="568"/>
         <source>检查更新失败</source>
         <translation>Не удалось проверить обновления</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="544"/>
+        <location filename="../../view/pages/setting_page.py" line="568"/>
         <source>无法获取最新版本信息</source>
         <translation>Не удалось получить информацию о последней версии</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="560"/>
+        <location filename="../../view/pages/setting_page.py" line="584"/>
         <source>搜索设置</source>
         <translation>Поиск настроек</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="314"/>
+        <location filename="../../view/pages/setting_page.py" line="312"/>
         <source>开机启动</source>
         <translation>Автозапуск</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="125"/>
+        <location filename="../../view/pages/setting_page.py" line="123"/>
         <source>使用系统 DNS</source>
         <translation>Использовать системный DNS</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="126"/>
+        <location filename="../../view/pages/setting_page.py" line="124"/>
         <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
         <translation>Использовать системный резолвер DNS, совместим с TUN, VPN, прокси и другими сетевыми средами</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="315"/>
+        <location filename="../../view/pages/setting_page.py" line="313"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation>Тихий запуск при старте системы</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="348"/>
         <source>剪贴板监听</source>
-        <translation>Буфер обмена</translation>
+        <translation type="vanished">Буфер обмена</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="349"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
-        <translation>Слушатель буфера обмена находит ссылки и добавляет задачи</translation>
+        <translation type="vanished">Слушатель буфера обмена находит ссылки и добавляет задачи</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="377"/>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>打开作者的个人空间</source>
         <translation>Открыть страницу автора</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="374"/>
         <source>了解作者</source>
         <translation>Об авторе</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="374"/>
         <source>发现更多 {} 的作品</source>
         <translation>Найти больше работ {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
-        <location filename="../../view/pages/setting_page.py" line="358"/>
+        <location filename="../../view/pages/setting_page.py" line="353"/>
+        <location filename="../../view/pages/setting_page.py" line="354"/>
         <source>提供反馈</source>
         <translation>Обратная связь</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="111"/>
+        <location filename="../../view/pages/setting_page.py" line="109"/>
         <source>最小再分配大小</source>
         <translation>Мин. размер перераспределения</translation>
     </message>
@@ -5562,63 +5700,63 @@ FFmpeg: {2}</translation>
         <translation type="vanished">Помогите улучшить Ghost Downloader, оставив отзыв</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="361"/>
+        <location filename="../../view/pages/setting_page.py" line="357"/>
         <source>查看日志</source>
         <translation>Просмотреть журнал</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="372"/>
-        <location filename="../../view/pages/setting_page.py" line="535"/>
+        <location filename="../../view/pages/setting_page.py" line="368"/>
+        <location filename="../../view/pages/setting_page.py" line="559"/>
         <source>检查更新</source>
         <translation>Проверить обновления</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="431"/>
+        <location filename="../../view/pages/setting_page.py" line="423"/>
         <source>已配置</source>
         <translation>Настроено</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="431"/>
+        <location filename="../../view/pages/setting_page.py" line="423"/>
         <source>重启软件后生效</source>
         <translation>Вступит в силу после перезапуска</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="439"/>
+        <location filename="../../view/pages/setting_page.py" line="431"/>
         <source>已复制配对令牌</source>
         <translation>Токен скопирован</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="437"/>
         <source>已重新生成配对令牌</source>
         <translation>Токен был повторно сгенерирован</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="437"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Новый токен скопирован</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="460"/>
+        <location filename="../../view/pages/setting_page.py" line="452"/>
         <source>解包失败</source>
         <translation>Ошибка распаковки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="471"/>
+        <location filename="../../view/pages/setting_page.py" line="463"/>
         <source>未连接</source>
         <translation>Не подключено</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="473"/>
+        <location filename="../../view/pages/setting_page.py" line="465"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Подключено v{} (автономное)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="475"/>
+        <location filename="../../view/pages/setting_page.py" line="467"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Подключено v{} (из магазина)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="492"/>
+        <location filename="../../view/pages/setting_page.py" line="484"/>
         <source>选择导出路径</source>
         <translation>Выбрать путь для экспорта</translation>
     </message>
@@ -5683,33 +5821,46 @@ FFmpeg: {2}</translation>
 <context>
     <name>SubworkerCountCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="131"/>
+        <location filename="../../view/components/option_cards.py" line="123"/>
         <source>预分配线程数</source>
         <translation>Предвыделенные потоки</translation>
     </message>
 </context>
 <context>
+    <name>SwitchSettingCard</name>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="354"/>
+        <source>On</source>
+        <translation>Вкл</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="355"/>
+        <source>Off</source>
+        <translation>Выкл</translation>
+    </message>
+</context>
+<context>
     <name>SystemTrayIcon</name>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="78"/>
+        <location filename="../../view/shell/mac_status_item.py" line="97"/>
         <location filename="../../view/shell/tray.py" line="181"/>
         <source>仪表盘</source>
         <translation>Панель</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="79"/>
+        <location filename="../../view/shell/mac_status_item.py" line="98"/>
         <location filename="../../view/shell/tray.py" line="183"/>
         <source>全部开始</source>
         <translation>Запустить все</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="80"/>
+        <location filename="../../view/shell/mac_status_item.py" line="99"/>
         <location filename="../../view/shell/tray.py" line="185"/>
         <source>全部暂停</source>
         <translation>Пауза для всех</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="81"/>
+        <location filename="../../view/shell/mac_status_item.py" line="100"/>
         <location filename="../../view/shell/tray.py" line="188"/>
         <source>退出程序</source>
         <translation>Выйти</translation>
@@ -5907,48 +6058,48 @@ FFmpeg: {2}</translation>
 <context>
     <name>TaskDraftDialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="77"/>
+        <location filename="../../view/dialogs/task_draft.py" line="75"/>
         <source>添加任务</source>
         <translation>Добавить задачу</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="82"/>
+        <location filename="../../view/dialogs/task_draft.py" line="80"/>
         <source>批量添加</source>
         <translation>Пакетное добавление</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="347"/>
+        <location filename="../../view/dialogs/task_draft.py" line="81"/>
+        <location filename="../../view/dialogs/task_draft.py" line="350"/>
         <source>导入文件</source>
         <translation>Импортировать файлы</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="97"/>
+        <location filename="../../view/dialogs/task_draft.py" line="95"/>
         <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
         <translation>При добавлении нескольких ссылок убедитесь, что в каждой строке одна ссылка</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="107"/>
+        <location filename="../../view/dialogs/task_draft.py" line="105"/>
         <source>下载</source>
         <translation>Скачать</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="109"/>
+        <location filename="../../view/dialogs/task_draft.py" line="107"/>
         <source>稍后下载</source>
         <translation>Загрузить позже</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="115"/>
+        <location filename="../../view/dialogs/task_draft.py" line="113"/>
         <source>取消</source>
         <translation>Отмена</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="300"/>
+        <location filename="../../view/dialogs/task_draft.py" line="303"/>
         <source>链接解析失败</source>
         <translation>Ошибка разбора ссылки</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="342"/>
+        <location filename="../../view/dialogs/task_draft.py" line="345"/>
         <source>所有可导入文件 ({0})</source>
         <translation>Все импортируемые файлы ({0})</translation>
     </message>
@@ -5956,7 +6107,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>TaskDrawer</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="411"/>
+        <location filename="../../view/dialogs/task_drawer.py" line="415"/>
         <source>任务详情</source>
         <translation>Детали задачи</translation>
     </message>
@@ -6080,17 +6231,27 @@ FFmpeg: {2}</translation>
         <translation>Не удалось получить информацию о пакете PyPI: {package}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="33"/>
+        <location filename="../../i18n.py" line="31"/>
+        <source>{path} 已被其他文件占用</source>
+        <translation>{path} уже занят другим файлом</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="32"/>
+        <source>未获得管理员授权</source>
+        <translation>Права администратора не предоставлены</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="35"/>
         <source>端口 {port} 被占用，请更换端口</source>
         <translation>Порт {port} занят, выберите другой</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="34"/>
+        <location filename="../../i18n.py" line="36"/>
         <source>没有权限监听端口 {port}，请更换端口</source>
         <translation>Нет прав для прослушивания порта {port}, смените порт</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="35"/>
+        <location filename="../../i18n.py" line="37"/>
         <source>无法监听端口 {port}，详情见日志</source>
         <translation>Не удалось прослушать порт {port}, подробности в журнале</translation>
     </message>
@@ -6307,7 +6468,7 @@ FFmpeg: {2}</translation>
         <translation>Для текущей платформы нет доступных обновлений</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="31"/>
+        <location filename="../../i18n.py" line="33"/>
         <source>DMG 中未找到 .app</source>
         <translation>В DMG не найден .app</translation>
     </message>
@@ -6428,32 +6589,32 @@ FFmpeg: {2}</translation>
         <translation>Ограничение скорости загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="780"/>
+        <location filename="../../view/pages/task_page.py" line="782"/>
         <source>校验失败</source>
         <translation>Ошибка проверки</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="877"/>
+        <location filename="../../view/pages/task_page.py" line="879"/>
         <source>无法移到回收站</source>
         <translation>Не удалось переместить в корзину</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="878"/>
+        <location filename="../../view/pages/task_page.py" line="880"/>
         <source>旧文件已保留，新文件另存为 {0}</source>
         <translation>Старый файл сохранён, новый сохранён как {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="886"/>
+        <location filename="../../view/pages/task_page.py" line="888"/>
         <source>文件删除受限</source>
         <translation>Удаление файлов ограничено</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="887"/>
+        <location filename="../../view/pages/task_page.py" line="889"/>
         <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
         <translation>macOS заблокировал удаление файлов, добавьте Ghost Downloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="892"/>
+        <location filename="../../view/pages/task_page.py" line="894"/>
         <source>前往设置</source>
         <translation>Перейти к настройкам</translation>
     </message>
@@ -6863,7 +7024,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>UrlEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="243"/>
+        <location filename="../../view/components/option_cards.py" line="235"/>
         <source>下载链接</source>
         <translation>Ссылка для загрузки</translation>
     </message>
@@ -7063,6 +7224,14 @@ FFmpeg: {2}</translation>
         <location filename="../../view/windows/oobe_window.py" line="289"/>
         <source>开始配置</source>
         <translation>Начать настройку</translation>
+    </message>
+</context>
+<context>
+    <name>YouTubePack</name>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/pack.py" line="63"/>
+        <source>YouTube 视频</source>
+        <translation>Видео YouTube</translation>
     </message>
 </context>
 <context>
@@ -7413,7 +7582,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>self._dialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="46"/>
+        <location filename="../../view/dialogs/task_draft.py" line="45"/>
         <source>添加任务</source>
         <translation>Добавить задачу</translation>
     </message>
