@@ -59,18 +59,18 @@
 
 ![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
 
-<p align="center">
+<p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-recording-dark.webp" />
-    <img src=".github/assets/android-recording-light.webp" width="30%" alt="Android 端录制直播" />
+    <img src=".github/assets/android-recording-light.webp" width="236" alt="Android 端录制直播" />
   </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-tasks-dark.webp" />
-    <img src=".github/assets/android-tasks-light.webp" width="30%" alt="Android 端下载列表" />
+    <img src=".github/assets/android-tasks-light.webp" width="236" alt="Android 端下载列表" />
   </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-notification-dark.webp" />
-    <img src=".github/assets/android-notification-light.webp" width="30%" alt="Android 端下载完成通知" />
+    <img src=".github/assets/android-notification-light.webp" width="236" alt="Android 端下载完成通知" />
   </picture>
 </p>
 

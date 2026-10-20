@@ -58,18 +58,18 @@ Started as a passion project to help a Bilibili creator manage resources. Now it
 
 ![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
 
-<p align="center">
+<p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-recording-dark.webp" />
-    <img src=".github/assets/android-recording-light.webp" width="30%" alt="Recording a live stream on Android" />
+    <img src=".github/assets/android-recording-light.webp" width="236" alt="Recording a live stream on Android" />
   </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-tasks-dark.webp" />
-    <img src=".github/assets/android-tasks-light.webp" width="30%" alt="Download list on Android" />
+    <img src=".github/assets/android-tasks-light.webp" width="236" alt="Download list on Android" />
   </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/android-notification-dark.webp" />
-    <img src=".github/assets/android-notification-light.webp" width="30%" alt="Download complete notification on Android" />
+    <img src=".github/assets/android-notification-light.webp" width="236" alt="Download complete notification on Android" />
   </picture>
 </p>
 
