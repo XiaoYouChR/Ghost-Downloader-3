@@ -102,7 +102,9 @@ class AnimationLayer(QWidget):
 
     def _buildBackdrop(self) -> QPixmap:
         window = self._dialog.window()
-        image = window.backingStore().paintDevice()
+        store = window.backingStore()
+        # 窗口还没画过时后备缓冲还没分配图像，读它会崩溃
+        image = None if store.size().isEmpty() else store.paintDevice()
         # 打开时对话框还没画过，后备缓冲里就是底下的画面，直接复制最快
         if not self.isClosing and isinstance(image, QImage):
             ratio = window.devicePixelRatioF()
