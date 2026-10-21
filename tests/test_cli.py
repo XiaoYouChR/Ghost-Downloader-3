@@ -93,6 +93,7 @@ def test_help_lists_commands(cli):
     [reply] = replies
     assert reply.exitCode == 0
     assert "add" in reply.output and "wait" in reply.output
+    assert not reply.output.endswith("\n")
 
 
 
@@ -103,7 +104,7 @@ def test_version_replies_running_version(cli):
 
     [reply] = replies
     assert reply.exitCode == 0
-    assert VERSION in reply.output
+    assert reply.output == f"ghd {VERSION}"
 
 async def test_wait_returns_when_task_completes(cli, engine):
     task = buildTask("complete")

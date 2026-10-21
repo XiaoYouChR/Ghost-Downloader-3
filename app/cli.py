@@ -160,7 +160,7 @@ class Cli:
         try:
             args = self._parser.parse_args(argv[1:])
         except TextRequested as text:
-            reply(Reply(str(text), 0))
+            reply(Reply(str(text).rstrip("\n"), 0))
             return
         except UsageError as error:
             reply(toError("usage", str(error), 2))
