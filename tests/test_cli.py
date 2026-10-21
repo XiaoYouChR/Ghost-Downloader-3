@@ -108,7 +108,7 @@ def test_version_replies_running_version(cli):
 
     [reply] = replies
     assert reply.exitCode == 0
-    assert reply.output == f"ghd {VERSION}"
+    assert reply.output == f"ghd (Ghost Downloader) {VERSION}"
 
 async def test_wait_returns_when_task_completes(cli, engine):
     task = buildTask("complete")

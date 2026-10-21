@@ -55,7 +55,7 @@ def buildParser() -> CommandParser:
     parser = CommandParser(prog="ghd", description="Control Ghost Downloader from the terminal. "
                                                    "Starts it in the background if it is not running.",
                            epilog=OUTPUT_CONTRACT, formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--version", action="version", version=f"ghd {VERSION}")
+    parser.add_argument("--version", action="version", version=f"ghd (Ghost Downloader) {VERSION}")
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     add = commands.add_parser("add", help="add tasks and start them; prints task IDs")
