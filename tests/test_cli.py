@@ -100,6 +100,15 @@ def test_help_lists_commands(cli):
     assert not reply.output.endswith("\n")
 
 
+def test_without_command_replies_help(cli):
+    replies = []
+
+    cli.run(Invocation(["ghd"], ".", replies.append))
+    cli.run(Invocation(["ghd", "--help"], ".", replies.append))
+
+    bare, help = replies
+    assert bare == help
+
 
 def test_version_replies_running_version(cli):
     replies = []
@@ -109,6 +118,7 @@ def test_version_replies_running_version(cli):
     [reply] = replies
     assert reply.exitCode == 0
     assert reply.output == f"ghd (Ghost Downloader) {VERSION}"
+
 
 async def test_wait_returns_when_task_completes(cli, engine):
     task = buildTask("complete")

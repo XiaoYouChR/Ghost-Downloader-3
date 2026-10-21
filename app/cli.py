@@ -158,7 +158,7 @@ class Cli:
             reply(Reply("", 0))
             return
         try:
-            args = self._parser.parse_args(argv[1:])
+            args = self._parser.parse_args(argv[1:] or ["--help"])
         except TextRequested as text:
             reply(Reply(str(text).rstrip("\n"), 0))
             return
