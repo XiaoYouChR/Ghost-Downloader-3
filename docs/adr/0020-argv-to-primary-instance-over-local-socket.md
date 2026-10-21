@@ -17,8 +17,9 @@
 - 取代 WM_COPYDATA 和 `_sendToRunningLinux`。D-Bus 接收端（`DBusActivatable`）和 QFileOpenEvent 由操作系统调用，保留，
   收到的 URI 同样交给 Primary Instance 的 argv 入口。
 - 占锁后立即开始接收，就绪后才执行：服务就绪前到达的请求按到达顺序排队，启动期间打开的文件和链接不会丢失。
-- QSharedMemory 单实例锁保留：Windows 上 `listen` 不排他，不能兼作锁。清理崩溃残留只在 1 秒无人应答后才做：
-  `QSharedMemory::create` 加锁前会重置 Qt 的系统信号量，并发启动时提前清理会删掉胜者刚建的段，出现两个 Primary Instance。
+- QSharedMemory 单实例锁保留：Windows 上 `listen` 不排他，不能兼作锁。崩溃残留的段由 Qt 清理：同一对象再次 `create` 时，
+  会先删掉上次 key 对应、已无进程连接的段，所以选举循环第二轮就能抢到锁。不另做 attach/detach 清理：
+  并发启动时它会删掉胜者刚建、尚未连接的段，出现两个 Primary Instance。
 - 锁在 Engine 写完数据之后才释放，新的 Primary Instance 不会和正在退出的进程同时写任务。
 - 锁和 socket 按用户区分（Unix 用 uid），与锁 key 为 `DESKTOP_ID` 的旧版本不再互斥。
 - 以 `ghd` 调用的 argv 一律是子命令：打错的子命令报用法错误，不回落为打开链接，

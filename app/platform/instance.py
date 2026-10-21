@@ -108,17 +108,13 @@ def request(argv: list[str], cwd: str) -> int | None:
 
 def open(application: Application, argv: list[str], cwd: str) -> PrimaryInstance | None:
     memory = QSharedMemory(INSTANCE_NAME)
+    # 锁先于监听建立、晚于监听释放，这两段间隙里连不上，只能重试
     for _ in range(50):
         if memory.create(1):
             return PrimaryInstance(memory, application, Invocation(argv[1:], cwd))
         if fetchReply(argv[1:], cwd) is not None:
             return None
         time.sleep(0.02)
-    stale = QSharedMemory(INSTANCE_NAME)
-    if stale.attach():
-        stale.detach()
-    if memory.create(1):
-        return PrimaryInstance(memory, application, Invocation(argv[1:], cwd))
     from loguru import logger
     logger.error("Another instance holds the lock but does not answer: {}", memory.errorString())
     return None

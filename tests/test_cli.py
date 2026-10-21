@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
+import sys
 from dataclasses import dataclass, field
 
 import pytest
+from PySide6.QtCore import QObject, Signal
 
 from app.cli import Cli
 from app.config.constants import VERSION
+from app.platform import instance
 from app.platform.instance import Invocation
 from app.models.task import Task, TaskStatus
 from tests.conftest import FakeStep
@@ -153,3 +157,29 @@ async def test_mistyped_command_reports_usage_without_activating(cli, window):
     assert exitCode == 2
     assert output["error"]["code"] == "usage"
     assert window.activations == 0
+
+
+class FakeApplication(QObject):
+    openRequested = Signal(str)
+    activated = Signal()
+
+
+def test_open_after_crash_takes_over_stale_lock(qapp, monkeypatch):
+    name = "GhostDownloader-test-stale-lock"
+    monkeypatch.setattr(instance, "INSTANCE_NAME", name)
+    holder = subprocess.Popen([sys.executable, "-c", f"""
+import time
+from PySide6.QtCore import QSharedMemory
+memory = QSharedMemory({name!r})
+print(memory.create(1), flush=True)
+time.sleep(60)
+"""], stdout=subprocess.PIPE, text=True)
+    assert holder.stdout.readline().strip() == "True"
+    holder.kill()
+    holder.wait()
+
+    application = FakeApplication()
+    primaryInstance = instance.open(application, ["ghd"], ".")
+
+    assert primaryInstance is not None
+    primaryInstance.close()
