@@ -42,18 +42,6 @@ UNAVAILABLE = Reply(json.dumps({"error": {"code": "instanceUnavailable",
                                           "message": "Ghost Downloader did not reply. Check GhostDownloader.log."}}), 1)
 
 
-def toLine(reply: Reply) -> bytes:
-    return json.dumps({"output": reply.output, "exitCode": reply.exitCode}).encode() + b"\n"
-
-
-def parseReply(data: bytes) -> Reply | None:
-    try:
-        reply = json.loads(data)
-        return Reply(reply["output"], reply["exitCode"])
-    except (ValueError, KeyError, TypeError):
-        return None
-
-
 def toTerminal(output: str) -> str:
     try:
         return json.dumps(json.loads(output), indent=2, ensure_ascii=False)
@@ -74,7 +62,11 @@ def fetchReply(argv: list[str], cwd: str) -> Reply | None:
     data = b""
     while socket.waitForReadyRead(-1):
         data += socket.readAll().data()
-    return parseReply(data + socket.readAll().data())
+    try:
+        reply = json.loads(data + socket.readAll().data())
+        return Reply(reply["output"], reply["exitCode"])
+    except (ValueError, KeyError, TypeError):
+        return None
 
 
 def create() -> subprocess.Popen:
@@ -181,7 +173,7 @@ class PrimaryInstance(QObject):
                 socket.deleteLater()
                 return
             socket.disconnected.connect(socket.deleteLater)
-            socket.write(toLine(reply))
+            socket.write(json.dumps({"output": reply.output, "exitCode": reply.exitCode}).encode() + b"\n")
             socket.disconnectFromServer()
 
         socket.readyRead.connect(onReadyRead)
