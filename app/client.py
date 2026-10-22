@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import certifi
 from loguru import logger
 from wreq import Client, Emulation, Proxy
 from wreq.dns import DnsOptions
@@ -104,7 +105,11 @@ def buildClient(
     readTimeout: int | None = None,
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
-    config: ClientConfig = {"tls_verify": cfg.shouldVerifySsl.value, "redirect": Policy.limited(10)}
+    # wreq 内置的根证书跟着 wreq 发版才更新，eMudhra 私钥泄露（2026-10）时还信任被吊销的中间证书
+    config: ClientConfig = {
+        "tls_verify": Path(certifi.where()) if cfg.shouldVerifySsl.value else False,
+        "redirect": Policy.limited(10),
+    }
     if cfg.shouldUseSystemDns.value:
         config["dns_options"] = DnsOptions(system_dns=True)
 

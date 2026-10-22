@@ -11,6 +11,7 @@ from struct import pack, unpack
 from urllib.parse import unquote, urlparse
 
 import aioftp
+import certifi
 from loguru import logger
 
 from app.config.cfg import cfg
@@ -72,7 +73,7 @@ class FtpConnectionInfo:
         lastError: Exception | None = None
         for index, (port, mode) in enumerate(attempts):
             if mode != "plain":
-                sslCtx = ssl.create_default_context()
+                sslCtx = ssl.create_default_context(cafile=certifi.where())
                 if not cfg.shouldVerifySsl.value:
                     sslCtx.check_hostname = False
                     sslCtx.verify_mode = ssl.CERT_NONE
