@@ -42,7 +42,7 @@ def main() -> None:
         "CIBW_BEFORE_ALL_WINDOWS": "bash -c './tools/cibuildwheel/setup_boost.sh $BOOST_VERSION $BOOST_ROOT'",
         "CIBW_TEST_SKIP": "*",
     }
-    run("uvx", "cibuildwheel", "--output-dir", str(Path(outputFolder).resolve()), str(source), env=env)
+    run("uvx", "cibuildwheel", "--output-dir", str(Path(outputFolder).resolve()), cwd=source, env=env)
 
 
 if __name__ == "__main__":
