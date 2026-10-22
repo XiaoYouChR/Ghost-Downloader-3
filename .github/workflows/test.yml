@@ -88,4 +88,5 @@ jobs:
 
       - name: Run Kotlin tests without Android wheels
         working-directory: android
-        run: ./gradlew :app:testDebugUnitTest -x installDebugPythonRequirements
+        # 开启 configuration cache 时，-x 找不到 Chaquopy 17.1 的 installDebugPythonRequirements
+        run: ./gradlew :app:testDebugUnitTest -x installDebugPythonRequirements --no-configuration-cache
