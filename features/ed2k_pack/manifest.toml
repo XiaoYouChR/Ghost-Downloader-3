@@ -2,5 +2,5 @@
 entry = "pack.py"
 class = "ED2kPack"
 dependencies = []
-version = "2.0.1"
-gdMinVersion = "4.4.4"
+version = "2.0.2"
+gdMinVersion = "4.4.5"
