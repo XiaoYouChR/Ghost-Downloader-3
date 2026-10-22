@@ -787,16 +787,17 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Read libtorrent version
+      - name: Resolve libtorrent wheel versions
         id: libtorrent
-        run: echo "version=$(python3 -c "import tomllib; print(next(p['version'] for p in tomllib.load(open('uv.lock', 'rb'))['package'] if p['name'] == 'libtorrent'))")" >> "$GITHUB_OUTPUT"
+        working-directory: android/build-scripts
+        run: echo "versions=$(./build_libtorrent_wheel.sh --print-versions)" >> "$GITHUB_OUTPUT"
 
       - name: Cache libtorrent wheel
         id: libtorrent-cache
         uses: actions/cache@v6
         with:
           path: android/build-scripts/dist
-          key: libtorrent-android-arm64-v8a-${{ steps.libtorrent.outputs.version }}-${{ hashFiles('android/build-scripts/build_libtorrent_wheel.sh') }}
+          key: libtorrent-android-arm64-v8a-${{ steps.libtorrent.outputs.versions }}-${{ hashFiles('android/build-scripts/build_libtorrent_wheel.sh') }}
 
       - name: Install wheel tool
         if: ${{ steps.libtorrent-cache.outputs.cache-hit != 'true' }}
