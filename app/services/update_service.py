@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -20,6 +19,7 @@ from app.checksum import parseChecksum, toChecksum
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, FEATURES_DIR, EXECUTABLE_DIR
 from app.platform.android import IS_ANDROID
+from app.platform.arch import BUILD_ARCH, MACHINE_ARCH
 from app.models.pack import PackManifest
 from app.models.task import TaskError, toTaskError
 from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
@@ -31,11 +31,6 @@ if TYPE_CHECKING:
 STAGING_DIR = APP_DATA_DIR / "update_staging"
 
 OS_MAP = {"win32": "Windows", "darwin": "macOS", "linux": "Linux"}
-MACHINE_MAP = {"AMD64": "x86_64", "x86_64": "x86_64", "aarch64": "arm64", "arm64": "arm64"}
-
-
-def buildPlatformKey() -> str:
-    return f"{OS_MAP[sys.platform]}-{MACHINE_MAP[platform.machine()]}"
 
 
 def extractZip(archivePath: Path, targetDir: Path) -> None:
@@ -207,12 +202,12 @@ class UpdateService:
         appData = self._versionsData.get("app", {})
         version = appData.get("version", "")
         tag = f"v{version}"
-        platformKey = buildPlatformKey()
+        platformKey = f"{OS_MAP[sys.platform]}-{MACHINE_ARCH}"
 
         patches = appData.get("patches", {})
         patch = patches.get(platformKey)
 
-        if patch and patch.get("from") == VERSION:
+        if patch and patch.get("from") == VERSION and BUILD_ARCH == MACHINE_ARCH:
             sha = patch.get("sha256", "")
             outputPath = STAGING_DIR / "patch.hdiff"
 
