@@ -202,6 +202,8 @@ jobs:
 
       - name: Build libtorrent wheel
         if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
+        # b2 找不到编译器时会卡住而不是报错
+        timeout-minutes: 120
         run: uv run --no-sync python scripts/build_libtorrent_wheel.py "${{ steps.libtorrent.outputs.version }}" "${{ steps.libtorrent.outputs.python }}" libtorrent-wheel
 
       - name: Install libtorrent wheel
@@ -224,14 +226,14 @@ jobs:
       - name: Build updater
         shell: pwsh
         run: |
-          cmake -B build-updater -G "Visual Studio 17 2022" -A ${{ matrix.msvc_arch }} tools/updater
+          cmake -B build-updater -A ${{ matrix.msvc_arch }} tools/updater
           cmake --build build-updater --config Release
           Copy-Item build-updater/Release/updater.exe dist/Ghost-Downloader-3.dist/
 
       - name: Build ghd
         shell: pwsh
         run: |
-          cmake -B build-ghd -G "Visual Studio 17 2022" -A ${{ matrix.msvc_arch }} tools/ghd
+          cmake -B build-ghd -A ${{ matrix.msvc_arch }} tools/ghd
           cmake --build build-ghd --config Release
           New-Item -ItemType Directory -Force dist/Ghost-Downloader-3.dist/bin
           Copy-Item build-ghd/Release/ghd.exe dist/Ghost-Downloader-3.dist/bin/
