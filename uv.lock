@@ -368,7 +368,6 @@ dependencies = [
     { name = "aioftp", extra = ["socks"] },
     { name = "desktop-notifier" },
     { name = "libtorrent" },
-    { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'" },
     { name = "loguru" },
     { name = "m3u8" },
     { name = "mpegdash" },
@@ -400,7 +399,6 @@ requires-dist = [
     { name = "aioftp", extras = ["socks"], specifier = ">=0.27.2" },
     { name = "desktop-notifier", specifier = ">=6.2.0" },
     { name = "libtorrent", specifier = ">=2.0.13" },
-    { name = "libtorrent-windows-dll", marker = "sys_platform == 'win32'", specifier = ">=0.0.3" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "m3u8", specifier = ">=6.0.0" },
     { name = "mpegdash", specifier = ">=0.4.1" },
@@ -459,18 +457,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7d/02/42a632b930a61c96a4aed9ca3e451ed61a46ef19ef9d8d31e95772c624ba/libtorrent-2.1.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:98a0cccb5da53e855c8ea6d8b06f190f05de3219732882a1cd2643df15faa22a", size = 14301102, upload-time = "2026-08-10T17:38:15.511Z" },
     { url = "https://files.pythonhosted.org/packages/c2/5b/b84a328fe45983ff2f6a77d6d466ad78d39127894f0fd6f44bd64269fffa/libtorrent-2.1.1-cp313-cp313-win32.whl", hash = "sha256:ee9030a6062b671a71ce1bf873e3b62481b7ef9abbe6bce1768c2efb8426f8f8", size = 4323886, upload-time = "2026-08-10T17:38:18.005Z" },
     { url = "https://files.pythonhosted.org/packages/f0/2b/b843874837440dadb6d6cde2374a311367efdb40f86375de46cf9a0e59ea/libtorrent-2.1.1-cp313-cp313-win_amd64.whl", hash = "sha256:fa11aa801d5b9184f067f559c465d3074a4e878d9c671b00dd4930d6dfce2b46", size = 5018669, upload-time = "2026-08-10T17:38:19.403Z" },
-]
-
-[[package]]
-name = "libtorrent-windows-dll"
-version = "0.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "libtorrent" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/06/cb2fd5a6948aa1936ec6400c2478e04f65faaee6df750a5201026b419c11/libtorrent_windows_dll-0.0.3.tar.gz", hash = "sha256:84f0f4f8d80f36a8769eeed8b85aa03ed1a961fd44ff597d60771f63f77135d8", size = 1524559, upload-time = "2025-07-08T19:05:32.488Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/cf/0293a8daea4a0e89044f3f7289930046bf139d118b62bbe2d47b78a0bc9b/libtorrent_windows_dll-0.0.3-py3-none-any.whl", hash = "sha256:eac387522f70286fcad688c78c3f8e428c43fef3bd48f493bc4fb480d68ed366", size = 1532907, upload-time = "2025-07-08T19:05:30.741Z" },
 ]
 
 [[package]]
