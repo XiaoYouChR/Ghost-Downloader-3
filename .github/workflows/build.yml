@@ -151,10 +151,19 @@ jobs:
     needs: [prepare]
     if: ${{ github.event.inputs.build_target == 'windows' || github.event.inputs.build_target == 'all' }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - architecture: x86_64
             runner: windows-2022
+            msvc_arch: x64
+            hdiff_arch: windows64
+            installer_arch: x64compatible
+          - architecture: arm64
+            runner: windows-11-arm
+            msvc_arch: ARM64
+            hdiff_arch: windows_arm64
+            installer_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
@@ -168,25 +177,55 @@ jobs:
       - name: Install dependencies
         run: |
           uv python install 3.13
-          uv sync
+          uv sync ${{ matrix.architecture == 'arm64' && '--no-install-package libtorrent' || '' }}
+
+      - name: Read libtorrent version
+        if: ${{ matrix.architecture == 'arm64' }}
+        id: libtorrent
+        shell: pwsh
+        run: |
+          $version = uv run --no-sync python -c "import tomllib; print(next(p['version'] for p in tomllib.load(open('uv.lock', 'rb'))['package'] if p['name'] == 'libtorrent'))"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "python=$((Get-Content .python-version).Trim())" >> $env:GITHUB_OUTPUT
+
+      - name: Cache libtorrent wheel
+        if: ${{ matrix.architecture == 'arm64' }}
+        id: libtorrent-cache
+        uses: actions/cache@v6
+        with:
+          path: libtorrent-wheel
+          key: libtorrent-win_arm64-py${{ steps.libtorrent.outputs.python }}-${{ steps.libtorrent.outputs.version }}-${{ hashFiles('scripts/build_libtorrent_wheel.py') }}
+
+      - name: Set up MSBuild
+        if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build libtorrent wheel
+        if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
+        run: uv run --no-sync python scripts/build_libtorrent_wheel.py "${{ steps.libtorrent.outputs.version }}" "${{ steps.libtorrent.outputs.python }}" libtorrent-wheel
+
+      - name: Install libtorrent wheel
+        if: ${{ matrix.architecture == 'arm64' }}
+        shell: pwsh
+        run: uv pip install (Get-ChildItem libtorrent-wheel/*.whl).FullName
 
       - name: Build with Nuitka
         run: |
           echo "VERSION=${{ needs.prepare.outputs.version }}" >> $env:GITHUB_ENV
-          (Get-Content scripts/Ghost-Downloader-3.iss) -replace 'APPLICATION_VERSION', '${{ needs.prepare.outputs.version }}' | Set-Content scripts/Ghost-Downloader-3.iss
-          uv run scripts/deploy.py
+          (Get-Content scripts/Ghost-Downloader-3.iss) -replace 'APPLICATION_VERSION', '${{ needs.prepare.outputs.version }}' -replace 'APPLICATION_ARCHITECTURES', '${{ matrix.installer_arch }}' | Set-Content scripts/Ghost-Downloader-3.iss
+          uv run --no-sync scripts/deploy.py
 
       - name: Build updater
         shell: pwsh
         run: |
-          cmake -B build-updater -G "Visual Studio 17 2022" -A x64 tools/updater
+          cmake -B build-updater -G "Visual Studio 17 2022" -A ${{ matrix.msvc_arch }} tools/updater
           cmake --build build-updater --config Release
           Copy-Item build-updater/Release/updater.exe dist/Ghost-Downloader-3.dist/
 
       - name: Build ghd
         shell: pwsh
         run: |
-          cmake -B build-ghd -G "Visual Studio 17 2022" -A x64 tools/ghd
+          cmake -B build-ghd -G "Visual Studio 17 2022" -A ${{ matrix.msvc_arch }} tools/ghd
           cmake --build build-ghd --config Release
           New-Item -ItemType Directory -Force dist/Ghost-Downloader-3.dist/bin
           Copy-Item build-ghd/Release/ghd.exe dist/Ghost-Downloader-3.dist/bin/
@@ -194,9 +233,9 @@ jobs:
       - name: Download HDiffPatch
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_windows64.zip" -OutFile hdiffpatch.zip
+          Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_${{ matrix.hdiff_arch }}.zip" -OutFile hdiffpatch.zip
           Expand-Archive hdiffpatch.zip -DestinationPath hdiffpatch
-          Copy-Item hdiffpatch/windows64/hpatchz.exe dist/Ghost-Downloader-3.dist/
+          Copy-Item hdiffpatch/${{ matrix.hdiff_arch }}/hpatchz.exe dist/Ghost-Downloader-3.dist/
 
       - name: Prepare For Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
@@ -295,6 +334,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $baseVer = "${{ needs.prepare.outputs.patch_base }}"
+          $baseAssets = gh release view "v$baseVer" --json assets --jq '.assets[].name'
+          if ($baseAssets -notcontains "Ghost-Downloader-v$baseVer-Windows-${{ matrix.architecture }}.zip") {
+            Write-Output "v$baseVer has no Windows-${{ matrix.architecture }} package, skipping patch"; exit 0
+          }
 
           New-Item -ItemType Directory -Path prev -Force
           gh release download "v$baseVer" -p "*Windows-${{ matrix.architecture }}.zip" -D prev/
@@ -313,7 +356,7 @@ jobs:
           }
 
           $patchFile = "patch-Windows-${{ matrix.architecture }}-${baseVer}-to-${{ env.VERSION }}.hdiff"
-          & "hdiffpatch/windows64/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
+          & "hdiffpatch/${{ matrix.hdiff_arch }}/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
           echo "PATCH_FILE=$patchFile" >> $env:GITHUB_ENV
 
       - name: Upload to release
@@ -982,7 +1025,7 @@ jobs:
                       h.update(chunk)
               return h.hexdigest()
 
-          platforms = ["Windows-x86_64", "macOS-arm64", "macOS-x86_64"]
+          platforms = ["Windows-x86_64", "Windows-arm64", "macOS-arm64", "macOS-x86_64"]
           patches = {}
           full = {}
 
