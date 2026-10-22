@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import platform
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -13,6 +12,7 @@ from app.i18n import N
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
+from app.platform.arch import MACHINE_ARCH
 from app.install import installFile
 from app.platform.filesystem import findExecutable
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
@@ -218,8 +218,7 @@ class KelpieRuntime(BinaryRuntime):
 
 
 def buildAssetName() -> str:
-    machine = platform.machine().lower()
-    arch = "arm64" if machine in {"arm64", "aarch64"} else "amd64"
+    arch = "arm64" if MACHINE_ARCH == "arm64" else "amd64"
     if sys.platform == "win32":
         return f"kelpie-windows-{arch}.exe"
     elif sys.platform == "darwin":

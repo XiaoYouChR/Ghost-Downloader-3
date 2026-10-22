@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import platform
 import sys
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from app.config.cfg import ConfigItem
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID, nativeLibraryDir
+from app.platform.arch import MACHINE_ARCH
 from app.platform.filesystem import deletePath, findExecutable
 from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
@@ -21,9 +21,8 @@ from app.install import installArchive
 FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-FFmpeg"})
 
 
-def ffmpegAssetTarget() -> str:
-    machine = platform.machine().lower()
-    isArm = machine in {"arm64", "aarch64"}
+def buildAssetTarget() -> str:
+    isArm = MACHINE_ARCH == "arm64"
     if sys.platform == "win32":
         return "winarm64" if isArm else "win64"
     if sys.platform == "darwin":
@@ -119,7 +118,7 @@ class FFmpegRuntime(BinaryRuntime):
     async def install(self, version: str, onProgress) -> None:
         tag = version or (await fetchLatestRelease(FFMPEG_REPO)).version
         extension = "zip" if sys.platform == "win32" else "tar.gz"
-        asset = f"ffmpeg-{ffmpegAssetTarget()}.{extension}"
+        asset = f"ffmpeg-{buildAssetTarget()}.{extension}"
         folder = self.installFolder()
         archive = folder / asset
         sha256File = folder / f"{asset}.sha256"

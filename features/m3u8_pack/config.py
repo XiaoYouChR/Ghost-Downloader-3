@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import platform
 import sys
 from pathlib import Path
 
@@ -19,6 +18,7 @@ from app.config.paths import APP_DATA_DIR
 from app.install import installArchive
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
+from app.platform.arch import MACHINE_ARCH
 from app.platform.filesystem import findExecutable
 from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
@@ -169,18 +169,12 @@ class M3U8Runtime(BinaryRuntime):
         return [self.installFolder() / f"N_m3u8DL-RE{suffix}"]
 
     async def install(self, version: str, onProgress) -> None:
-        machine = platform.machine().lower()
         if sys.platform == "win32":
-            if machine in {"amd64", "x86_64"}:
-                target = "win-x64"
-            elif machine in {"arm64", "aarch64"}:
-                target = "win-arm64"
-            else:
-                target = "win-NT6.0-x86"
+            target = "win-arm64" if MACHINE_ARCH == "arm64" else "win-x64"
         elif sys.platform == "darwin":
-            target = "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
+            target = "osx-arm64" if MACHINE_ARCH == "arm64" else "osx-x64"
         elif sys.platform == "linux":
-            target = "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
+            target = "linux-arm64" if MACHINE_ARCH == "arm64" else "linux-x64"
         else:
             raise TaskError("当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}", platform=sys.platform)
 

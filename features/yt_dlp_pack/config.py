@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ast
-import platform
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -12,6 +11,7 @@ from app.i18n import N
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
+from app.platform.arch import MACHINE_ARCH
 from app.platform.filesystem import findExecutable
 from app.models.task import TaskError
 from app.install import installArchive, installFile
@@ -218,7 +218,7 @@ class YouTubeRuntime(BinaryRuntime):
             qjsPath = folder / ("qjs.exe" if sys.platform == "win32" else "qjs")
             downloadPath = qjsPath.with_name(f"{qjsPath.name}.download")
             try:
-                await fetchReleaseAsset(QJS_REPO, qjsTag, _qjsAssetName(), downloadPath)
+                await fetchReleaseAsset(QJS_REPO, qjsTag, buildQjsAssetName(), downloadPath)
                 if sys.platform != "win32":
                     downloadPath.chmod(downloadPath.stat().st_mode | 0o755)
                 installFile(downloadPath, qjsPath)
@@ -246,15 +246,13 @@ async def fetchNightlyWheel() -> tuple[str, str]:
     return f"{year}.{month:02d}.{day:02d}.{time:06d}", nightlies[latest]
 
 
-def _qjsAssetName() -> str:
-    machine = platform.machine().lower()
+def buildQjsAssetName() -> str:
     if sys.platform == "win32":
-        arch = "x86" if machine in {"x86", "i386", "i686"} else "x86_64"
-        return f"qjs-windows-{arch}.exe"
+        return "qjs-windows-x86_64.exe"
     elif sys.platform == "darwin":
-        return f"qjs-darwin-{machine}"
+        return f"qjs-darwin-{MACHINE_ARCH}"
     else:
-        arch = "aarch64" if machine in {"arm64", "aarch64"} else "x86_64"
+        arch = "aarch64" if MACHINE_ARCH == "arm64" else "x86_64"
         return f"qjs-linux-{arch}"
 
 

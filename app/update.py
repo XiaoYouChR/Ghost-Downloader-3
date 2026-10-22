@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import platform
 import sys
 
+from app.platform.arch import MACHINE_ARCH
 from app.sources import Release, ReleaseAsset, Repo, fetchLatestRelease, probeDownloadUrl
 
 APP_REPO = Repo("XiaoYouChR/Ghost-Downloader-3", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-3"})
@@ -70,13 +70,7 @@ def assetScore(name: str) -> int:
     else:
         platformKw = ["linux"]
 
-    machine = platform.machine().lower()
-    archKw = (
-        ["x86_64", "amd64", "x64"] if machine in {"amd64", "x86_64"} else
-        ["arm64", "aarch64"] if machine in {"arm64", "aarch64"} else
-        ["x86", "i386", "i686"] if machine in {"x86", "i386", "i686"} else
-        [machine] if machine else []
-    )
+    archKw = ["x86_64", "amd64", "x64"] if MACHINE_ARCH == "x86_64" else ["arm64", "aarch64"]
 
     platformScore = 0
     for i, kw in enumerate(platformKw):
