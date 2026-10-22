@@ -65,10 +65,10 @@
       "gdMinVersion": "4.4.5"
     },
     "ftp_pack": {
-      "version": "1.1.1",
+      "version": "1.1.2",
       "file": "ftp_pack.zip",
-      "sha256": "193942b952dc64224a43d1014208e2ca92b4be6062e3291946a974ffa5241418",
-      "gdMinVersion": "4.4.4"
+      "sha256": "73d989f58bcf504b2303d9176e6c81f14618a211d9c0335e9333cd607e64180f",
+      "gdMinVersion": "4.4.5"
     },
     "github_pack": {
       "version": "1.1.1",
