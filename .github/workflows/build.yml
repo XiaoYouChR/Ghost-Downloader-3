@@ -158,7 +158,7 @@ jobs:
             runner: windows-2022
             msvc_arch: x64
             hdiff_arch: windows64
-            installer_arch: x64compatible
+            installer_arch: x64compatible and not arm64
           - architecture: arm64
             runner: windows-11-arm
             msvc_arch: ARM64
