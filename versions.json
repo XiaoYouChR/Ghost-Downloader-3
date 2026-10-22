@@ -1,41 +1,41 @@
 {
   "app": {
-    "version": "4.4.4",
+    "version": "4.4.5",
     "patches": {
       "Windows-x86_64": {
-        "from": "4.4.3",
-        "file": "patch-Windows-x86_64-4.4.3-to-4.4.4.hdiff",
-        "sha256": "a01134578c523d351b98ab7cace78ec28e71f9acb6134a07aa92dec0d63efe9a",
-        "size": 6521339
+        "from": "4.4.4",
+        "file": "patch-Windows-x86_64-4.4.4-to-4.4.5.hdiff",
+        "sha256": "e7eca4d2f2cb197c01fd162ee2c726350d7b75f19dba7c2fa873a92e29ad69f9",
+        "size": 6010044
       },
       "macOS-arm64": {
-        "from": "4.4.3",
-        "file": "patch-macOS-arm64-4.4.3-to-4.4.4.hdiff",
-        "sha256": "337d429eac3587fd86abf22716b351b69b220b034d684613647422f03ffd4cb4",
-        "size": 8483137
+        "from": "4.4.4",
+        "file": "patch-macOS-arm64-4.4.4-to-4.4.5.hdiff",
+        "sha256": "dab80156e50ba46efc69e6ed42fbea7553932f8ba603d71f3e8c80d14ddc0894",
+        "size": 7815467
       },
       "macOS-x86_64": {
-        "from": "4.4.3",
-        "file": "patch-macOS-x86_64-4.4.3-to-4.4.4.hdiff",
-        "sha256": "82183a703437624968ce28cf9baceffe5b30ae37bfac17d46f0a3ea998ef74b3",
-        "size": 9331299
+        "from": "4.4.4",
+        "file": "patch-macOS-x86_64-4.4.4-to-4.4.5.hdiff",
+        "sha256": "df4c11875e6bebf4109de038c70dae1f27612b4d1c4954a6b214a5a08180f42a",
+        "size": 9431788
       }
     },
     "full": {
       "Windows-x86_64": {
-        "file": "Ghost-Downloader-v4.4.4-Windows-x86_64.zip",
-        "sha256": "62262c641e47bdfdc56b391df88da0f359df83eb2725014074fa60b8278ff89f",
-        "size": 47554292
+        "file": "Ghost-Downloader-v4.4.5-Windows-x86_64.zip",
+        "sha256": "f1f1ceda1129fb64f2fa288ba03ccfb96a6f16f2864f2d35bcf66f22a4d9e923",
+        "size": 47676608
       },
       "macOS-arm64": {
-        "file": "Ghost-Downloader-v4.4.4-macOS-arm64.dmg",
-        "sha256": "9c8b0fb813c4823a82213b1e1bb99f5b6ef5db9d678369135f12077a2110e692",
-        "size": 69648343
+        "file": "Ghost-Downloader-v4.4.5-macOS-arm64.dmg",
+        "sha256": "e1850125ca304ea3508c62bfd2b0f35da2726f68a4c3c298c149fe72f745e55b",
+        "size": 69786574
       },
       "macOS-x86_64": {
-        "file": "Ghost-Downloader-v4.4.4-macOS-x86_64.dmg",
-        "sha256": "f28469c2a5727f29a310361105c7ca762db2c4106fd6758f4a42c3659e1823d7",
-        "size": 74314602
+        "file": "Ghost-Downloader-v4.4.5-macOS-x86_64.dmg",
+        "sha256": "0a7320734aba1321563229ebfe3874a7c83bd77dfa98b04649f4cb4e6cfa28c3",
+        "size": 74441320
       }
     }
   },
@@ -53,16 +53,16 @@
       "gdMinVersion": "4.4.4"
     },
     "ed2k_pack": {
-      "version": "2.0.1",
+      "version": "2.0.2",
       "file": "ed2k_pack.zip",
-      "sha256": "950830db55cfaf2cbb4aa83c8a890a909cc75fd9136232817458120aa64c3922",
-      "gdMinVersion": "4.4.4"
+      "sha256": "a401ee94c6d987cfd21d70a600bf37909fc60edf4ec7ec2a01fb2916da9c6056",
+      "gdMinVersion": "4.4.5"
     },
     "ffmpeg_pack": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "file": "ffmpeg_pack.zip",
-      "sha256": "55363315b9ad25c31ec65efe18b82bd1f75f9ba383f6ff25e81d897c362073f1",
-      "gdMinVersion": "4.4.0"
+      "sha256": "335dc5c8075f6fd508954f391a41ee9f35e800f1ed0804632640c4704840a18e",
+      "gdMinVersion": "4.4.5"
     },
     "ftp_pack": {
       "version": "1.1.1",
@@ -89,16 +89,16 @@
       "gdMinVersion": "4.4.4"
     },
     "m3u8_pack": {
-      "version": "1.1.2",
+      "version": "1.1.3",
       "file": "m3u8_pack.zip",
-      "sha256": "456130666180bf4f6bb457621e65547aae22f78b52da7214bcda386a39d34d8c",
-      "gdMinVersion": "4.4.4"
+      "sha256": "8dce6260324bb5ad81e40fb2e7c6bbdd85db508e153b15d8d86b66fd4d479e75",
+      "gdMinVersion": "4.4.5"
     },
     "yt_dlp_pack": {
-      "version": "1.3.2",
+      "version": "1.3.3",
       "file": "yt_dlp_pack.zip",
-      "sha256": "6758cf61e99836be01d374027ff99640f216da96d98d8f7753d527b098e66f3e",
-      "gdMinVersion": "4.4.4"
+      "sha256": "e4f6d2fcaf5ee0867ba0933819115b8cb71fff8d0492350fcca41f2743a159db",
+      "gdMinVersion": "4.4.5"
     }
   }
 }
