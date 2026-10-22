@@ -9,6 +9,7 @@ from typing import Any
 
 from loguru import logger
 
+# 取到的版本信息和文件会被安装执行，所以一律验证证书，不看用户设置
 from app.client import buildClient, fetchFile
 from app.models.task import TaskError
 
@@ -107,7 +108,7 @@ async def fetchLatestRelease(repo: Repo) -> Release:
         endpoints = SOURCES[source]
         url = f"{endpoints.api}/{repo.nameOn(source)}/releases/latest"
         headers = {"accept": "application/vnd.github+json"} if source == "github" else {}
-        client = buildClient(headers=headers, timeout=15)
+        client = buildClient(headers=headers, timeout=15, shouldVerifySsl=True)
         try:
             resp = await client.get(url)
             resp.raise_for_status()
@@ -141,7 +142,7 @@ async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
     async def attempt(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.raw}/{repo.nameOn(source)}{endpoints.rawInfix}{branch}/{path}"
-        client = buildClient(timeout=15)
+        client = buildClient(timeout=15, shouldVerifySsl=True)
         try:
             resp = await client.get(url)
             resp.raise_for_status()
@@ -167,7 +168,7 @@ async def fetchRawFile(
     async def probe(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.raw}/{repo.nameOn(source)}{endpoints.rawInfix}{branch}/{path}"
-        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10, shouldVerifySsl=True)
         try:
             resp = await client.get(url)
             try:
@@ -193,7 +194,7 @@ async def fetchRawFile(
 async def probeDownloadUrl(repo: Repo, tag: str, asset: str) -> str:
     async def probe(source):
         url = buildDownloadUrl(repo, tag, asset, source=source)
-        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10, shouldVerifySsl=True)
         try:
             resp = await client.get(url)
             try:
@@ -241,7 +242,7 @@ def buildPypiUrl(package: str, *, source: str) -> str:
 async def fetchPypiReleases(package: str) -> dict[str, list[dict]]:
     async def attempt(source):
         url = buildPypiUrl(package, source=source)
-        client = buildClient(timeout=15)
+        client = buildClient(timeout=15, shouldVerifySsl=True)
         try:
             resp = await client.get(url)
             resp.raise_for_status()
@@ -264,7 +265,7 @@ async def fetchPypiReleases(package: str) -> dict[str, list[dict]]:
 
 async def fetchPypiFile(url: str, outputPath: Path, onProgress: Callable[[float], None] | None = None) -> None:
     async def probe(candidate):
-        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10, shouldVerifySsl=True)
         try:
             resp = await client.get(candidate)
             try:

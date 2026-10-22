@@ -103,11 +103,14 @@ def buildClient(
     sourceUserAgent: str = "",
     timeout: int | None = None,
     readTimeout: int | None = None,
+    shouldVerifySsl: bool | None = None,
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
+    if shouldVerifySsl is None:
+        shouldVerifySsl = cfg.shouldVerifySsl.value
     # wreq 内置的根证书跟着 wreq 发版才更新，eMudhra 私钥泄露（2026-10）时还信任被吊销的中间证书
     config: ClientConfig = {
-        "tls_verify": Path(certifi.where()) if cfg.shouldVerifySsl.value else False,
+        "tls_verify": Path(certifi.where()) if shouldVerifySsl else False,
         "redirect": Policy.limited(10),
     }
     if cfg.shouldUseSystemDns.value:
@@ -169,7 +172,7 @@ async def fetchFile(
     outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> None:
-    client = buildClient(readTimeout=FETCH_READ_TIMEOUT)
+    client = buildClient(readTimeout=FETCH_READ_TIMEOUT, shouldVerifySsl=True)
     try:
         outputPath.parent.mkdir(parents=True, exist_ok=True)
         response = await client.get(url)
