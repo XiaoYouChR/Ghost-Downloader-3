@@ -209,6 +209,12 @@ jobs:
         shell: pwsh
         run: uv pip install (Get-ChildItem libtorrent-wheel/*.whl).FullName
 
+      - name: Run tests
+        if: ${{ matrix.architecture == 'arm64' }}
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: uv run --no-sync pytest
+
       - name: Build with Nuitka
         run: |
           echo "VERSION=${{ needs.prepare.outputs.version }}" >> $env:GITHUB_ENV
