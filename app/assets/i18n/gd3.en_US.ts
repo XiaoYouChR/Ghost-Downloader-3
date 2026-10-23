@@ -599,7 +599,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/setting_cards.py" line="194"/>
         <source>状态：已登录 用户名：{0} UID：{1} 会员状态：{2}</source>
-        <translation>Status: Logged In, User: {0}, UID: {1}, Membership: {2}</translation>
+        <translation>Status: Logged in, User: {0}, UID: {1}, Membership: {2}</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/setting_cards.py" line="226"/>
@@ -804,7 +804,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
         <source>自动更新订阅</source>
-        <translation>Auto-update Subscriptions</translation>
+        <translation>Automatically Update Subscriptions</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
@@ -944,7 +944,7 @@ http://example.com/{mp4,mkv}/video</translation>
         <location filename="../../../features/ed2k_pack/config.py" line="151"/>
         <location filename="../../../features/ed2k_pack/config.py" line="170"/>
         <source>未运行</source>
-        <translation>Not Running</translation>
+        <translation>Not running</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="153"/>
@@ -955,32 +955,32 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="155"/>
         <source>未连接服务器</source>
-        <translation>Not Connected to Server</translation>
+        <translation>server disconnected</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="157"/>
         <source>已连接服务器（HighID）</source>
-        <translation>Connected to Server (HighID)</translation>
+        <translation>connected to server (HighID)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="159"/>
         <source>已连接服务器（LowID，经代理连接时无法获得 HighID）</source>
-        <translation>Connected to Server (LowID; HighID unavailable when connected via proxy)</translation>
+        <translation>connected to server (LowID; HighID unavailable when connected via proxy)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="161"/>
         <source>已连接服务器（LowID，运营商 NAT，无法获得 HighID）</source>
-        <translation>Connected to Server (LowID; HighID unavailable due to carrier NAT)</translation>
+        <translation>connected to server (LowID; HighID unavailable due to carrier NAT)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="162"/>
         <source>已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）</source>
-        <translation>Connected to Server (LowID; enable UPnP or forward listening port on router to get HighID)</translation>
+        <translation>connected to server (LowID; enable UPnP or forward listening port on router to get HighID)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="166"/>
         <source>KAD 已关闭</source>
-        <translation>KAD Disabled</translation>
+        <translation>KAD disabled</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="174"/>
@@ -990,17 +990,17 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="176"/>
         <source>KAD 节点 {nodes}（处于防火墙后）</source>
-        <translation>KAD Nodes {nodes} (Behind Firewall)</translation>
+        <translation>{nodes} KAD nodes (firewalled)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="177"/>
         <source>KAD 节点 {nodes}</source>
-        <translation>KAD Nodes {nodes}</translation>
+        <translation>{nodes} KAD nodes</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="34"/>
         <source>刚刚</source>
-        <translation>Just now</translation>
+        <translation>just now</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="36"/>
@@ -1021,27 +1021,27 @@ http://example.com/{mp4,mkv}/video</translation>
         <location filename="../../view/components/bootstrap_list.py" line="44"/>
         <location filename="../../view/components/bootstrap_list.py" line="47"/>
         <source>更新失败</source>
-        <translation>Update Failed</translation>
+        <translation>Update failed</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="44"/>
         <source>未拉取</source>
-        <translation>Waiting for Refresh</translation>
+        <translation>Waiting for refresh</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="45"/>
         <source>{0} 条</source>
-        <translation>{0} items</translation>
+        <translation>{0} item(s)</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="45"/>
         <source>{0}更新</source>
-        <translation>Updated {0}</translation>
+        <translation>updated {0}</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="48"/>
         <source>，</source>
-        <translation>,</translation>
+        <translation>, </translation>
     </message>
 </context>
 <context>
@@ -1064,17 +1064,17 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="110"/>
         <source>{0} 个订阅</source>
-        <translation>{0} subscriptions</translation>
+        <translation>{0} subscription(s)</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="113"/>
         <source>共 {0} 条</source>
-        <translation>{0} items total</translation>
+        <translation>{0} item(s) total</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="114"/>
         <source>{0}更新</source>
-        <translation>Updated {0}</translation>
+        <translation>updated {0}</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="116"/>
@@ -1090,7 +1090,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="123"/>
         <source>，</source>
-        <translation>,</translation>
+        <translation>, </translation>
     </message>
 </context>
 <context>
@@ -1570,7 +1570,7 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
     <message>
         <location filename="../../view/components/category_settings.py" line="75"/>
         <source>{0} 等 {1} 项</source>
-        <translation>{0} &amp; more totaling {1} items</translation>
+        <translation>{0} &amp; more totaling {1} item(s)</translation>
     </message>
 </context>
 <context>
@@ -1917,7 +1917,7 @@ You can adjust options in Settings at any time.</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="73"/>
         <source>未运行</source>
-        <translation>Not Running</translation>
+        <translation>Not running</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="75"/>
@@ -1952,7 +1952,7 @@ You can adjust options in Settings at any time.</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="106"/>
         <source>自动更新订阅</source>
-        <translation>Auto-update Subscriptions</translation>
+        <translation>Automatically Update Subscriptions</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="107"/>
@@ -4970,7 +4970,8 @@ Path: {1}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="105"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
-        <translation>More threads speed up downloads. Over 64 threads may trigger anti-scraping and corrupt files</translation>
+        <translation>More threads speed up downloads
+Over 64 threads may trigger rate limiting and corrupt files</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="106"/>
@@ -5409,7 +5410,8 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="321"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
-        <translation>Currently in Portable mode, configuration stored next to the app: {0}</translation>
+        <translation>Currently running in Portable mode, configuration stored next to the app:
+{0}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="325"/>
@@ -5419,7 +5421,8 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="327"/>
         <source>当前为用户模式，数据保存在: {0}</source>
-        <translation>Currently in User mode, configuration stored at: {0}</translation>
+        <translation>Currently running in User mode, configuration stored at:
+{0}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="331"/>
@@ -6558,7 +6561,8 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../view/pages/task_page.py" line="889"/>
         <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
-        <translation>macOS has denied file deletion; please add Ghost Downloader into System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
+        <translation>macOS has denied file deletion; please add Ghost Downloader into
+System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="894"/>
