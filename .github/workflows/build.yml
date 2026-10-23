@@ -188,10 +188,10 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
           echo "python=$((Get-Content .python-version).Trim())" >> $env:GITHUB_OUTPUT
 
-      - name: Cache libtorrent wheel
+      - name: Restore libtorrent wheel
         if: ${{ matrix.architecture == 'arm64' }}
         id: libtorrent-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: libtorrent-wheel
           key: libtorrent-win_arm64-py${{ steps.libtorrent.outputs.python }}-${{ steps.libtorrent.outputs.version }}-${{ hashFiles('scripts/build_libtorrent_wheel.py', 'scripts/patch-libdatachannel-vs2026.patch') }}
@@ -201,6 +201,14 @@ jobs:
         # b2 找不到编译器时会卡住而不是报错
         timeout-minutes: 120
         run: uv run --no-sync python scripts/build_libtorrent_wheel.py "${{ steps.libtorrent.outputs.version }}" "${{ steps.libtorrent.outputs.python }}" libtorrent-wheel
+
+      # 编完就存，后面的步骤失败也不必重编
+      - name: Save libtorrent wheel
+        if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: libtorrent-wheel
+          key: ${{ steps.libtorrent-cache.outputs.cache-primary-key }}
 
       - name: Install libtorrent wheel
         if: ${{ matrix.architecture == 'arm64' }}
