@@ -43,7 +43,7 @@
 
 | 平台 | 版本要求 | 架构支持 |
 |:--|:--|:--|
-| <img src="https://api.iconify.design/mdi/microsoft-windows.svg?color=%238B949E" width="16" height="16"> **Windows** | `10+` | `x86_64` |
+| <img src="https://api.iconify.design/mdi/microsoft-windows.svg?color=%238B949E" width="16" height="16"> **Windows** | `10+` | `x86_64` / `arm64` |
 | <img src="https://api.iconify.design/mdi/apple.svg?color=%238B949E" width="16" height="16"> **macOS** | `13.0+` | `x86_64` / `arm64` |
 | <img src="https://api.iconify.design/mdi/linux.svg?color=%238B949E" width="16" height="16"> **Linux** | `glibc 2.35+` | `x86_64` / `arm64` |
 | <img src="https://api.iconify.design/mdi/android.svg?color=%238B949E" width="16" height="16"> **Android** | `9.0+` | `arm64-v8a` |
