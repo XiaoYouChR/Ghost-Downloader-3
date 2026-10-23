@@ -158,7 +158,12 @@ jobs:
             runner: windows-2022
             msvc_arch: x64
             hdiff_arch: windows64
-            installer_arch: x64compatible
+            installer_arch: x64compatible and not arm64
+          - architecture: arm64
+            runner: windows-11-arm
+            msvc_arch: ARM64
+            hdiff_arch: windows_arm64
+            installer_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
@@ -200,6 +205,14 @@ jobs:
           gh release verify-asset $tag $wheel.FullName -R $env:REPO
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv pip install $wheel.FullName
+
+      # runner 没有 ARM64 的 VC++ 运行库，Nuitka 要打包它
+      - name: Install VC++ runtime
+        if: ${{ matrix.architecture == 'arm64' }}
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://aka.ms/vc14/vc_redist.arm64.exe" -OutFile vc_redist.arm64.exe
+          Start-Process vc_redist.arm64.exe -ArgumentList "/install", "/quiet", "/norestart" -Wait
 
       - name: Build with Nuitka
         run: |
