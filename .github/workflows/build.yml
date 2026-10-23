@@ -219,7 +219,11 @@ jobs:
         if: ${{ matrix.architecture == 'arm64' }}
         env:
           QT_QPA_PLATFORM: offscreen
-        run: uv run --no-sync pytest
+        run: |
+          # runner 没装 ARM64 的 VC++ 运行库，libtorrent 依赖其中的 msvcp140.dll
+          Invoke-WebRequest -Uri "https://aka.ms/vc14/vc_redist.arm64.exe" -OutFile vc_redist.arm64.exe
+          Start-Process vc_redist.arm64.exe -ArgumentList "/install", "/quiet", "/norestart" -Wait
+          uv run --no-sync pytest
 
       - name: Build with Nuitka
         run: |
