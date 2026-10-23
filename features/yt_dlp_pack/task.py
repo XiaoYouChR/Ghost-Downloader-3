@@ -820,5 +820,5 @@ class YouTubeCoverStep(HttpTaskStep):
         return str(self.task.toSidePath(None, "jpg"))
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        if self.url:
+        if self.url and self.task.isCoverEnabled:
             await super().run(reportSpeed, waitForSpeedLimit)
