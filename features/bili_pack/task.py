@@ -188,18 +188,15 @@ class BilibiliTask(Task):
 
     def __post_init__(self):
         super().__post_init__()
+        if self.isOutputFolder:
+            self._baseName = self._baseName or Path(self.name).stem
+            self.name = self._baseName
         if any(not f.relativePath.endswith((".mp4", ".m4a")) for f in self.files or []):
             self._baseName = self._baseName or Path(self.name).stem
             if self.status == TaskStatus.COMPLETED:
                 self.updateNames()
             else:
                 self.update()
-
-    @property
-    def outputPath(self) -> str:
-        if self.isOutputFolder:
-            return str(self.outputFolder / Path(self.name).stem)
-        return super().outputPath
 
     @property
     def isSeason(self) -> bool:
@@ -245,13 +242,15 @@ class BilibiliTask(Task):
 
     def updateNames(self) -> None:
         extension = "mp4" if self.isVideoEnabled else "m4a"
+        stem = self.name if self.isOutputFolder else Path(self.name).stem
         for page in self.files or []:
-            stem = f"{Path(self.name).stem}{self._pageSuffix(page)}"
-            page.relativePath = toSafeFilename(f"{stem}.{extension}", fallback=f"P{page.pageNumber}.{extension}")
+            name = f"{stem}{self._pageSuffix(page)}.{extension}"
+            page.relativePath = toSafeFilename(name, fallback=f"P{page.pageNumber}.{extension}")
 
     def setName(self, name: str):
         super().setName(name)
-        self._baseName = Path(self.name).stem
+        self._baseName = self.name if self.isOutputFolder else Path(self.name).stem
+        self.updateNames()
 
     def setVideoQuality(self, qn: int, codecid: int) -> None:
         self.requestedQn = qn
@@ -294,21 +293,24 @@ class BilibiliTask(Task):
         self.steps.clear()
         files: list[BiliPage] = self.files or []
 
-        timeSuffix = ""
-        if len(files) == 1 and (files[0].startTime or files[0].endTime):
-            timeSuffix = f" {buildTimeSuffix(files[0].startTime, files[0].endTime)}"
-
-        if self.isVideoEnabled:
-            self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.mp4", fallback="video.mp4")
-        elif self.isAudioEnabled:
-            self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.m4a", fallback="audio.m4a")
-        elif self.isCoverEnabled:
-            self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
-        else:
+        if not (self.isVideoEnabled or self.isAudioEnabled or self.isCoverEnabled):
             for file in files:
                 file.size = 0
             self.fileSize = 0
             return
+
+        timeSuffix = ""
+        if len(files) == 1 and (files[0].startTime or files[0].endTime):
+            timeSuffix = f" {buildTimeSuffix(files[0].startTime, files[0].endTime)}"
+
+        if self.isOutputFolder:
+            self.name = self._baseName
+        elif self.isVideoEnabled:
+            self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.mp4", fallback="video.mp4")
+        elif self.isAudioEnabled:
+            self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.m4a", fallback="audio.m4a")
+        else:
+            self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
         self.updateNames()
 
         for file in files:
