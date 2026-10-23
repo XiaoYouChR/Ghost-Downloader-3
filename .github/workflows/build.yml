@@ -1160,8 +1160,24 @@ jobs:
               -w "uploaded: ${name}  http=%{http_code}  bytes=%{size_upload}  time=%{time_total}s\n"
           }
 
+          # GitCode 并发上传偶尔返回 502
+          upload_with_retry() {
+            for attempt in 1 2 3; do
+              upload_file "$1" && return 0
+              sleep 5
+            done
+            echo "$1" >> failed.txt
+          }
+
+          rm -f failed.txt
           for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*; do
-            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; } &
+            [ -f "$f" ] && upload_with_retry "$f" &
           done
           wait
+
+          if [ -f failed.txt ]; then
+            echo "Failed to upload:"
+            cat failed.txt
+            exit 1
+          fi
 
