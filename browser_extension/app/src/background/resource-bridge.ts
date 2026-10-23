@@ -55,6 +55,8 @@ type DesktopRequestSender = <T extends CommandResult>(payload: Record<string, un
 
 export function createResourceBridge(options: {
   sendDesktopRequest: DesktopRequestSender;
+  // Read on each successful handoff. The worker loads storage after the bridge is created.
+  shouldOpenPopupOnSent: () => boolean;
 }) {
   let bridgePersistTimer: number | null = null;
   let loadedFromStorage = false;
@@ -448,7 +450,7 @@ export function createResourceBridge(options: {
           ),
         },
       });
-      if (result.ok) {
+      if (result.ok && options.shouldOpenPopupOnSent()) {
         await openActionPopup();
       }
     } catch {
@@ -576,7 +578,7 @@ export function createResourceBridge(options: {
       }
       const resource = await resourceForMediaUrl(selection.url, tabId, payload.title, fallbackPageUrl);
       const result = await sendHttpResourceToDesktop(resource);
-      if (result.ok) { await openActionPopup(); }
+      if (result.ok && options.shouldOpenPopupOnSent()) { await openActionPopup(); }
       return result;
     }
 
@@ -589,7 +591,7 @@ export function createResourceBridge(options: {
         resourceForMediaUrl(selection.audio, tabId, payload.title, fallbackPageUrl),
       ]);
       const result = await sendMergeResources([video, audio]);
-      if (result.ok) { await openActionPopup(); }
+      if (result.ok && options.shouldOpenPopupOnSent()) { await openActionPopup(); }
       return result;
     }
 
@@ -598,7 +600,7 @@ export function createResourceBridge(options: {
         return { ok: false, message: chrome.i18n.getMessage("errorInvalidDownloadRequest") };
       }
       const result = await sendExternalDownload(selection, payload.title, fallbackPageUrl);
-      if (result.ok) { await openActionPopup(); }
+      if (result.ok && options.shouldOpenPopupOnSent()) { await openActionPopup(); }
       return result;
     }
 

@@ -84,6 +84,8 @@ const desktopBridge = createDesktopBridge({
 });
 const resourceBridge = createResourceBridge({
   sendDesktopRequest: (payload) => sendTaskOrEnqueue(payload),
+  // Live read: setupBackground assigns the stored preference after this bridge exists.
+  shouldOpenPopupOnSent: () => shouldOpenPopupOnSent,
 });
 const featureBridge = createFeatureBridge();
 const mediaBridge = createMediaBridge();
