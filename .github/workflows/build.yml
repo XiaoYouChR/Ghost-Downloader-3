@@ -154,11 +154,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - architecture: x86_64
-            runner: windows-2022
-            msvc_arch: x64
-            hdiff_arch: windows64
-            installer_arch: x64compatible and not arm64
           - architecture: arm64
             runner: windows-11-arm
             msvc_arch: ARM64
@@ -214,6 +209,33 @@ jobs:
         if: ${{ matrix.architecture == 'arm64' }}
         shell: pwsh
         run: uv pip install (Get-ChildItem libtorrent-wheel/*.whl).FullName
+
+      - name: Upload libtorrent wheel
+        if: ${{ matrix.architecture == 'arm64' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: libtorrent-win_arm64-wheel
+          path: libtorrent-wheel/*.whl
+
+      - name: Probe libtorrent DLLs
+        if: ${{ matrix.architecture == 'arm64' }}
+        shell: pwsh
+        run: |
+          @'
+          import ctypes, importlib.util, pefile
+          origin = importlib.util.find_spec("libtorrent").origin
+          pe = pefile.PE(origin)
+          print(origin, hex(pe.FILE_HEADER.Machine))
+          entries = list(getattr(pe, "DIRECTORY_ENTRY_IMPORT", [])) + list(getattr(pe, "DIRECTORY_ENTRY_DELAY_IMPORT", []))
+          for entry in entries:
+              name = entry.dll.decode()
+              try:
+                  ctypes.WinDLL(name)
+                  print("ok     ", name)
+              except OSError as e:
+                  print("MISSING", name, e)
+          '@ | Set-Content "$env:RUNNER_TEMP/probe.py"
+          uv run --no-sync --with pefile python "$env:RUNNER_TEMP/probe.py"
 
       - name: Run tests
         if: ${{ matrix.architecture == 'arm64' }}
