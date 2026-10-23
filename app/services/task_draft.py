@@ -69,10 +69,16 @@ class TaskDraft:
         self.itemsChanged.emit()
 
     def setBaseOptions(self, options: dict) -> None:
+        changed = {
+            name: value for name, value in options.items()
+            if name not in self._baseOptions or self._baseOptions[name] != value
+        }
         self._baseOptions = options
+        if not changed:
+            return
         for item in self._items:
             if item.task is not None:
-                item.task.setOptions(self._buildOptions(item))
+                item.task.setOptions(changed)
         self.itemsChanged.emit()
 
     def setUrlCategory(self, url: str, categoryId: str | None) -> None:
@@ -174,7 +180,6 @@ class TaskDraft:
     def confirm(self, autoStart=True) -> None:
         for item in self._items:
             if item.task is not None:
-                item.task.setOptions(self._buildOptions(item))
                 self.taskConfirmed.emit(item.task, autoStart)
             elif item.parseId:
                 item.confirmedOptions = self._buildOptions(item)

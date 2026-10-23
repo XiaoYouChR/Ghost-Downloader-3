@@ -5729,6 +5729,17 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
 </context>
 <context>
+    <name>SingleSubworkerCard</name>
+    <message>
+        <source>单线程下载</source>
+        <translation>Single-Threaded Download</translation>
+    </message>
+    <message>
+        <source>强制以单线程下载此任务，避免反爬及限流</source>
+        <translation>Force 1 download thread for this task to avoid triggering rate limiting</translation>
+    </message>
+</context>
+<context>
     <name>StreamSelectCard</name>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="101"/>
