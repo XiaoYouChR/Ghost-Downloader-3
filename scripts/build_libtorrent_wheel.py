@@ -69,6 +69,9 @@ def main() -> None:
         "CIBW_BUILD": f"cp{pythonVersion.replace('.', '')}-win_arm64",
         "CIBW_ARCHS_WINDOWS": "ARM64",
         "CIBW_TEST_SKIP": "*",
+        # cibuildwheel 4 起默认用 delvewheel 修复：它把 msvcp140.dll 改名放进 libtorrent.libs，
+        # 补的 __init__.py 又被同名 pyd 遮住，导入时找不到；上游编 x64 用的 2.23.4 不修复
+        "CIBW_REPAIR_WHEEL_COMMAND_WINDOWS": "",
     }
     run("uvx", "cibuildwheel", "--output-dir", str(Path(outputFolder).resolve()), cwd=source, env=env)
 
