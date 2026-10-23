@@ -1,0 +1,26 @@
+diff --git a/Jamfile b/Jamfile
+index bba7864..314867b 100644
+--- a/Jamfile
++++ b/Jamfile
+@@ -125,8 +125,8 @@ actions make_libusrsctp_msvc
+     cd $(CWD)/deps/usrsctp
+     mkdir $(BUILD_DIR)
+     cd $(BUILD_DIR)
+-    cmake -G "Visual Studio 17 2022" -A $(ARCH) -Dsctp_werror=0 -Dsctp_build_shared_lib=0 -Dsctp_build_programs=0 -Dsctp_inet=0 -Dsctp_inet6=0 ..
+-    msbuild usrsctplib.sln /property:Configuration=$(VARIANT)
++    cmake -Dsctp_werror=0 -Dsctp_build_shared_lib=0 -Dsctp_build_programs=0 -Dsctp_inet=0 -Dsctp_inet6=0 ..
++    cmake --build . --config $(VARIANT) --target usrsctp
+     cd %OLDD%
+     cp $(CWD)/deps/usrsctp/$(BUILD_DIR)/usrsctplib/Release/usrsctp.lib $(<)
+ }
+@@ -196,8 +196,8 @@ actions make_libjuice_msvc
+     cd $(CWD)/deps/libjuice
+     mkdir $(BUILD_DIR)
+     cd $(BUILD_DIR)
+-    cmake -G "Visual Studio 17 2022" -A $(ARCH) $(CMAKEOPTS) ..
+-    msbuild libjuice.sln /property:Configuration=$(VARIANT)
++    cmake $(CMAKEOPTS) ..
++    cmake --build . --config $(VARIANT) --target juice-static
+     cd %OLDD%
+     cp $(CWD)/deps/libjuice/$(BUILD_DIR)/Release/juice-static.lib $(<)
+ }

@@ -18,6 +18,8 @@ from pathlib import Path
 
 UPSTREAM = "https://github.com/arvidn/libtorrent.git"
 BOOST = "https://github.com/boostorg/boost.git"
+# 上游 pyproject 的 BOOST_ROOT 与 B2_EXTRA_ARGS 固定指向这两处
+BOOST_FOLDER = Path(r"C:\boost")
 OPENSSL_FOLDER = Path(r"C:\Program Files\OpenSSL")
 
 
@@ -32,25 +34,40 @@ def fetchLatestBoostVersion() -> str:
     return max(versions, key=lambda v: tuple(map(int, v.split("."))))
 
 
+def installBoost(version: str) -> None:
+    archive = Path(os.environ["RUNNER_TEMP"]) / "boost.tar.gz"
+    run("curl", "-L", "-o", str(archive),
+        f"https://archives.boost.io/release/{version}/source/boost_{version.replace('.', '_')}.tar.gz")
+    BOOST_FOLDER.mkdir(exist_ok=True)
+    run("tar", "-xzf", str(archive), "-C", str(BOOST_FOLDER), "--strip-components", "1")
+    # 上游的 setup_boost.sh 用 bootstrap.sh，会挑中 x64 的 MinGW 编出 x64 的 b2，
+    # 它在模拟下看到的是 AMD64，把 Boost 和 libtorrent 都编成 x64
+    run("cmd", "/c", "bootstrap.bat", cwd=BOOST_FOLDER)
+    run(str(BOOST_FOLDER / "b2.exe"), "headers", cwd=BOOST_FOLDER)
+
+
 def main() -> None:
     version, pythonVersion, outputFolder = sys.argv[1:]
     source = Path(os.environ["RUNNER_TEMP"]) / "libtorrent"
 
     run("git", "clone", "--depth=1", f"--branch=v{version}",
         "--recurse-submodules", "--shallow-submodules", UPSTREAM, str(source))
-    run("git", "apply", "../patch-libdatachannel-32bit-builds.patch", cwd=source / "deps" / "libdatachannel")
+    libdatachannel = source / "deps" / "libdatachannel"
+    run("git", "apply", "../patch-libdatachannel-32bit-builds.patch", cwd=libdatachannel)
+    # runner 只有 VS 2026：不写死 VS 2022 生成器，CMake 自选最新的 VS 和本机的 ARM64；
+    # VS 2026 生成 .slnx 而非 .sln，改用 cmake --build
+    run("git", "apply", str(Path(__file__).with_name("patch-libdatachannel-vs2026.patch").resolve()), cwd=libdatachannel)
 
     run("vcpkg", "install", "--triplet=arm64-windows-static", cwd=source / "tools")
-    # 上游 pyproject 的 B2_EXTRA_ARGS 固定从这里找 OpenSSL
     shutil.rmtree(OPENSSL_FOLDER, ignore_errors=True)
     run("cmd", "/c", "mklink", "/J", str(OPENSSL_FOLDER),
         str(source / "tools" / "vcpkg_installed" / "arm64-windows-static"))
 
+    installBoost(fetchLatestBoostVersion())
+
     env = os.environ | {
         "CIBW_BUILD": f"cp{pythonVersion.replace('.', '')}-win_arm64",
         "CIBW_ARCHS_WINDOWS": "ARM64",
-        # 上游只给 win32、win_amd64 配了装 Boost 的 before-all
-        "CIBW_BEFORE_ALL_WINDOWS": f"bash -c './tools/cibuildwheel/setup_boost.sh {fetchLatestBoostVersion()} $BOOST_ROOT'",
         "CIBW_TEST_SKIP": "*",
     }
     run("uvx", "cibuildwheel", "--output-dir", str(Path(outputFolder).resolve()), cwd=source, env=env)

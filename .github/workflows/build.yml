@@ -194,11 +194,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: libtorrent-wheel
-          key: libtorrent-win_arm64-py${{ steps.libtorrent.outputs.python }}-${{ steps.libtorrent.outputs.version }}-${{ hashFiles('scripts/build_libtorrent_wheel.py') }}
-
-      - name: Set up MSBuild
-        if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
-        uses: microsoft/setup-msbuild@v2
+          key: libtorrent-win_arm64-py${{ steps.libtorrent.outputs.python }}-${{ steps.libtorrent.outputs.version }}-${{ hashFiles('scripts/build_libtorrent_wheel.py', 'scripts/patch-libdatachannel-vs2026.patch') }}
 
       - name: Build libtorrent wheel
         if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
