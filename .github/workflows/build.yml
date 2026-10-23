@@ -183,34 +183,23 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
           echo "python=$((Get-Content .python-version).Trim())" >> $env:GITHUB_OUTPUT
 
-      - name: Cache libtorrent wheel
-        if: ${{ matrix.architecture == 'arm64' }}
-        id: libtorrent-cache
-        uses: actions/cache@v6
-        with:
-          path: libtorrent-wheel
-          key: libtorrent-win_arm64-py${{ steps.libtorrent.outputs.python }}-${{ steps.libtorrent.outputs.version }}-${{ hashFiles('scripts/build_libtorrent_wheel.py') }}
-
-      - name: Set up MSBuild
-        if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Build libtorrent wheel
-        if: ${{ matrix.architecture == 'arm64' && steps.libtorrent-cache.outputs.cache-hit != 'true' }}
-        # b2 找不到编译器时会卡住而不是报错
-        timeout-minutes: 120
-        run: uv run --no-sync python scripts/build_libtorrent_wheel.py "${{ steps.libtorrent.outputs.version }}" "${{ steps.libtorrent.outputs.python }}" libtorrent-wheel
-
       - name: Install libtorrent wheel
         if: ${{ matrix.architecture == 'arm64' }}
         shell: pwsh
-        run: uv pip install (Get-ChildItem libtorrent-wheel/*.whl).FullName
-
-      - name: Run tests
-        if: ${{ matrix.architecture == 'arm64' }}
         env:
-          QT_QPA_PLATFORM: offscreen
-        run: uv run --no-sync pytest
+          GH_TOKEN: ${{ github.token }}
+          REPO: XiaoYouChR/libtorrent-python-win-arm64
+          PREFIX: v${{ steps.libtorrent.outputs.version }}-py${{ steps.libtorrent.outputs.python }}-
+        run: |
+          $tag = gh release list -R $env:REPO --limit 1000 --json tagName --jq '.[].tagName' | Where-Object { $_.StartsWith($env:PREFIX) } | Sort-Object { [int]$_.Substring($env:PREFIX.Length) } | Select-Object -Last 1
+          if (-not $tag) {
+            throw "No $env:PREFIX* wheel in $env:REPO, run Build there first"
+          }
+          gh release download $tag -R $env:REPO -p "*.whl" -D libtorrent-wheel
+          $wheel = Get-ChildItem libtorrent-wheel/*.whl
+          gh release verify-asset $tag $wheel.FullName -R $env:REPO
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          uv pip install $wheel.FullName
 
       - name: Build with Nuitka
         run: |
