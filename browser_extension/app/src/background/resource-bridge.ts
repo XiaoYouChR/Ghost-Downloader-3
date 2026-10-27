@@ -4,6 +4,7 @@ import {
     domainFromUrl,
     fileExtension,
     filenameFromUrl,
+    isCapturable,
     mimeFromUrl,
     sortResourcesForOnlineMerge,
 } from "../shared/utils";
@@ -247,19 +248,8 @@ export function createResourceBridge(options: {
     return meta;
   }
 
-  function shouldCaptureNetworkResource(details: chrome.webRequest.OnResponseStartedDetails, meta: NetworkResponseMeta): boolean {
-    if (!isCapturableUrl(details.url)) {
-      return false;
-    }
-    const extension = fileExtension(meta.filename || filenameFromUrl(details.url));
-    return details.type === "media" || isCatCatchMedia(extension, meta.mime);
-  }
-
-  function shouldCaptureRequestResource(details: chrome.webRequest.OnSendHeadersDetails): boolean {
-    if (!isCapturableUrl(details.url)) {
-      return false;
-    }
-    return details.type === "media" || isCatCatchMedia(fileExtension(filenameFromUrl(details.url)), mimeFromUrl(details.url));
+  function shouldCapture(url: string, type: string, extension: string, mime: string): boolean {
+    return isCapturableUrl(url) && (type === "media" || isCapturable(extension, mime));
   }
 
   // Cross-origin opaque requests get the literal string "null" here.
@@ -376,7 +366,7 @@ export function createResourceBridge(options: {
       cache.setHeaderSnapshot(details.url, {}, details.tabId > 0 ? details.tabId : lastActiveTabId, responseSupportsRange, meta.size);
     }
 
-    if (!shouldCaptureNetworkResource(details, meta)) {
+    if (!shouldCapture(details.url, details.type, fileExtension(meta.filename || filenameFromUrl(details.url)), meta.mime)) {
       return;
     }
 
@@ -395,7 +385,7 @@ export function createResourceBridge(options: {
   }
 
   async function captureRequestResource(details: chrome.webRequest.OnSendHeadersDetails) {
-    if (!shouldCaptureRequestResource(details)) {
+    if (!shouldCapture(details.url, details.type, fileExtension(filenameFromUrl(details.url)), mimeFromUrl(details.url))) {
       return;
     }
 

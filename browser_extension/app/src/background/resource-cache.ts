@@ -14,29 +14,30 @@ export type HeaderSnapshot = {
   size: number;
 };
 
-// Forwarded to desktop on resource handoff. Cookies/auth/sec-* are needed for gated CDNs;
-// the rest are dropped to keep storage small and avoid leaking irrelevant headers.
-const HEADER_WHITELIST = new Set([
-  "accept",
-  "accept-language",
-  "authorization",
-  "cookie",
-  "origin",
-  "referer",
-  "sec-ch-ua",
-  "sec-ch-ua-arch",
-  "sec-ch-ua-bitness",
-  "sec-ch-ua-full-version",
-  "sec-ch-ua-full-version-list",
-  "sec-ch-ua-mobile",
-  "sec-ch-ua-model",
-  "sec-ch-ua-platform",
-  "sec-ch-ua-platform-version",
-  "sec-fetch-dest",
-  "sec-fetch-mode",
-  "sec-fetch-site",
-  "user-agent",
-  "priority",
+// Gated CDNs use custom auth headers (x-nd-auth, ...) that no allowlist can enumerate, so only drop ones that break the desktop's own requests.
+const HEADER_BLOCKLIST = new Set([
+  "range",
+  "if-range",
+  "if-match",
+  "if-none-match",
+  "if-modified-since",
+  "if-unmodified-since",
+  "content-length",
+  "content-type",
+  "accept-encoding",
+  "host",
+  "connection",
+  "keep-alive",
+  "transfer-encoding",
+  "te",
+  "trailer",
+  "upgrade",
+  "expect",
+  "proxy-authorization",
+  "proxy-connection",
+  "alt-used",
+  "purpose",
+  "sec-purpose",
 ]);
 
 export type ResourceCacheSnapshot = {
@@ -48,7 +49,7 @@ export function selectAllowedHeaders(headers: Record<string, string> | undefined
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers ?? {})) {
     const name = key.trim().toLowerCase();
-    if (!HEADER_WHITELIST.has(name)) {
+    if (!name || HEADER_BLOCKLIST.has(name)) {
       continue;
     }
     const text = value.trim();

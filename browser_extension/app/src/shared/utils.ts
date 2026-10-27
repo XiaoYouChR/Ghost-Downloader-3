@@ -188,6 +188,14 @@ export function domainFromUrl(value: string): string {
   }
 }
 
+export function isPdf(extension: string, mime = ""): boolean {
+  return PDF_EXTENSIONS.has(extension) || mime.toLowerCase() === "application/pdf";
+}
+
+export function isCapturable(extension: string, mime = ""): boolean {
+  return isCatCatchMedia(extension, mime) || isPdf(extension, mime);
+}
+
 export function mimeFromUrl(value: string): string {
   try {
     const mime = new URL(value).searchParams.get("mime_type")?.replace(/_/g, "/").toLowerCase() ?? "";
@@ -320,7 +328,7 @@ function visualKindOf({
   if (ARCHIVE_EXTENSIONS.has(loweredExtension)) {
     return "archive";
   }
-  if (PDF_EXTENSIONS.has(loweredExtension) || loweredMime === "application/pdf") {
+  if (isPdf(loweredExtension, loweredMime)) {
     return "pdf";
   }
   if (
