@@ -74,6 +74,27 @@ async def test_run_without_range_support_fetches_whole_file(startServer, tmp_pat
     assert (tmp_path / "test.bin").read_bytes() == content
 
 
+async def test_run_finishes_when_server_sends_trailers(startServer, tmp_path):
+    content = buildFileContent(500)
+
+    async def chunkedWithTrailers(request: web.Request) -> web.Response:
+        # aiohttp 不支持发送 trailer，只能直接写原始响应
+        request.transport.write(
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nTrailer: x-checksum\r\nConnection: close\r\n\r\n"
+            + f"{len(content):x}\r\n".encode() + content + b"\r\n0\r\nx-checksum: abc\r\n\r\n"
+        )
+        request.transport.close()
+        return web.Response()
+
+    url = await startServer(chunkedWithTrailers)
+    task, step = buildStep(url, tmp_path, fileSize=500, subworkerCount=1, canUseRangeRequests=False)
+
+    async with asyncio.timeout(3):
+        await runStep(step)
+
+    assert (tmp_path / "test.bin").read_bytes() == content
+
+
 async def test_run_falls_back_when_range_is_ignored(startServer, tmp_path):
     content = buildFileContent(500)
     url = await startServer(buildFullBodyHandler(content))

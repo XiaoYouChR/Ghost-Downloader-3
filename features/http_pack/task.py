@@ -10,6 +10,7 @@ from pathlib import Path
 from struct import unpack, pack
 
 from loguru import logger
+from wreq import HeaderMap
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
@@ -256,7 +257,8 @@ class HttpTaskStep(TaskStep):
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
                         async for chunk in response.stream():
-                            if not chunk:
+                            # 服务器发送 HTTP trailer 时，wreq 在流末尾以 HeaderMap 交出
+                            if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
                             pwrite(fd, chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
@@ -291,7 +293,7 @@ class HttpTaskStep(TaskStep):
                         if status != 200:
                             raise Exception(f"服务器返回了异常状态码：{status}")
                         async for chunk in response.stream():
-                            if not chunk:
+                            if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
                             pwrite(fd, chunk, subworker.receivedBytes)
                             subworker.receivedBytes += len(chunk)
@@ -334,7 +336,7 @@ class HttpTaskStep(TaskStep):
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
                         async for chunk in response.stream():
-                            if not chunk:
+                            if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
                             remaining = subworker.end - subworker.position + 1
                             if len(chunk) > remaining:
