@@ -204,6 +204,30 @@ def test_parse_uses_chosen_audio_quality():
     assert page.audioUrl == "https://a192"
 
 
+def test_set_audio_quality_picks_dolby_and_hires_tracks():
+    from pathlib import Path
+    from bili_pack.stream import parseDash
+    from bili_pack.task import BiliPage, BilibiliTask
+
+    page = BiliPage(index=0, relativePath="p", _duration=10)
+    parseDash(page, {
+        "video": [{"id": 126, "codecid": 12, "bandwidth": 8000, "baseUrl": "https://dv"}],
+        "audio": [{"id": 30280, "bandwidth": 192000, "baseUrl": "https://a192"}],
+        "dolby": {"type": 2, "audio": [{"id": 30250, "bandwidth": 448000, "baseUrl": "https://atmos"}]},
+        "flac": {"display": True, "audio": {"id": 30251, "bandwidth": 1000000, "baseUrl": "https://flac"}},
+    }, qn=126, acceptQuality=[126])
+    task = BilibiliTask(name="v.mp4", url="u", outputFolder=Path("."), files=[page], _baseName="v")
+    assert page.audioUrl == "https://a192"
+
+    def audioStepUrl():
+        return next(s.url for s in task.steps if type(s).__name__ == "BilibiliAudioStep")
+
+    task.setAudioQuality(30250)
+    assert audioStepUrl() == "https://atmos"
+    task.setAudioQuality(30251)
+    assert audioStepUrl() == "https://flac"
+
+
 async def test_probe_size_from_content_range(startServer):
     from aiohttp import web
     from bili_pack.stream import probeSize

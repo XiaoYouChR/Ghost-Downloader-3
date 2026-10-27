@@ -11,6 +11,8 @@ from .config import bilibiliConfig
 if TYPE_CHECKING:
     from .task import BiliPage
 
+ALL_DASH_STREAMS = 4048
+
 
 class NoopRunner:
     def submit(self, *a, **k):
@@ -69,22 +71,14 @@ async def probeSize(url: str, headers: dict | None = None) -> int:
         client.close()
 
 
-def buildFnval(qn: int) -> int:
-    fnval = 16
-    if bilibiliConfig.shouldIncludeHdr.value:
-        fnval |= 64
-    if bilibiliConfig.shouldIncludeDolby.value:
-        fnval |= 256 | 512
-    if qn == 128:
-        fnval |= 1024
-    if qn == 120:
-        fnval |= 128
-    return fnval
-
-
 def parseDash(page: BiliPage, dash: dict, *, qn: int, acceptQuality: list[int], audioQn: int = 0) -> None:
     videoStreams = list(dash.get("video") or [])
-    audioStreams = list(dash.get("audio") or [])
+    flac = (dash.get("flac") or {}).get("audio")
+    audioStreams = [
+        *(dash.get("audio") or []),
+        *((dash.get("dolby") or {}).get("audio") or []),
+        *([flac] if flac else []),
+    ]
     if not videoStreams:
         raise ValueError("Bilibili 返回结果中不存在可用的媒体流")
     video = matchStream(videoStreams, qn, acceptQuality)
@@ -150,7 +144,7 @@ async def fetchPlayurl(
                 client.close()
                 client = buildClient(headers={"cookie": cookie})
 
-        playParams = {"cid": page.cid, "qn": qn, "fnval": buildFnval(qn), "fourk": 1}
+        playParams = {"cid": page.cid, "qn": qn, "fnval": ALL_DASH_STREAMS, "fourk": 1}
         if page.bvid:
             playParams["bvid"] = page.bvid
         playParams = signParams(playParams)

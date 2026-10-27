@@ -72,7 +72,7 @@ class FFmpegStep(TaskStep):
         args = [ffmpegPath, "-y", "-v", "error", "-nostats", "-progress", "pipe:1"]
         for source in sources:
             args.extend([*sourceArgs, "-i", str(source)])
-        args.extend([*extraInputArgs, "-c", "copy", *outputArgs, self.outputPath])
+        args.extend([*extraInputArgs, "-c", "copy", "-strict", "unofficial", *outputArgs, self.outputPath])
 
         process = await asyncio.create_subprocess_exec(
             *args,
