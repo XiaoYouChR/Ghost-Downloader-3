@@ -356,6 +356,8 @@ chrome.webNavigation.onCompleted.addListener((details) => {
 
 chrome.webRequest.onSendHeaders.addListener(
   (details) => {
+    // CORS preflight shares the media URL; its access-control-request-* headers would merge into the snapshot.
+    if (details.method === "OPTIONS") { return; }
     resourceBridge.onRequestHeaders(details);
     void resourceBridge.captureRequestResource(details);
   },
@@ -365,6 +367,7 @@ chrome.webRequest.onSendHeaders.addListener(
 
 chrome.webRequest.onResponseStarted.addListener(
   (details) => {
+    if (details.method === "OPTIONS") { return; }
     void resourceBridge.captureNetworkResource(details);
   },
   { urls: ["<all_urls>"] },
