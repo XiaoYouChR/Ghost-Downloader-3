@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import errno
 import os
+import sys
 from asyncio import TaskGroup, CancelledError
 from contextlib import suppress
 from dataclasses import field, dataclass
@@ -30,6 +31,16 @@ class PermanentDownloadError(Exception):
 
 class RangeNotSupportedError(Exception):
     pass
+
+
+def matchRange(contentRange: bytes, start: int, end: int, total: int | None) -> bool:
+    """RFC 9110 §14.4"""
+    unit, _, spec = contentRange.strip().partition(b" ")
+    span, _, size = spec.partition(b"/")
+    first, _, last = span.partition(b"-")
+    if unit.lower() != b"bytes" or not (first.isdigit() and last.isdigit() and size.isdigit()):
+        return False
+    return int(first) == start and start <= int(last) <= end and total in {None, int(size)}
 
 
 @dataclass
@@ -119,16 +130,8 @@ class HttpTaskStep(TaskStep):
         if self.fileSize == SpecialFileSize.UNKNOWN:
             return [HttpSubworker(index=0, start=0, end=SpecialFileSize.UNKNOWN)]
 
-        count = min(self.subworkerCount, self.fileSize)
-        chunkSize = self.fileSize // count
-        subworkers = []
-        start = 0
-        for i in range(count - 1):
-            end = start + chunkSize - 1
-            subworkers.append(HttpSubworker(index=i, start=start, end=end))
-            start = end + 1
-        subworkers.append(HttpSubworker(index=count - 1, start=start, end=self.fileSize - 1))
-        return subworkers
+        # 其余分片待首个响应到达后再拆分
+        return [HttpSubworker(index=0, start=0, end=self.fileSize - 1)]
 
     def _deleteRecord(self) -> None:
         try:
@@ -137,24 +140,33 @@ class HttpTaskStep(TaskStep):
         except Exception as e:
             logger.opt(exception=e).error("删除进度文件失败 {}", self.recordPath)
 
-    def _splitSlowest(self) -> HttpSubworker | None:
+    def _splitSlowest(self, count: int = 2) -> list[HttpSubworker]:
         slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
         remainingBytes = slowest.end - slowest.position + 1
-        if remainingBytes < 2:
-            return None
+        count = min(count, remainingBytes)
+        if count < 2:
+            return []
 
-        base = remainingBytes // 2
-        remainder = remainingBytes % 2
+        base, remainder = divmod(remainingBytes, count)
         oldEnd = slowest.end
         slowest.end = slowest.position + base + remainder - 1
 
-        newSubworker = HttpSubworker(
-            index=len(self.subworkers),
-            start=slowest.end + 1,
-            end=oldEnd,
-        )
-        self.subworkers.insert(self.subworkers.index(slowest) + 1, newSubworker)
-        return newSubworker
+        newSubworkers = []
+        start = slowest.end + 1
+        for _ in range(count - 1):
+            newSubworkers.append(HttpSubworker(index=len(self.subworkers) + len(newSubworkers), start=start, end=start + base - 1))
+            start += base
+        newSubworkers[-1].end = oldEnd
+        index = self.subworkers.index(slowest) + 1
+        self.subworkers[index:index] = newSubworkers
+        return newSubworkers
+
+    def _emptyRightOf(self, subworker: HttpSubworker) -> HttpSubworker | None:
+        """右侧分片尚未收到数据时返回它。"""
+        index = self.subworkers.index(subworker) + 1
+        if index < len(self.subworkers) and not self.subworkers[index].receivedBytes:
+            return self.subworkers[index]
+        return None
 
     def _reassignSubworker(self) -> None:
         if self.fileSize <= 0:
@@ -162,8 +174,7 @@ class HttpTaskStep(TaskStep):
         slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
         if slowest.end - slowest.position + 1 < cfg.maxReassignSize.value * 1024:
             return
-        newSw = self._splitSlowest()
-        if newSw:
+        for newSw in self._splitSlowest():
             self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
     def _autoSpeedUp(self) -> None:
@@ -198,7 +209,8 @@ class HttpTaskStep(TaskStep):
             workerRatio = (len(self.subworkers) - self._accelInitialWorkers) / self._accelInitialWorkers
             speedRatio = (avgSpeed - self._accelInitialSpeed) / self._accelInitialSpeed
 
-            if speedRatio < 0.8 * workerRatio:
+            # 新分片均被拒绝时，同样视为加速无效
+            if workerRatio <= 0 or speedRatio < 0.8 * workerRatio:
                 self.isAccelerated = True
                 logger.info("自动加速已禁用，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
                             workerRatio, speedRatio)
@@ -316,28 +328,63 @@ class HttpTaskStep(TaskStep):
                     client.close()
 
         else:
-            while subworker.position <= subworker.end:
+            while True:
+                # 已被左侧分片并入
+                if subworker not in self.subworkers:
+                    return
+                while subworker.end < subworker.position and (right := self._emptyRightOf(subworker)):
+                    subworker.end = right.end
+                    self.subworkers.remove(right)
+                if subworker.position > subworker.end:
+                    break
                 client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
+                    # https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/888
+                    shouldConfirmFileSize = isinstance(self.task, HttpTask) and self.subworkers == [subworker] and subworker.position == 0
                     httpPos = self.httpByteOffset + subworker.position
-                    httpEnd = self.httpByteOffset + subworker.end
-                    headers = {
-                        **self._effectiveHeaders,
-                        "range": f"bytes={httpPos}-{httpEnd}",
-                        "accept-encoding": "identity",
-                    }
+                    # 请求至 Step 末尾，以便直接并入右侧分片
+                    httpEnd = self.httpByteOffset + self.fileSize - 1
+                    headers = {**self._effectiveHeaders, "accept-encoding": "identity"}
+                    if not shouldConfirmFileSize:
+                        headers["range"] = f"bytes={httpPos}-{httpEnd}"
                     response = await client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
                             raise PermanentDownloadError(status)
-                        if status == 200:
-                            raise RangeNotSupportedError()
-                        if status != 206:
-                            raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
+                        if shouldConfirmFileSize:
+                            if status != 200:
+                                raise Exception(f"服务器返回了异常状态码：{status}")
+                            length = bytes(response.headers.get("content-length") or b"")
+                            if length.isdigit():
+                                self.fileSize = self.task.fileSize = int(length)
+                                subworker.end = self.fileSize - 1
+                                ftruncate(fd, self.fileSize)
+                            else:
+                                # 缺少 Content-Length 时无法校验 Range
+                                self.canUseRangeRequests = False
+                                self.fileSize = self.task.fileSize = SpecialFileSize.UNKNOWN
+                                subworker.end = sys.maxsize
+                        else:
+                            if status == 200:
+                                raise RangeNotSupportedError()
+                            if status != 206:
+                                raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
+                            total = self.fileSize if isinstance(self.task, HttpTask) else None
+                            if not matchRange(bytes(response.headers.get("content-range") or b""), httpPos, httpEnd, total):
+                                raise RangeNotSupportedError()
+                        self._effectiveUrl = str(response.url)
+                        if len(self.subworkers) == 1 and self.canUseRangeRequests:
+                            for newSw in self._splitSlowest(self.subworkerCount):
+                                self._taskGroup.create_task(self._runSubworker(newSw, fd))
                         async for chunk in response.stream():
                             if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
+                            if not subworker.receivedBytes and subworker not in self.subworkers:
+                                return
+                            while subworker.end < subworker.position + len(chunk) and (right := self._emptyRightOf(subworker)):
+                                subworker.end = right.end
+                                self.subworkers.remove(right)
                             remaining = subworker.end - subworker.position + 1
                             if len(chunk) > remaining:
                                 chunk = chunk[:remaining]
@@ -350,6 +397,9 @@ class HttpTaskStep(TaskStep):
                     finally:
                         response.close()
 
+                    if not self.canUseRangeRequests:
+                        ftruncate(fd, subworker.position)
+                        return
                     if subworker.position > subworker.end:
                         subworker.receivedBytes = subworker.end - subworker.start + 1
 
@@ -360,6 +410,12 @@ class HttpTaskStep(TaskStep):
                 except Exception as e:
                     if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
                         raise
+                    if not self.canUseRangeRequests:
+                        raise RangeNotSupportedError() from e
+                    # 服务器限流时仅拒绝新连接，尚未收到数据的分片留待左侧分片并入
+                    if not subworker.receivedBytes and self.subworkers[0] is not subworker:
+                        logger.info("分片请求失败，留待左侧分片并入 {}: {}", self.outputPath, e)
+                        return
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
                 finally:
@@ -379,45 +435,20 @@ class HttpTaskStep(TaskStep):
             self._effectiveHeaders["user-agent"] = self.userAgent
 
         self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
+        self._effectiveUrl = self.url
 
-        probeHeaders = {**self._effectiveHeaders, "range": "bytes=0-0", "accept-encoding": "identity"}
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, timeout=30)
-        try:
-            response = await client.get(self.url, headers=probeHeaders)
-            self._effectiveUrl = str(response.url)
-            total = bytes(response.headers.get("content-range") or b"").rpartition(b"/")[2]
-            response.close()
-        finally:
-            client.close()
-
-        # 浏览器报来的可能是 gzip 后的长度 #923
-        if isinstance(self.task, HttpTask) and total.isdigit() and int(total) != self.fileSize:
-            self.fileSize = self.task.fileSize = int(total)
+        self.subworkers = self._loadRecord() if self.canUseRangeRequests else []
+        isResuming = bool(self.subworkers)
+        if not isResuming:
             self._deleteRecord()
-
-        restored = False
-        if self.canUseRangeRequests:
-            loaded = self._loadRecord()
-            if loaded:
-                self.subworkers = loaded
-                restored = True
-
-        if not restored:
-            if not self.canUseRangeRequests:
-                self._deleteRecord()
             self.subworkers = self._buildSubworkers()
-        elif self.fileSize > 0:
-            target = min(self.subworkerCount, self.fileSize)
-            while len(self.subworkers) < target:
-                if not self._splitSlowest():
-                    break
 
         openMode = os.O_RDWR | os.O_CREAT
         if not self.canUseRangeRequests:
             openMode |= os.O_TRUNC
         self._fd = os.open(self.outputPath, openMode, 0o666)
 
-        if not restored and self.fileSize > 0:
+        if not isResuming and self.fileSize > 0:
             try:
                 ftruncate(self._fd, self.fileSize)
             except Exception as e:
@@ -429,8 +460,11 @@ class HttpTaskStep(TaskStep):
                 try:
                     self._taskGroup = TaskGroup()
                     async with self._taskGroup:
-                        for subworker in self.subworkers:
+                        for subworker in list(self.subworkers):
                             self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+                        if isResuming:
+                            for newSw in self._splitSlowest(self.subworkerCount - len(self.subworkers) + 1):
+                                self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
                     shouldDeleteRecord = True
                     break
@@ -438,11 +472,14 @@ class HttpTaskStep(TaskStep):
                     self.setStatus(TaskStatus.PAUSED)
                     raise
                 except ExceptionGroup as eg:
-                    if self.canUseRangeRequests and any(
-                        isinstance(e, RangeNotSupportedError) for e in eg.exceptions
-                    ):
-                        logger.warning("服务器不支持范围请求，降级为单流下载 {}", self.outputPath)
-                        self.canUseRangeRequests = False
+                    if any(isinstance(e, RangeNotSupportedError) for e in eg.exceptions):
+                        if isResuming:
+                            # https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/377
+                            logger.warning("续传的范围对不上，重新下载 {}", self.outputPath)
+                            isResuming = False
+                        else:
+                            logger.warning("服务器不支持范围请求，降级为单流下载 {}", self.outputPath)
+                            self.canUseRangeRequests = False
                         self.subworkers = self._buildSubworkers()
                         ftruncate(self._fd, 0)
                         self._deleteRecord()
