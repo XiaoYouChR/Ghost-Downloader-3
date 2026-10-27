@@ -91,6 +91,14 @@ class ProxyValidator(ConfigValidator):
         return value if self.validate(value) else "Auto"
 
 
+class RecentCustomProxyValidator(ProxyValidator):
+    def validate(self, value: str) -> bool:
+        return value == "" or (value not in {"Auto", "Off"} and super().validate(value))
+
+    def correct(self, value) -> str:
+        return value if self.validate(value) else ""
+
+
 class GeometrySerializer(ConfigSerializer):
     def serialize(self, value: tuple[int, int, int, int]) -> str:
         return ",".join(map(str, value))
@@ -247,6 +255,7 @@ class Config(QConfig):
     )
     shouldVerifySsl = ConfigItem("GeneralDownload", "shouldVerifySsl", False, BoolValidator(), restart=True)
     proxyServer = ConfigItem("GeneralDownload", "ProxyServer", "Auto", ProxyValidator())
+    recentCustomProxy = ConfigItem("GeneralDownload", "RecentCustomProxy", "", RecentCustomProxyValidator())
     preBlockNum = RangeConfigItem("GeneralDownload", "PreBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     shouldPreserveLastModified = ConfigItem("GeneralDownload", "PreserveLastModified", False, BoolValidator())

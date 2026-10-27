@@ -310,11 +310,18 @@ _Avoid_: Mirror、CDN、channel
 把一个 Pack 的新版本放到 Origin，客户端从此能收到它。只在 Pack 版本号变化时发生，与 App 的发版无关。
 _Avoid_: 发版、打包、release（指 App）
 
+### 网络
+
+**Proxy**:
+下载连接经过的代理服务器。三种模式：不使用、自动检测系统代理、自定义。
+用户最近一次填写的自定义地址独立保存，切换到其他模式再切回时仍在。
+_Avoid_: 与 Proxy Site 混淆
+
 ### GitHub 加速
 
 **Proxy Site**:
 把 GitHub 文件 URL 作为路径前缀转发下载的第三方反向代理。
-_Avoid_: Mirror、Source、CDN
+_Avoid_: Mirror、Source、CDN；不简称「代理」（留给 Proxy）
 
 **Auto Site**:
 选站方式之一：每个任务解析时让直连与全部 Proxy Site 竞速，取第一个合格响应。不跨任务记忆胜出者。

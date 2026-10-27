@@ -189,12 +189,11 @@ class ProxySettingCard(CollapsibleSettingCard):
         self._loadProxy()
 
         self.buttonGroup.buttonClicked.connect(self._onRadioClicked)
-        self.protocolCombo.activated.connect(self._onProxyFieldChanged)
-        self.ipEdit.textEdited.connect(self._onProxyFieldChanged)
-        self.portEdit.textEdited.connect(self._onProxyFieldChanged)
-        self.userEdit.textEdited.connect(self._onProxyFieldChanged)
-        self.passEdit.textEdited.connect(self._onProxyFieldChanged)
-        self._refreshCompatBanner()
+        self.protocolCombo.activated.connect(self._refreshChoice)
+        self.ipEdit.textEdited.connect(self._refreshChoice)
+        self.portEdit.textEdited.connect(self._refreshChoice)
+        self.userEdit.textEdited.connect(self._refreshChoice)
+        self.passEdit.textEdited.connect(self._refreshChoice)
 
     def _initLayout(self) -> None:
         self.addWidget(self.choiceLabel)
@@ -233,44 +232,48 @@ class ProxySettingCard(CollapsibleSettingCard):
         value = self._configItem.value
         if value == "Auto":
             self.autoRadio.setChecked(True)
-            self._onRadioClicked(self.autoRadio)
         elif value == "Off":
             self.offRadio.setChecked(True)
-            self._onRadioClicked(self.offRadio)
         else:
             self.customRadio.setChecked(True)
-            self._showProxyUrl(value)
-            self._onRadioClicked(self.customRadio)
-
-    def setExpand(self, isExpand):
-        super().setExpand(isExpand)
-        if not isExpand:
-            self._loadProxy()
+        self._setProxyUrl(cfg.recentCustomProxy.value or ("" if value in {"Auto", "Off"} else value))
+        self._refreshChoice()
 
     def _onRadioClicked(self, button) -> None:
-        self.choiceLabel.setText(button.text())
-        isCustom = button is self.customRadio
+        if button is self.autoRadio:
+            cfg.set(self._configItem, "Auto")
+        elif button is self.offRadio:
+            cfg.set(self._configItem, "Off")
+        else:
+            url = self._buildProxyUrl()
+            if cfg.recentCustomProxy.validator.validate(url):
+                cfg.set(self._configItem, url)
+        self._refreshChoice()
+
+    def _refreshChoice(self) -> None:
+        isCustom = self.customRadio.isChecked()
         self.customWidget.setEnabled(isCustom)
         self.credWidget.setEnabled(isCustom)
 
-        if button is self.autoRadio:
-            cfg.set(self._configItem, "Auto")
-            self._showProxyUrl(proxy())
-        elif button is self.offRadio:
-            cfg.set(self._configItem, "Off")
-        elif button is self.customRadio:
-            if self.ipEdit.text() == self.tr("未检测到代理"):
-                self.ipEdit.clear()
-            self._onProxyFieldChanged()
+        url = self._buildProxyUrl()
+        isValid = cfg.recentCustomProxy.validator.validate(url)
+        if self.autoRadio.isChecked():
+            detected = proxy() or self.tr("未检测到代理")
+            self.choiceLabel.setText(f"{self.autoRadio.text()}: {detected}")
+        elif self.offRadio.isChecked():
+            self.choiceLabel.setText(self.offRadio.text())
+        else:
+            self.choiceLabel.setText(url if isValid else self.tr("请填写代理地址"))
+
+        shouldMarkError = isCustom and not isValid
+        ip = self.ipEdit.text().strip()
+        port = self.portEdit.text().strip()
+        self.ipEdit.setError(shouldMarkError and bool(ip) and not HOST_PATTERN.match(ip))
+        self.portEdit.setError(shouldMarkError and bool(port) and not PORT_PATTERN.match(port))
         self._refreshCompatBanner()
 
-    def _showProxyUrl(self, url: str | None) -> None:
+    def _setProxyUrl(self, url: str) -> None:
         if not url:
-            self.protocolCombo.setCurrentText("")
-            self.ipEdit.setText(self.tr("未检测到代理"))
-            self.portEdit.setText("")
-            self.userEdit.setText("")
-            self.passEdit.setText("")
             return
         parsed = urlsplit(url)
         self.protocolCombo.setCurrentText(parsed.scheme)
@@ -313,30 +316,13 @@ class ProxySettingCard(CollapsibleSettingCard):
         cred = f"{user}:{password}@" if user or password else ""
         return f"{protocol}://{cred}{ip}:{port}"
 
-    def _onProxyFieldChanged(self) -> None:
-        if not self.customRadio.isChecked():
-            self.ipEdit.setError(False)
-            self.portEdit.setError(False)
-            return
-
-        url = self._buildProxyUrl()
-        if cfg.proxyServer.validator.validate(url):
-            self.choiceLabel.setText(url)
-            self.ipEdit.setError(False)
-            self.portEdit.setError(False)
-        else:
-            self.choiceLabel.setText(self.customRadio.text())
-            ip = self.ipEdit.text().strip()
-            port = self.portEdit.text().strip()
-            self.ipEdit.setError(bool(ip) and not HOST_PATTERN.match(ip))
-            self.portEdit.setError(bool(port) and not PORT_PATTERN.match(port))
-        self._refreshCompatBanner()
-
     def leaveEvent(self, event):
+        url = self._buildProxyUrl()
+        if not cfg.recentCustomProxy.validator.validate(url):
+            return
+        cfg.set(cfg.recentCustomProxy, url)
         if self.customRadio.isChecked():
-            url = self._buildProxyUrl()
-            if cfg.proxyServer.validator.validate(url):
-                cfg.set(self._configItem, url)
+            cfg.set(self._configItem, url)
 
 
 class ClipboardSettingCard(CollapsibleSettingCard):
