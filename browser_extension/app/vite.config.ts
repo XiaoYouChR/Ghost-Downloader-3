@@ -18,37 +18,17 @@ export default defineConfig({
     emptyOutDir: true,
     target: buildTarget,
     cssCodeSplit: false,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         popup: path.resolve(__dirname, "popup.html"),
       },
       output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) {
-            return undefined;
-          }
-
-          if (
-            id.includes("/@fluentui/")
-            || id.includes("\\@fluentui\\")
-            || id.includes("/@griffel/")
-            || id.includes("\\@griffel\\")
-          ) {
-            return "fluent-vendor";
-          }
-
-          if (
-            id.includes("/react/")
-            || id.includes("\\react\\")
-            || id.includes("/react-dom/")
-            || id.includes("\\react-dom\\")
-            || id.includes("/scheduler/")
-            || id.includes("\\scheduler\\")
-          ) {
-            return "react-vendor";
-          }
-
-          return "vendor";
+        codeSplitting: {
+          groups: [
+            {name: "fluent-vendor", test: /node_modules[\\/]@(fluentui|griffel)[\\/]/, priority: 30},
+            {name: "react-vendor", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 20},
+            {name: "vendor", test: /node_modules[\\/]/, priority: 10},
+          ],
         },
       },
     },
