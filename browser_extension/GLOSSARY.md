@@ -51,6 +51,11 @@ _Avoid_: resource manager
 让桌面端能复用浏览器的认证凭据下载需要登录的资源。
 _Avoid_: resource store、resource map
 
+**Resource Kind**:
+Resource 所属的类别：视频、音频、PDF、图片、压缩包、文档、表格、其他。
+Popup 资源面板按它筛选。流媒体清单（m3u8、mpd）归为视频。
+_Avoid_: category、filter type
+
 ### 页面媒体
 
 **Page Media**:

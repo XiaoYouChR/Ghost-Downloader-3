@@ -20,7 +20,8 @@ export type DesktopConnectionState =
   | "unauthorized"
   | "disconnected";
 
-export type ResourceFilter = "all" | "video" | "audio";
+export type ResourceKind = "video" | "audio" | "pdf" | "image" | "archive" | "document" | "spreadsheet" | "other";
+export type ResourceSort = "time" | "size" | "name";
 export type ResourceScope = "current" | "other";
 export type ResourceCollectionState = "restoring" | "ready" | "unavailable";
 

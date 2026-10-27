@@ -1,4 +1,4 @@
-import type {Resource, DesktopConnectionState, TaskSummary, ResourceFilter,} from "./types";
+import type {Resource, DesktopConnectionState, TaskSummary, ResourceKind,} from "./types";
 import {
     CAT_CATCH_AUDIO_EXTENSIONS,
     CAT_CATCH_VIDEO_EXTENSIONS,
@@ -44,7 +44,6 @@ interface ResourcePresentation {
   extension: string;
   parserHint: ResourceParserHint;
   deliveryTarget: ResourceDeliveryTarget;
-  category: ResourceFilter;
   primaryBadge: string;
   statusText: string;
   actionLabel: string;
@@ -267,31 +266,6 @@ export function dashTrackRoleOf(filename: string, url: string): ResourceMediaKin
   return "";
 }
 
-function mediaKindOf(resource: Resource, extension: string): ResourceMediaKind {
-  const mime = resource.mime.toLowerCase();
-  if (extension === "m4s") {
-    const dashKind = dashTrackRoleOf(resource.filename, resource.url);
-    if (dashKind) {
-      return dashKind;
-    }
-  }
-
-  if (mime.startsWith("video/")) {
-    return "video";
-  }
-  if (mime.startsWith("audio/")) {
-    return "audio";
-  }
-
-  if (CAT_CATCH_VIDEO_EXTENSIONS.has(extension) && !CAT_CATCH_AUDIO_EXTENSIONS.has(extension)) {
-    return "video";
-  }
-  if (CAT_CATCH_AUDIO_EXTENSIONS.has(extension) && !CAT_CATCH_VIDEO_EXTENSIONS.has(extension)) {
-    return "audio";
-  }
-  return "";
-}
-
 function visualKindOf({
   extension,
   mime,
@@ -349,14 +323,12 @@ function resourcePresentationParts(resource: Resource): {
   extension: string;
   parserHint: ResourceParserHint;
   deliveryTarget: ResourceDeliveryTarget;
-  mediaKind: ResourceMediaKind;
 } {
   const extension = fileExtension(resource.filename || filenameFromUrl(resource.url));
   return {
     extension,
     parserHint: parserHintOf(resource.url, resource.mime, extension),
     deliveryTarget: resource.url.startsWith("blob:") ? "browser_download" : "desktop",
-    mediaKind: mediaKindOf(resource, extension),
   };
 }
 
@@ -380,16 +352,29 @@ function resourcePrimaryBadge(resource: Resource, parts = resourcePresentationPa
   return chrome.i18n.getMessage("resource");
 }
 
+function resourceVisualKindOf(resource: Resource, parts = resourcePresentationParts(resource)): VisualKind {
+  return visualKindOf({
+    extension: parts.extension,
+    mime: resource.mime,
+    parserHint: parts.parserHint,
+    filename: resource.filename,
+    url: resource.url,
+  });
+}
+
+export function kindOf(resource: Resource): ResourceKind {
+  const kind = resourceVisualKindOf(resource);
+  if (kind === "stream") {
+    return "video";
+  }
+  if (kind === "download") {
+    return "other";
+  }
+  return kind;
+}
+
 export function describeResource(resource: Resource): ResourcePresentation {
   const parts = resourcePresentationParts(resource);
-  const mime = resource.mime.toLowerCase();
-
-  let category: ResourceFilter = "all";
-  if (parts.parserHint === "m3u8" || parts.parserHint === "mpd" || parts.mediaKind === "video") {
-    category = "video";
-  } else if (parts.mediaKind === "audio") {
-    category = "audio";
-  }
 
   const primaryBadge = resourcePrimaryBadge(resource, parts);
   const needsDesktop = parts.deliveryTarget === "desktop";
@@ -411,20 +396,13 @@ export function describeResource(resource: Resource): ResourcePresentation {
     else if (role === "audio") { tags.push(chrome.i18n.getMessage("audioTrack")); }
   }
   const visual: ResourcePresentation["visual"] = {
-    kind: visualKindOf({
-      extension: parts.extension,
-      mime,
-      parserHint: parts.parserHint,
-      filename: resource.filename,
-      url: resource.url,
-    }),
+    kind: resourceVisualKindOf(resource, parts),
   };
 
   return {
     extension: parts.extension,
     parserHint: parts.parserHint,
     deliveryTarget: parts.deliveryTarget,
-    category,
     primaryBadge,
     statusText,
     actionLabel: needsDesktop ? chrome.i18n.getMessage("sendToDesktop") : chrome.i18n.getMessage("browserDownload"),
@@ -466,27 +444,19 @@ export function canUseOnlineMergeSelection(resources: Resource[]): boolean {
 
 export function sortResourcesForOnlineMerge(resources: Resource[]): Resource[] {
   return [...resources].sort((left, right) => {
-    const leftCategory = describeResource(left).category;
-    const rightCategory = describeResource(right).category;
-    if (leftCategory === rightCategory) {
+    const leftKind = kindOf(left);
+    const rightKind = kindOf(right);
+    if (leftKind === rightKind) {
       return 0;
     }
-    if (leftCategory === "video") {
+    if (leftKind === "video") {
       return -1;
     }
-    if (rightCategory === "video") {
+    if (rightKind === "video") {
       return 1;
     }
     return 0;
   });
-}
-
-export function filterResources(resources: Resource[], filter: ResourceFilter): Resource[] {
-  const sorted = [...resources].sort((left, right) => right.capturedAt - left.capturedAt);
-  if (filter === "all") {
-    return sorted;
-  }
-  return sorted.filter((resource) => describeResource(resource).category === filter);
 }
 
 export function taskActionLabel(task: TaskSummary): string {

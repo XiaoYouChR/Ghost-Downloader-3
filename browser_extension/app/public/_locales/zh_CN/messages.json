@@ -416,15 +416,6 @@
   "invertSelection": {
     "message": "反选"
   },
-  "itemCount": {
-    "message": "$1 项",
-    "placeholders": {
-      "1": {
-        "content": "$1",
-        "example": "12"
-      }
-    }
-  },
   "itemCount_popup_pages_ImagesPage_tsx": {
     "message": "$1 项",
     "placeholders": {
@@ -803,5 +794,47 @@
   },
   "openPopupOnSent": {
     "message": "发送任务后弹出扩展窗口"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "图片"
+  },
+  "filterArchive": {
+    "message": "压缩包"
+  },
+  "filterDocument": {
+    "message": "文档"
+  },
+  "filterSpreadsheet": {
+    "message": "表格"
+  },
+  "filterOther": {
+    "message": "其他"
+  },
+  "moreKinds": {
+    "message": "更多类型"
+  },
+  "sortByTime": {
+    "message": "时间"
+  },
+  "sortBySize": {
+    "message": "大小"
+  },
+  "sortByName": {
+    "message": "名称"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "搜索名称或链接"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "没有匹配的资源"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "换个关键词，或清除筛选条件。"
+  },
+  "clearFilters": {
+    "message": "清除筛选"
   }
 }

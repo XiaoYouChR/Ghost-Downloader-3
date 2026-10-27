@@ -360,9 +360,6 @@
   "invertSelection": {
     "message": "Invert Selection"
   },
-  "itemCount": {
-    "message": "$1 items"
-  },
   "itemCount_popup_pages_ImagesPage_tsx": {
     "message": "$1 items"
   },
@@ -697,5 +694,47 @@
   },
   "openPopupOnSent": {
     "message": "Open popup when task sent"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "Images"
+  },
+  "filterArchive": {
+    "message": "Archives"
+  },
+  "filterDocument": {
+    "message": "Documents"
+  },
+  "filterSpreadsheet": {
+    "message": "Spreadsheets"
+  },
+  "filterOther": {
+    "message": "Other"
+  },
+  "moreKinds": {
+    "message": "More kinds"
+  },
+  "sortByTime": {
+    "message": "Time"
+  },
+  "sortBySize": {
+    "message": "Size"
+  },
+  "sortByName": {
+    "message": "Name"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "Search name or link"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "No matching resources"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "Try another keyword, or clear the filters."
+  },
+  "clearFilters": {
+    "message": "Clear filters"
   }
 }
