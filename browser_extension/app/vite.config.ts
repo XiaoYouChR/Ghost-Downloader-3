@@ -18,6 +18,8 @@ export default defineConfig({
     emptyOutDir: true,
     target: buildTarget,
     cssCodeSplit: false,
+    // Extension assets load from the local package, so the web-oriented 500 kB warning doesn't apply.
+    chunkSizeWarningLimit: 700,
     rolldownOptions: {
       input: {
         popup: path.resolve(__dirname, "popup.html"),
