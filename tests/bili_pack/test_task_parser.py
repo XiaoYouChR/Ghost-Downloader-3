@@ -251,6 +251,27 @@ def test_set_audio_quality_picks_dolby_and_hires_tracks():
     assert audioStepUrl() == "https://flac"
 
 
+def test_parse_lists_audio_from_best_and_defaults_to_aac():
+    from pathlib import Path
+    from bili_pack.stream import parseDash
+    from bili_pack.task import BiliPage, BilibiliTask, audioTiers, currentAudioTier
+
+    page = BiliPage(index=0, relativePath="p", _duration=10)
+    parseDash(page, {
+        "video": [{"id": 80, "codecid": 7, "bandwidth": 8000, "baseUrl": "https://v"}],
+        "audio": [
+            {"id": 30216, "bandwidth": 64000, "baseUrl": "https://a64"},
+            {"id": 30280, "bandwidth": 192000, "baseUrl": "https://a192"},
+            {"id": 30232, "bandwidth": 132000, "baseUrl": "https://a132"},
+        ],
+        "dolby": {"type": 2, "audio": [{"id": 30250, "bandwidth": 448000, "baseUrl": "https://atmos"}]},
+        "flac": {"display": True, "audio": {"id": 30251, "bandwidth": 1000000, "baseUrl": "https://flac"}},
+    }, qn=80, acceptQuality=[80])
+    task = BilibiliTask(name="v.mp4", url="u", outputFolder=Path("."), files=[page], _baseName="v")
+    assert [value for value, _ in audioTiers(task)] == ["30251", "30250", "30280", "30232", "30216"]
+    assert currentAudioTier(task) == "30280"
+
+
 async def test_probe_size_from_content_range(startServer):
     from aiohttp import web
     from bili_pack.stream import probeSize

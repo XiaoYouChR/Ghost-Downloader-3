@@ -73,19 +73,22 @@ async def probeSize(url: str, headers: dict | None = None) -> int:
 
 def parseDash(page: BiliPage, dash: dict, *, qn: int, acceptQuality: list[int], audioQn: int = 0) -> None:
     videoStreams = list(dash.get("video") or [])
+    aacStreams = sorted(dash.get("audio") or [], key=lambda s: s["bandwidth"], reverse=True)
     flac = (dash.get("flac") or {}).get("audio")
-    audioStreams = [
-        *(dash.get("audio") or []),
+    audioStreams = sorted([
+        *aacStreams,
         *((dash.get("dolby") or {}).get("audio") or []),
         *([flac] if flac else []),
-    ]
+    ], key=lambda s: s["bandwidth"], reverse=True)
     if not videoStreams:
         raise ValueError("Bilibili 返回结果中不存在可用的媒体流")
     video = matchStream(videoStreams, qn, acceptQuality)
     audio = None
-    if audioStreams:
+    if audioStreams and audioQn:
         audioIds = [s.get("id") for s in audioStreams if s.get("id") is not None]
-        audio = matchStream(audioStreams, audioQn or None, audioIds if audioQn else None)
+        audio = matchStream(audioStreams, audioQn, audioIds)
+    elif audioStreams:
+        audio = matchStream(aacStreams or audioStreams)
     page.videoUrl = toStreamUrl(video)
     page.audioUrl = toStreamUrl(audio) if audio else ""
     page._videoStreams = videoStreams
