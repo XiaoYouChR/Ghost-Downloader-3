@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "aioftp[socks]>=0.27.2",
     "desktop-notifier>=6.2.0",
-    "libtorrent>=2.0.13",
+    "libtorrent>=2.1.1",
     "loguru>=0.7.3",
     "m3u8>=6.0.0",
     "mpegdash>=0.4.1",

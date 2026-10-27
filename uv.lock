@@ -410,7 +410,7 @@ requires-dist = [
     { name = "aioftp", extras = ["socks"], specifier = ">=0.27.2" },
     { name = "certifi", specifier = ">=2026.10.19" },
     { name = "desktop-notifier", specifier = ">=6.2.0" },
-    { name = "libtorrent", specifier = ">=2.0.13" },
+    { name = "libtorrent", specifier = ">=2.1.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "m3u8", specifier = ">=6.0.0" },
     { name = "mpegdash", specifier = ">=0.4.1" },
