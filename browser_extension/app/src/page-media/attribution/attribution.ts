@@ -177,15 +177,15 @@ class MediaAttribution {
   }
 
   private emitMediaMetadata(element: HTMLMediaElement, session: VideoSession): void {
-    const urls = [...session.attributedUrls.keys()];
-    if (element.currentSrc && !urls.includes(element.currentSrc)) {
-      urls.push(element.currentSrc);
+    const tracks = [...session.attributedUrls].map(([url, meta]) => ({ url, mime: meta.contentType }));
+    if (element.currentSrc && !session.attributedUrls.has(element.currentSrc)) {
+      tracks.push({ url: element.currentSrc, mime: "" });
     }
-    if (urls.length === 0) { return; }
+    if (tracks.length === 0) { return; }
     try {
       chrome.runtime.sendMessage({
         type: "media_metadata",
-        urls,
+        tracks,
         duration: Number.isFinite(element.duration) ? element.duration : 0,
         videoWidth: element instanceof HTMLVideoElement ? element.videoWidth : 0,
         videoHeight: element instanceof HTMLVideoElement ? element.videoHeight : 0,
@@ -340,7 +340,7 @@ class MediaAttribution {
       if (ledgerEntry?.lockedByMse) {
         const owner = this.sessionsById.get(ledgerEntry.sessionId);
         const meta = owner?.attributedUrls.get(entry.url);
-        if (meta) { this.upgradeTrackMime(meta, sourceBufferMime); }
+        if (owner && meta && this.upgradeTrackMime(meta, sourceBufferMime)) { this.emitSessionMetadata(owner); }
         continue;
       }
       if (entry.idHints.size > 0 && session.idHints.size > 0) {
@@ -354,11 +354,12 @@ class MediaAttribution {
       if (claim.moved || claim.ownerId === session.id) {
         if (!session.attributedUrls.has(entry.url)) {
           this.handoffUrl(entry.url, session, sourceBufferMime);
+          this.emitSessionMetadata(session);
         } else {
           const meta = session.attributedUrls.get(entry.url);
           if (meta) {
             meta.lockedByMse = true;
-            this.upgradeTrackMime(meta, sourceBufferMime);
+            if (this.upgradeTrackMime(meta, sourceBufferMime)) { this.emitSessionMetadata(session); }
           }
           for (const d of urlIdHints(entry.url)) { session.idHints.add(d); }
         }
@@ -372,10 +373,16 @@ class MediaAttribution {
 
   // SourceBuffer mime (with `codecs=...`) is always more specific than the container mime
   // it would overwrite, so once it's in place we leave it.
-  private upgradeTrackMime(meta: AttributedUrlMeta, sourceBufferMime: string): void {
-    if (!sourceBufferMime) { return; }
-    if (meta.contentType.includes("codecs")) { return; }
+  private upgradeTrackMime(meta: AttributedUrlMeta, sourceBufferMime: string): boolean {
+    if (!sourceBufferMime || meta.contentType.includes("codecs")) { return false; }
     meta.contentType = sourceBufferMime;
+    return true;
+  }
+
+  // Track mimes can land after loadedmetadata; resend so Resources learn each URL's track role.
+  private emitSessionMetadata(session: VideoSession): void {
+    const element = session.elementRef.deref();
+    if (element) { this.emitMediaMetadata(element, session); }
   }
 
   private onMessage = (event: MessageEvent): void => {

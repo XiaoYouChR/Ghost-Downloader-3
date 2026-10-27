@@ -238,8 +238,7 @@ function parserHintOf(url: string, mime: string, extension: string): ResourcePar
   return "other";
 }
 
-// Fallback heuristic when no SourceBuffer mime is around: explicit /video/ or /audio/
-// markers, then Bilibili's 5-6 digit quality code (30000+ audio, 100000+ video).
+// Fallback when no SourceBuffer mime is around: explicit video/audio markers in the URL.
 export function dashTrackRoleOf(filename: string, url: string): ResourceMediaKind {
   const name = filename || filenameFromUrl(url);
   const lowered = `${name} ${url}`.toLowerCase();
@@ -250,19 +249,26 @@ export function dashTrackRoleOf(filename: string, url: string): ResourceMediaKin
   if (/(^|[-_.\\/])(audio)([-_.\\/]|$)/i.test(lowered)) {
     return "audio";
   }
+  return "";
+}
 
-  const match = lowered.match(/-(\d{5,6})(?=\.m4s(?:$|[?#]))/i)
-    ?? lowered.match(/\/(\d{5,6})(?=\.m4s(?:$|[?#]))/i);
-  const trackId = Number(match?.[1] ?? 0);
-  if (!Number.isFinite(trackId) || trackId <= 0) {
-    return "";
+// Container mime can't tell DASH tracks apart (Bilibili serves audio as video/mp4), so DASH
+// segments only trust a SourceBuffer mime with codecs or explicit URL markers.
+export function trackRoleOf(resource: Resource): ResourceMediaKind {
+  const mime = resource.mime.toLowerCase();
+  if (mime.includes("codecs")) {
+    if (mime.startsWith("video/")) { return "video"; }
+    if (mime.startsWith("audio/")) { return "audio"; }
   }
-  if (trackId >= 100000) {
-    return "video";
+  if (isDashSegment(resource)) {
+    return dashTrackRoleOf(resource.filename, resource.url);
   }
-  if (trackId >= 30000 && trackId < 40000) {
-    return "audio";
-  }
+
+  if (mime.startsWith("video/")) { return "video"; }
+  if (mime.startsWith("audio/")) { return "audio"; }
+  const extension = fileExtension(resource.filename || filenameFromUrl(resource.url));
+  if (CAT_CATCH_VIDEO_EXTENSIONS.has(extension) && !CAT_CATCH_AUDIO_EXTENSIONS.has(extension)) { return "video"; }
+  if (CAT_CATCH_AUDIO_EXTENSIONS.has(extension) && !CAT_CATCH_VIDEO_EXTENSIONS.has(extension)) { return "audio"; }
   return "";
 }
 
@@ -270,14 +276,12 @@ function visualKindOf({
   extension,
   mime,
   parserHint,
-  filename,
-  url,
+  trackRole,
 }: {
   extension: string;
   mime?: string;
   parserHint?: ResourceParserHint;
-  filename?: string;
-  url?: string;
+  trackRole?: ResourceMediaKind;
 }): VisualKind {
   const loweredMime = mime?.toLowerCase() ?? "";
   const loweredExtension = extension.toLowerCase();
@@ -285,10 +289,8 @@ function visualKindOf({
   if (parserHint === "m3u8" || parserHint === "mpd") {
     return "stream";
   }
-  if (loweredExtension === "m4s" && filename && url) {
-    const role = dashTrackRoleOf(filename, url);
-    if (role === "audio") { return "audio"; }
-    if (role === "video") { return "video"; }
+  if (trackRole) {
+    return trackRole;
   }
   if (loweredMime.startsWith("video/") || CAT_CATCH_VIDEO_EXTENSIONS.has(loweredExtension)) {
     return "video";
@@ -357,8 +359,7 @@ function resourceVisualKindOf(resource: Resource, parts = resourcePresentationPa
     extension: parts.extension,
     mime: resource.mime,
     parserHint: parts.parserHint,
-    filename: resource.filename,
-    url: resource.url,
+    trackRole: trackRoleOf(resource),
   });
 }
 
@@ -391,7 +392,7 @@ export function describeResource(resource: Resource): ResourcePresentation {
     tags.push(chrome.i18n.getMessage("browserDownload"));
   }
   if (isDashSegment(resource)) {
-    const role = dashTrackRoleOf(resource.filename, resource.url);
+    const role = trackRoleOf(resource);
     if (role === "video") { tags.push(chrome.i18n.getMessage("videoTrack")); }
     else if (role === "audio") { tags.push(chrome.i18n.getMessage("audioTrack")); }
   }
@@ -444,15 +445,15 @@ export function canUseOnlineMergeSelection(resources: Resource[]): boolean {
 
 export function sortResourcesForOnlineMerge(resources: Resource[]): Resource[] {
   return [...resources].sort((left, right) => {
-    const leftKind = kindOf(left);
-    const rightKind = kindOf(right);
-    if (leftKind === rightKind) {
+    const leftRole = trackRoleOf(left);
+    const rightRole = trackRoleOf(right);
+    if (leftRole === rightRole) {
       return 0;
     }
-    if (leftKind === "video") {
+    if (leftRole === "video") {
       return -1;
     }
-    if (rightKind === "video") {
+    if (rightRole === "video") {
       return 1;
     }
     return 0;

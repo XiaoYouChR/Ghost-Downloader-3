@@ -147,9 +147,7 @@ export function classifyTrackRole(url: string, contentType: string): TrackRole {
 
   const mime = (contentType || mimeFromUrl(url) || "").toLowerCase();
 
-  // SourceBuffer mime (`codecs=...`) wins outright: Bilibili's da3 format puts both
-  // video (30016) and audio (30216) in the same trackId range that the heuristic uses,
-  // and only the MSE-side mime tells them apart.
+  // SourceBuffer mime (`codecs=...`) wins outright: CDNs serve DASH audio as video/mp4 (Bilibili).
   if (mime.includes("codecs")) {
     if (mime.startsWith("video/")) { return "video"; }
     if (mime.startsWith("audio/")) { return "audio"; }

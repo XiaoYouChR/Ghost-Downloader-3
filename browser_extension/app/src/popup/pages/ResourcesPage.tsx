@@ -385,10 +385,7 @@ export function ResourcesPage({
         />
       ) : (
         <>
-          <section className={styles.list}>
-            {view.resources.map(renderCard)}
-          </section>
-
+          {/* DASH tracks are usually the main video and audio, so they lead; HLS .ts fragments trail. */}
           {view.dashSegments.length > 0 && (
             <>
               <Card
@@ -403,6 +400,10 @@ export function ResourcesPage({
               )}
             </>
           )}
+
+          <section className={styles.list}>
+            {view.resources.map(renderCard)}
+          </section>
 
           {view.hlsSegments.length > 0 && (
             <>

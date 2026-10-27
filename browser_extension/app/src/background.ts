@@ -615,14 +615,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }));
   }
 
-  if (message.type === "media_metadata" && Array.isArray(message.urls)) {
+  if (message.type === "media_metadata" && Array.isArray(message.tracks)) {
     const meta = {
       duration: message.duration,
       videoWidth: message.videoWidth,
       videoHeight: message.videoHeight,
       posterUrl: message.posterUrl,
     };
-    resourceBridge.enrichResource(message.urls, meta);
+    resourceBridge.enrichResource(message.tracks, meta);
     if (sender.tab?.id && meta.posterUrl) {
       resourceBridge.enrichTabPoster(sender.tab.id, meta.posterUrl);
     }

@@ -752,8 +752,7 @@ export function createResourceBridge(options: {
     captureRequestResource,
     downloadPageMedia,
     flushState,
-    enrichResource: (urls: string[], meta: Parameters<typeof cache.enrichResource>[1]) =>
-      cache.enrichResource(urls, meta),
+    enrichResource: (...args: Parameters<typeof cache.enrichResource>) => cache.enrichResource(...args),
     enrichTabPoster: (tabId: number, posterUrl: string) =>
       cache.enrichTabPoster(tabId, posterUrl),
     headersForPage: (pageUrl: string) => cache.headersForPage(pageUrl),

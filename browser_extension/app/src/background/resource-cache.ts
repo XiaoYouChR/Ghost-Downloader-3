@@ -126,7 +126,8 @@ export class ResourceCache {
           pageTitle: resource.pageTitle || existing.pageTitle,
           pageUrl: resource.pageUrl || existing.pageUrl,
           filename: resource.filename || existing.filename,
-          mime: resource.mime || existing.mime,
+          // SourceBuffer mime (see enrichResource) outranks the container mime of later range requests.
+          mime: existing.mime.includes("codecs") ? existing.mime : resource.mime || existing.mime,
           size: resource.size > 0 ? resource.size : existing.size,
           supportsRange: resource.supportsRange || existing.supportsRange,
           referer: resource.referer || existing.referer,
@@ -210,20 +211,24 @@ export class ResourceCache {
     return sortResources(result);
   }
 
-  enrichResource(urls: string[], meta: {
+  // CDNs often serve DASH audio as video/mp4; only the page's SourceBuffer mime (with codecs) tells tracks apart.
+  enrichResource(tracks: Array<{ url: string; mime: string }>, meta: {
     duration?: number;
     videoWidth?: number;
     videoHeight?: number;
     posterUrl?: string;
   }): void {
     let changed = false;
-    for (const url of urls) {
-      const normalizedUrl = urlWithoutHash(url, true);
+    for (const track of tracks) {
+      const normalizedUrl = urlWithoutHash(track.url, true);
+      const trackMime = track.mime.toLowerCase();
+      const isAudio = trackMime.startsWith("audio/");
       for (const resource of this.resourcesById.values()) {
         if (!resource.id.endsWith(`:${normalizedUrl}`)) { continue; }
+        if (trackMime.includes("codecs")) { resource.mime = trackMime; }
         if (meta.duration != null && meta.duration > 0) { resource.duration = meta.duration; }
-        if (meta.videoWidth != null && meta.videoWidth > 0) { resource.videoWidth = meta.videoWidth; }
-        if (meta.videoHeight != null && meta.videoHeight > 0) { resource.videoHeight = meta.videoHeight; }
+        if (!isAudio && meta.videoWidth != null && meta.videoWidth > 0) { resource.videoWidth = meta.videoWidth; }
+        if (!isAudio && meta.videoHeight != null && meta.videoHeight > 0) { resource.videoHeight = meta.videoHeight; }
         if (meta.posterUrl) { resource.posterUrl = meta.posterUrl; }
         changed = true;
       }
