@@ -12,9 +12,9 @@ from app.platform.filesystem import toSafeFilename
 from app.i18n import N
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.task import FFmpegStep
+from .config import AUDIO_QUALITY_LABELS, AUDIO_QUALITY_VALUES
 from .stream import buildSize, fetchPlayurl, probeSize, toStreamUrl
 
-AUDIO_QUALITY_LABELS = {30216: "64K", 30232: "132K", 30280: "192K", 30250: "杜比全景声", 30251: "Hi-Res"}
 CODEC_NAMES = {7: "H.264", 12: "H.265", 13: "AV1"}
 
 
@@ -41,13 +41,14 @@ def audioTiers(task: BilibiliTask) -> list[tuple[str, str]]:
     page = streamPage(task)
     if page is None:
         return []
+    names = dict(zip(AUDIO_QUALITY_VALUES, AUDIO_QUALITY_LABELS))
     tiers = []
     seen = set()
     for s in page._audioStreams:
         if s["id"] in seen:
             continue
         seen.add(s["id"])
-        name = AUDIO_QUALITY_LABELS.get(s["id"], str(s["id"]))
+        name = names.get(s["id"], str(s["id"]))
         tiers.append((str(s["id"]), f'{name} ({s["bandwidth"] // 1000}Kbps)'))
     return tiers
 
@@ -454,7 +455,7 @@ class BilibiliVideoStep(HttpTaskStep):
             from .config import bilibiliConfig
             qn = self.task.requestedQn or bilibiliConfig.defaultQuality.value
             _, _, usedQn = await fetchPlayurl(
-                page, qn=qn, headers=page.headers, audioQn=self.task.requestedAudioQn,
+                page, qn=qn, headers=page.headers, audioQn=self.task.requestedAudioQn or bilibiliConfig.defaultAudioQuality.value,
             )
             self.task.requestedQn = usedQn
         if page:
@@ -520,7 +521,7 @@ class BilibiliAudioStep(HttpTaskStep):
             from .config import bilibiliConfig
             qn = self.task.requestedQn or bilibiliConfig.defaultQuality.value
             _, _, usedQn = await fetchPlayurl(
-                page, qn=qn, headers=page.headers, audioQn=self.task.requestedAudioQn,
+                page, qn=qn, headers=page.headers, audioQn=self.task.requestedAudioQn or bilibiliConfig.defaultAudioQuality.value,
             )
             self.task.requestedQn = usedQn
         if page:

@@ -69,6 +69,7 @@ class BilibiliParser(TaskParser):
                 raise ValueError("未获取到视频分P信息")
 
             requestedQuality = bilibiliConfig.defaultQuality.value
+            requestedAudioQuality = bilibiliConfig.defaultAudioQuality.value
             baseName = toSafeFilename(title, fallback="bilibili_video")
             for page in parsedPages:
                 page.headers = dict(downloadHeaders)
@@ -79,6 +80,7 @@ class BilibiliParser(TaskParser):
                 qn=requestedQuality,
                 signParams=self.pack.account.signParams,
                 headers=template.headers,
+                audioQn=requestedAudioQuality,
             )
             for page in parsedPages:
                 page.headers["cookie"] = template.headers.get("cookie", "")
@@ -114,6 +116,7 @@ class BilibiliParser(TaskParser):
                 coverSize=coverSize,
                 files=parsedPages,
                 requestedQn=requestedQuality,
+                requestedAudioQn=requestedAudioQuality,
                 _baseName=baseName,
                 _acceptQualities=acceptQuality,
                 _qualityLabels=acceptDescription,

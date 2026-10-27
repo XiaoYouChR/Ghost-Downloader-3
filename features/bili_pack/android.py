@@ -21,6 +21,11 @@ def qualityOptions() -> list[dict]:
     return [{"value": v, "label": l} for v, l in zip(QUALITY_VALUES, QUALITY_LABELS)]
 
 
+def audioQualityOptions() -> list[dict]:
+    from .config import AUDIO_QUALITY_VALUES, AUDIO_QUALITY_LABELS
+    return [{"value": v, "label": l} for v, l in zip(AUDIO_QUALITY_VALUES, AUDIO_QUALITY_LABELS)]
+
+
 QR_STATUS = {
     QR_GOT_URL: "ready",
     QR_UNSCANNED: "waiting",

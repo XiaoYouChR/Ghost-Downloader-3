@@ -71,24 +71,18 @@ async def probeSize(url: str, headers: dict | None = None) -> int:
         client.close()
 
 
-def parseDash(page: BiliPage, dash: dict, *, qn: int, acceptQuality: list[int], audioQn: int = 0) -> None:
+def parseDash(page: BiliPage, dash: dict, *, qn: int, acceptQuality: list[int], audioQn: int) -> None:
     videoStreams = list(dash.get("video") or [])
-    aacStreams = sorted(dash.get("audio") or [], key=lambda s: s["bandwidth"], reverse=True)
     flac = (dash.get("flac") or {}).get("audio")
     audioStreams = sorted([
-        *aacStreams,
+        *(dash.get("audio") or []),
         *((dash.get("dolby") or {}).get("audio") or []),
         *([flac] if flac else []),
     ], key=lambda s: s["bandwidth"], reverse=True)
     if not videoStreams:
         raise ValueError("Bilibili 返回结果中不存在可用的媒体流")
     video = matchStream(videoStreams, qn, acceptQuality)
-    audio = None
-    if audioStreams and audioQn:
-        audioIds = [s.get("id") for s in audioStreams if s.get("id") is not None]
-        audio = matchStream(audioStreams, audioQn, audioIds)
-    elif audioStreams:
-        audio = matchStream(aacStreams or audioStreams)
+    audio = matchAudio(audioStreams, audioQn) if audioStreams else None
     page.videoUrl = toStreamUrl(video)
     page.audioUrl = toStreamUrl(audio) if audio else ""
     page._videoStreams = videoStreams
@@ -122,13 +116,24 @@ def matchStream(
     raise ValueError("未找到可用的媒体流")
 
 
+def matchAudio(streams: list[dict], quality: int) -> dict:
+    playable = [s for s in streams if toStreamUrl(s)]
+    if not playable:
+        raise ValueError("未找到可用的媒体流")
+    preferred = next((s for s in playable if s.get("id") == quality), None)
+    if preferred:
+        return preferred
+    pick = max if bilibiliConfig.alternativeQuality.value == "max" else min
+    return pick(playable, key=lambda s: s["bandwidth"])
+
+
 async def fetchPlayurl(
     page: BiliPage,
     *,
     qn: int,
     headers: dict,
     signParams=None,
-    audioQn: int = 0,
+    audioQn: int,
 ) -> tuple[list[int], list[str], int]:
     if signParams is None:
         from .account import BilibiliAccount
