@@ -305,7 +305,7 @@ class TaskService:
     def runningCount(self) -> int:
         return self._queue.runningCount()
 
-    def runningProgress(self) -> float:
+    def overallProgress(self) -> float | None:
         from app.models.task import TaskStatus
         totalReceived = 0
         totalSize = 0
@@ -317,7 +317,7 @@ class TaskService:
                 totalReceived += receivedBytes
                 totalSize += task.fileSize
         if totalSize == 0:
-            return -1.0
+            return None
         return min(100.0, totalReceived / totalSize * 100)
 
     def add(self, task: Task, autoStart=True, choice: NameConflictChoice | None = None) -> bool:

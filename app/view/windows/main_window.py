@@ -260,6 +260,7 @@ class MainWindow(MSFluentWindow):
 
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectWin)
+            self._speedMeter.speedChanged.connect(self._onSpeedChanged, owner=self)
         elif sys.platform == "darwin":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectMac)
             QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self._onCloseClicked)
@@ -440,6 +441,11 @@ class MainWindow(MSFluentWindow):
 
     def _openLogFolder(self) -> None:
         revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
+
+    def _onSpeedChanged(self, _speed: int) -> None:
+        from app.platform.taskbar import setWindowsProgress
+        setWindowsProgress(int(self.winId()), self._taskService.runningCount() > 0,
+                           self._taskService.overallProgress())
 
     def _onCloseClicked(self) -> None:
         for dialog in self.findChildren(MaskDialogBase):

@@ -59,7 +59,7 @@ def startApp(application, primaryInstance, isSilent=False):
     from app.signal_bus import signalBus
     from app.services.port_listener import ListenStatus
     from app.services.update_service import UpdateService
-    from app.startup import loadResources, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
+    from app.startup import loadResources, createEngine, deleteBackupDir, deleteLegacyAppIdFiles, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -90,6 +90,13 @@ def startApp(application, primaryInstance, isSilent=False):
     browserService, speedMeter = engine.browserService, engine.speedMeter
 
     deleteBackupDir()
+    if deleteLegacyAppIdFiles():
+        from app.platform.file_association import registerUrlScheme
+        from app.platform.run_at_login import setRunAtLogin
+        if cfg.isUrlSchemeRegistered.value:
+            registerUrlScheme()
+        if cfg.shouldRunAtLogin.value:
+            setRunAtLogin(True)
 
     MainWindow.refreshThemeColor()
 
@@ -215,6 +222,9 @@ def startApp(application, primaryInstance, isSilent=False):
         from app.view.shell.tray import SystemTrayIcon
         tray = SystemTrayIcon(taskService, speedMeter, QIcon(":/image/logo.png"), parent=application)
         tray.show()
+    if sys.platform == "linux":
+        from app.platform.taskbar import setLauncherProgress
+        speedMeter.speedChanged.connect(lambda _: setLauncherProgress(taskService.overallProgress()))
 
     from app.platform.desktop_keepalive import hold, release
     taskService.taskStarted.connect(lambda _: hold())

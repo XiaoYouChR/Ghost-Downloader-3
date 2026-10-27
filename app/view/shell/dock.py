@@ -28,7 +28,7 @@ def setupDock(speedMeter, taskService) -> None:
     imageView = None
     progressBar = None
 
-    def update(text: str, progress: float) -> None:
+    def update(text: str, progress: float | None) -> None:
         nonlocal baseIcon, container, imageView, progressBar
 
         if baseIcon is None:
@@ -101,11 +101,9 @@ def setupDock(speedMeter, taskService) -> None:
 
         imageView.setImage_(nsImage)
 
-        if progress >= 0:
-            progressBar.setHidden_(False)
+        progressBar.setIndeterminate_(progress is None)
+        if progress is not None:
             progressBar.setDoubleValue_(progress)
-        else:
-            progressBar.setHidden_(True)
 
         tile.display()
 
@@ -123,10 +121,10 @@ def setupDock(speedMeter, taskService) -> None:
     def onSpeedChanged(speed: int) -> None:
         if not (cfg.shouldShowDockSpeed.value and cfg.shouldShowDockIcon.value):
             return
-        if speed <= 0:
+        if taskService.runningCount() == 0:
             clear()
             return
-        update(toDockSpeed(speed), taskService.runningProgress())
+        update(toDockSpeed(speed), taskService.overallProgress())
 
     def onShowSpeedChanged(enabled: bool) -> None:
         if not enabled:

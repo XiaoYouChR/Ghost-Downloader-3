@@ -133,6 +133,11 @@ _Avoid_: Source（指更新分发）、节点源、mirror
 Task 内的一个可执行步骤。一个 Task 可能有一个或多个 Step。
 _Avoid_: stage、phase、action
 
+**Overall Progress**:
+所有 RUNNING 状态、大小已知的 Task 按字节加权的进度。有 Task 在运行但都不知道大小时，进度不确定；没有 Task 在运行时，不显示进度。
+显示在 Dock 图标和任务栏按钮上。
+_Avoid_: 任务栏进度、总下载进度
+
 **Subworker**:
 HTTP 或 FTP Step 内的一个分片传输单元，负责一个 byte-range 区间。
 _Avoid_: worker、thread、chunk

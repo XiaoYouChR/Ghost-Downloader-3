@@ -667,7 +667,7 @@ jobs:
           APPDIR="$RUNNER_TEMP/GhostDownloader.AppDir"
           PACKAGE_NAME="ghost-downloader"
           INSTALL_DIR="/opt/Ghost-Downloader-3"
-          DESKTOP_FILE="$PACKAGE_NAME.desktop"
+          DESKTOP_FILE="com.xychr.ghostdownloader.desktop"
           ICON_FILE="$PACKAGE_NAME.png"
           DEB_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb"
           APPIMAGE_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage"

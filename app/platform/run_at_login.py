@@ -36,7 +36,8 @@ def _setWindows(enabled: bool) -> None:
 
 def _setMacOS(enabled: bool) -> None:
     from pwd import getpwuid
-    plistPath = Path(f"/Users/{getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/com.xiaoyouchr.ghostdownloader.plist")
+    from app.config.constants import DESKTOP_ID
+    plistPath = Path(f"/Users/{getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/{DESKTOP_ID}.plist")
 
     if enabled:
         plistPath.parent.mkdir(parents=True, exist_ok=True)
@@ -45,7 +46,7 @@ def _setMacOS(enabled: bool) -> None:
             '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
             '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
             '<plist version="1.0">\n<dict>\n'
-            '<key>Label</key>\n<string>com.xiaoyouchr.ghostdownloader</string>\n'
+            f'<key>Label</key>\n<string>{DESKTOP_ID}</string>\n'
             '<key>ProgramArguments</key>\n<array>\n'
             f'<string>{EXECUTABLE_PATH}</string>\n<string>--silence</string>\n'
             '</array>\n<key>RunAtLoad</key>\n<true/>\n'

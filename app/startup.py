@@ -61,6 +61,27 @@ def deleteBackupDir():
         shutil.rmtree(backupDir, ignore_errors=True)
 
 
+def deleteLegacyAppIdFiles() -> bool:
+    import sys
+    from pathlib import Path
+
+    if sys.platform == "linux":
+        legacyId = "io.github.xiaoyouchr.GhostDownloader"
+        paths = [
+            Path.home() / ".local/share/applications" / f"{legacyId}.desktop",
+            Path.home() / ".local/share/dbus-1/services" / f"{legacyId}.service",
+            Path.home() / ".config/autostart" / f"{legacyId}.desktop",
+        ]
+    elif sys.platform == "darwin":
+        paths = [Path.home() / "Library/LaunchAgents/com.xiaoyouchr.ghostdownloader.plist"]
+    else:
+        return False
+    existing = [path for path in paths if path.exists()]
+    for path in existing:
+        path.unlink()
+    return bool(existing)
+
+
 def loadPacks(featureService, coroutineRunner, speedMeter):
     from app.models.pack import PackConfig, PackServices
     from app.services.update_service import installPendingPacks
