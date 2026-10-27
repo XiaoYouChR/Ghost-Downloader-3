@@ -7,7 +7,6 @@ import shutil
 import tempfile
 import threading
 from collections.abc import Iterable, Iterator
-from contextlib import suppress
 from dataclasses import dataclass, field
 from itertools import count
 from pathlib import Path
@@ -626,7 +625,7 @@ class YouTubeMergeStep(FFmpegStep):
 
         if hasVideo and hasAudio:
             if self.metadataTitle or self.chapters or self._timeRange:
-                await self._runWithMetadata()
+                await self._runWithMetadata([self._videoPath, self._audioPath])
             else:
                 await super().run(reportSpeed, waitForSpeedLimit)
             return
@@ -640,155 +639,28 @@ class YouTubeMergeStep(FFmpegStep):
         if isSameContainer and not (self.metadataTitle or self.chapters or self._timeRange):
             singleInput.replace(self.outputPath)
         else:
-            await self._runSingleWithMetadata(singleInput)
+            await self._runWithMetadata([singleInput])
 
-    async def _runSingleWithMetadata(self, inputPath: Path) -> None:
-        from ffmpeg_pack.config import ffmpegRuntime
-        from app.platform.filesystem import deletePath
-
-        ffmpegPath = ffmpegRuntime.path()
-        ffprobePath = ffmpegRuntime.ffprobePath()
-        if not ffmpegPath or not ffprobePath:
-            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
-
-        totalDuration = await self._probeDuration(ffprobePath, inputPath)
-
+    async def _runWithMetadata(self, sources: list[Path]) -> None:
         preArgs, postArgs = self._buildTrimArgs()
-        args = [
-            ffmpegPath,
-            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
-            *preArgs,
-            "-i", str(inputPath),
-        ]
-
-        chaptersFile = None
-        if self.chapters:
-            chaptersFile = self._createChaptersFile()
-            args.extend(["-f", "ffmetadata", "-i", chaptersFile])
-
-        args.extend(postArgs)
-
-        args.extend(["-c", "copy"])
-
-        if self.chapters and chaptersFile:
-            args.extend(["-map", "0", "-map_metadata", "1"])
-
+        chaptersFile = self._createChaptersFile() if self.chapters else None
+        outputArgs = list(postArgs)
+        if chaptersFile:
+            for index in range(len(sources)):
+                outputArgs.extend(["-map", str(index)])
+            outputArgs.extend(["-map_metadata", str(len(sources))])
         if self.metadataTitle:
-            args.extend(["-metadata", f"title={self.metadataTitle}"])
+            outputArgs.extend(["-metadata", f"title={self.metadataTitle}"])
         if self.metadataArtist:
-            args.extend(["-metadata", f"artist={self.metadataArtist}"])
-
-        args.extend(["-f", "mp4", self.outputPath])
-
-        process = await asyncio.create_subprocess_exec(
-            *args,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
-
+            outputArgs.extend(["-metadata", f"artist={self.metadataArtist}"])
+        outputArgs.extend(["-f", "mp4"])
         try:
-            await process.wait()
-            await progressTask
-
-            if process.returncode != 0:
-                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
-                raise TaskError(
-                    "FFmpeg 写入元数据失败（{code}）：{detail}",
-                    code=process.returncode,
-                    detail=stderr or "unknown error",
-                )
-
-            if self.shouldDeleteSource:
-                deletePath(inputPath)
-        except asyncio.CancelledError:
-            self.setStatus(TaskStatus.PAUSED)
-            if process.returncode is None:
-                process.kill()
-                await process.wait()
-            if not progressTask.done():
-                progressTask.cancel()
-                with suppress(asyncio.CancelledError):
-                    await progressTask
-            raise
-        finally:
-            if chaptersFile:
-                Path(chaptersFile).unlink(missing_ok=True)
-
-    async def _runWithMetadata(self) -> None:
-        from ffmpeg_pack.config import ffmpegRuntime
-        from app.platform.filesystem import deletePath
-
-        ffmpegPath = ffmpegRuntime.path()
-        ffprobePath = ffmpegRuntime.ffprobePath()
-        if not ffmpegPath or not ffprobePath:
-            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
-
-        totalDuration = await self._probeDuration(ffprobePath, self._videoPath)
-
-        preArgs, postArgs = self._buildTrimArgs()
-        args = [
-            ffmpegPath,
-            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
-            *preArgs,
-            "-i", str(self._videoPath),
-            *preArgs,
-            "-i", str(self._audioPath),
-        ]
-
-        chaptersFile = None
-        if self.chapters:
-            chaptersFile = self._createChaptersFile()
-            args.extend(["-f", "ffmetadata", "-i", chaptersFile])
-
-        args.extend(postArgs)
-
-        args.extend(["-c", "copy"])
-
-        if self.chapters and chaptersFile:
-            args.extend(["-map", "0", "-map", "1", "-map_metadata", "2"])
-
-        if self.metadataTitle:
-            args.extend(["-metadata", f"title={self.metadataTitle}"])
-        if self.metadataArtist:
-            args.extend(["-metadata", f"artist={self.metadataArtist}"])
-
-        args.extend(["-f", "mp4", self.outputPath])
-
-        process = await asyncio.create_subprocess_exec(
-            *args,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
-
-        try:
-            await process.wait()
-            await progressTask
-
-            if process.returncode != 0:
-                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
-                raise TaskError(
-                    "FFmpeg 合并失败（{code}）：{detail}",
-                    code=process.returncode,
-                    detail=stderr or "unknown error",
-                )
-
-            if self.shouldDeleteSource:
-                for path in (self._videoPath, self._audioPath):
-                    deletePath(path)
-        except asyncio.CancelledError:
-            self.setStatus(TaskStatus.PAUSED)
-            if process.returncode is None:
-                process.kill()
-                await process.wait()
-            if not progressTask.done():
-                progressTask.cancel()
-                with suppress(asyncio.CancelledError):
-                    await progressTask
-            raise
+            await self._runMerge(
+                sources,
+                sourceArgs=preArgs,
+                extraInputArgs=["-f", "ffmetadata", "-i", chaptersFile] if chaptersFile else [],
+                outputArgs=outputArgs,
+            )
         finally:
             if chaptersFile:
                 Path(chaptersFile).unlink(missing_ok=True)

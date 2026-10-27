@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,21 +52,30 @@ class FFmpegStep(TaskStep):
         return toResourcePath(self.task, "audio", self.audioExtension)
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        await self._runMerge([self._videoPath, self._audioPath])
 
+    async def _runMerge(
+        self,
+        sources: list[Path],
+        *,
+        sourceArgs: Sequence[str] = (),
+        extraInputArgs: Sequence[str] = (),
+        outputArgs: Sequence[str] = (),
+    ) -> None:
         ffmpegPath = ffmpegRuntime.path()
         ffprobePath = ffmpegRuntime.ffprobePath()
         if not ffmpegPath or not ffprobePath:
             raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
 
-        totalDuration = await self._probeDuration(ffprobePath, self._videoPath)
+        totalDuration = await self._probeDuration(ffprobePath, sources[0])
+
+        args = [ffmpegPath, "-y", "-v", "error", "-nostats", "-progress", "pipe:1"]
+        for source in sources:
+            args.extend([*sourceArgs, "-i", str(source)])
+        args.extend([*extraInputArgs, "-c", "copy", *outputArgs, self.outputPath])
 
         process = await asyncio.create_subprocess_exec(
-            ffmpegPath,
-            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
-            "-i", str(self._videoPath),
-            "-i", str(self._audioPath),
-            "-c", "copy",
-            self.outputPath,
+            *args,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -78,14 +88,14 @@ class FFmpegStep(TaskStep):
 
             if process.returncode != 0:
                 stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
-                for inputPath in (self._videoPath, self._audioPath):
-                    if inputPath.exists():
-                        with open(inputPath, "rb") as f:
+                for source in sources:
+                    if source.exists():
+                        with open(source, "rb") as f:
                             boxType = f.read(8)[4:8]
                         if boxType not in ISOBMFF_BOX_TYPES:
                             raise TaskError(
                                 "文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}",
-                                name=inputPath.name,
+                                name=source.name,
                             )
                 raise TaskError(
                     "FFmpeg 合并失败（{code}）：{detail}",
@@ -94,8 +104,8 @@ class FFmpegStep(TaskStep):
                 )
 
             if self.shouldDeleteSource:
-                for path in (self._videoPath, self._audioPath):
-                    deletePath(path)
+                for source in sources:
+                    deletePath(source)
         except asyncio.CancelledError:
             self.setStatus(TaskStatus.PAUSED)
             if process.returncode is None:

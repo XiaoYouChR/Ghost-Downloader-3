@@ -2,5 +2,5 @@
 entry = "pack.py"
 class = "FFmpegPack"
 dependencies = ["http_pack"]
-version = "1.1.1"
+version = "1.1.2"
 gdMinVersion = "4.4.5"

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import asyncio
 import shutil
-from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -616,79 +614,18 @@ class BilibiliMergeStep(FFmpegStep):
                         shutil.copyfileobj(seg, f)
                 tmp.replace(path)
 
-        hasVideo = self._videoPath.exists()
-        hasAudio = self._audioPath.exists()
-
-        if hasVideo and hasAudio:
-            if self._timeRange:
-                await self._runWithTrim()
-            else:
-                await super().run(reportSpeed, waitForSpeedLimit)
-            return
-
-        singleInput = self._videoPath if hasVideo else self._audioPath if hasAudio else None
-        if not singleInput:
+        sources = [p for p in (self._videoPath, self._audioPath) if p.exists()]
+        if not sources:
             deletePlaceholder(Path(self.outputPath))
             return
 
         if self._timeRange:
-            await self._runWithTrim()
+            preArgs, postArgs = self._buildTrimArgs()
+            await self._runMerge(sources, sourceArgs=preArgs, outputArgs=[*postArgs, "-f", "mp4"])
+        elif len(sources) == 2:
+            await self._runMerge(sources)
         else:
-            singleInput.replace(self.outputPath)
-
-    async def _runWithTrim(self) -> None:
-        from ffmpeg_pack.config import ffmpegRuntime
-        from app.platform.filesystem import deletePath
-
-        ffmpegPath = ffmpegRuntime.path()
-        ffprobePath = ffmpegRuntime.ffprobePath()
-        if not ffmpegPath or not ffprobePath:
-            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
-
-        probeInput = self._videoPath if self._videoPath.exists() else self._audioPath
-        totalDuration = await self._probeDuration(ffprobePath, probeInput)
-
-        preArgs, postArgs = self._buildTrimArgs()
-        args = [ffmpegPath, "-y", "-v", "error", "-nostats", "-progress", "pipe:1"]
-        for path in (self._videoPath, self._audioPath):
-            if path.exists():
-                args.extend([*preArgs, "-i", str(path)])
-        args.extend([*postArgs, "-c", "copy", "-f", "mp4", self.outputPath])
-
-        process = await asyncio.create_subprocess_exec(
-            *args,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
-
-        try:
-            await process.wait()
-            await progressTask
-
-            if process.returncode != 0:
-                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
-                raise TaskError(
-                    "FFmpeg 合并失败（{code}）：{detail}",
-                    code=process.returncode,
-                    detail=stderr or "unknown error",
-                )
-
-            if self.shouldDeleteSource:
-                for path in (self._videoPath, self._audioPath):
-                    if path.exists():
-                        deletePath(path)
-        except asyncio.CancelledError:
-            self.setStatus(TaskStatus.PAUSED)
-            if process.returncode is None:
-                process.kill()
-                await process.wait()
-            if not progressTask.done():
-                progressTask.cancel()
-                with suppress(asyncio.CancelledError):
-                    await progressTask
-            raise
+            sources[0].replace(self.outputPath)
 
 
 @dataclass(kw_only=True)

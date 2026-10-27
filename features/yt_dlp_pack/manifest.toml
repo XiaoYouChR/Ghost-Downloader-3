@@ -2,5 +2,5 @@
 entry = "pack.py"
 class = "YouTubePack"
 dependencies = ["http_pack", "ffmpeg_pack"]
-version = "1.3.4"
+version = "1.3.5"
 gdMinVersion = "4.4.5"
