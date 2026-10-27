@@ -18,6 +18,7 @@ dependencies = [
     "websockets>=14",
     "wreq>=0.12.0",
     "winloop>=0.6.0; sys_platform == 'win32'",
+    "pywin32>=312; sys_platform == 'win32'",
     "uvloop>=0.22.1; sys_platform != 'win32'",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",

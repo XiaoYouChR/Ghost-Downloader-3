@@ -22,6 +22,19 @@ def test_flush_readonly_memoryview_at_offset(tmp_path):
     assert path.read_bytes() == bytes(123) + b"ghost-downloader"
 
 
+def test_ftruncate_shorter_keeps_only_head(tmp_path):
+    path = tmp_path / "out.bin"
+    fd = os.open(path, os.O_RDWR | os.O_CREAT | O_BINARY)
+    try:
+        ftruncate(fd, 1024)
+        pwrite(fd, b"ghost-downloader", 0)
+        ftruncate(fd, 5)
+    finally:
+        os.close(fd)
+
+    assert path.read_bytes() == b"ghost"
+
+
 def test_flush_to_readonly_file_fails_like_os(tmp_path):
     path = tmp_path / "out.bin"
     path.write_bytes(b"")
