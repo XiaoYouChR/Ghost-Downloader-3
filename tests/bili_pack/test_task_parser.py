@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
-from bili_pack.parse import BiliUrl, buildPages, parseBiliUrl
+from bili_pack.parse import BiliUrl, buildFavoritePages, buildPages, parseBiliUrl
+
+FAVORITE_SAMPLE = Path(__file__).parent.parent / "samples" / "bilibili_favorite.json"
 
 
 def test_parse_bvid_link():
@@ -21,6 +26,24 @@ def test_parse_link_with_page_list():
 def test_parse_avid_link():
     biliUrl = parseBiliUrl("https://www.bilibili.com/video/av12345")
     assert biliUrl.videoId == "av12345"
+
+
+def test_parse_favorite_links():
+    assert parseBiliUrl("https://space.bilibili.com/437313511/favlist?fid=478029911").favoriteId == 478029911
+    assert parseBiliUrl("https://www.bilibili.com/list/ml478029911").favoriteId == 478029911
+    assert parseBiliUrl("https://www.bilibili.com/medialist/detail/ml478029911").favoriteId == 478029911
+    collected = parseBiliUrl("https://space.bilibili.com/437313511/favlist?fid=1094155&ctype=21")
+    assert (collected.favoriteId, collected.seasonId) == (0, 1094155)
+
+
+def test_build_favorite_pages_skips_invalid_and_expands_pages():
+    sample = json.loads(FAVORITE_SAMPLE.read_text(encoding="utf-8"))
+    pages = buildFavoritePages(sample["medias"], sample["pageLists"])
+    assert [p.bvid for p in pages] == ["BV1p3ivB8EZA", "BV1PW4y1G7WG"] + ["BV1sx411N7ms"] * 14
+    assert pages[0].cid == 35163146510
+    assert pages[0].episodeTitle == "【中配】为什么Rust教程总喜欢自我吹嘘？ Tsoding - Tsoding Highlights"
+    assert [p.pagePart for p in pages[2:5]] == ["至少还有你", "好久不见", "隐形的翅膀"]
+    assert all(p.selected for p in pages)
 
 
 def test_parse_space_list_link():

@@ -55,8 +55,8 @@ def toTimeText(seconds: int) -> str:
     return f"{m}:{s:02d}"
 
 
-def toSeasonText(task: BilibiliTask) -> str:
-    return QCoreApplication.translate("TaskCard", "{0}/{1} 集").format(*task.seasonCounts())
+def toVideoCountText(task: BilibiliTask) -> str:
+    return QCoreApplication.translate("TaskCard", "已选 {0}/{1}").format(*task.videoCounts())
 
 
 class SelectDialog(MessageBoxBase):
@@ -64,11 +64,11 @@ class SelectDialog(MessageBoxBase):
     def __init__(self, task: BilibiliTask, parent=None):
         super().__init__(parent)
         self._pages = task.files or []
-        self._isSeason = task.isSeason
-        self._groups = task.episodeGroups() if self._isSeason else [[p] for p in self._pages]
+        self._hasManyVideos = task.hasManyVideos
+        self._groups = task.videoGroups() if self._hasManyVideos else [[p] for p in self._pages]
         self._isSyncing = False
 
-        title = self.tr("选择合集") if self._isSeason else self.tr("选择分P")
+        title = self.tr("选择视频") if self._hasManyVideos else self.tr("选择分P")
         self.titleLabel = SubtitleLabel(title, self)
         self.summaryLabel = BodyLabel("", self)
 
@@ -89,11 +89,11 @@ class SelectDialog(MessageBoxBase):
         self.yesButton.setText(self.tr("确定"))
         self.cancelButton.setText(self.tr("取消"))
 
-        self.treeView.setRootIsDecorated(self._isSeason)
+        self.treeView.setRootIsDecorated(self._hasManyVideos)
         self.treeView.setUniformRowHeights(True)
         self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
 
-        firstCol = self.tr("合集") if self._isSeason else self.tr("分P")
+        firstCol = self.tr("视频") if self._hasManyVideos else self.tr("分P")
         self.treeModel.setHorizontalHeaderLabels([
             firstCol, self.tr("大小"), self.tr("开始"), self.tr("结束"),
         ])
@@ -105,9 +105,9 @@ class SelectDialog(MessageBoxBase):
         self.treeView.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
         for pages in self._groups:
-            if not self._isSeason or len(pages) == 1:
+            if not self._hasManyVideos or len(pages) == 1:
                 page = pages[0]
-                if self._isSeason:
+                if self._hasManyVideos:
                     label = page.episodeTitle or page.bvid or f"#{page.index}"
                 else:
                     label = page.pagePart.strip() or f"P{page.pageNumber}"
@@ -377,9 +377,9 @@ class SelectDialog(MessageBoxBase):
 
     def _refreshSummary(self) -> None:
         selected = self.selectedIndexes()
-        if self._isSeason:
-            selectedEps = sum(1 for pages in self._groups if any(p.index in selected for p in pages))
-            self.summaryLabel.setText(self.tr("{0}/{1} 集").format(selectedEps, len(self._groups)))
+        if self._hasManyVideos:
+            selectedVideos = sum(1 for pages in self._groups if any(p.index in selected for p in pages))
+            self.summaryLabel.setText(self.tr("已选 {0}/{1}").format(selectedVideos, len(self._groups)))
         else:
             self.summaryLabel.setText(self.tr("{0}/{1} 个分P").format(len(selected), len(self._pages)))
         self.yesButton.setEnabled(len(selected) > 0)
@@ -478,7 +478,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
                 self._rangeSlider.setValues(0, page._duration)
 
         if self._selectFilesButton is not None:
-            tip = self.tr("选择合集") if task.isSeason else self.tr("选择分P")
+            tip = self.tr("选择视频") if task.hasManyVideos else self.tr("选择分P")
             self._selectFilesButton.setToolTip(tip)
         self._refreshButtonVisibility()
 
@@ -691,8 +691,8 @@ class BilibiliDraftCard(MultiFileDraftCard):
         size = toReadableSize(self._task.fileSize)
         if self._isSizeEstimated:
             size = f"~{size}"
-        if self._task.isSeason:
-            self.sizeLabel.setText(f"{toSeasonText(self._task)} · {size}")
+        if self._task.hasManyVideos:
+            self.sizeLabel.setText(f"{toVideoCountText(self._task)} · {size}")
         else:
             self.sizeLabel.setText(size)
         self.nameLabel.setText(self._task.name)
@@ -713,11 +713,11 @@ class BilibiliTaskCard(MultiFileTaskCard):
 
     def _refreshForStatus(self, task: BilibiliTask) -> None:
         super()._refreshForStatus(task)
-        if (task.isSeason
+        if (task.hasManyVideos
                 and task.files and len(task.files) > 1
                 and not self._isFileMissing
                 and task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED}):
-            self.statusLabel.setText(toSeasonText(task))
+            self.statusLabel.setText(toVideoCountText(task))
 
     def _onSelectFilesClicked(self) -> None:
         dialog = SelectDialog(self._task, self.window())
@@ -732,5 +732,5 @@ class BilibiliTaskCard(MultiFileTaskCard):
     def _initWidget(self) -> None:
         super()._initWidget()
         task: BilibiliTask = self._task
-        tip = self.tr("选择合集") if task.isSeason else self.tr("选择分P")
+        tip = self.tr("选择视频") if task.hasManyVideos else self.tr("选择分P")
         self.selectFilesButton.setToolTip(tip)

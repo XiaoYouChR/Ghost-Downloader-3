@@ -12,6 +12,7 @@ class BiliUrl:
     videoId: str = ""
     mid: int = 0
     seasonId: int = 0
+    favoriteId: int = 0
     selectedPages: list[int] | None = None
 
 
@@ -24,6 +25,19 @@ def parseBiliUrl(url: str) -> BiliUrl:
     listsMatch = re.match(r"/(\d+)/lists/(\d+)", parsed.path)
     if listsMatch:
         return BiliUrl(mid=int(listsMatch.group(1)), seasonId=int(listsMatch.group(2)))
+
+    favoriteMatch = re.match(r"/(\d+)/favlist", parsed.path)
+    if favoriteMatch:
+        query = parse_qs(parsed.query)
+        fid = query.get("fid", [""])[0]
+        if fid.isdigit():
+            if query.get("ctype", [""])[0] == "21":
+                return BiliUrl(mid=int(favoriteMatch.group(1)), seasonId=int(fid))
+            return BiliUrl(favoriteId=int(fid))
+
+    mediaListMatch = re.match(r"/(?:list|medialist/detail)/ml(\d+)", parsed.path)
+    if mediaListMatch:
+        return BiliUrl(favoriteId=int(mediaListMatch.group(1)))
 
     detailMatch = re.match(r"/(\d+)/channel/collectiondetail", parsed.path)
     if detailMatch:
@@ -49,6 +63,29 @@ def buildPages(viewData: dict, biliUrl: BiliUrl) -> tuple[list[BiliPage], str, s
         setVideoSelection(pages, biliUrl.selectedPages)
 
     return pages, title, coverUrl
+
+
+def matchFavoriteVideo(media: dict) -> bool:
+    return media.get("type") == 2 and not int(media.get("attr") or 0) & 1
+
+
+def buildFavoritePages(medias: list[dict], pageLists: dict[str, list[dict]]) -> list[BiliPage]:
+    pages: list[BiliPage] = []
+    for media in medias:
+        if not matchFavoriteVideo(media):
+            continue
+        bvid = str(media["bvid"])
+        title = str(media.get("title") or "").strip()
+        rawPages = pageLists.get(bvid) or [{
+            "cid": (media.get("ugc") or {})["first_cid"],
+            "page": 1,
+            "part": title,
+            "duration": media.get("duration"),
+        }]
+        coverUrl = toHttps(media.get("cover") or "")
+        for raw in rawPages:
+            pages.append(buildPage(len(pages), raw, bvid=bvid, episodeTitle=title, coverUrl=coverUrl))
+    return pages
 
 
 def toHttps(url: str) -> str:

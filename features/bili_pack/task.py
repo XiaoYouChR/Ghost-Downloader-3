@@ -200,11 +200,11 @@ class BilibiliTask(Task):
         return super().outputPath
 
     @property
-    def isSeason(self) -> bool:
+    def hasManyVideos(self) -> bool:
         files = self.files or []
         return any(f.episodeTitle for f in files) or len({f.bvid for f in files if f.bvid}) > 1
 
-    def episodeGroups(self) -> list[list[BiliPage]]:
+    def videoGroups(self) -> list[list[BiliPage]]:
         groups: dict[str, list[BiliPage]] = {}
         order: list[str] = []
         for page in self.files or []:
@@ -219,8 +219,8 @@ class BilibiliTask(Task):
     def hasAudio(self) -> bool:
         return any(f.audioUrl or f._audioStreams for f in self.files or [])
 
-    def seasonCounts(self) -> tuple[int, int]:
-        groups = self.episodeGroups()
+    def videoCounts(self) -> tuple[int, int]:
+        groups = self.videoGroups()
         selected = sum(1 for g in groups if any(p.selected for p in g))
         return selected, len(groups)
 
@@ -330,7 +330,7 @@ class BilibiliTask(Task):
         covers: list[tuple[str, int, int | None]] = []
         if self.coverUrl:
             covers.append((self.coverUrl, self.coverSize, None))
-        if self.isSeason:
+        if self.hasManyVideos:
             seen: set[str] = set()
             for page in self.files or []:
                 if not page.selected or not page.coverUrl:

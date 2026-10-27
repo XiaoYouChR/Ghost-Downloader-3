@@ -75,15 +75,15 @@ def test_update_summary_with_one_episode():
         files=files,
         _baseName="各种番",
     )
-    assert [[p.bvid for p in g] for g in task.episodeGroups()] == [["BV1"], ["BV2"]]
-    assert task.seasonCounts() == (1, 2)
+    assert [[p.bvid for p in g] for g in task.videoGroups()] == [["BV1"], ["BV2"]]
+    assert task.videoCounts() == (1, 2)
 
     files[0].selected = False
-    assert task.seasonCounts() == (0, 2)
+    assert task.videoCounts() == (0, 2)
 
     files[0].selected = True
     files[1].selected = True
-    assert task.seasonCounts() == (2, 2)
+    assert task.videoCounts() == (2, 2)
 
 
 def test_update_adds_covers_for_season_and_selected_episodes():

@@ -9,9 +9,9 @@ from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
 from .config import bilibiliConfig
-from .parse import buildPages, parseBiliUrl
+from .parse import buildFavoritePages, buildPages, matchFavoriteVideo, parseBiliUrl, toHttps
 from .stream import buildSize, fetchPlayurl, toStreamUrl
-from .task import BilibiliTask
+from .task import BiliPage, BilibiliTask
 
 
 class BilibiliParser(TaskParser):
@@ -28,7 +28,7 @@ class BilibiliParser(TaskParser):
             biliUrl = parseBiliUrl(options.url)
         except ValueError:
             return False
-        return bool(biliUrl.videoId or biliUrl.seasonId)
+        return bool(biliUrl.videoId or biliUrl.seasonId or biliUrl.favoriteId)
 
     async def parse(self, options: TaskOptions) -> Task:
         url = options.url
@@ -58,11 +58,13 @@ class BilibiliParser(TaskParser):
 
         try:
             biliUrl = parseBiliUrl(url)
-            if not biliUrl.videoId and not biliUrl.seasonId:
+            if biliUrl.favoriteId:
+                parsedPages, title, coverUrl = await fetchFavorite(client, biliUrl.favoriteId)
+            elif biliUrl.videoId or biliUrl.seasonId:
+                viewData = await fetchView(client, biliUrl)
+                parsedPages, title, coverUrl = buildPages(viewData, biliUrl)
+            else:
                 raise ValueError("不是有效的 Bilibili 视频链接")
-
-            viewData = await fetchView(client, biliUrl)
-            parsedPages, title, coverUrl = buildPages(viewData, biliUrl)
             if not parsedPages:
                 raise ValueError("未获取到视频分P信息")
 
@@ -121,6 +123,47 @@ class BilibiliParser(TaskParser):
             return task
         finally:
             client.close()
+
+
+async def fetchFavorite(client, favoriteId: int) -> tuple[list[BiliPage], str, str]:
+    medias: list[dict] = []
+    info: dict = {}
+    pageNumber = 1
+    while True:
+        data = await fetchApi(
+            client,
+            "https://api.bilibili.com/x/v3/fav/resource/list"
+            f"?media_id={favoriteId}&ps=36&pn={pageNumber}&platform=web",
+        )
+        info = data.get("info") or info
+        medias.extend(data.get("medias") or [])
+        if not data.get("has_more"):
+            break
+        pageNumber += 1
+
+    pageLists: dict[str, list[dict]] = {}
+    for media in filter(matchFavoriteVideo, medias):
+        hasFirstCid = bool((media.get("ugc") or {}).get("first_cid"))
+        if int(media.get("page") or 1) > 1 or not hasFirstCid:
+            bvid = str(media["bvid"])
+            pageLists[bvid] = await fetchApi(client, f"https://api.bilibili.com/x/player/pagelist?bvid={bvid}")
+
+    pages = buildFavoritePages(medias, pageLists)
+    if not pages:
+        raise ValueError("收藏夹中没有可下载的视频")
+    title = str(info.get("title") or "").strip() or "bilibili_favorite"
+    return pages, title, toHttps(info.get("cover") or "")
+
+
+async def fetchApi(client, url: str):
+    response = await client.get(url, headers={"referer": "https://www.bilibili.com"})
+    if response.status.as_int() == 412:
+        raise ValueError("Bilibili 拦截了请求（412 风控），请稍后再试")
+    response.raise_for_status()
+    payload = await response.json()
+    if payload.get("code") not in {None, 0}:
+        raise ValueError(payload.get("message") or "Bilibili 接口返回错误")
+    return payload.get("data")
 
 
 async def fetchView(client, biliUrl) -> dict:

@@ -51,7 +51,7 @@ def init(pack) -> dict:
 
 def taskFields(task) -> dict:
     return {
-        "fileSelectKind": "season" if task.isSeason else "pages",
+        "fileSelectKind": "videos" if task.hasManyVideos else "pages",
         "canSelectFiles": task.isVideoEnabled or task.isAudioEnabled,
     }
 
@@ -77,11 +77,11 @@ def applyFileEdits(task, edits: dict):
 
 
 def fileGroups(task) -> dict[int, list[str]]:
-    if not task.isSeason:
+    if not task.hasManyVideos:
         return {}
     return {
         page.index: [group[0].episodeTitle or group[0].bvid or f"#{group[0].index}"]
-        for group in task.episodeGroups() for page in group
+        for group in task.videoGroups() for page in group
     }
 
 
