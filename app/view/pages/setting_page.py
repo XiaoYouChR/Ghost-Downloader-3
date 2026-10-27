@@ -313,7 +313,8 @@ class SettingPage(FastScrollArea):
             self.tr("在系统启动时静默运行 Ghost Downloader"),
             cfg.shouldRunAtLogin,
         )
-        from app.config.paths import APP_DATA_DIR, isPortable
+        from app.config.paths import APP_DATA_DIR, hasNoAutoUpdateMarker, isPortable
+        hasMarker = hasNoAutoUpdateMarker()
         if isPortable():
             self.migrateCard = PushSettingCard(
                 self.tr("切换到用户模式"), FluentIcon.SYNC,
@@ -333,9 +334,6 @@ class SettingPage(FastScrollArea):
         )
         self._refreshCommandLineToolCard()
         softwareCards = [
-            SwitchSettingCard(FluentIcon.UPDATE, self.tr("在应用程序启动时检查更新"),
-                              self.tr("新版本将更稳定，并具有更多功能"),
-                              cfg.shouldCheckUpdateAtStartup),
             self.autoRunCard,
             self.commandLineToolCard,
             ComboBoxSettingCard(
@@ -347,6 +345,12 @@ class SettingPage(FastScrollArea):
             ClipboardSettingCard(self._featureService.packs),
             self.migrateCard,
         ]
+        if not hasMarker:
+            softwareCards.insert(0, SwitchSettingCard(
+                FluentIcon.UPDATE, self.tr("在应用程序启动时检查更新"),
+                self.tr("新版本将更稳定，并具有更多功能"),
+                cfg.shouldCheckUpdateAtStartup,
+            ))
         self.softwareGroup.addSettingCards(softwareCards)
 
         self.feedbackCard = PrimaryPushSettingCard(
@@ -368,6 +372,8 @@ class SettingPage(FastScrollArea):
             self.tr("检查更新"), FluentIcon.INFO, self.tr("关于"),
             f"© Copyright {YEAR}, {AUTHOR}. Version {VERSION}",
         )
+        if hasMarker:
+            self.aboutCard.button.hide()
 
         self.aboutGroup.addSettingCards([
             HyperlinkCard(AUTHOR_URL, self.tr("打开作者的个人空间"), FluentIcon.PROJECTOR,
