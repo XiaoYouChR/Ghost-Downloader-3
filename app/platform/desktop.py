@@ -263,47 +263,17 @@ def requestForeground() -> None:
         pass
 
 
-def raiseWindow(window) -> None:
+def raiseWindow(window: QWidget) -> None:
+    _sendForegroundInput()
     window.show()
     window.setWindowState(
         (window.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive
     )
     window.raise_()
     window.activateWindow()
-
     if sys.platform == "win32":
-        try:
-            import win32api
-            import win32con
-            import win32gui
-            import win32process
-
-            hwnd = int(window.winId())
-            if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-
-            foregroundHwnd = win32gui.GetForegroundWindow()
-            foregroundThreadId = (
-                win32process.GetWindowThreadProcessId(foregroundHwnd)[0]
-                if foregroundHwnd
-                else 0
-            )
-            currentThreadId = win32api.GetCurrentThreadId()
-            attached = False
-            try:
-                if foregroundThreadId and foregroundThreadId != currentThreadId:
-                    win32process.AttachThreadInput(currentThreadId, foregroundThreadId, True)
-                    attached = True
-                win32gui.BringWindowToTop(hwnd)
-                win32gui.SetForegroundWindow(hwnd)
-                flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
-                win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, flags)
-                win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, flags)
-            finally:
-                if attached:
-                    win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
-        except Exception as e:
-            logger.opt(exception=e).warning("Failed to raise window on Windows")
+        import ctypes
+        ctypes.windll.user32.SetForegroundWindow(int(window.winId()))
 
 
 def startFileDrag(paths: list[Path], source: QWidget) -> None:
