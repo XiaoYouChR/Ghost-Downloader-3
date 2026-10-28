@@ -52,6 +52,11 @@ export function parseMp4Duration(bytes: Uint8Array): number | undefined {
   return timescale > 0 && duration > 0 ? duration / timescale : undefined;
 }
 
+export function isInitSegment(bytes: Uint8Array): boolean {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return parseBoxes(view, 0, view.byteLength).some((box) => box.type === "moov");
+}
+
 // The tail of a media segment's samples: entropy-coded bytes, unlike the head's encoder SEI that repeats across videos.
 export function parseMdatTail(bytes: Uint8Array, length: number): Uint8Array | undefined {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

@@ -1,7 +1,7 @@
 import {isCatCatchMedia} from "../../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
-import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, isStreamUrl, matchPageVideo, urlIdHints} from "../resolution/url-classify";
-import type {VideoMatch} from "../resolution/url-classify";
+import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, isStreamUrl, matchClickedVideoById, urlIdHints} from "../resolution/url-classify";
+import type {ClickedVideoMatch} from "../resolution/url-classify";
 
 import {AttributionLedger} from "./attribution-ledger";
 import {selectMediaForPage} from "../resolution/strategy";
@@ -30,11 +30,11 @@ const FETCH_BUFFER_CORRELATION_MS = 2500;
 const RECENT_FETCHES_CAP = 16;
 // One AAC frame: a DASH audio track ends up to a frame short of the element's (video) duration.
 const SAME_DURATION_TOLERANCE_S = 0.025;
-// Rejecting is the risky verdict, so it waits for a gap no track of the same video shows.
+// The element lasts as long as its longest track, so only a file outlasting it by more than any rounding is another video.
 const OTHER_DURATION_GAP_S = 1;
 const DURATIONS_CAP = 512;
 
-type MatchClickedVideo = (url: string) => VideoMatch;
+type MatchClickedVideo = (url: string) => ClickedVideoMatch;
 
 function toFormKind(mimeTypes: Set<string>): VideoSessionFormKind {
   if (mimeTypes.size === 0) { return "unknown"; }
@@ -692,12 +692,12 @@ class MediaAttribution {
     const isSameLength = (duration: number) => Math.abs(duration - target) <= SAME_DURATION_TOLERANCE_S;
     const canCompare = Number.isFinite(target) && target > 0 && [...this.durationByUrl.values()].some(isSameLength);
     return (url) => {
-      const byPage = matchPageVideo(url, pageUrl);
+      const byPage = matchClickedVideoById(url, pageUrl);
       if (byPage !== "unknown" || !canCompare) { return byPage; }
       const duration = this.durationByUrl.get(url);
       if (duration === undefined) { return "unknown"; }
       if (isSameLength(duration)) { return "same"; }
-      return Math.abs(duration - target) > OTHER_DURATION_GAP_S ? "other" : "unknown";
+      return duration - target > OTHER_DURATION_GAP_S ? "other" : "unknown";
     };
   }
 

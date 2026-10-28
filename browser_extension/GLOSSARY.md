@@ -96,7 +96,7 @@ _Avoid_: confirmed、bound
 
 **Clicked Video Match**:
 判断一个 URL 是否装着用户点击的那个视频：same / other / unknown。
-证据是精确的——页面上的视频 id 与 URL 里的视频 id 相同，或文件时长与该 video 元素的时长相差不超过一帧；时长相差超过一秒才判为 other。
+证据是精确的——页面上的视频 id 与 URL 里的视频 id 相同，或文件时长与该 video 元素的时长相差不超过一帧；文件比该 video 元素长出一秒以上才判为 other。
 解析时 Clicked Video Match 优先于 MSE Lock，MSE Lock 优先于捕获时间。
 _Avoid_: page video
 

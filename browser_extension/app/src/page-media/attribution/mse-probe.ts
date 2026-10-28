@@ -5,7 +5,7 @@
  * capturing buffers. Built as a standalone IIFE bundle (see scripts/build.mjs).
  */
 import {postMediaSignal} from "./attribution-signal";
-import {isMp4Head, MP4_HEAD_LIMIT, parseMdatTail, parseMp4Duration} from "./mp4";
+import {isInitSegment, isMp4Head, MP4_HEAD_LIMIT, parseMdatTail, parseMp4Duration} from "./mp4";
 
 declare global {
   interface Window {
@@ -34,6 +34,11 @@ const HEADS_CAP = 16;
     recentHeads.push(head);
     if (recentHeads.length > HEADS_CAP) { recentHeads.shift(); }
     return head;
+  }
+
+  // Repeated silent AAC frames are byte-identical across unrelated videos.
+  function isDistinctive(tail: Uint8Array): boolean {
+    return new Set(tail).size >= MDAT_TAIL_LENGTH / 2;
   }
 
   function hasBytes(haystack: Uint8Array, needle: Uint8Array): boolean {
@@ -75,11 +80,13 @@ const HEADS_CAP = 16;
                 postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: id, mimeType });
                 try {
                   const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-                  const tail = parseMdatTail(bytes, MDAT_TAIL_LENGTH);
-                  if (!tail) {
-                    // An init segment starts the next video in a reused SourceBuffer, so the match starts over.
+                  if (isInitSegment(bytes)) {
+                    // An init segment starts the next video in a reused SourceBuffer, so the old match must not outlive it.
+                    if (sourceUrls.length > 0) { postMediaSignal({ kind: "mse_buffer_matched", mediaSourceId: id, mimeType, urls: [] }); }
                     sourceUrls = [];
-                  } else if (sourceUrls.length !== 1) {
+                  }
+                  const tail = parseMdatTail(bytes, MDAT_TAIL_LENGTH);
+                  if (tail && isDistinctive(tail) && sourceUrls.length !== 1) {
                     const found = sourceUrlsOf(tail);
                     // Each later segment can only narrow the holders down.
                     const narrowed = sourceUrls.length === 0 ? found : sourceUrls.filter((url) => found.includes(url));
@@ -209,9 +216,9 @@ const HEADS_CAP = 16;
           }
         } catch { /* responseText throws on non-text responseType. */ }
         try {
-          if (xhr.responseType === "arraybuffer" && xhr.response instanceof ArrayBuffer) {
+          if (xhr.responseType === "arraybuffer" && xhr.response instanceof ArrayBuffer && isMp4Head(new Uint8Array(xhr.response).subarray(0, 8))) {
             const head = new Uint8Array(xhr.response.slice(0, MP4_HEAD_LIMIT));
-            if (isMp4Head(head)) { addHead(resolvedUrl, head); }
+            addHead(resolvedUrl, head);
             const duration = parseMp4Duration(head);
             if (duration !== undefined) { postMediaSignal({ kind: "media_duration", url: resolvedUrl, duration }); }
           }

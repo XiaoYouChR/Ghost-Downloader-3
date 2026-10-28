@@ -74,11 +74,14 @@ export function selectGeneric(ctx: ResolveContext): Resolution {
   const evidenced = post.filter((r) => r.clickedVideo === "same");
   // Two evidenced files are a duration collision between reels, not a choice.
   const evidencedMuxed = evidenced.filter((r) => isMuxedUrl(r.url));
-  const muxed = evidencedMuxed.length === 1 ? evidencedMuxed[0].url : (post.length === 1 && isMuxedUrl(post[0].url) ? post[0].url : undefined);
+  const onlyMuxed = post.length === 1 && isMuxedUrl(post[0].url) ? post[0].url : undefined;
+  const muxed = evidencedMuxed.length === 1 ? evidencedMuxed[0].url : onlyMuxed;
   if (muxed) {
     return { kind: "selection", selection: { kind: "single", url: stripRangeParams(muxed), formKind: "unknown" } };
   }
-  const pair = selectMergePair(evidenced, classifyTrackRole) ?? (post.length === 2 ? selectMergePair(post, classifyTrackRole) : null);
+  // An mp4 beside an unrelated mp3 is no pair, so without evidence only URLs naming themselves as tracks are paired.
+  const isTrackPair = post.length === 2 && post.every((r) => isDashSegmentUrl(r.url));
+  const pair = selectMergePair(evidenced, classifyTrackRole) ?? (isTrackPair ? selectMergePair(post, classifyTrackRole) : null);
   if (pair) {
     return { kind: "selection", selection: { kind: "merge", video: stripRangeParams(pair.video), audio: stripRangeParams(pair.audio) } };
   }

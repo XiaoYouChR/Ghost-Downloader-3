@@ -2,7 +2,7 @@ import {selectGeneric} from "./strategies/generic";
 import {selectMeta} from "./strategies/instagram";
 import {selectYouTube} from "./strategies/youtube";
 import {isStreamUrl} from "./url-classify";
-import type {VideoMatch} from "./url-classify";
+import type {ClickedVideoMatch} from "./url-classify";
 import type {Resolution, VideoSessionFormKind} from "../types";
 
 // One attributed URL as the strategies see it — also the element type of
@@ -14,7 +14,7 @@ export type AttributedUrlView = {
   readonly isMaster?: boolean;
   readonly isLockedByMse: boolean;
   // Whether the URL holds the video the user clicked, judged by the Attribution Engine.
-  readonly clickedVideo: VideoMatch;
+  readonly clickedVideo: ClickedVideoMatch;
 };
 
 // Strategies see only this — they MUST NOT reach back into the controller.

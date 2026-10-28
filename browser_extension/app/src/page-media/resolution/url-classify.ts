@@ -137,9 +137,12 @@ export function urlIdHints(url: string): Set<string> {
   return result;
 }
 
-function queryIdValues(parsed: URL): Set<string> {
+// CDN path segments are storage hashes and v/id/aid also carry cache busters, so neither can prove "other".
+const OTHER_PROVING_QUERY_KEYS = ["__vid", "modal_id", "video_id", "bvid"];
+
+function queryIdValues(parsed: URL, keys: string[]): Set<string> {
   const values = new Set<string>();
-  for (const key of VIDEO_ID_QUERY_KEYS) {
+  for (const key of keys) {
     const value = parsed.searchParams.get(key);
     if (value && value.length >= 4) { values.add(value); }
   }
@@ -150,24 +153,23 @@ function pathIdValues(parsed: URL): Set<string> {
   return new Set(parsed.pathname.split("/").filter(looksLikeVideoIdSegment));
 }
 
-export type VideoMatch = "same" | "other" | "unknown";
+export type ClickedVideoMatch = "same" | "other" | "unknown";
 
-// By value, not key: Douyin's page says modal_id=X where its CDN says __vid=X. CDN path segments are storage hashes, so they never prove "other".
-export function matchPageVideo(url: string, pageUrl: URL): VideoMatch {
+// By value, not key: Douyin's page says modal_id=X where its CDN says __vid=X.
+export function matchClickedVideoById(url: string, pageUrl: URL): ClickedVideoMatch {
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
     return "unknown";
   }
-  const pageQueryIds = queryIdValues(pageUrl);
-  const pageIds = new Set([...pageQueryIds, ...pathIdValues(pageUrl)]);
+  const pageIds = new Set([...queryIdValues(pageUrl, VIDEO_ID_QUERY_KEYS), ...pathIdValues(pageUrl)]);
   if (pageIds.size === 0) { return "unknown"; }
-  const queryIds = queryIdValues(parsed);
-  for (const id of [...queryIds, ...pathIdValues(parsed)]) {
+  for (const id of [...queryIdValues(parsed, VIDEO_ID_QUERY_KEYS), ...pathIdValues(parsed)]) {
     if (pageIds.has(id)) { return "same"; }
   }
-  return queryIds.size > 0 && pageQueryIds.size > 0 ? "other" : "unknown";
+  const isProvable = queryIdValues(parsed, OTHER_PROVING_QUERY_KEYS).size > 0 && queryIdValues(pageUrl, OTHER_PROVING_QUERY_KEYS).size > 0;
+  return isProvable ? "other" : "unknown";
 }
 
 export function classifyTrackRole(url: string, contentType: string): TrackRole {
