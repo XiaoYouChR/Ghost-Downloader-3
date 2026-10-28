@@ -102,6 +102,7 @@ class MainWindow(MSFluentWindow):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self._macVisualEffectView = None
+        self._settingsPreloadStarted = False
         self.searchEdit = None
         self._dropOverlay = None
         super().__init__(parent)
@@ -161,6 +162,11 @@ class MainWindow(MSFluentWindow):
         self._addPage(SettingPage, FluentIcon.SETTING, self.tr("设置"),
                       NavigationItemPosition.BOTTOM)
         self._showPage(TaskPage)
+        # 设置页首次创建约需数百毫秒，放到窗口显示后预建，避免首次点击设置时卡顿
+        self._settingsPreloadTimer = QTimer(self)
+        self._settingsPreloadTimer.setSingleShot(True)
+        self._settingsPreloadTimer.setInterval(200)
+        self._settingsPreloadTimer.timeout.connect(self._preloadSettingsPage)
 
     def setupPacks(self) -> None:
         for PageClass in self._featureService.pages():
@@ -188,6 +194,12 @@ class MainWindow(MSFluentWindow):
         )
 
     def _showPage(self, pageClass: type[QWidget]) -> None:
+        page = self._pageByClass(pageClass)
+        self.switchTo(page)
+        self.navigationInterface.setCurrentItem(pageClass.__name__)
+        self._updateSearchTarget(page)
+
+    def _pageByClass(self, pageClass: type[QWidget]) -> QWidget:
         routeKey = pageClass.__name__
         page = self._pages.get(routeKey)
         if page is None:
@@ -200,9 +212,10 @@ class MainWindow(MSFluentWindow):
             if self.stackedWidget.count() == 1:
                 self.stackedWidget.currentChanged.connect(self._onCurrentInterfaceChanged)
                 qrouter.setDefaultRouteKey(self.stackedWidget, routeKey)
-        self.switchTo(page)
-        self.navigationInterface.setCurrentItem(routeKey)
-        self._updateSearchTarget(page)
+        return page
+
+    def _preloadSettingsPage(self) -> None:
+        self._pageByClass(SettingPage)
 
     def _createPage(self, pageClass: type[QWidget]) -> QWidget:
         if pageClass is TaskPage:
@@ -542,6 +555,9 @@ class MainWindow(MSFluentWindow):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
+        if not self._settingsPreloadStarted:
+            self._settingsPreloadStarted = True
+            self._settingsPreloadTimer.start()
         if not self._isGeometryRestored:
             self._isGeometryRestored = True
             saved = cfg.geometry.value
