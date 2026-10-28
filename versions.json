@@ -41,9 +41,9 @@
   },
   "packs": {
     "bili_pack": {
-      "version": "1.2.2",
+      "version": "1.2.3",
       "file": "bili_pack.zip",
-      "sha256": "f765cdb45dfe026feccb64b828a9f2bdf14d08d165cc5ad864c723d105b43476",
+      "sha256": "98dd346d72d8d8906202f1ac60271431b7671e48721746a669a42088ee58b877",
       "gdMinVersion": "4.4.4"
     },
     "bittorrent_pack": {
@@ -59,9 +59,9 @@
       "gdMinVersion": "4.4.5"
     },
     "ffmpeg_pack": {
-      "version": "1.1.1",
+      "version": "1.1.2",
       "file": "ffmpeg_pack.zip",
-      "sha256": "335dc5c8075f6fd508954f391a41ee9f35e800f1ed0804632640c4704840a18e",
+      "sha256": "44f14f25aeffbe7277eafc3fa78104b1c0f171df3e6d7167a284509a5d893245",
       "gdMinVersion": "4.4.5"
     },
     "ftp_pack": {
@@ -77,9 +77,9 @@
       "gdMinVersion": "4.4.4"
     },
     "http_pack": {
-      "version": "1.1.5",
+      "version": "1.1.6",
       "file": "http_pack.zip",
-      "sha256": "ac214e2df38d1526d8fbf53a7fa89ae7e18e6d8fbf455a7b423d39176a108445",
+      "sha256": "639f2df067495b15412ba4f7c022023d47d9dec6f601d6fa0218486d85c9b8ff",
       "gdMinVersion": "4.4.4"
     },
     "huggingface_pack": {
@@ -95,9 +95,9 @@
       "gdMinVersion": "4.4.5"
     },
     "yt_dlp_pack": {
-      "version": "1.3.4",
+      "version": "1.3.5",
       "file": "yt_dlp_pack.zip",
-      "sha256": "85ecc15bfc7f7434507ef2f55087859bb7e6e2d736deb08fe5805656dd67235a",
+      "sha256": "4ac85e1ca182ae3199f77a5a20f1ed141f7c029a62535eda53c5e5d571be4e6e",
       "gdMinVersion": "4.4.5"
     }
   }
