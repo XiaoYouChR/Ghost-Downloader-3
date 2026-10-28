@@ -1,7 +1,7 @@
 import {Button, makeStyles, Spinner, tokens, Tooltip, typographyStyles} from "@fluentui/react-components";
 import {
     CheckmarkCircleRegular,
-    OpenRegular,
+    Open16Regular,
     PlugDisconnectedRegular,
     WarningRegular,
 } from "@fluentui/react-icons";
@@ -39,6 +39,11 @@ const useStyles = makeStyles({
   },
   launch: {
     flexShrink: 0,
+  },
+  launchIcon: {
+    fontSize: "16px",
+    width: "16px",
+    height: "16px",
   },
 });
 
@@ -81,7 +86,7 @@ export function ConnectionStatus({
         <Button
           className={styles.launch}
           appearance="subtle"
-          icon={<OpenRegular />}
+          icon={{ className: styles.launchIcon, children: <Open16Regular /> }}
           size="small"
           onClick={onLaunchDesktop}
         />
