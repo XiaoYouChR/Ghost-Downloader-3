@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from app.config.cfg import cfg
 from app.models.task import Task, TaskFile, TaskStatus
 from tests.conftest import FakeStep
 from tests.helpers import waitUntil
@@ -268,3 +269,41 @@ async def test_edit_side_file_onto_taken_name_numbers_task(engine, downloadFolde
     assert task.name == "a(1).mp4"
     assert (downloadFolder / "a(1).mp4").read_bytes() == b"downloaded"
     assert (downloadFolder / "a.fr.vtt").read_bytes() == b"mine"
+
+
+async def addCompleted(engine, name: str) -> Task:
+    task = buildTask(name)
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.status == TaskStatus.COMPLETED)
+    return task
+
+
+async def test_enable_remove_missing_tasks_removes_only_missing(engine):
+    missing = await addCompleted(engine, "a.zip")
+    kept = await addCompleted(engine, "b.zip")
+    Path(missing.outputPath).unlink()
+
+    cfg.set(cfg.shouldRemoveMissingTasks, True)
+
+    assert engine.taskService.taskById(missing.taskId) is None
+    assert engine.taskService.taskById(kept.taskId) is kept
+
+
+async def test_file_disappeared_removes_task_when_enabled(engine, fileWatcher):
+    cfg.set(cfg.shouldRemoveMissingTasks, True)
+    task = await addCompleted(engine, "a.zip")
+
+    Path(task.outputPath).unlink()
+    fileWatcher.fileChanged.emit(task.outputPath)
+
+    assert engine.taskService.taskById(task.taskId) is None
+
+
+async def test_resume_removes_missing_task_when_enabled(engine, startEngine):
+    cfg.set(cfg.shouldRemoveMissingTasks, True)
+    task = await addCompleted(engine, "a.zip")
+    Path(task.outputPath).unlink()
+
+    restarted = startEngine()
+
+    assert restarted.taskService.tasks == []

@@ -302,7 +302,7 @@ class TaskCard(CardWidget):
             self.progressBar.hide()
             self._isFileMissing = task.hasOutputFile and not isExisting(task.outputPath)
             if self._isFileMissing:
-                self._setStatus(self.tr("文件不存在"))
+                self._setStatus(self.tr("文件缺失"))
                 self.statusLabel.setTextColor(QColor(200, 160, 80), QColor(200, 170, 100))
             elif task.completedAt:
                 self._setStatus(self.tr("完成于 {}").format(
@@ -390,7 +390,7 @@ class TaskCard(CardWidget):
             self._taskService.cancelChecksum(self._task)
             return
         if isFolder(self._task.outputPath) or not isExisting(self._task.outputPath):
-            self._setStatus(self.tr("文件不存在，无法校验"))
+            self._setStatus(self.tr("文件缺失，无法校验"))
             return
         menu = RoundMenu(parent=self)
         moreMenu = RoundMenu(self.tr("更多"), self)

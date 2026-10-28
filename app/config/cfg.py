@@ -249,6 +249,7 @@ class Config(QConfig):
     nameConflict = OptionsConfigItem(
         "GeneralDownload", "NameConflict", "keepBoth", OptionsValidator(["keepBoth", "overwrite", "ask"])
     )
+    shouldRemoveMissingTasks = ConfigItem("GeneralDownload", "RemoveMissingTasks", False, BoolValidator())
     isSpeedLimitEnabled = ConfigItem("GeneralDownload", "isSpeedLimitEnabled", False, BoolValidator())
     speedLimitation = RangeConfigItem(
         "GeneralDownload", "SpeedLimitation", 4194304, RangeValidator(1024, 104857600)

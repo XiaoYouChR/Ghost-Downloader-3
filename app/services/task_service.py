@@ -294,6 +294,7 @@ class TaskService:
         self._flushWorkId: str | None = None
 
         cfg.maxTaskNum.valueChanged.connect(self._rebalance)
+        cfg.shouldRemoveMissingTasks.valueChanged.connect(self._onShouldRemoveMissingTasksChanged)
 
     @property
     def tasks(self) -> list[Task]:
@@ -497,10 +498,23 @@ class TaskService:
             elif task.status in {TaskStatus.WAITING, TaskStatus.RUNNING}:
                 task.setStatus(TaskStatus.WAITING)
                 self._schedule(task)
+        if cfg.shouldRemoveMissingTasks.value:
+            self.removeMissing()
+
+    def removeMissing(self) -> None:
+        from app.models.task import TaskStatus
+        for task in self.tasks:
+            if task.status == TaskStatus.COMPLETED and task.hasOutputFile and not isExisting(task.outputPath):
+                self.delete(task, shouldDeleteFiles=False)
+
+    def _onShouldRemoveMissingTasksChanged(self, isEnabled: bool) -> None:
+        if isEnabled:
+            self.removeMissing()
 
     def stop(self) -> None:
         from app.models.task import TaskStatus
         cfg.maxTaskNum.valueChanged.disconnect(self._rebalance)
+        cfg.shouldRemoveMissingTasks.valueChanged.disconnect(self._onShouldRemoveMissingTasksChanged)
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 task.setStatus(TaskStatus.PAUSED)
@@ -666,6 +680,10 @@ class TaskService:
         if taskId is None:
             return
         task = self._store.taskById(taskId)
-        if task is not None:
-            self._cancelWork(task)
-            self.fileDisappeared.emit(task)
+        if task is None:
+            return
+        if cfg.shouldRemoveMissingTasks.value:
+            self.delete(task, shouldDeleteFiles=False)
+            return
+        self._cancelWork(task)
+        self.fileDisappeared.emit(task)
