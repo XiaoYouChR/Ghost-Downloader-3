@@ -403,9 +403,6 @@ export function usePopupBridge(activeView: PopupView) {
           action,
         }, chrome.i18n.getMessage("errorTaskActionFailed"));
         await refreshState(activeViewRef.current);
-        if (action !== "open_when_done") {
-          showToast(chrome.i18n.getMessage("taskActionSent"), "success");
-        }
       } catch (error) {
         showToast(errorMessageOr(error, chrome.i18n.getMessage("errorTaskActionFailed")), "error");
       } finally {

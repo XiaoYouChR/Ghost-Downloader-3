@@ -625,9 +625,6 @@
   "takeOverDownloads": {
     "message": "Intercept Downloads"
   },
-  "taskActionSent": {
-    "message": "Task action sent"
-  },
   "taskQueued": {
     "message": "Desktop not connected, task queued"
   },

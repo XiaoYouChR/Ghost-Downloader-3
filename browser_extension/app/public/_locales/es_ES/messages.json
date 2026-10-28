@@ -625,9 +625,6 @@
   "takeOverDownloads": {
     "message": "Interceptar descargas"
   },
-  "taskActionSent": {
-    "message": "Acción de tarea enviada"
-  },
   "taskQueued": {
     "message": "El escritorio no está conectado, la tarea se ha puesto en cola"
   },

@@ -625,9 +625,6 @@
   "takeOverDownloads": {
     "message": "Перехват"
   },
-  "taskActionSent": {
-    "message": "Действие над задачей отправлено"
-  },
   "taskQueued": {
     "message": "Рабочий стол не подключён, задача поставлена в очередь"
   },

@@ -625,9 +625,6 @@
   "takeOverDownloads": {
     "message": "Assumir"
   },
-  "taskActionSent": {
-    "message": "Ação da tarefa enviada"
-  },
   "taskQueued": {
     "message": "Desktop não conectado; tarefa na fila"
   },

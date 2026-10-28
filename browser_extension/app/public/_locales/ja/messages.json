@@ -625,9 +625,6 @@
   "takeOverDownloads": {
     "message": "引継ぎ"
   },
-  "taskActionSent": {
-    "message": "タスク操作を送信しました"
-  },
   "taskQueued": {
     "message": "デスクトップ版が未接続のため、タスクはキューに入りました"
   },

@@ -625,9 +625,6 @@
   "takeOverDownloads": {
     "message": "接管下載"
   },
-  "taskActionSent": {
-    "message": "任務操作已傳送"
-  },
   "taskQueued": {
     "message": "桌面版未連接，任務已排隊"
   },
