@@ -8,10 +8,10 @@ from typing import Any, TYPE_CHECKING
 from app.signal import Signal
 from loguru import logger
 
-from app.models.task import TaskOptions, toTaskError
+from app.models.task import TaskError, TaskOptions, toTaskError
 
 if TYPE_CHECKING:
-    from app.models.task import Task, TaskError
+    from app.models.task import Task
 
 
 @dataclass
@@ -31,11 +31,12 @@ class TaskDraft:
     parseFailed = Signal(str, object)
     itemsChanged = Signal()
     itemsCleared = Signal()
-    taskConfirmed = Signal(object, bool)
+    addFailed = Signal(list, object)
 
-    def __init__(self, coroutineRunner, featureService):
+    def __init__(self, coroutineRunner, featureService, add: Callable[[Task, bool], bool]):
         self._coroutineRunner = coroutineRunner
         self._featureService = featureService
+        self._add = add
         self._items: list[DraftItem] = []
         self._baseOptions: dict[str, Any] = {}
 
@@ -172,10 +173,14 @@ class TaskDraft:
         return newUrls
 
     def confirm(self, autoStart=True) -> None:
+        failures: list[tuple[Task, TaskError]] = []
         for item in self._items:
             if item.task is not None:
                 item.task.setOptions(self._buildOptions(item))
-                self.taskConfirmed.emit(item.task, autoStart)
+                try:
+                    self._add(item.task, autoStart)
+                except TaskError as e:
+                    failures.append((item.task, e))
             elif item.parseId:
                 item.confirmedOptions = self._buildOptions(item)
                 item.confirmedAutoStart = autoStart
@@ -188,6 +193,8 @@ class TaskDraft:
         self._items.clear()
         self.parsingBusyChanged.emit(self._isParsing())
         self.itemsCleared.emit()
+        for task, error in failures:
+            self.addFailed.emit([task], error)
 
     def clear(self) -> None:
         for item in self._items:
@@ -211,7 +218,10 @@ class TaskDraft:
         if item.confirmedOptions is not None:
             task.setOptions(item.confirmedOptions)
             item.confirmedOptions = None
-            self.taskConfirmed.emit(task, item.confirmedAutoStart)
+            try:
+                self._add(task, item.confirmedAutoStart)
+            except TaskError as e:
+                self.addFailed.emit([task], e)
             return
 
         if not item.parseId:

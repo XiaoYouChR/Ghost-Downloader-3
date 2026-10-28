@@ -26,11 +26,16 @@ class Browser:
         self.service = engine.browserService
         self.events = []
         self.drafted = []
-        self.service.taskDraftRequested.connect(self.drafted.extend)
+        self.draftErrors = []
+        self.service.taskDraftRequested.connect(self._onTaskDraftRequested)
         self.service.extensionUpdated.connect(lambda version: self.events.append(("extensionUpdated", version)))
         self.service.connectionChanged.connect(lambda: self.events.append("connectionChanged"))
         self.service.protocolMismatched.connect(lambda: self.events.append("protocolMismatched"))
         self.service.pairRequestChanged.connect(self.events.append)
+
+    def _onTaskDraftRequested(self, tasks, error):
+        self.drafted.extend(tasks)
+        self.draftErrors.append(error)
 
     def open(self):
         return websockets.connect(f"ws://127.0.0.1:{self.engine.browserListener.state.port}/")
@@ -237,6 +242,16 @@ async def test_add_reports_parse_failure(browser):
     result = await createTask(browser, source="download", payload={"url": "http://test/v.mp4"})
 
     assert (result["status"], result["message"]) == ("rejected", "network error")
+
+
+async def test_add_into_blocked_folder_drafts_task_with_reason(browser, blockedFolder):
+    result = await createTask(browser, source="download",
+                              payload={"url": "http://test/v.mp4", "path": str(blockedFolder)})
+
+    assert result["status"] == "drafted"
+    assert browser.engine.taskService.tasks == []
+    assert [task.url for task in browser.drafted] == ["http://test/v.mp4"]
+    assert str(blockedFolder) in str(browser.draftErrors[0])
 
 
 async def requestSnapshot(browser, ws) -> dict:

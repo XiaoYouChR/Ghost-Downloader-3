@@ -20,7 +20,6 @@ from qfluentwidgets import (
     ConfigValidator,
     ConfigSerializer,
     EnumSerializer,
-    FolderListValidator,
     Theme,
 )
 
@@ -242,9 +241,8 @@ class Config(QConfig):
     downloadFolder = ConfigItem(
         "GeneralDownload", "DownloadFolder",
         "/storage/emulated/0/Download" if IS_ANDROID else str(DOWNLOAD_DIR),
-        FolderValidator(),
     )
-    recentFolders = ConfigItem("GeneralDownload", "RecentFolders", [], FolderListValidator())
+    recentFolders = ConfigItem("GeneralDownload", "RecentFolders", [], StringListValidator())
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
     nameConflict = OptionsConfigItem(
         "GeneralDownload", "NameConflict", "keepBoth", OptionsValidator(["keepBoth", "overwrite", "ask"])

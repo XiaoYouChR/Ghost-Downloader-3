@@ -12,7 +12,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
-from app.models.task import TaskOptions, toTaskError
+from app.models.task import TaskError, TaskOptions, toTaskError
 from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
 
@@ -105,7 +105,7 @@ def toHeaders(options: dict) -> dict[str, str]:
 
 
 class Aria2RpcService:
-    taskDraftRequested = Signal(list)
+    taskDraftRequested = Signal(list, object)
     parseFailed = Signal(str, object)
 
     def __init__(self, coroutineRunner, parse, addTask) -> None:
@@ -244,9 +244,12 @@ class Aria2RpcService:
         if name:
             task.setName(name)
         if cfg.shouldDraftTakenDownload.value:
-            self.taskDraftRequested.emit([task])
+            self.taskDraftRequested.emit([task], None)
             return
-        self._addTask(task)
+        try:
+            self._addTask(task)
+        except TaskError as e:
+            self.taskDraftRequested.emit([task], e)
 
     def _onTaskParseFailed(self, error, url: str, **_) -> None:
         logger.warning("Aria2 RPC task parse failed: {}", error)

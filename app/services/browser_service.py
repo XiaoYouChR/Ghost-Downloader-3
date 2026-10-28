@@ -9,7 +9,7 @@ from enum import StrEnum
 from io import BytesIO
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from loguru import logger
 
@@ -20,10 +20,7 @@ from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
 from app.update import isNewer
 
-from app.models.task import MergeTaskOptions, PageTaskOptions
-
-if TYPE_CHECKING:
-    from app.models.task import Task, TaskOptions, ResourceTaskOptions
+from app.models.task import MergeTaskOptions, PageTaskOptions, ResourceTaskOptions, Task, TaskError, TaskOptions, TaskStatus
 
 @dataclass
 class BrowserClientSession:
@@ -101,7 +98,6 @@ def toInt(data: dict, key: str, default: int) -> int:
 
 
 def toResourceTaskOptions(resource: dict) -> ResourceTaskOptions:
-    from app.models.task import ResourceTaskOptions
     hdrs = resource.get("headers") or {}
     return ResourceTaskOptions(
         url=toStr(resource, "url"),
@@ -172,7 +168,7 @@ class BrowserService:
     pairRequestChanged = Signal(object)
     connectionChanged = Signal()
     protocolMismatched = Signal()
-    taskDraftRequested = Signal(list)
+    taskDraftRequested = Signal(list, object)
     extensionUpdated = Signal(str)
 
     def __init__(self, coroutineRunner, taskService, speedChanged, parse, loadCrx, extensionFolder: Path):
@@ -505,10 +501,15 @@ class BrowserService:
         shouldDraft = draft if draft is not None else cfg.shouldDraftTakenDownload.value
         if shouldDraft:
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
-            self.taskDraftRequested.emit([task])
+            self.taskDraftRequested.emit([task], None)
             return
 
-        if not self._taskService.add(task):
+        try:
+            isAdded = self._taskService.add(task)
+        except TaskError as e:
+            isAdded = False
+            self.taskDraftRequested.emit([task], e)
+        if not isAdded:
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
             return
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.CREATED, taskId=task.taskId)
@@ -517,7 +518,6 @@ class BrowserService:
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.REJECTED, message=str(error))
 
     def _onTaskAction(self, session: BrowserClientSession, data: dict) -> None:
-        from app.models.task import TaskStatus
         from app.platform.desktop import openFile, revealInFolder
 
         requestId = toStr(data, "requestId")

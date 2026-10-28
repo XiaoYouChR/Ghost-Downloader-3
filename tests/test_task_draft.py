@@ -107,6 +107,31 @@ async def test_add_applies_chosen_folder_and_category(engine, draft, downloadFol
     assert (task.category, task.outputFolder) == ("cat_video", downloadFolder / "chosen")
 
 
+async def test_add_into_blocked_folder_keeps_task_in_draft(engine, draft, blockedFolder):
+    draft.addFailed.connect(lambda tasks, error: draft.addParsedTasks(tasks))
+    draft.setUrls([A, B])
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [A, B]))
+    draft.setBaseOptions({"outputFolder": str(blockedFolder)})
+
+    draft.confirm()
+
+    assert draft.urls() == [A, B]
+    assert engine.taskService.tasks == []
+
+
+async def test_add_into_blocked_folder_after_parsing_returns_task_to_draft(engine, draft, pack, blockedFolder):
+    draft.addFailed.connect(lambda tasks, error: draft.addParsedTasks(tasks))
+    pack.heldUrls.add(A)
+    draft.setUrls([A])
+    draft.setBaseOptions({"outputFolder": str(blockedFolder)})
+
+    draft.confirm()
+    pack.heldUrls.clear()
+
+    await waitUntil(lambda: draft.urls() == [A])
+    assert engine.taskService.tasks == []
+
+
 async def test_clear_drops_links_being_parsed(draft, pack):
     parsed = []
     draft.parseSucceeded.connect(lambda url, task: parsed.append(url))

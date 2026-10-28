@@ -402,6 +402,7 @@ class SettingPage(FastScrollArea):
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
         self.downloadFolderPicker.pathChanged.connect(self._onDownloadFolderChanged)
+        cfg.downloadFolder.valueChanged.connect(self.downloadFolderPicker.setPath)
 
         self.browserPairTokenCard.clicked.connect(self._onCopyTokenClicked)
         self.regenerateTokenButton.clicked.connect(self._onRegenerateTokenClicked)

@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
+from app.models.task import TaskError
 from app.services.task_service import NameConflictChoice
 from app.signal import Signal
 
@@ -45,11 +48,15 @@ class NameConflictQueue:
         conflict = self._conflict
         if conflict is None or conflict.task.taskId != taskId:
             return
-        self._add(conflict.task, choice=choice)
+        tasks = [conflict.task]
         if isAppliedToRest:
             rest, self._tasks = self._tasks[:conflict.restCount], self._tasks[conflict.restCount:]
-            for task in rest:
+            tasks += rest
+        for task in tasks:
+            try:
                 self._add(task, choice=choice)
+            except TaskError as e:
+                logger.warning("无法加入 {}：{}", task.name, e)
         self._refresh()
 
     def cancel(self, taskId: str) -> None:

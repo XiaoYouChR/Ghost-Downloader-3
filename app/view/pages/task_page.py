@@ -20,7 +20,7 @@ from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
 from app.config.cfg import cfg
 from app.format import toReadableSize
 from app.i18n import toLocalizedError
-from app.models.task import TaskStatus
+from app.models.task import TaskError, TaskStatus
 from app.platform.filesystem import isExisting
 from app.view.cards.task_cards import TaskCard
 from app.view.components.category_settings import toCategoryName
@@ -292,6 +292,7 @@ class TaskPage(QWidget):
         self._taskService.fileDisappeared.connect(self._onFileDisappeared, owner=self)
         self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied, owner=self)
         self._taskService.overwriteFailed.connect(self._onOverwriteFailed, owner=self)
+        self._taskService.editFailed.connect(self._onEditFailed, owner=self)
         self._speedMeter.speedChanged.connect(self._onSpeedChanged, owner=self)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
@@ -877,6 +878,15 @@ class TaskPage(QWidget):
         InfoBar.warning(
             self.tr("无法移到回收站"),
             self.tr("旧文件已保留，新文件另存为 {0}").format(task.name),
+            duration=5000,
+            position=InfoBarPosition.TOP,
+            parent=self.window(),
+        )
+
+    def _onEditFailed(self, task: Task, error: TaskError) -> None:
+        InfoBar.error(
+            self.tr("无法修改任务"),
+            toLocalizedError(error),
             duration=5000,
             position=InfoBarPosition.TOP,
             parent=self.window(),

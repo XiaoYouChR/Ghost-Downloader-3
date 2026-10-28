@@ -140,10 +140,10 @@ def startApp(application, primaryInstance, isSilent=False):
         raiseWindow(window)
         return window
 
-    def onTaskDraftRequested(tasks):
+    def onTaskDraftRequested(tasks, error):
         if window is None:
             createWindow().setupPacks()
-        window.addTasks(tasks)
+        window.addTasks(tasks, error)
 
     def onExtensionUpdated(version):
         from qfluentwidgets import InfoBar, InfoBarPosition

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import re
+
+import pytest
+
 from app.config.cfg import cfg
-from app.models.task import Task, TaskStatus
+from app.models.task import Task, TaskError, TaskStatus
 from tests.conftest import FakeStep
 from tests.helpers import waitUntil
 
@@ -32,6 +36,16 @@ def test_add_same_task_twice_keeps_one(engine):
 
     assert added == [task]
     assert engine.taskService.tasks == [task]
+
+
+def test_add_into_blocked_folder_fails_with_reason(engine, blockedFolder):
+    task = buildTask()
+    task.setOptions({"outputFolder": blockedFolder})
+
+    with pytest.raises(TaskError, match=re.escape(str(blockedFolder))):
+        engine.taskService.add(task)
+
+    assert engine.taskService.tasks == []
 
 
 async def test_start_all_skips_finished_tasks(engine):

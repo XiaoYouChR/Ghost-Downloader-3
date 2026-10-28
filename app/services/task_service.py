@@ -9,17 +9,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from shutil import move
-from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
 from app.platform.filesystem import deletePath, isExisting, splitStemExt
+from app.checksum import toChecksum
+from app.models.task import Task, TaskError, TaskStatus, deletePlaceholder
 from app.signal import Signal
-
-if TYPE_CHECKING:
-    from app.models.task import Task
 
 
 @dataclass
@@ -57,7 +55,6 @@ class TaskStore:
         self._taskByPlaceholder: dict[Path, Task] = {}
 
     def add(self, task: Task, choice: NameConflictChoice) -> AddResult | None:
-        task.outputFolder.mkdir(parents=True, exist_ok=True)
         isOverwriteFailed = False
         stem, ext = splitStemExt(task.name)
         index = 0
@@ -84,16 +81,19 @@ class TaskStore:
         return AddResult(replacedTasks, isOverwriteFailed)
 
     def updatePlaceholders(self, task: Task) -> None:
-        from app.models.task import deletePlaceholder
         placeholders = self._placeholders[task.taskId]
         if task.placeholderPaths == placeholders.paths:
             return
-        task.outputFolder.mkdir(parents=True, exist_ok=True)
         stem, ext = splitStemExt(task.name)
         index = 0
-        while self._createPlaceholders(task) is not None:
-            index += 1
-            task.setName(f"{stem}({index}){ext}")
+        try:
+            while self._createPlaceholders(task) is not None:
+                index += 1
+                task.setName(f"{stem}({index}){ext}")
+        except TaskError:
+            task.outputFolder = placeholders.outputFolder
+            task.setName(placeholders.name)
+            raise
         newPaths = task.placeholderPaths
         if (task.outputFolder, task.name) != (placeholders.outputFolder, placeholders.name):
             oldPaths = task.placeholderPathsAt(placeholders.outputFolder, placeholders.name)
@@ -118,7 +118,6 @@ class TaskStore:
         return next((path for path in paths if isExisting(path) and not self._isUnfinishedPlaceholder(path)), None)
 
     def _isUnfinishedPlaceholder(self, path: Path) -> bool:
-        from app.models.task import TaskStatus
         task = self._taskByPlaceholder.get(path)
         return task is not None and task.status != TaskStatus.COMPLETED
 
@@ -129,12 +128,21 @@ class TaskStore:
         takenPath = next((path for path in newPaths if isExisting(path)), None)
         if takenPath is not None:
             return takenPath
-        for path in newPaths:
-            if task.isOutputFolder and path == Path(task.outputPath):
-                path.mkdir()
-            else:
-                path.touch(exist_ok=False)
-            deletePath(Path(f"{path}.ghd"))
+        created: list[Path] = []
+        try:
+            task.outputFolder.mkdir(parents=True, exist_ok=True)
+            for path in newPaths:
+                if task.isOutputFolder and path == Path(task.outputPath):
+                    path.mkdir()
+                else:
+                    path.touch(exist_ok=False)
+                created.append(path)
+                deletePath(Path(f"{path}.ghd"))
+        except OSError as e:
+            for path in created:
+                deletePath(path)
+            raise TaskError("无法写入文件夹 {folder}：{reason}",
+                            folder=task.outputFolder, reason=e.strerror or str(e)) from e
         return None
 
     def _setPlaceholders(self, task: Task) -> None:
@@ -181,7 +189,6 @@ class TaskStore:
             logger.opt(exception=e).error("failed to write tasks.jsonl")
 
     def loadSaved(self) -> list[Task]:
-        from app.models.task import Task
 
         tasks: list[Task] = []
         if not self._path.exists():
@@ -275,6 +282,7 @@ class TaskService:
     diskSpaceInsufficient = Signal(int, int)
     nameConflicted = Signal(object)
     overwriteFailed = Signal(object)
+    editFailed = Signal(object, object)
 
     def __init__(self, coroutineRunner, categoryService, speedMeter, fileWatcher,
                  deleteRecoverably: Callable[[Path], bool],
@@ -307,7 +315,6 @@ class TaskService:
         return self._queue.runningCount()
 
     def overallProgress(self) -> float | None:
-        from app.models.task import TaskStatus
         totalReceived = 0
         totalSize = 0
         for task in self._store.tasks.values():
@@ -376,7 +383,6 @@ class TaskService:
         return work.progress if work else None
 
     def startChecksum(self, task: Task, algorithm: str) -> None:
-        from app.checksum import toChecksum
         work = ChecksumWork()
         self._checksums[task.taskId] = work
         work.workId = self._coroutineRunner.submit(
@@ -393,7 +399,6 @@ class TaskService:
         self.checksumStopped.emit(task, None)
 
     def pause(self, task: Task) -> None:
-        from app.models.task import TaskStatus
         self._cancelWork(task)
         task.setStatus(TaskStatus.PAUSED)
         self._flushSoon()
@@ -436,7 +441,10 @@ class TaskService:
             if newTask is not None:
                 task.replaceWith(newTask)
             task.setOptions(options)
-            self._store.updatePlaceholders(task)
+            try:
+                self._store.updatePlaceholders(task)
+            except TaskError as e:
+                self.editFailed.emit(task, e)
             self._flushSoon()
             self._schedule(task)
         self._cancelWork(task, finished=onStopped)
@@ -446,14 +454,19 @@ class TaskService:
         self._flushSoon()
 
     def updateSelection(self, task: Task, selectedIndexes: set[int]) -> None:
-        from app.models.task import TaskStatus
 
         selectedSet = set(selectedIndexes)
         wasCompleted = task.status == TaskStatus.COMPLETED
 
         def apply():
+            previous = {file.index for file in task.files if file.selected}
             task.setSelection(selectedSet)
-            self._store.updatePlaceholders(task)
+            try:
+                self._store.updatePlaceholders(task)
+            except TaskError as e:
+                task.setSelection(previous)
+                self.editFailed.emit(task, e)
+                return
             if wasCompleted and task.files and any(f.selected and not f.completed for f in task.files):
                 task.completedAt = 0
                 self._unwatchFile(task)
@@ -477,7 +490,6 @@ class TaskService:
         apply()
 
     def startAll(self) -> None:
-        from app.models.task import TaskStatus
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.PAUSED, TaskStatus.WAITING, TaskStatus.FAILED}:
                 self._schedule(task)
@@ -488,7 +500,6 @@ class TaskService:
                 self.pause(task)
 
     def resumeSaved(self) -> None:
-        from app.models.task import TaskStatus
         for task in self._store.loadSaved():
             self.taskAdded.emit(task)
             if task.status == TaskStatus.COMPLETED and task.hasOutputFile and isExisting(task.outputPath):
@@ -502,7 +513,6 @@ class TaskService:
             self.removeMissing()
 
     def removeMissing(self) -> None:
-        from app.models.task import TaskStatus
         for task in self.tasks:
             if task.status == TaskStatus.COMPLETED and task.hasOutputFile and not isExisting(task.outputPath):
                 self.delete(task, shouldDeleteFiles=False)
@@ -512,7 +522,6 @@ class TaskService:
             self.removeMissing()
 
     def stop(self) -> None:
-        from app.models.task import TaskStatus
         cfg.maxTaskNum.valueChanged.disconnect(self._rebalance)
         cfg.shouldRemoveMissingTasks.valueChanged.disconnect(self._onShouldRemoveMissingTasksChanged)
         for task in self._store.tasks.values():
@@ -551,7 +560,6 @@ class TaskService:
         self._pump()
 
     def _dispatch(self, task: Task) -> None:
-        from app.models.task import TaskStatus
 
         task.setStatus(TaskStatus.RUNNING)
         workId = self._coroutineRunner.submit(
@@ -601,7 +609,6 @@ class TaskService:
         self.checksumCompleted.emit(task, algorithm)
 
     def _onChecksumFailed(self, task: Task, error: Exception) -> None:
-        from app.models.task import TaskError
         del self._checksums[task.taskId]
         self.checksumStopped.emit(task, TaskError("无法读取文件：{detail}", detail=str(error)))
 
@@ -617,7 +624,6 @@ class TaskService:
             finished()
 
     def _rebalance(self, *_args) -> None:
-        from app.models.task import TaskStatus
         for taskId in self._queue.runningIds()[cfg.maxTaskNum.value:]:
             task = self._store.taskById(taskId)
             if task is not None and task.canPause:
@@ -643,7 +649,6 @@ class TaskService:
             self._speedMeter.stop()
 
     def _onRunDone(self, task: Task) -> None:
-        from app.models.task import TaskStatus
         self._queue.done(task.taskId)
         self._flushSoon()
         self.taskCompleted.emit(task)

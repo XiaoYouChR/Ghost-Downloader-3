@@ -187,6 +187,12 @@ def downloadFolder(tmp_path):
 
 
 @pytest.fixture
+def blockedFolder(downloadFolder):
+    (downloadFolder / "file").write_bytes(b"")
+    return downloadFolder / "file" / "sub"
+
+
+@pytest.fixture
 def config(downloadFolder):
     for item in vars(type(cfg)).values():
         if isinstance(item, ConfigItem):
@@ -241,9 +247,7 @@ def engine(startEngine):
 
 @pytest.fixture
 def draft(engine):
-    draft = TaskDraft(engine.coroutineRunner, engine.featureService)
-    draft.taskConfirmed.connect(engine.taskService.add)
-    return draft
+    return TaskDraft(engine.coroutineRunner, engine.featureService, engine.taskService.add)
 
 
 @pytest.fixture

@@ -167,11 +167,23 @@ async def test_add_task_with_aria2_options(aria2, engine, pack, downloadFolder):
 async def test_add_goes_to_draft_when_drafting_is_on(aria2, engine):
     cfg.set(cfg.shouldDraftTakenDownload, True)
     drafted = []
-    engine.aria2RpcService.taskDraftRequested.connect(drafted.extend)
+    engine.aria2RpcService.taskDraftRequested.connect(lambda tasks, error: drafted.extend(tasks))
 
     await aria2.request("aria2.addUri", [["http://test/f"]])
 
     await waitUntil(lambda: [task.url for task in drafted] == ["http://test/f"])
+    assert engine.taskService.tasks == []
+
+
+async def test_add_into_blocked_folder_goes_to_draft_with_reason(aria2, engine, blockedFolder):
+    drafted = []
+    engine.aria2RpcService.taskDraftRequested.connect(lambda tasks, error: drafted.append((tasks, str(error))))
+
+    await aria2.request("aria2.addUri", [["http://test/f"], {"dir": str(blockedFolder)}])
+
+    await waitUntil(lambda: len(drafted) == 1)
+    [([task], reason)] = drafted
+    assert task.url == "http://test/f" and str(blockedFolder) in reason
     assert engine.taskService.tasks == []
 
 

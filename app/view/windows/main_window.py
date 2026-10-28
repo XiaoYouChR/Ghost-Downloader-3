@@ -121,7 +121,7 @@ class MainWindow(MSFluentWindow):
 
         self._pages: dict[str, QWidget] = {}
         self._progressToast = None
-        self._draft = TaskDraft(self._coroutineRunner, self._featureService)
+        self._draft = TaskDraft(self._coroutineRunner, self._featureService, self._taskService.add)
         self.searchEdit = SearchLineEdit(self.titleBar)
 
         self._initWidget()
@@ -246,7 +246,7 @@ class MainWindow(MSFluentWindow):
             self.searchEdit.selectAll()
 
     def _bind(self) -> None:
-        self._draft.taskConfirmed.connect(self._taskService.add)
+        self._draft.addFailed.connect(self.addTasks)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)
@@ -273,9 +273,9 @@ class MainWindow(MSFluentWindow):
         if not dialog.isVisible():
             dialog.showMask()
 
-    def addTasks(self, tasks: list[Task]) -> None:
+    def addTasks(self, tasks: list[Task], error: TaskError | None = None) -> None:
         dialog = self._draftDialog
-        dialog.addParsedTasks(tasks)
+        dialog.addParsedTasks(tasks, error)
         if dialog.isActive:
             return
         if sys.platform == "darwin":
@@ -284,6 +284,12 @@ class MainWindow(MSFluentWindow):
             dialog.showMask()
         else:
             dialog.showStandalone()
+
+    def _add(self, task: Task) -> None:
+        try:
+            self._taskService.add(task)
+        except TaskError as e:
+            self.addTasks([task], e)
 
     @cached_property
     def _draftDialog(self) -> TaskDraftDialog:
@@ -369,7 +375,7 @@ class MainWindow(MSFluentWindow):
                 return
             self._coroutineRunner.submit(
                 self._featureService.parse(TaskOptions(url=url)),
-                done=self._taskService.add,
+                done=self._add,
                 owner=self,
             )
 
@@ -399,7 +405,7 @@ class MainWindow(MSFluentWindow):
                 def onUrl(url):
                     self._coroutineRunner.submit(
                         self._featureService.parse(TaskOptions(url=url)),
-                        done=self._taskService.add,
+                        done=self._add,
                         owner=self,
                     )
 

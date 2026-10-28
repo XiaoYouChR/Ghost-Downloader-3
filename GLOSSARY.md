@@ -32,10 +32,11 @@ _Avoid_: 占位符文件、lock file
 
 **Default Folder**:
 新 Task 的 Output Folder 初始值，由用户在设置中指定。
+文件夹不存在（如移动硬盘未接入）时保持原样，应用不替用户改动。
 _Avoid_: 下载路径、默认目录
 
 **Recent Folders**:
-用户最近作为 Output Folder 真正使用过的文件夹列表，供快速选择；用户可逐条移除。
+用户最近作为 Output Folder 真正使用过的文件夹列表，供快速选择；只由用户逐条移除，文件夹暂时不存在不影响列表。
 Task 加入时、Default Folder 被改为某文件夹时记入。
 _Avoid_: 历史路径、memory folders
 
@@ -90,6 +91,7 @@ FeaturePack 提供的能力，将 Task Options 转为 Task。声明优先级和�
 **Task Draft**:
 用户确认前的未确认任务状态。内含一个或多个 Draft Item，每个 Draft Item 跟踪一条 URL，
 处于三个状态之一：Parsing、Resolved（持有 Task）、Failed。Failed 不是终态。
+Task 加入失败（如 Output Folder 无法创建）时退回 Task Draft，由用户修改后重新确认。
 _Avoid_: pending task、unconfirmed task
 
 **Resource**:

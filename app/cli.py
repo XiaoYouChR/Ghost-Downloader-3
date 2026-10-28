@@ -7,7 +7,7 @@ from pathlib import Path
 
 from app.config.cfg import cfg, currentHeaders
 from app.config.constants import VERSION
-from app.models.task import Task, TaskOptions, TaskStatus, toTaskError
+from app.models.task import Task, TaskError, TaskOptions, TaskStatus, toTaskError
 from app.platform.instance import Invocation, Reply
 from app.platform.url_scheme import isLaunchUri, isWakeUri
 from app.services.task_service import NameConflictChoice
@@ -220,7 +220,11 @@ class Cli:
                 task.setName(args.name)
             if selection is not None:
                 task.setSelection(selection)
-            self._taskService.add(task, choice=choice)
+            try:
+                self._taskService.add(task, choice=choice)
+            except TaskError as e:
+                collect(index, {"error": {"code": "addFailed", "message": str(e)}})
+                return
             collect(index, {"taskId": task.taskId, "name": task.name})
 
         def onParseFailed(error: Exception, index: int) -> None:

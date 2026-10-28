@@ -222,6 +222,20 @@ async def test_edit_folder_onto_taken_name_numbers_task(engine, downloadFolder):
     assert namesIn(downloadFolder) == ["new"]
 
 
+async def test_edit_folder_into_blocked_folder_keeps_finished_task(engine, downloadFolder, blockedFolder):
+    failed = []
+    engine.taskService.editFailed.connect(lambda task, error: failed.append(str(error)))
+    task = buildTask()
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.status == TaskStatus.COMPLETED)
+
+    engine.taskService.edit(task, {"outputFolder": str(blockedFolder)})
+
+    assert (task.status, task.outputFolder) == (TaskStatus.COMPLETED, downloadFolder)
+    assert (downloadFolder / "a.zip").read_bytes() == b"downloaded"
+    assert len(failed) == 1 and str(blockedFolder) in failed[0]
+
+
 async def test_edit_folder_carries_progress(engine, downloadFolder):
     task = buildTask(steps=[FakeStep(stepIndex=0, outcome="hang")])
     engine.taskService.add(task, autoStart=False)

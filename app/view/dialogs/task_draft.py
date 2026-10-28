@@ -9,11 +9,12 @@ from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QHBoxLayout, Q
 from qframelesswindow import FramelessDialog
 from qfluentwidgets import (
     FluentIcon, FluentStyleSheet, FluentTitleBar,
-    IndeterminateProgressBar, InfoBar, InfoBarPosition,
+    IndeterminateProgressBar, InfoBar, InfoBarIcon, InfoBarPosition,
     MessageBoxBase, PrimarySplitPushButton, PushButton, SubtitleLabel,
     ToolTipFilter,
 )
 
+from app.config.cfg import cfg
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit, addRecentFolder
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
@@ -204,17 +205,22 @@ class TaskDraftDialog(MessageBoxBase):
         self._parseTimer.stop()
         self._onParseNeeded()
 
-    def addParsedTasks(self, tasks: list[Task]) -> None:
+    def addParsedTasks(self, tasks: list[Task], error: TaskError | None = None) -> None:
         if not tasks:
             return
         newUrls = self._draft.addParsedTasks(tasks)
         if newUrls:
             self.urlEdit.appendPlainText("\n".join(newUrls))
         self._parseTimer.stop()
+        if error is not None:
+            QTimer.singleShot(0, lambda: self._showAddError(tasks, error))
 
     def done(self, code: int, autoStart=True) -> None:
         if code == QDialog.DialogCode.Accepted:
             self._draft.confirm(autoStart=autoStart)
+            if self._draft.urls():
+                self.urlEdit.setPlainText("\n".join(self._draft.urls()))
+                return
             addRecentFolder(str(self.optionGroup.options()["outputFolder"]))
         else:
             self._draft.clear()
@@ -307,6 +313,32 @@ class TaskDraftDialog(MessageBoxBase):
             position=InfoBarPosition.BOTTOM_RIGHT,
             parent=self,
         )
+
+    def _showAddError(self, tasks: list[Task], error: TaskError) -> None:
+        bar = InfoBar(
+            icon=InfoBarIcon.ERROR,
+            title=self.tr("无法开始下载"),
+            content=toLocalizedError(error),
+            orient=Qt.Orientation.Horizontal,
+            isClosable=True,
+            duration=-1,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self,
+        )
+        if any(task.outputFolder.is_relative_to(cfg.downloadFolder.value) for task in tasks):
+            button = PushButton(self.tr("更改默认文件夹"))
+            button.clicked.connect(lambda: self._onChangeDefaultFolderClicked(bar))
+            bar.addWidget(button)
+        bar.show()
+
+    def _onChangeDefaultFolderClicked(self, bar: InfoBar) -> None:
+        folder = QFileDialog.getExistingDirectory(self, self.tr("选择默认下载文件夹"), str(Path.home()))
+        if not folder:
+            return
+        cfg.set(cfg.downloadFolder, folder)
+        addRecentFolder(folder)
+        self.optionGroup.reset()
+        bar.close()
 
     def _onItemsChanged(self) -> None:
         self.draftGroup.setUrls(self._draft.urls())

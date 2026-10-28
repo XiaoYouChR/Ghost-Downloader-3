@@ -71,6 +71,16 @@ async def test_add_with_one_failing_url_adds_the_rest(cli, engine):
     assert [task.name for task in engine.taskService.tasks] == ["a.zip"]
 
 
+async def test_add_into_blocked_folder_reports_reason(cli, engine, blockedFolder):
+    output, exitCode = await run(cli, "add", "http://test/a.zip", "--folder", str(blockedFolder))
+
+    assert exitCode == 1
+    [failed] = output["result"]
+    assert failed["error"]["code"] == "addFailed"
+    assert str(blockedFolder) in failed["error"]["message"]
+    assert engine.taskService.tasks == []
+
+
 async def test_pause_unknown_task_reports_task_not_found(cli, engine):
     task = buildTask()
     engine.taskService.add(task)
