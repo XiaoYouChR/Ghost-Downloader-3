@@ -15,6 +15,7 @@ else:
             self.viewport().setStyleSheet("background: transparent")
 
 SCROLL_BAR_WIDTH = 13
+PAGE_MARGIN = 12
 
 if sys.platform == "win32":
     class FastScrollArea(ScrollArea):
@@ -45,4 +46,4 @@ if sys.platform == "win32":
 else:
     FastScrollArea = ScrollArea
 
-__all__ = ["FastScrollArea", "ScrollArea"]
+__all__ = ["FastScrollArea", "PAGE_MARGIN", "ScrollArea"]

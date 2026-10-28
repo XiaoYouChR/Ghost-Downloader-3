@@ -11,7 +11,7 @@ from qfluentwidgets import (
     RangeSettingCard, SwitchSettingCard, ToolButton, ToolTipFilter,
 )
 
-from app.view.components.scroll_area import FastScrollArea
+from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
@@ -77,9 +77,8 @@ class SettingPage(FastScrollArea):
         self.setObjectName("SettingPage")
         self.enableTransparentBackground()
         # 扣掉视口给滚动条让出的宽度，左右留白对称
-        margins = self.vBoxLayout.contentsMargins()
-        margins.setRight(max(0, margins.right() - self.viewportMargins().right()))
-        self.vBoxLayout.setContentsMargins(margins)
+        rightMargin = max(0, PAGE_MARGIN - self.viewportMargins().right())
+        self.vBoxLayout.setContentsMargins(PAGE_MARGIN, PAGE_MARGIN, rightMargin, PAGE_MARGIN)
 
     def _initCards(self) -> None:
         self.speedLimitationCard = SpinBoxSettingCard(

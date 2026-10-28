@@ -15,7 +15,7 @@ from qfluentwidgets import (
 )
 
 from app.view.components.band_selector import BandSelector
-from app.view.components.scroll_area import FastScrollArea
+from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
 
 from app.config.cfg import cfg
 from app.format import toReadableSize
@@ -127,8 +127,6 @@ class EmptyStatusWidget(QWidget):
 
 class TaskPage(QWidget):
     ROW_SPACING = 8
-    SIDE_PADDING = 12
-    BOTTOM_PADDING = 12
     VIEWPORT_BUFFER = 5
 
     def __init__(self, taskService, featureService, categoryService, speedMeter, plan=None, parent=None):
@@ -259,7 +257,7 @@ class TaskPage(QWidget):
 
     def _initLayout(self) -> None:
         toolBarLayout = QHBoxLayout(self.toolBar)
-        toolBarLayout.setContentsMargins(16, 10, 16, 10)
+        toolBarLayout.setContentsMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN)
         toolBarLayout.addWidget(self.filterSegment)
         toolBarLayout.addWidget(self.startAllButton)
         toolBarLayout.addWidget(self.pauseAllButton)
@@ -649,7 +647,7 @@ class TaskPage(QWidget):
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         count = len(self._displayOrder)
         self.scrollWidget.setMinimumHeight(
-            count * stride - self.ROW_SPACING + self.BOTTOM_PADDING if count else 0
+            count * stride - self.ROW_SPACING + PAGE_MARGIN if count else 0
         )
         self._bandSelector.setItemCount(count)
         self._refreshViewport()
@@ -693,7 +691,7 @@ class TaskPage(QWidget):
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         width = self.scrollWidget.width()
         # 视口给滚动条让出的位置也算右侧留白，和工具栏对齐
-        rightPadding = max(0, self.SIDE_PADDING - self.scrollArea.viewportMargins().right())
+        rightPadding = max(0, PAGE_MARGIN - self.scrollArea.viewportMargins().right())
         count = len(self._displayOrder)
         if count:
             top = self.scrollArea.verticalScrollBar().value()
@@ -727,7 +725,7 @@ class TaskPage(QWidget):
                 card.dragRequested.connect(self._onCardDragRequested)
                 self._liveCards[taskId] = card
                 card.refresh()
-            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - self.SIDE_PADDING - rightPadding), TaskCard.ROW_HEIGHT)
+            card.setGeometry(PAGE_MARGIN, idx * stride, max(0, width - PAGE_MARGIN - rightPadding), TaskCard.ROW_HEIGHT)
             card.show()
 
     def _refreshTickingCards(self) -> None:
