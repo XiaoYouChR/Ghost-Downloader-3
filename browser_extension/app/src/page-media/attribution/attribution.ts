@@ -1,6 +1,7 @@
 import {isCatCatchMedia} from "../../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
-import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, isStreamUrl, urlIdHints} from "../resolution/url-classify";
+import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, isStreamUrl, matchPageVideo, urlIdHints} from "../resolution/url-classify";
+import type {VideoMatch} from "../resolution/url-classify";
 
 import {AttributionLedger} from "./attribution-ledger";
 import {selectMediaForPage} from "../resolution/strategy";
@@ -27,6 +28,13 @@ type ResolveStateListener = (state: VideoSessionState, reason: string) => void;
 // mse_buffer_appended usually follows fetch_completed within tens of ms; slow CPUs stretch.
 const FETCH_BUFFER_CORRELATION_MS = 2500;
 const RECENT_FETCHES_CAP = 16;
+// One AAC frame: a DASH audio track ends up to a frame short of the element's (video) duration.
+const SAME_DURATION_TOLERANCE_S = 0.025;
+// Rejecting is the risky verdict, so it waits for a gap no track of the same video shows.
+const OTHER_DURATION_GAP_S = 1;
+const DURATIONS_CAP = 512;
+
+type MatchClickedVideo = (url: string) => VideoMatch;
 
 function toFormKind(mimeTypes: Set<string>): VideoSessionFormKind {
   if (mimeTypes.size === 0) { return "unknown"; }
@@ -59,14 +67,20 @@ function trySelect(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Res
   }
 }
 
-function toSessionSnapshot(session: VideoSession): SessionSnapshot {
+function toView(url: string, meta: AttributedUrlMeta, matchClickedVideo: MatchClickedVideo): AttributedUrlView {
+  return Object.freeze({
+    url,
+    contentType: meta.contentType,
+    capturedAt: meta.capturedAt,
+    isMaster: meta.isMaster,
+    isLockedByMse: meta.lockedByMse,
+    clickedVideo: matchClickedVideo(url),
+  });
+}
+
+function toSessionSnapshot(session: VideoSession, matchClickedVideo: MatchClickedVideo): SessionSnapshot {
   const attributedUrls: SessionSnapshot["attributedUrls"] = Object.freeze(
-    [...session.attributedUrls.entries()].map(([url, meta]) => Object.freeze({
-      url,
-      contentType: meta.contentType,
-      capturedAt: meta.capturedAt,
-      isMaster: meta.isMaster,
-    })),
+    [...session.attributedUrls.entries()].map(([url, meta]) => toView(url, meta, matchClickedVideo)),
   );
   return Object.freeze({
     formKind: session.formKind,
@@ -91,6 +105,8 @@ class MediaAttribution {
   // The only way to definitively bind a URL to a specific <video>: lock the most recent
   // unlocked fetch to whichever session consumed it via appendBuffer.
   private readonly recentFetches: Array<{ url: string; capturedAt: number; idHints: ReadonlySet<string> }> = [];
+  // Read off the moov of files the player itself fetched, so no extra request.
+  private readonly durationByUrl = new Map<string, number>();
 
   start(): void {
     document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((element) => {
@@ -422,6 +438,13 @@ class MediaAttribution {
         this.attributeBufferAppend(signal.mediaSourceId, signal.mimeType);
         return;
 
+      case "media_duration":
+        this.durationByUrl.set(signal.url, signal.duration);
+        if (this.durationByUrl.size > DURATIONS_CAP) {
+          this.durationByUrl.delete(this.durationByUrl.keys().next().value!);
+        }
+        return;
+
       case "request_completed":
         this.recordFetch(signal.url, signal.contentType);
         this.attributeFetch(signal.url, signal.contentType);
@@ -592,13 +615,18 @@ class MediaAttribution {
     }
 
     const pageUrl = new URL(location.href);
-    const findUrlsByIdHint: FindUrlsByIdHint = (idHint) => this.lookupByIdHint(idHint);
+    const findUrlsByIdHint: FindUrlsByIdHint = (idHint) =>
+      this.viewsOfAllSessions(this.buildClickedVideoMatcher(pageUrl, element)).filter((view) => urlIdHints(view.url).has(idHint));
 
-    const buildCtx = (): ResolveContext => ({
-      clicked: toSessionSnapshot(session),
-      pageUrl,
-      hints,
-    });
+    const buildCtx = (): ResolveContext => {
+      const matchClickedVideo = this.buildClickedVideoMatcher(pageUrl, element);
+      return {
+        clicked: toSessionSnapshot(session, matchClickedVideo),
+        pageUrl,
+        hints,
+        clickedVideoUrls: this.viewsOfAllSessions(matchClickedVideo).filter((view) => view.clickedVideo === "same"),
+      };
+    };
 
     const initial = trySelect(buildCtx(), findUrlsByIdHint);
     if (initial.kind !== "pending") {
@@ -641,23 +669,25 @@ class MediaAttribution {
     });
   }
 
-  // Douyin uses this to reach across sessions for a prefetched URL claimed by a sibling
-  // before the new <video> existed.
-  private lookupByIdHint(idHint: string): ReadonlyArray<AttributedUrlView> {
-    const matches: AttributedUrlView[] = [];
-    for (const session of this.sessionsById.values()) {
-      for (const [url, meta] of session.attributedUrls) {
-        if (urlIdHints(url).has(idHint)) {
-          matches.push({
-            url,
-            contentType: meta.contentType,
-            capturedAt: meta.capturedAt,
-            isMaster: meta.isMaster,
-          });
-        }
-      }
-    }
-    return matches;
+  // Reaches across sessions for a prefetched URL claimed by a sibling before the new <video> existed.
+  private viewsOfAllSessions(matchClickedVideo: MatchClickedVideo): AttributedUrlView[] {
+    return [...this.sessionsById.values()].flatMap((session) =>
+      [...session.attributedUrls].map(([url, meta]) => toView(url, meta, matchClickedVideo)));
+  }
+
+  // When no known file has the element's length, this site's MSE duration isn't the file's, so durations stay silent.
+  private buildClickedVideoMatcher(pageUrl: URL, element: HTMLMediaElement): MatchClickedVideo {
+    const target = element.duration;
+    const isSameLength = (duration: number) => Math.abs(duration - target) <= SAME_DURATION_TOLERANCE_S;
+    const canCompare = Number.isFinite(target) && target > 0 && [...this.durationByUrl.values()].some(isSameLength);
+    return (url) => {
+      const byPage = matchPageVideo(url, pageUrl);
+      if (byPage !== "unknown" || !canCompare) { return byPage; }
+      const duration = this.durationByUrl.get(url);
+      if (duration === undefined) { return "unknown"; }
+      if (isSameLength(duration)) { return "same"; }
+      return Math.abs(duration - target) > OTHER_DURATION_GAP_S ? "other" : "unknown";
+    };
   }
 
   // Worker-based MediaSourceHandle bypasses the MSE probe — the probe only patches

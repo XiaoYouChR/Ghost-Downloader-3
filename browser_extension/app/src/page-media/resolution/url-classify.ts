@@ -44,12 +44,10 @@ export function isDashSegmentUrl(url: string): boolean {
   return fileExtension(filenameFromUrl(url)) === "m4s";
 }
 
-// Douyin tags track role in the URL path; the "prime" muxed-MP4 has no marker but stays
-// on douyinvod.com with __vid in the query.
-export function douyinKindOf(url: string): "video" | "audio" | "muxed" | "" {
+// ByteDance CDNs (Douyin, TikTok) tag track role in the URL path.
+function trackRoleFromPath(url: string): "video" | "audio" | "" {
   if (url.includes("/media-audio-")) { return "audio"; }
   if (url.includes("/media-video-")) { return "video"; }
-  if (hostEndsWith(url, "douyinvod.com") && url.includes("__vid=")) { return "muxed"; }
   return "";
 }
 
@@ -139,11 +137,42 @@ export function urlIdHints(url: string): Set<string> {
   return result;
 }
 
+function queryIdValues(parsed: URL): Set<string> {
+  const values = new Set<string>();
+  for (const key of VIDEO_ID_QUERY_KEYS) {
+    const value = parsed.searchParams.get(key);
+    if (value && value.length >= 4) { values.add(value); }
+  }
+  return values;
+}
+
+function pathIdValues(parsed: URL): Set<string> {
+  return new Set(parsed.pathname.split("/").filter(looksLikeVideoIdSegment));
+}
+
+export type VideoMatch = "same" | "other" | "unknown";
+
+// By value, not key: Douyin's page says modal_id=X where its CDN says __vid=X. CDN path segments are storage hashes, so they never prove "other".
+export function matchPageVideo(url: string, pageUrl: URL): VideoMatch {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "unknown";
+  }
+  const pageQueryIds = queryIdValues(pageUrl);
+  const pageIds = new Set([...pageQueryIds, ...pathIdValues(pageUrl)]);
+  if (pageIds.size === 0) { return "unknown"; }
+  const queryIds = queryIdValues(parsed);
+  for (const id of [...queryIds, ...pathIdValues(parsed)]) {
+    if (pageIds.has(id)) { return "same"; }
+  }
+  return queryIds.size > 0 && pageQueryIds.size > 0 ? "other" : "unknown";
+}
+
 export function classifyTrackRole(url: string, contentType: string): TrackRole {
-  const douyin = douyinKindOf(url);
-  if (douyin === "muxed") { return "muxed"; }
-  if (douyin === "video") { return "video"; }
-  if (douyin === "audio") { return "audio"; }
+  const pathRole = trackRoleFromPath(url);
+  if (pathRole) { return pathRole; }
 
   const mime = (contentType || mimeFromUrl(url) || "").toLowerCase();
 

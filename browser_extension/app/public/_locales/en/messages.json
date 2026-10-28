@@ -136,9 +136,6 @@
   "errorBrowserNoDownloadId": {
     "message": "Browser did not return a download task"
   },
-  "errorCannotDetermineDouyinMediaForm": {
-    "message": "Cannot determine Douyin media format, please select in the resource sniffer page"
-  },
   "errorCannotLocateMedia": {
     "message": "Cannot locate media"
   },
@@ -658,12 +655,6 @@
   },
   "waiting": {
     "message": "Waiting"
-  },
-  "waitingForDouyinMuxedUrl": {
-    "message": "Waiting for Douyin single MP4 URL"
-  },
-  "waitingForDouyinSeparateTracks": {
-    "message": "Waiting for Douyin audio/video separate tracks"
   },
   "waitingForInstagramSeparateTracks": {
     "message": "Waiting for Instagram audio/video separate tracks"

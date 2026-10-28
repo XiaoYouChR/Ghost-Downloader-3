@@ -136,9 +136,6 @@
   "errorBrowserNoDownloadId": {
     "message": "El navegador no devolvió la tarea de descarga"
   },
-  "errorCannotDetermineDouyinMediaForm": {
-    "message": "No se puede determinar el formato del medio de Douyin, selecciónalo en la página de análisis."
-  },
   "errorCannotLocateMedia": {
     "message": "No se pudo localizar el medio"
   },
@@ -661,12 +658,6 @@
   },
   "waiting": {
     "message": "Esperando"
-  },
-  "waitingForDouyinMuxedUrl": {
-    "message": "Esperando URL única MP4 de Douyin"
-  },
-  "waitingForDouyinSeparateTracks": {
-    "message": "Esperando que las pistas de audio y vídeo de Douyin estén completas"
   },
   "waitingForInstagramSeparateTracks": {
     "message": "Esperando que las pistas de audio y vídeo de Instagram estén completas"

@@ -89,6 +89,17 @@ _Avoid_: video tracker、media session
 归因置信度分级。决定 URL 归属的优先级——从最高置信（缓冲追加确认）
 到最低（唯一 session 兜底）。高 tier 可以从低 tier 夺取 URL 所有权。
 
+**MSE Lock**:
+URL 的归属已由 MSE 证据确认（典型证据：字节进入了该视频的 SourceBuffer）。
+锁定后归属不再转移。
+_Avoid_: confirmed、bound
+
+**Clicked Video Match**:
+判断一个 URL 是否装着用户点击的那个视频：same / other / unknown。
+证据是精确的——页面上的视频 id 与 URL 里的视频 id 相同，或文件时长与该 video 元素的时长相差不超过一帧；时长相差超过一秒才判为 other。
+解析时 Clicked Video Match 优先于 MSE Lock，MSE Lock 优先于捕获时间。
+_Avoid_: page video
+
 **Attribution Ledger**:
 跨 session 的 URL 所有权账本。仲裁多个 Video Session 争抢同一 URL 的情况
 （如预加载场景中多个视频共享相同的 CDN URL）。
@@ -98,7 +109,7 @@ _Avoid_: video tracker、media session
 获取 Resolution 后发送到 Resource Bridge 转发给桌面。
 
 **Resolution Strategy**:
-按站点分发的下载解析逻辑（YouTube、X、Douyin、Instagram、generic）。
+按站点分发的下载解析逻辑（YouTube、Instagram/Facebook、generic）。
 纯函数，不能回调 Attribution Engine。输出 Resolution。
 
 **Resolution**:

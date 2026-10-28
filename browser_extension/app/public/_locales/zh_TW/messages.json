@@ -136,9 +136,6 @@
   "errorBrowserNoDownloadId": {
     "message": "瀏覽器未返回下載任務"
   },
-  "errorCannotDetermineDouyinMediaForm": {
-    "message": "無法判定 Douyin 當前媒體形態，請在資源嗅探頁選擇"
-  },
   "errorCannotLocateMedia": {
     "message": "未能定位媒體"
   },
@@ -661,12 +658,6 @@
   },
   "waiting": {
     "message": "等待中"
-  },
-  "waitingForDouyinMuxedUrl": {
-    "message": "等待 Douyin 單 MP4 URL"
-  },
-  "waitingForDouyinSeparateTracks": {
-    "message": "等待 Douyin 音視訊分軌齊全"
   },
   "waitingForInstagramSeparateTracks": {
     "message": "等待 Instagram 音視訊分軌齊全"

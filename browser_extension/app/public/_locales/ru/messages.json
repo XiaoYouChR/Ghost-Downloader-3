@@ -136,9 +136,6 @@
   "errorBrowserNoDownloadId": {
     "message": "Браузер не вернул идентификатор загрузки"
   },
-  "errorCannotDetermineDouyinMediaForm": {
-    "message": "Не удалось определить текущий тип медиа Douyin, выберите на странице анализа"
-  },
   "errorCannotLocateMedia": {
     "message": "Не удалось найти медиа"
   },
@@ -661,12 +658,6 @@
   },
   "waiting": {
     "message": "Ожидание"
-  },
-  "waitingForDouyinMuxedUrl": {
-    "message": "Ожидание единого MP4 URL Douyin"
-  },
-  "waitingForDouyinSeparateTracks": {
-    "message": "Ожидание готовности раздельных аудио и видео дорожек Douyin"
   },
   "waitingForInstagramSeparateTracks": {
     "message": "Ожидание готовности раздельных аудио и видео дорожек Instagram"
