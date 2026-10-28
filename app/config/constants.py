@@ -1,6 +1,6 @@
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
-VERSION = "4.4.5"
+VERSION = "4.4.6"
 BUILD_VERSION = VERSION.split("-")[0]
 DESKTOP_ID = "com.xychr.ghostdownloader"
 DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")

@@ -1,6 +1,6 @@
 [project]
 name = "ghost-downloader-3"
-version = "4.3.5"
+version = "4.4.6"
 description = "The only downloader you need."
 readme = "README.md"
 requires-python = ">=3.13"
