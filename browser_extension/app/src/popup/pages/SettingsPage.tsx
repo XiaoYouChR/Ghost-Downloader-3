@@ -26,7 +26,7 @@ import {
     SHOULD_OPEN_POPUP_ON_SENT_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
 } from "../../background/constants";
-import type {ThemePreference} from "../../shared/types";
+import {MEDIA_BUTTON_STYLE_KEY, type MediaButtonStyle, type ThemePreference} from "../../shared/types";
 import {
   type BypassShortcut,
   DEFAULT_BYPASS_SHORTCUT,
@@ -118,6 +118,7 @@ export function SettingsPage({
   const [skipExtensionsRaw, setSkipExtensionsRaw] = useState("");
   const [skipDomains, setSkipDomains] = useState<string[]>([]);
   const [openPopupOnSent, setOpenPopupOnSent] = useState(true);
+  const [mediaButtonStyle, setMediaButtonStyle] = useState<MediaButtonStyle>("standard");
   const [bypassShortcut, setBypassShortcut] = useState<BypassShortcut>(DEFAULT_BYPASS_SHORTCUT);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDraft, setRecordingDraft] = useState<BypassShortcut | null>(null);
@@ -152,6 +153,7 @@ export function SettingsPage({
       [SKIP_DOMAINS_KEY]: [],
       [SHOULD_OPEN_POPUP_ON_SENT_KEY]: true,
       [BYPASS_SHORTCUT_KEY]: null,
+      [MEDIA_BUTTON_STYLE_KEY]: "standard",
     }, (result) => {
       setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
       setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
@@ -159,6 +161,7 @@ export function SettingsPage({
       setSkipDomains(Array.isArray(result[SKIP_DOMAINS_KEY]) ? result[SKIP_DOMAINS_KEY] : []);
       setOpenPopupOnSent(Boolean(result[SHOULD_OPEN_POPUP_ON_SENT_KEY] ?? true));
       setBypassShortcut(parseBypassShortcut(result[BYPASS_SHORTCUT_KEY]));
+      setMediaButtonStyle(result[MEDIA_BUTTON_STYLE_KEY] as MediaButtonStyle);
     });
   }, []);
 
@@ -425,6 +428,20 @@ export function SettingsPage({
               ? (recordingDraft ? toShortcutLabel(recordingDraft) : chrome.i18n.getMessage("pressShortcutKey"))
               : toShortcutLabel(bypassShortcut)}
           </Button>
+        </Field>
+
+        <Field label={chrome.i18n.getMessage("mediaButtonStyle")} hint={chrome.i18n.getMessage("mediaButtonStyleHint")}>
+          <Select
+            value={mediaButtonStyle}
+            onChange={(event) => {
+              const next = event.currentTarget.value as MediaButtonStyle;
+              setMediaButtonStyle(next);
+              void chrome.storage.local.set({ [MEDIA_BUTTON_STYLE_KEY]: next });
+            }}
+          >
+            <option value="standard">{chrome.i18n.getMessage("mediaButtonStyleStandard")}</option>
+            <option value="compact">{chrome.i18n.getMessage("mediaButtonStyleCompact")}</option>
+          </Select>
         </Field>
 
         <Field label={chrome.i18n.getMessage("theme")}>

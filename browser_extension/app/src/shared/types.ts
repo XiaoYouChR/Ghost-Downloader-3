@@ -11,6 +11,8 @@ export type MediaAction =
   | "set_time"
   | "fullscreen";
 export type ThemePreference = "system" | "light" | "dark";
+export type MediaButtonStyle = "standard" | "compact";
+export const MEDIA_BUTTON_STYLE_KEY = "mediaButtonStyle";
 
 export type DesktopConnectionState =
   | "missing_token"

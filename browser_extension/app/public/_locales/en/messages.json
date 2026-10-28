@@ -763,5 +763,17 @@
         "example": "3"
       }
     }
+  },
+  "mediaButtonStyle": {
+    "message": "Media button style"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "Standard"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "Compact"
+  },
+  "mediaButtonStyleHint": {
+    "message": "Compact style shows only the icon"
   }
 }

@@ -115,6 +115,10 @@ _Avoid_: content lock、origin file
 获取 Resolution 后发送到 Resource Bridge 转发给桌面。用户可在 Popup 中全局开关。
 _Avoid_: Download Button、下载按钮
 
+**Media Button Style**:
+Media Button 的全局外观偏好：标准（图标加文字）或精简（仅图标）。对所有网站生效。
+_Avoid_: 精简模式、compact mode
+
 **Resolution Strategy**:
 按站点分发的下载解析逻辑（YouTube、Instagram/Facebook、generic）。
 纯函数，不能回调 Attribution Engine。输出 Resolution。

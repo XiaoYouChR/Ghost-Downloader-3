@@ -863,5 +863,17 @@
         "example": "3"
       }
     }
+  },
+  "mediaButtonStyle": {
+    "message": "媒体按钮样式"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "标准"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "精简"
+  },
+  "mediaButtonStyleHint": {
+    "message": "精简样式只显示图标"
   }
 }
