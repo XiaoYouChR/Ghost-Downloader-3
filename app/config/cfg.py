@@ -259,6 +259,8 @@ class Config(QConfig):
     preBlockNum = RangeConfigItem("GeneralDownload", "PreBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     shouldPreserveLastModified = ConfigItem("GeneralDownload", "PreserveLastModified", False, BoolValidator())
+    shouldOpenFolderWhenCompleted = ConfigItem("GeneralDownload", "OpenFolderWhenCompleted", False, BoolValidator())
+    openFolderMinSize = RangeConfigItem("GeneralDownload", "OpenFolderMinSize", 0, RangeValidator(0, 1048576))
     shouldDeleteFilesOnRemove = ConfigItem("GeneralDownload", "DeleteFilesOnRemove", False, BoolValidator())
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 512, RangeValidator(64, 102400)
@@ -322,6 +324,10 @@ class Config(QConfig):
     geometry = ConfigItem(
         "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),
     )
+
+    # 通知
+    isTaskStartedNotificationEnabled = ConfigItem("Notifications", "TaskStartedNotification", False, BoolValidator())
+    isTaskCompletedNotificationEnabled = ConfigItem("Notifications", "TaskCompletedNotification", True, BoolValidator())
 
     # OOBE
     hasCompletedOobe = ConfigItem("Software", "HasCompletedOobe", False, BoolValidator())

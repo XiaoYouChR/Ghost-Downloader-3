@@ -54,6 +54,7 @@ class SettingPage(FastScrollArea):
         self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
         self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
         self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
+        self.notificationGroup = CollapsibleSettingCardGroup(self.tr("通知"), "notification", self.container)
         self.aboutGroup = CollapsibleSettingCardGroup(self.tr("关于"), "about", self.container)
 
         from app.view.pages.task_page import EmptyStatusWidget
@@ -93,6 +94,17 @@ class SettingPage(FastScrollArea):
         self.downloadFolderPicker = FolderPicker(
             lambda: cfg.downloadFolder.defaultValue, self.tr("系统默认"), self.downloadFolderCard
         )
+        self.openFolderCard = SwitchSettingCard(
+            FluentIcon.FOLDER, self.tr("下载完成后自动打开下载文件夹"),
+            self.tr("任务完成后自动在文件管理器中定位下载文件"),
+            cfg.shouldOpenFolderWhenCompleted,
+        )
+        self.openFolderMinSizeCard = SpinBoxSettingCard(
+            FluentIcon.DOCUMENT, self.tr("自动打开的最小文件体积"),
+            self.tr("文件体积大于此值时自动打开，0 表示不限制"),
+            suffix=" MB", configItem=cfg.openFolderMinSize, singleStep=100, division=1,
+        )
+        self.openFolderMinSizeCard.setEnabled(cfg.shouldOpenFolderWhenCompleted.value)
         self.downloadFolderPicker.setPath(cfg.downloadFolder.value)
         self.downloadFolderCard.hBoxLayout.addWidget(self.downloadFolderPicker, 0, Qt.AlignmentFlag.AlignRight)
         self.downloadFolderCard.hBoxLayout.addSpacing(16)
@@ -117,6 +129,8 @@ class SettingPage(FastScrollArea):
                               self.tr("文件无法下载时，可尝试关闭该选项"),
                               cfg.shouldVerifySsl),
             self.downloadFolderCard,
+            self.openFolderCard,
+            self.openFolderMinSizeCard,
             ComboBoxSettingCard(cfg.nameConflict, FluentIcon.COPY, self.tr("同名文件"),
                                 self.tr("下载目录中已有同名文件时的处理方式"),
                                 texts=[self.tr("保留两者"), self.tr("覆盖"), self.tr("询问")]),
@@ -349,6 +363,15 @@ class SettingPage(FastScrollArea):
         ]
         self.softwareGroup.addSettingCards(softwareCards)
 
+        self.notificationGroup.addSettingCards([
+            SwitchSettingCard(FluentIcon.PLAY, self.tr("下载开始通知"),
+                              self.tr("任务开始下载时发送系统通知"),
+                              cfg.isTaskStartedNotificationEnabled),
+            SwitchSettingCard(FluentIcon.ACCEPT, self.tr("下载完成通知"),
+                              self.tr("任务下载完成后发送系统通知"),
+                              cfg.isTaskCompletedNotificationEnabled),
+        ])
+
         self.feedbackCard = PrimaryPushSettingCard(
             self.tr("提供反馈"), FluentIcon.FEEDBACK,
             self.tr("提供反馈"),
@@ -386,6 +409,7 @@ class SettingPage(FastScrollArea):
         self.addSettingGroup(self.aria2RpcGroup)
         self.addSettingGroup(self.personalGroup)
         self.addSettingGroup(self.softwareGroup)
+        self.addSettingGroup(self.notificationGroup)
         for group in self._featureService.settingGroups(self.container):
             self.addSettingGroup(group)
         self.addSettingGroup(self.aboutGroup)
@@ -400,6 +424,7 @@ class SettingPage(FastScrollArea):
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
         self.downloadFolderPicker.pathChanged.connect(self._onDownloadFolderChanged)
+        cfg.shouldOpenFolderWhenCompleted.valueChanged.connect(self.openFolderMinSizeCard.setEnabled)
 
         self.browserPairTokenCard.clicked.connect(self._onCopyTokenClicked)
         self.regenerateTokenButton.clicked.connect(self._onRegenerateTokenClicked)
