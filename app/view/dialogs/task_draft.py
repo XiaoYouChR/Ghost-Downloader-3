@@ -317,7 +317,7 @@ class TaskDraftDialog(MessageBoxBase):
     def _showAddError(self, tasks: list[Task], error: TaskError) -> None:
         bar = InfoBar(
             icon=InfoBarIcon.ERROR,
-            title=self.tr("无法开始下载"),
+            title=self.tr("无法添加任务"),
             content=toLocalizedError(error),
             orient=Qt.Orientation.Horizontal,
             isClosable=True,
