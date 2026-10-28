@@ -1,9 +1,29 @@
 import {classifyTrackRole, isDashSegmentUrl, isStreamUrl, stripRangeParams} from "../url-classify";
 import {bestMatching, postBindAttributedUrls, selectMergePair} from "../strategy";
-import type {ResolveContext} from "../strategy";
-import type {Resolution} from "../../types";
+import type {ResolveContext, SessionSnapshot} from "../strategy";
+import type {Resolution, Selection} from "../../types";
 
 const isMuxedUrl = (url: string) => !isDashSegmentUrl(url);
+// TikTok declares its audio SourceBuffer as video/mp4, so the codec is what tells.
+const isAudioTrack = (mimeType: string) => /^audio\/|codecs="?(mp4a|opus|vorbis|flac|[ae]c-3)/i.test(mimeType);
+
+// Source Files hold the samples being played, so they settle the form whatever their URLs look like.
+function selectBySourceFiles({ tracks, formKind }: SessionSnapshot): Selection | undefined {
+  if (tracks.length === 1 && tracks[0].sourceUrls.length === 1) {
+    return { kind: "single", url: stripRangeParams(tracks[0].sourceUrls[0]), formKind };
+  }
+  const video = tracks.find((track) => !isAudioTrack(track.mimeType))?.sourceUrls;
+  const audio = tracks.find((track) => isAudioTrack(track.mimeType))?.sourceUrls;
+  if (tracks.length !== 2 || video?.length !== 1 || !audio) { return undefined; }
+  // The video's file holding the played audio too makes it the whole video, even when other files share the sound.
+  if (audio.includes(video[0])) {
+    return { kind: "single", url: stripRangeParams(video[0]), formKind: "muxed" };
+  }
+  if (audio.length === 1) {
+    return { kind: "merge", video: stripRangeParams(video[0]), audio: stripRangeParams(audio[0]) };
+  }
+  return undefined;
+}
 
 // Fallback strategy — runs when no per-site strategy matches the hostname.
 export function selectGeneric(ctx: ResolveContext): Resolution {
@@ -19,6 +39,11 @@ export function selectGeneric(ctx: ResolveContext): Resolution {
   const stream = bestMatching(post, isStreamUrl);
   if (stream) {
     return { kind: "selection", selection: { kind: "stream", url: stream } };
+  }
+
+  const bySourceFiles = selectBySourceFiles(ctx.clicked);
+  if (bySourceFiles) {
+    return { kind: "selection", selection: bySourceFiles };
   }
 
   if (ctx.clicked.formKind === "muxed") {

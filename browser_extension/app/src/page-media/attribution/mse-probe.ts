@@ -5,7 +5,7 @@
  * capturing buffers. Built as a standalone IIFE bundle (see scripts/build.mjs).
  */
 import {postMediaSignal} from "./attribution-signal";
-import {isMp4Head, MP4_HEAD_LIMIT, parseMp4Duration} from "./mp4-duration";
+import {isMp4Head, MP4_HEAD_LIMIT, parseMdatTail, parseMp4Duration} from "./mp4";
 
 declare global {
   interface Window {
@@ -14,6 +14,10 @@ declare global {
 }
 
 type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
+type Head = { url: string; bytes: Uint8Array };
+
+const MDAT_TAIL_LENGTH = 32;
+const HEADS_CAP = 16;
 
 (function installGhostDownloaderMseAttribution() {
   if (window.__gdMseAttributionInstalled) { return; }
@@ -21,6 +25,30 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
 
   const mediaSourceIdByInstance = new WeakMap<MediaSource, string>();
   let mediaSourceCounter = 0;
+
+  // Remuxing players (TikTok) copy sample bytes verbatim, so the MP4 heads they fetched name where appended samples came from.
+  const recentHeads: Head[] = [];
+
+  function addHead(url: string, bytes: Uint8Array): Head {
+    const head = { url, bytes };
+    recentHeads.push(head);
+    if (recentHeads.length > HEADS_CAP) { recentHeads.shift(); }
+    return head;
+  }
+
+  function hasBytes(haystack: Uint8Array, needle: Uint8Array): boolean {
+    for (let i = haystack.indexOf(needle[0]); i >= 0 && i + needle.length <= haystack.length; i = haystack.indexOf(needle[0], i + 1)) {
+      let j = 1;
+      while (j < needle.length && haystack[i + j] === needle[j]) { j += 1; }
+      if (j === needle.length) { return true; }
+    }
+    return false;
+  }
+
+  // Every holder, not the newest: videos sharing a sound carry identical audio bytes.
+  function sourceUrlsOf(tail: Uint8Array): string[] {
+    return [...new Set(recentHeads.filter((head) => hasBytes(head.bytes, tail)).map((head) => head.url))];
+  }
 
   // Hook each MediaSource instance, never MediaSource.prototype: CCTV's player stops
   // decrypting video when its prototype methods are not native.
@@ -42,8 +70,25 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
             postMediaSignal({ kind: "mse_source_buffer_added", mediaSourceId: id, mimeType });
             try {
               const originalAppendBuffer = sourceBuffer.appendBuffer;
+              let sourceUrls: string[] = [];
               sourceBuffer.appendBuffer = function patchedAppendBuffer(this: SourceBuffer, data: BufferSource): void {
                 postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: id, mimeType });
+                try {
+                  const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+                  const tail = parseMdatTail(bytes, MDAT_TAIL_LENGTH);
+                  if (!tail) {
+                    // An init segment starts the next video in a reused SourceBuffer, so the match starts over.
+                    sourceUrls = [];
+                  } else if (sourceUrls.length !== 1) {
+                    const found = sourceUrlsOf(tail);
+                    // Each later segment can only narrow the holders down.
+                    const narrowed = sourceUrls.length === 0 ? found : sourceUrls.filter((url) => found.includes(url));
+                    if (narrowed.length > 0 && narrowed.length !== sourceUrls.length) {
+                      sourceUrls = narrowed;
+                      postMediaSignal({ kind: "mse_buffer_matched", mediaSourceId: id, mimeType, urls: sourceUrls });
+                    }
+                  }
+                } catch { /* Detached buffer. */ }
                 return originalAppendBuffer.call(this, data);
               };
             } catch {
@@ -80,16 +125,19 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
     if (!reader) { return; }
     const chunks: Uint8Array[] = [];
     let size = 0;
+    let mp4Head: Head | undefined;
     while (size < MP4_HEAD_LIMIT) {
       const { done, value } = await reader.read();
       if (done || !value) { break; }
       chunks.push(value);
       size += value.length;
-      // One chunk settles an m3u8; an MP4 needs its whole moov.
-      if (!isMp4Head(chunks[0]) || parseMp4Duration(toBytes(chunks)) !== undefined) { break; }
+      // One chunk settles an m3u8; an MP4 is read on for the first samples sourceUrlsOf looks for.
+      if (!isMp4Head(chunks[0])) { break; }
+      // Grown chunk by chunk: the player appends its first segments before the head is complete.
+      if (mp4Head) { mp4Head.bytes = toBytes(chunks); } else { mp4Head = addHead(url, toBytes(chunks)); }
     }
     reader.cancel().catch(() => {});
-    const head = toBytes(chunks);
+    const head = mp4Head?.bytes ?? toBytes(chunks);
     const duration = parseMp4Duration(head);
     if (duration !== undefined) {
       postMediaSignal({ kind: "media_duration", url, duration });
@@ -162,7 +210,8 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
         } catch { /* responseText throws on non-text responseType. */ }
         try {
           if (xhr.responseType === "arraybuffer" && xhr.response instanceof ArrayBuffer) {
-            const head = new Uint8Array(xhr.response, 0, Math.min(xhr.response.byteLength, MP4_HEAD_LIMIT));
+            const head = new Uint8Array(xhr.response.slice(0, MP4_HEAD_LIMIT));
+            if (isMp4Head(head)) { addHead(resolvedUrl, head); }
             const duration = parseMp4Duration(head);
             if (duration !== undefined) { postMediaSignal({ kind: "media_duration", url: resolvedUrl, duration }); }
           }

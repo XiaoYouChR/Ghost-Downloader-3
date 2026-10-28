@@ -86,6 +86,7 @@ function toSessionSnapshot(session: VideoSession, matchClickedVideo: MatchClicke
     formKind: session.formKind,
     lastBoundAt: session.lastBoundAt,
     attributedUrls,
+    tracks: Object.freeze([...session.mimeTypes].map((mimeType) => ({ mimeType, sourceUrls: session.sourceUrlsByMime.get(mimeType) ?? [] }))),
   });
 }
 
@@ -242,6 +243,7 @@ class MediaAttribution {
       lastBoundAt: 0,
       attributedUrls: new Map(),
       mimeTypes: new Set(),
+      sourceUrlsByMime: new Map(),
       mediaSourceIds: new Set(),
       idHints: new Set(),
       formKind: "unknown",
@@ -437,6 +439,15 @@ class MediaAttribution {
       case "mse_buffer_appended":
         this.attributeBufferAppend(signal.mediaSourceId, signal.mimeType);
         return;
+
+      case "mse_buffer_matched": {
+        const session = this.sessionByMediaSourceId.get(signal.mediaSourceId);
+        if (!session) { return; }
+        session.sourceUrlsByMime.set(signal.mimeType, signal.urls);
+        console.log(`${LOG_PREFIX} ${session.id} ${signal.mimeType} samples come from`, signal.urls);
+        this.notifyResolveListener(session, session.state, "source-matched");
+        return;
+      }
 
       case "media_duration":
         this.durationByUrl.set(signal.url, signal.duration);

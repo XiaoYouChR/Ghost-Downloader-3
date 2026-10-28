@@ -100,6 +100,12 @@ _Avoid_: confirmed、bound
 解析时 Clicked Video Match 优先于 MSE Lock，MSE Lock 优先于捕获时间。
 _Avoid_: page video
 
+**Source File**:
+SourceBuffer 里正在播放的样本所在的文件——播放器追加的样本字节在该文件里原样出现。
+共用同一段音乐的视频，音频可能有多个 Source File。
+Source File 已知时直接决定下载内容，优先于 Clicked Video Match 和 MSE Lock。
+_Avoid_: content lock、origin file
+
 **Attribution Ledger**:
 跨 session 的 URL 所有权账本。仲裁多个 Video Session 争抢同一 URL 的情况
 （如预加载场景中多个视频共享相同的 CDN URL）。

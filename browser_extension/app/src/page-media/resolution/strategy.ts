@@ -22,6 +22,8 @@ export type SessionSnapshot = {
   readonly formKind: VideoSessionFormKind;
   readonly lastBoundAt: number;
   readonly attributedUrls: ReadonlyArray<AttributedUrlView>;
+  // One per SourceBuffer, with its Source Files (empty until the probe finds one).
+  readonly tracks: ReadonlyArray<{ readonly mimeType: string; readonly sourceUrls: ReadonlyArray<string> }>;
 };
 
 export type ResolveHints = {

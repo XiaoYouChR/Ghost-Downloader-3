@@ -26,6 +26,7 @@ export type MseAttributionSignal =
   | { kind: "mse_objecturl"; mediaSourceId: string; objectUrl: string }
   | { kind: "mse_source_buffer_added"; mediaSourceId: string; mimeType: string }
   | { kind: "mse_buffer_appended"; mediaSourceId: string; mimeType: string }
+  | { kind: "mse_buffer_matched"; mediaSourceId: string; mimeType: string; urls: string[] }
   | { kind: "request_completed"; url: string; contentType: string }
   | { kind: "media_duration"; url: string; duration: number }
   | { kind: "stream_detected"; url: string; isMaster: boolean };
@@ -40,6 +41,7 @@ export type VideoSession = {
   lastBoundAt: number;
   attributedUrls: Map<string, AttributedUrlMeta>;
   mimeTypes: Set<string>;
+  sourceUrlsByMime: Map<string, string[]>;
   mediaSourceIds: Set<string>;
   idHints: Set<string>;
   formKind: VideoSessionFormKind;
