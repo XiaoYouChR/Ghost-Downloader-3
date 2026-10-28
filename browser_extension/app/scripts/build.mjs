@@ -110,7 +110,7 @@ for (const [target, config] of Object.entries(buildTargets)) {
   });
 
   await esbuild({
-    entryPoints: [path.resolve(appRoot, "src/page-media/download-button/download-button.ts")],
+    entryPoints: [path.resolve(appRoot, "src/page-media/media-button/media-button.ts")],
     bundle: true,
     format: "iife",
     target: config.runtimeTarget,

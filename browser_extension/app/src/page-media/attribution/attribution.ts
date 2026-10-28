@@ -20,7 +20,7 @@ import type {
 const LOG_PREFIX = "[GD Media]";
 // Budget from the FIRST Pending — not per re-eval.
 const WAIT_FOR_TIMEOUT_MS = 8000;
-// Matches the download-button status toast — auto-reset and toast fade on the same clock.
+// Matches the Media Button status toast — auto-reset and toast fade on the same clock.
 const TERMINAL_RESET_MS = 1600;
 
 type ResolveStateListener = (state: VideoSessionState, reason: string) => void;
