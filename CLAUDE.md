@@ -1,23 +1,26 @@
 # CLAUDE.md
 
-## 思想（宪法——遇到下面任何规则没覆盖的场景，回到这里判断）
+## 思想
+
+这是宪法：下面的规则未覆盖的场景，以此判断。
 
 - **Simple is better than complex.** (Zen)
-- **Flat is better than nested.** (Zen) — 函数优于类、内联优于跳转、三行重复优于过早抽象
-- **Explicit is better than implicit.** (Zen) — 依赖显式传入、配置显式注入、不靠模块级全局状态做隐式耦合
-- **Readability counts.** (Zen) — 代码被读 > 被写。从业务角度命名，不用生僻词；「注释只写 Why」的前提是代码本身能说明 What
-- **Signal-driven actors.** — Service 拥有私有状态，对外通信仅通过信号；Service 不持 View 引用（View 持 Service 引用以 connect 信号是允许的）
-- **YAGNI — trust internals, validate at boundaries.** — 不写 hypothetical 防御，删除胜于注释掉，不留向后兼容别名
-- **If the implementation is hard to explain, it's a bad idea.** (Zen) — 解释起来绕的设计，多半是错的
+- **Flat is better than nested.** (Zen)：函数优于类、内联优于跳转、三行重复优于过早抽象
+- **Explicit is better than implicit.** (Zen)：依赖显式传入、配置显式注入，不靠模块级全局状态做隐式耦合
+- **Readability counts.** (Zen)：代码被读多于被写。从业务角度命名，不用生僻词；"注释只写 Why"的前提是代码本身能说明 What
+- **Signal-driven actors.** Service 拥有私有状态，对外仅通过信号通信；Service 不持有 View 引用（View 可持有 Service 引用以 connect 信号）
+- **General-purpose modules are deeper.** (Ousterhout)：功能只做当前所需，接口按通用设计；专用逻辑留在调用方，通用机制不夹带特例
+- **YAGNI: trust internals, validate at boundaries.** 不写 hypothetical 防御，删除胜于注释掉，不留向后兼容别名
+- **If the implementation is hard to explain, it's a bad idea.** (Zen)
 
 ## 命名
 
 - 类名 PascalCase，函数和变量 camelCase
 - 函数名用动词前缀（PowerShell 风格）：`taskService.add()`、`featureService.parse()`
 - 选短词、常见词，第一次读代码的人也能看懂
-- 类名提供了上下文后，去掉冗余名词：`taskService.add()` 不写 `addTask()`
+- 类名已提供上下文时，去掉冗余名词：`taskService.add()` 不写 `addTask()`
 - 名词锁定到 GLOSSARY.md，不用近义词：`task` 不写 `download`，`name` 不写 `title`
-- 不用 `_` 前缀标记模块内部函数——模块边界本身就是封装
+- 不用 `_` 前缀标记模块内部函数，模块边界本身就是封装
 - Actor 以它拥有的业务概念命名，禁用 manager、controller、coordinator、provider、repository、facade、pipeline、context
 - 布尔值用 `is*` / `has*` / `can*` / `should*` 前缀
 - 信号 `{noun}{PastParticiple}`（`taskAdded`、`speedChanged`）；类名已提供上下文时可只用 `{PastParticiple}`。槽 `_on{Noun}{PastParticiple}`
@@ -26,7 +29,7 @@
 
 ## 动词表
 
-封闭词汇表——函数名只能从这里选动词。选不出说明职责不清或 seam 错了。
+封闭词汇表：函数名只能从这里选动词。选不出时，说明职责不清或 seam 划错了。
 
 | 动词 | 语义 |
 |---|---|
@@ -74,23 +77,27 @@ def __init__(self, parent=None):
     self._bind()         # 连接信号到槽，所有控件已存在
 ```
 
-## 反模式（看到就改）
+## 反模式（发现即改）
 
 **违反 Flat is better than nested：**
-- 只做 if/elif 分发的包装函数 → 让调用方直接调对应函数
-- 把类嵌在方法里但不用闭包 → 提升为模块级
-- 类名已提供上下文时函数名还重复名词 → 砍掉名词
+- 只做 if/elif 分发的包装函数 -> 让调用方直接调对应函数
+- 把类嵌在方法里但不用闭包 -> 提升为模块级
+- 类名已提供上下文时函数名还重复名词 -> 删去名词
 
 **违反 Explicit is better than implicit：**
-- 模块级 `global` 可变状态伪装成单例 → 提升为类，或 frozen dataclass 显式注入
-- 用 dict 传结构化数据 → 用 dataclass
-- 传整个对象但只用其中一个方法 → 传 callable，依赖保持最窄
+- 模块级 `global` 可变状态伪装成单例 -> 提升为类，或 frozen dataclass 显式注入
+- 用 dict 传结构化数据 -> 用 dataclass
+- 传整个对象但只用其中一个方法 -> 传 callable，依赖保持最窄
 
 **违反 YAGNI：**
-- 多处文档描述同一个事实 → 一个事实一个位置，其余用链接
+- 多处文档描述同一个事实 -> 一个事实一个位置，其余用链接
 
 **违反 Simple is better than complex：**
-- 把不属于本模块职责的逻辑混进来"顺手做了" → 保持单一职责
+- 把不属于本模块职责的逻辑顺带写进来 -> 保持单一职责
 
 **违反 Readability counts：**
-- 注释或文档复述代码已经说明的事 → 删掉，代码自己说 What
+- 注释或文档复述代码已说明的事 -> 删除，由代码说明 What
+
+## 中文用语
+
+凡写中文，都要书面、地道，无翻译腔、无废话。引号用 ""，箭头用 ->，不用「」、破折号、间隔号。
