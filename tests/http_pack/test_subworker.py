@@ -131,10 +131,18 @@ async def test_run_splits_slow_range_when_another_finishes(startServer, tmp_path
     size = 2_000_000
     content = buildFileContent(size)
     ranges = []
+    slowHalfStarted = asyncio.Event()
 
     async def slowSecondHalf(request: web.Request) -> web.StreamResponse:
         ranges.append(request.headers.get("Range", ""))
-        if request.headers.get("Range") != f"bytes={size // 2}-{size - 1}":
+        if "Range" not in request.headers:
+            # 回环上 1 MB 只需几毫秒，比新连接还快；真实网络中慢分片早已开始收数据
+            response = web.StreamResponse(status=200, headers={"Content-Length": str(size)})
+            await response.prepare(request)
+            await slowHalfStarted.wait()
+            await response.write(content)
+            return response
+        if request.headers["Range"] != f"bytes={size // 2}-{size - 1}":
             return await buildRangeHandler(content)(request)
         response = web.StreamResponse(status=206, headers={
             "Content-Range": f"bytes {size // 2}-{size - 1}/{size}", "Content-Length": str(size // 2)})
@@ -142,6 +150,7 @@ async def test_run_splits_slow_range_when_another_finishes(startServer, tmp_path
         for offset in range(size // 2, size, 65536):
             await response.write(content[offset:min(offset + 65536, size)])
             await asyncio.sleep(0.05)
+            slowHalfStarted.set()
         return response
 
     url = await startServer(slowSecondHalf)
