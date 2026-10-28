@@ -94,7 +94,7 @@ let shouldTakeUnknownSize = true;
 let skipExtensions: Set<string> = new Set();
 let skipDomains: Set<string> = new Set();
 
-function imageFilename(url: string, alt: string): string {
+function toImageFilename(url: string): string {
   try {
     const segments = new URL(url).pathname.split("/").filter(Boolean).map(decodeURIComponent);
     const basename = segments.pop() || "";
@@ -104,8 +104,7 @@ function imageFilename(url: string, alt: string): string {
       return name.slice(0, 160);
     }
   } catch { /* invalid URL */ }
-  const safe = (alt || "image").replace(/[<>:"/\\|?*\x00-\x1f]+/g, " ").trim().slice(0, 120);
-  return safe || "image";
+  return "";
 }
 
 async function injectMediaButton(tabId: number) {
@@ -518,11 +517,11 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
     case "popup_send_images": {
       let count = 0;
       for (const image of command.images) {
-        const filename = imageFilename(image.src, image.alt);
+        const filename = toImageFilename(image.src);
         await sendTaskOrEnqueue({
           type: "create_task",
           source: "download",
-          title: filename,
+          title: filename || image.alt.trim(),
           payload: {
             url: image.src,
             headers: { referer: command.pageUrl },
