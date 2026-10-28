@@ -727,5 +727,38 @@
   },
   "clearFilters": {
     "message": "Clear filters"
+  },
+  "sortByStatus": {
+    "message": "Status"
+  },
+  "sortAscending": {
+    "message": "Ascending"
+  },
+  "sortDescending": {
+    "message": "Descending"
+  },
+  "searchTasksPlaceholder": {
+    "message": "Search task name"
+  },
+  "noMatchingTasksTitle": {
+    "message": "No matching tasks"
+  },
+  "noMatchingTasksDescription": {
+    "message": "Try another keyword."
+  },
+  "moreOptions": {
+    "message": "More options"
+  },
+  "removeCompletedTasks": {
+    "message": "Remove completed tasks"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "Failed to remove $1 tasks",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

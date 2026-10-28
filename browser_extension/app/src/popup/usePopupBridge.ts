@@ -1,5 +1,5 @@
 import type {Dispatch, SetStateAction} from "react";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 
 import {ADVANCED_FEATURES} from "../shared/constants";
 import type {
@@ -13,7 +13,6 @@ import type {
     ScannedImage,
     TaskAction,
 } from "../shared/types";
-import {sortTasks} from "../shared/utils";
 import type {ActionCommand, PopupCommand, StateCommand} from "../shared/popup-protocol";
 import type {ToastIntent} from "./components/ToastHost";
 
@@ -416,6 +415,28 @@ export function usePopupBridge(activeView: PopupView) {
     [refreshState, showToast],
   );
 
+  const removeTasks = useCallback(
+    async (taskIds: string[]) => {
+      for (const taskId of taskIds) {
+        updateBusyState(setBusyTaskIds, taskId, true);
+      }
+      const results = await Promise.allSettled(taskIds.map(async (taskId) => {
+        try {
+          await sendActionCommand({ type: "popup_task_action", taskId, action: "remove" }, chrome.i18n.getMessage("errorTaskActionFailed"));
+        } finally {
+          updateBusyState(setBusyTaskIds, taskId, false);
+        }
+      }));
+      const failedCount = results.filter((result) => result.status === "rejected").length;
+      if (failedCount > 0) {
+        showToast(chrome.i18n.getMessage("errorRemoveTasksFailed", [String(failedCount)]), "error");
+      }
+      // The periodic refresh retries if this one fails.
+      await refreshState(activeViewRef.current).catch(() => undefined);
+    },
+    [refreshState, showToast],
+  );
+
   const sendResource = useCallback(
     async (resourceId: string) => {
       updateBusyState(setBusyResourceIds, resourceId, true);
@@ -561,8 +582,6 @@ export function usePopupBridge(activeView: PopupView) {
     [showToast],
   );
 
-  const sortedTasks = useMemo(() => sortTasks(payload.tasks), [payload.tasks]);
-
   return {
     ...payload,
     toastMessage,
@@ -581,12 +600,12 @@ export function usePopupBridge(activeView: PopupView) {
     setShouldTakeDownloads,
     setMediaButtonEnabled,
     sendTaskAction,
+    removeTasks,
     sendResource,
     mergeResources,
     toggleFeature,
     setMediaIndex,
     sendMediaAction,
-    sortedTasks,
     isTaskBusy: (taskId: string) => busyTaskIds.has(taskId),
     sendImages,
     isResourceBusy: (resourceId: string) => busyResourceIds.has(resourceId),

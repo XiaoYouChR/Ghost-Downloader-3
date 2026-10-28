@@ -69,9 +69,11 @@ export function App({
       <main className={styles.content}>
         {currentView === "tasks" ? (
           <DownloadsPage
-            tasks={bridge.sortedTasks}
+            tasks={bridge.tasks}
+            connected={bridge.isConnected}
             isTaskBusy={bridge.isTaskBusy}
             onTaskAction={(taskId, action) => void bridge.sendTaskAction(taskId, action)}
+            onRemoveTasks={(taskIds) => void bridge.removeTasks(taskIds)}
           />
         ) : null}
 

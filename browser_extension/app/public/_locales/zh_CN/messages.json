@@ -827,5 +827,38 @@
   },
   "clearFilters": {
     "message": "清除筛选"
+  },
+  "sortByStatus": {
+    "message": "状态"
+  },
+  "sortAscending": {
+    "message": "正序"
+  },
+  "sortDescending": {
+    "message": "倒序"
+  },
+  "searchTasksPlaceholder": {
+    "message": "搜索任务名称"
+  },
+  "noMatchingTasksTitle": {
+    "message": "没有匹配的任务"
+  },
+  "noMatchingTasksDescription": {
+    "message": "换个关键词试试。"
+  },
+  "moreOptions": {
+    "message": "更多选项"
+  },
+  "removeCompletedTasks": {
+    "message": "移除已完成的任务"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "$1 个任务移除失败",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

@@ -22,6 +22,13 @@ export type DesktopConnectionState =
 
 export type ResourceKind = "video" | "audio" | "pdf" | "image" | "archive" | "document" | "spreadsheet" | "other";
 export type ResourceSort = "time" | "size" | "name";
+export type TaskSortField = "time" | "status" | "name" | "size";
+export type SortDirection = "asc" | "desc";
+
+export interface TaskSort {
+  field: TaskSortField;
+  direction: SortDirection;
+}
 export type ResourceScope = "current" | "other";
 export type ResourceCollectionState = "restoring" | "ready" | "unavailable";
 

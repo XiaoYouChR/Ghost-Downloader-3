@@ -7,7 +7,6 @@ import {
     isCatCatchMpd,
 } from "./cat-catch";
 
-const ACTIVE_STATUSES = new Set(["running", "waiting", "paused", "failed"]);
 const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "heic"]);
 const ARCHIVE_EXTENSIONS = new Set(["zip", "7z", "rar", "tar", "gz", "bz2", "xz"]);
 const PDF_EXTENSIONS = new Set(["pdf"]);
@@ -52,17 +51,6 @@ interface ResourcePresentation {
   visual: {
     kind: VisualKind;
   };
-}
-
-export function sortTasks(tasks: TaskSummary[]): TaskSummary[] {
-  return [...tasks].sort((left, right) => {
-    const leftActive = ACTIVE_STATUSES.has(left.status);
-    const rightActive = ACTIVE_STATUSES.has(right.status);
-    if (leftActive !== rightActive) {
-      return leftActive ? -1 : 1;
-    }
-    return right.createdAt - left.createdAt;
-  });
 }
 
 export function formatBytes(value: number): string {
