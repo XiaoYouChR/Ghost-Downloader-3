@@ -298,6 +298,7 @@ const FADE_DURATION_MS = 300;
     try {
       const resolution = await pageMedia.selectMediaForElement(media, {
         poster: media.poster || "",
+        linkUrl: media.closest<HTMLAnchorElement>("a[href]")?.href ?? "",
       }, onState);
       if (!resolution || resolution.kind === "refused") {
         setStatus(resolution?.message || chrome.i18n.getMessage("errorCannotLocateMedia"), true);

@@ -23,6 +23,7 @@ export type SessionSnapshot = {
 
 export type ResolveHints = {
   readonly poster: string;
+  readonly linkUrl: string;
 };
 
 export type ResolveContext = {
