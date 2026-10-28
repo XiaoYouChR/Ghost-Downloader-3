@@ -1,7 +1,7 @@
 {
   "name": "ghost-downloader-browser-extension",
   "private": true,
-  "version": "2.2.0",
+  "version": "2.3.0",
   "type": "module",
   "scripts": {
     "build": "node ./scripts/build.mjs",
