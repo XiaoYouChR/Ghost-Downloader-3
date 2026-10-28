@@ -53,7 +53,7 @@
     "message": "Completed"
   },
   "fileMissing": {
-    "message": "Deleted"
+    "message": "File missing"
   },
   "confirmPairing": {
     "message": "Confirm Pairing"
@@ -751,6 +751,9 @@
   },
   "removeCompletedTasks": {
     "message": "Remove completed tasks"
+  },
+  "removeMissingTasks": {
+    "message": "Remove missing tasks"
   },
   "errorRemoveTasksFailed": {
     "message": "Failed to remove $1 tasks",

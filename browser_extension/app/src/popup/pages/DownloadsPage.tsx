@@ -18,6 +18,7 @@ import {
     ArrowSortDownRegular,
     ArrowSortUpRegular,
     DeleteRegular,
+    DocumentDismissRegular,
     MoreHorizontalRegular,
     SearchRegular,
 } from "@fluentui/react-icons";
@@ -96,6 +97,10 @@ export function DownloadsPage({
   const visibleTasks = useMemo(() => buildTaskView(tasks, { text, sort }), [tasks, text, sort]);
   const completedTaskIds = useMemo(
     () => tasks.filter((task) => task.status === "completed").map((task) => task.taskId),
+    [tasks],
+  );
+  const missingTaskIds = useMemo(
+    () => tasks.filter((task) => task.status === "completed" && !task.canOpenFile).map((task) => task.taskId),
     [tasks],
   );
 
@@ -182,6 +187,14 @@ export function DownloadsPage({
                 onClick={() => onRemoveTasks(completedTaskIds)}
               >
                 {chrome.i18n.getMessage("removeCompletedTasks")}
+              </MenuItem>
+              <MenuItem
+                icon={<DocumentDismissRegular />}
+                secondaryContent={String(missingTaskIds.length)}
+                disabled={!connected || missingTaskIds.length === 0}
+                onClick={() => onRemoveTasks(missingTaskIds)}
+              >
+                {chrome.i18n.getMessage("removeMissingTasks")}
               </MenuItem>
             </MenuList>
           </MenuPopover>

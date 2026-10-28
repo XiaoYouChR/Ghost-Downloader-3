@@ -53,7 +53,7 @@
     "message": "已完成"
   },
   "fileMissing": {
-    "message": "已删除"
+    "message": "文件缺失"
   },
   "confirmPairing": {
     "message": "请确认配对"
@@ -851,6 +851,9 @@
   },
   "removeCompletedTasks": {
     "message": "移除已完成的任务"
+  },
+  "removeMissingTasks": {
+    "message": "移除缺失的任务"
   },
   "errorRemoveTasksFailed": {
     "message": "$1 个任务移除失败",
