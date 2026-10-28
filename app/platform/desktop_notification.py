@@ -56,6 +56,15 @@ def notifyParseFailed(url: str, error: TaskError) -> None:
     ))
 
 
+def notifyTaskStarted(task: Task) -> None:
+    if notifier is None:
+        return
+    _submit(notifier.send(
+        title=QCoreApplication.translate("Notifications", "开始下载"),
+        message=task.name,
+    ))
+
+
 def notifyTaskCompleted(task: Task) -> None:
     if notifier is None:
         return

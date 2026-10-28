@@ -230,9 +230,27 @@ def startApp(application, primaryInstance, isSilent=False):
     taskService.taskStarted.connect(lambda _: hold())
     taskService.tasksAllCompleted.connect(release)
 
-    from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient, notifyParseFailed
+    from app.platform.desktop import revealInFolder
+    from app.platform.desktop_notification import (
+        init, notifyDiskSpaceInsufficient, notifyParseFailed,
+        notifyTaskCompleted, notifyTaskStarted,
+    )
     coroutineRunner.submit(init(coroutineRunner.submit))
-    taskService.taskCompleted.connect(notifyTaskCompleted)
+
+    def onTaskStarted(task):
+        if cfg.isTaskStartedNotificationEnabled.value:
+            notifyTaskStarted(task)
+
+    def onTaskCompleted(task):
+        if cfg.isTaskCompletedNotificationEnabled.value:
+            notifyTaskCompleted(task)
+        if cfg.shouldOpenFolderWhenCompleted.value:
+            minSize = cfg.openFolderMinSize.value * 1024 * 1024
+            if task.fileSize <= 0 or task.fileSize > minSize:
+                revealInFolder(task.outputPath)
+
+    taskService.taskStarted.connect(onTaskStarted)
+    taskService.taskCompleted.connect(onTaskCompleted)
     taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
     engine.aria2RpcService.parseFailed.connect(notifyParseFailed)
 
