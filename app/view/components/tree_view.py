@@ -46,17 +46,19 @@ class AutoSizingTreeView(TreeView):
         header = self.header()
         if header.count() == 0:
             return super().sizeHint().width()
-        return header.length() + self.frameWidth() * 2 + self.verticalScrollBar().sizeHint().width()
+        columns = sum(max(self.sizeHintForColumn(i), header.sectionSizeHint(i)) for i in range(header.count()))
+        return columns + self.frameWidth() * 2 + self.verticalScrollBar().sizeHint().width()
 
-    def _sizeForRows(self, count: int) -> QSize:
+    def _heightForRows(self, count: int) -> int:
         headerHeight = self.header().height() if self.header().isVisible() else 0
-        return QSize(self._contentWidth(), headerHeight + count * self._rowHeight() + 4)
+        return headerHeight + count * self._rowHeight() + 4
 
     def minimumSizeHint(self) -> QSize:
-        return self._sizeForRows(min(self._minimumVisibleRows, self._visibleRowCount()))
+        rows = min(self._minimumVisibleRows, self._visibleRowCount())
+        return QSize(super().minimumSizeHint().width(), self._heightForRows(rows))
 
     def sizeHint(self) -> QSize:
         count = self._visibleRowCount()
         if self._maximumVisibleRows is not None:
             count = min(count, self._maximumVisibleRows)
-        return self._sizeForRows(count).expandedTo(self.minimumSizeHint())
+        return QSize(self._contentWidth(), self._heightForRows(count)).expandedTo(self.minimumSizeHint())
