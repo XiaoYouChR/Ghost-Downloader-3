@@ -10,7 +10,7 @@ Chromium / Firefox 浏览器扩展。捕获页面中的可下载资源，通过�
 
 **cat-catch**:
 嵌入的第三方开源扩展，提供两个能力面：媒体播放控制，以及按 tab 手动开启的页面工具（录制、缓存捕捉、Deep Search 等）。
-不参与 Download Button 的默认路径；MSE Probe 参照 cat-catch 重写为独立实现，只发信号不缓存数据。
+不参与 Media Button 的默认路径；MSE Probe 参照 cat-catch 重写为独立实现，只发信号不缓存数据。
 _Avoid_: 把 cat-catch 功能与自研 Page Media 系统混为一谈
 
 **Deep Search**:
@@ -61,10 +61,10 @@ _Avoid_: category、filter type
 **Page Media**:
 Content script 侧的媒体检测和归因系统。检测页面中正在播放的媒体，将网络 URL
 归因到具体的 video 元素，为用户提供下载按钮。由四个协作层组成：
-MSE Probe → Attribution Engine → Download Button，Resolution Strategy 提供按站点的解析逻辑。
-Page Media 与 Resource 不是两条独立路径：Download Button 以本 tab 的 Resource 作为兜底候选，
+MSE Probe → Attribution Engine → Media Button，Resolution Strategy 提供按站点的解析逻辑。
+Page Media 与 Resource 不是两条独立路径：Media Button 以本 tab 的 Resource 作为兜底候选，
 发送时复用 Resource 的请求头；Page Media 也为 Resource 补充时长、尺寸和封面。
-Download Button 失败时，Popup 资源面板是用户手动挑选的兜底。
+Media Button 失败时，Popup 资源面板是用户手动挑选的兜底。
 
 **MSE Probe**:
 观察浏览器媒体流内部机制，将事件通过 Attribution Signal 报告给 Attribution Engine。
@@ -110,9 +110,10 @@ _Avoid_: content lock、origin file
 跨 session 的 URL 所有权账本。仲裁多个 Video Session 争抢同一 URL 的情况
 （如预加载场景中多个视频共享相同的 CDN URL）。
 
-**Download Button**:
+**Media Button**:
 悬浮在活跃媒体上的下载按钮。点击时请求 Attribution Engine 解析，
-获取 Resolution 后发送到 Resource Bridge 转发给桌面。
+获取 Resolution 后发送到 Resource Bridge 转发给桌面。用户可在 Popup 中全局开关。
+_Avoid_: Download Button、下载按钮
 
 **Resolution Strategy**:
 按站点分发的下载解析逻辑（YouTube、Instagram/Facebook、generic）。

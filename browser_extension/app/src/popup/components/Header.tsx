@@ -1,49 +1,73 @@
 import type {SelectTabData, SwitchOnChangeData} from "@fluentui/react-components";
-import {Button, Divider, makeStyles, Switch, Tab, TabList} from "@fluentui/react-components";
-import {ArrowDownloadRegular, GlobeRegular, ImageRegular, SettingsRegular, WrenchRegular,} from "@fluentui/react-icons";
+import {makeStyles, Switch, Tab, TabList, tokens, Tooltip} from "@fluentui/react-components";
+import {
+    ArrowDownloadFilled,
+    ArrowDownloadRegular,
+    bundleIcon,
+    GlobeFilled,
+    GlobeRegular,
+    ImageFilled,
+    ImageRegular,
+    SettingsFilled,
+    SettingsRegular,
+    WrenchFilled,
+    WrenchRegular,
+} from "@fluentui/react-icons";
 import type {DesktopConnectionState, PopupView} from "../../shared/types";
-import {ConnectionStatusBadge} from "./ConnectionStatusBadge";
+import {ConnectionStatus} from "./ConnectionStatus";
+
+const TasksIcon = bundleIcon(ArrowDownloadFilled, ArrowDownloadRegular);
+const ResourcesIcon = bundleIcon(GlobeFilled, GlobeRegular);
+const ImagesIcon = bundleIcon(ImageFilled, ImageRegular);
+const AdvancedIcon = bundleIcon(WrenchFilled, WrenchRegular);
+const SettingsIcon = bundleIcon(SettingsFilled, SettingsRegular);
+
+const TAB_INSET = "6px";
+const EDGE = "12px";
 
 const useStyles = makeStyles({
   root: {
-    paddingTop: "8px",
-    paddingBottom: "0",
-  },
-  topRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "4px",
-    paddingLeft: "8px",
-    paddingRight: "4px",
-    marginBottom: "8px",
-    overflow: "hidden",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   nav: {
-    minWidth: 0,
-    flex: 1,
+    paddingLeft: TAB_INSET,
+    paddingRight: TAB_INSET,
     overflowX: "auto",
     scrollbarWidth: "none",
   },
-  bottomRow: {
+  settingsTab: {
+    marginLeft: "auto",
+  },
+  statusRow: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: "8px",
-    paddingLeft: "8px",
-    paddingRight: "4px",
-    overflow: "hidden",
+    gap: EDGE,
+    height: "28px",
+    paddingLeft: EDGE,
+    paddingRight: EDGE,
   },
   switches: {
     display: "flex",
     alignItems: "center",
-    gap: "4px",
+    gap: EDGE,
+    flexShrink: 0,
     whiteSpace: "nowrap",
-    minWidth: 0,
   },
-  divider: {
-    width: "100%",
-    marginTop: "8px",
+  switch: {
+    alignItems: "center",
+  },
+  switchIndicator: {
+    margin: 0,
+  },
+  switchLabel: {
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: "8px",
   },
 });
 
@@ -52,10 +76,10 @@ const NAV_ITEMS: Array<{
   label: string;
   icon: React.JSX.Element;
 }> = [
-  { key: "tasks", label: chrome.i18n.getMessage("navTasks"), icon: <ArrowDownloadRegular /> },
-  { key: "resources", label: chrome.i18n.getMessage("navResources"), icon: <GlobeRegular /> },
-  { key: "images", label: chrome.i18n.getMessage("navImages"), icon: <ImageRegular /> },
-  { key: "advanced", label: chrome.i18n.getMessage("navAdvanced"), icon: <WrenchRegular /> },
+  { key: "tasks", label: chrome.i18n.getMessage("navTasks"), icon: <TasksIcon /> },
+  { key: "resources", label: chrome.i18n.getMessage("navResources"), icon: <ResourcesIcon /> },
+  { key: "images", label: chrome.i18n.getMessage("navImages"), icon: <ImagesIcon /> },
+  { key: "advanced", label: chrome.i18n.getMessage("navAdvanced"), icon: <AdvancedIcon /> },
 ];
 
 export function Header({
@@ -89,30 +113,25 @@ export function Header({
 
   return (
     <header className={styles.root}>
-      <div className={styles.topRow}>
-        <TabList
-          className={styles.nav}
-          appearance="subtle-circular"
-          selectedValue={currentView === "settings" ? undefined : currentView}
-          onTabSelect={(_event, data: SelectTabData) => onViewChange(data.value as PopupView)}
-        >
-          {NAV_ITEMS.map((item) => (
-            <Tab key={item.key} value={item.key} icon={item.icon}>
-              {item.label}
-            </Tab>
-          ))}
-        </TabList>
+      <TabList
+        className={styles.nav}
+        appearance="transparent"
+        size="small"
+        selectedValue={currentView}
+        onTabSelect={(_event, data: SelectTabData) => onViewChange(data.value as PopupView)}
+      >
+        {NAV_ITEMS.map((item) => (
+          <Tab key={item.key} value={item.key} icon={item.icon}>
+            {item.label}
+          </Tab>
+        ))}
+        <Tooltip content={chrome.i18n.getMessage("settings")} relationship="label">
+          <Tab className={styles.settingsTab} value="settings" icon={<SettingsIcon />} />
+        </Tooltip>
+      </TabList>
 
-        <Button
-          appearance={currentView === "settings" ? "primary" : "secondary"}
-          icon={<SettingsRegular />}
-          aria-label={chrome.i18n.getMessage("settings")}
-          onClick={() => onViewChange("settings")}
-        />
-      </div>
-
-      <div className={styles.bottomRow}>
-        <ConnectionStatusBadge
+      <div className={styles.statusRow}>
+        <ConnectionStatus
           state={connectionState}
           message={connectionMessage}
           pendingCount={pendingTaskCount}
@@ -121,22 +140,27 @@ export function Header({
 
         <div className={styles.switches}>
           <Switch
+            className={styles.switch}
+            indicator={{ className: styles.switchIndicator }}
+            size="small"
             checked={isMediaButtonEnabled}
             disabled={isMediaButtonBusy}
-            label={chrome.i18n.getMessage("mediaButtonLabel")}
+            label={{ className: styles.switchLabel, children: chrome.i18n.getMessage("mediaButtonLabel") }}
             labelPosition="before"
             onChange={(_event, data: SwitchOnChangeData) => onMediaButtonToggle(Boolean(data.checked))}
           />
           <Switch
+            className={styles.switch}
+            indicator={{ className: styles.switchIndicator }}
+            size="small"
             checked={shouldTakeDownloads}
             disabled={isTakeDownloadsBusy}
-            label={chrome.i18n.getMessage("takeOverDownloads")}
+            label={{ className: styles.switchLabel, children: chrome.i18n.getMessage("takeOverDownloads") }}
             labelPosition="before"
             onChange={(_event, data: SwitchOnChangeData) => onTakeDownloadsToggle(Boolean(data.checked))}
           />
         </div>
       </div>
-      <Divider className={styles.divider} />
     </header>
   );
 }

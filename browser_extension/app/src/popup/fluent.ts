@@ -24,7 +24,7 @@ import {
 } from "@fluentui/react-icons";
 
 import type {AdvancedFeatureKey} from "../shared/types";
-import type {AccentTone, VisualKind} from "../shared/utils";
+import type {VisualKind} from "../shared/utils";
 
 const VISUAL_ICON_MAP: Record<VisualKind, ComponentType> = {
   download: DocumentArrowDownRegular,
@@ -53,21 +53,6 @@ export function visualIcon(kind: VisualKind) {
 
 export function featureIcon(key: AdvancedFeatureKey) {
   return FEATURE_ICON_MAP[key];
-}
-
-export function toneToBadgeColor(tone: AccentTone): NonNullable<BadgeProps["color"]> {
-  switch (tone) {
-    case "success":
-      return "success";
-    case "info":
-      return "informative";
-    case "warning":
-      return "warning";
-    case "danger":
-      return "danger";
-    default:
-      return "subtle";
-  }
 }
 
 export function taskStatusToBadgeColor(status: string): NonNullable<BadgeProps["color"]> {
