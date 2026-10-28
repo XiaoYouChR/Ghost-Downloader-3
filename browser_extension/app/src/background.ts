@@ -14,7 +14,6 @@ import {
     MIN_TAKE_SIZE_KB_KEY,
     SKIP_EXTENSIONS_KEY,
     SKIP_DOMAINS_KEY,
-    SHOULD_OPEN_POPUP_ON_SENT_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
     SHOULD_TAKE_DOWNLOADS_KEY,
 } from "./background/constants";
@@ -42,7 +41,7 @@ function parseExtensions(raw: string): Set<string> {
 
 async function flushQueue(): Promise<void> {
   const sent = await flush((payload) => desktopBridge.sendRequest(payload));
-  if (sent > 0 && shouldOpenPopupOnSent) {
+  if (sent > 0) {
     await openActionPopup();
   }
 }
@@ -94,7 +93,6 @@ let minTakeSizeKB = 0;
 let shouldTakeUnknownSize = true;
 let skipExtensions: Set<string> = new Set();
 let skipDomains: Set<string> = new Set();
-let shouldOpenPopupOnSent = true;
 
 function imageFilename(url: string, alt: string): string {
   try {
@@ -199,7 +197,6 @@ async function setupBackground() {
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: boolean;
     [SKIP_EXTENSIONS_KEY]: string;
     [SKIP_DOMAINS_KEY]: string[];
-    [SHOULD_OPEN_POPUP_ON_SENT_KEY]: boolean;
   }>({
     [SHOULD_TAKE_DOWNLOADS_KEY]: true,
     [IS_MEDIA_BUTTON_ENABLED_KEY]: true,
@@ -207,7 +204,6 @@ async function setupBackground() {
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
     [SKIP_EXTENSIONS_KEY]: "",
     [SKIP_DOMAINS_KEY]: [],
-    [SHOULD_OPEN_POPUP_ON_SENT_KEY]: true,
   });
 
   shouldTakeDownloads = Boolean(localState[SHOULD_TAKE_DOWNLOADS_KEY] ?? true);
@@ -216,7 +212,6 @@ async function setupBackground() {
   shouldTakeUnknownSize = Boolean(localState[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true);
   skipExtensions = parseExtensions(String(localState[SKIP_EXTENSIONS_KEY] ?? ""));
   skipDomains = new Set(localState[SKIP_DOMAINS_KEY] ?? []);
-  shouldOpenPopupOnSent = Boolean(localState[SHOULD_OPEN_POPUP_ON_SENT_KEY] ?? true);
 
   try {
     const selfInfo = await chrome.management.getSelf();
@@ -273,7 +268,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
       title: "",
       payload: { url, headers, filename: "", size: 0, supportsRange: false },
     });
-    if (result.ok && shouldOpenPopupOnSent) { void openActionPopup(); }
+    if (result.ok) { void openActionPopup(); }
   })();
 });
 
@@ -309,9 +304,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
   if (changes[SKIP_DOMAINS_KEY]) {
     skipDomains = new Set((changes[SKIP_DOMAINS_KEY].newValue as string[]) ?? []);
-  }
-  if (changes[SHOULD_OPEN_POPUP_ON_SENT_KEY]) {
-    shouldOpenPopupOnSent = Boolean(changes[SHOULD_OPEN_POPUP_ON_SENT_KEY].newValue ?? true);
   }
 });
 

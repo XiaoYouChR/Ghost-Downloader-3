@@ -1,3 +1,5 @@
+import {SHOULD_OPEN_POPUP_ON_SENT_KEY} from "./constants";
+
 export type TabMessageStatus = "ok" | "no_receiver" | "runtime_error" | "no_response";
 
 export type TabMessageResult<T> = {
@@ -113,6 +115,10 @@ export async function eraseDownloadFromHistory(downloadId: number): Promise<void
 
 export async function openActionPopup(): Promise<void> {
   if (!chrome.action?.openPopup) {
+    return;
+  }
+  const settings = await chrome.storage.local.get(SHOULD_OPEN_POPUP_ON_SENT_KEY);
+  if (!(settings[SHOULD_OPEN_POPUP_ON_SENT_KEY] ?? true)) {
     return;
   }
 
