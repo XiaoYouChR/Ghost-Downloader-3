@@ -53,6 +53,11 @@ _Avoid_: Part Folder、work folder、temp、cache、Staging（Staging 指更新�
 新 Task 取得旧 Task Record 的路径时，旧 Task Record 被移除、由新 Task 顶替。只移除记录，不删磁盘。
 _Avoid_: merge、overwrite（覆盖指磁盘文件）
 
+**Missing**:
+已完成 Task 的成品不在磁盘上。原因可能是删除、移走或改名，应用不区分。
+Missing 的 Task 仍是 COMPLETED，用户可以移除它，也可以开启自动移除。
+_Avoid_: 已删除、文件不存在
+
 **Pausable**:
 Task 的可暂停性，派生属性。取决于当前运行 Step 是否支持断点恢复。
 
