@@ -21,44 +21,41 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
   const mediaSourceIdByInstance = new WeakMap<MediaSource, string>();
   let mediaSourceCounter = 0;
 
-  function mediaSourceId(mediaSource: MediaSource): string {
-    let id = mediaSourceIdByInstance.get(mediaSource);
-    if (id == null) {
-      mediaSourceCounter += 1;
-      id = `ms-${mediaSourceCounter}`;
-      mediaSourceIdByInstance.set(mediaSource, id);
-    }
-    return id;
-  }
-
-  // Record blob URL → MediaSource so the attribution engine can attribute <video>.src to a MS.
+  // Hook each MediaSource instance, never MediaSource.prototype: CCTV's player stops
+  // decrypting video when its prototype methods are not native.
   if (typeof window.URL?.createObjectURL === "function" && typeof window.MediaSource !== "undefined") {
     const originalCreateObjectUrl = window.URL.createObjectURL;
     window.URL.createObjectURL = function patchedCreateObjectURL(source: Blob | MediaSource): string {
       const url = originalCreateObjectUrl(source);
-      if (source instanceof MediaSource) {
-        postMediaSignal({ kind: "mse_objecturl", mediaSourceId: mediaSourceId(source), objectUrl: url });
+      if (!(source instanceof MediaSource)) { return url; }
+      let mediaSourceId = mediaSourceIdByInstance.get(source);
+      if (mediaSourceId == null) {
+        mediaSourceCounter += 1;
+        const id = `ms-${mediaSourceCounter}`;
+        mediaSourceId = id;
+        mediaSourceIdByInstance.set(source, id);
+        try {
+          const originalAddSourceBuffer = source.addSourceBuffer;
+          source.addSourceBuffer = function patchedAddSourceBuffer(this: MediaSource, mimeType: string): SourceBuffer {
+            const sourceBuffer = originalAddSourceBuffer.call(this, mimeType);
+            postMediaSignal({ kind: "mse_source_buffer_added", mediaSourceId: id, mimeType });
+            try {
+              const originalAppendBuffer = sourceBuffer.appendBuffer;
+              sourceBuffer.appendBuffer = function patchedAppendBuffer(this: SourceBuffer, data: BufferSource): void {
+                postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: id, mimeType });
+                return originalAppendBuffer.call(this, data);
+              };
+            } catch {
+              // Frozen SourceBuffer prototype on some players.
+            }
+            return sourceBuffer;
+          };
+        } catch {
+          // Frozen MediaSource prototype on some players.
+        }
       }
+      postMediaSignal({ kind: "mse_objecturl", mediaSourceId, objectUrl: url });
       return url;
-    };
-  }
-
-  if (typeof window.MediaSource !== "undefined") {
-    const originalAddSourceBuffer = MediaSource.prototype.addSourceBuffer;
-    MediaSource.prototype.addSourceBuffer = function patchedAddSourceBuffer(this: MediaSource, mimeType: string): SourceBuffer {
-      const sourceBuffer = originalAddSourceBuffer.call(this, mimeType);
-      const sourceId = mediaSourceId(this);
-      postMediaSignal({ kind: "mse_source_buffer_added", mediaSourceId: sourceId, mimeType });
-      try {
-        const originalAppendBuffer = sourceBuffer.appendBuffer;
-        sourceBuffer.appendBuffer = function patchedAppendBuffer(this: SourceBuffer, data: BufferSource): void {
-          postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: sourceId, mimeType });
-          return originalAppendBuffer.call(this, data);
-        };
-      } catch {
-        // Frozen SourceBuffer prototype on some players.
-      }
-      return sourceBuffer;
     };
   }
 
