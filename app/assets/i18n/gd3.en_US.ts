@@ -490,32 +490,32 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="38"/>
         <source>默认音质</source>
-        <translation type="unfinished"></translation>
+        <translation>Default Audio Quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="39"/>
         <source>选择偏好的音质</source>
-        <translation type="unfinished"></translation>
+        <translation>Select preferred default audio quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="41"/>
         <source>画质或音质不可用时</source>
-        <translation type="unfinished"></translation>
+        <translation>When Quality Unavailable</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="42"/>
         <source>当选择的画质或音质不可用时的替代策略</source>
-        <translation type="unfinished"></translation>
+        <translation>Fallback logic when selected video or audio quality is unavailable</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="43"/>
         <source>选择最高</source>
-        <translation type="unfinished"></translation>
+        <translation>Choose Highest</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="43"/>
         <source>选择最低</source>
-        <translation type="unfinished"></translation>
+        <translation>Choose Lowest</translation>
     </message>
     <message>
         <source>画质不可用时</source>
@@ -587,7 +587,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="481"/>
         <source>选择视频</source>
-        <translation type="unfinished">Select Video</translation>
+        <translation>Select Videos</translation>
     </message>
     <message>
         <source>选择合集</source>
@@ -660,7 +660,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="735"/>
         <source>选择视频</source>
-        <translation type="unfinished">Select Video</translation>
+        <translation>Select Videos</translation>
     </message>
     <message>
         <source>选择合集</source>
@@ -4500,7 +4500,7 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="266"/>
         <source>请填写代理地址</source>
-        <translation type="unfinished"></translation>
+        <translation>Missing Proxy Details</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="302"/>
@@ -4514,7 +4514,7 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="164"/>
         <source>代理 IP 地址</source>
-        <translation>Proxy IP Address</translation>
+        <translation>Proxy Address</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="166"/>
@@ -4853,7 +4853,7 @@ Path: {1}</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="71"/>
         <source>选择视频</source>
-        <translation type="unfinished">Select Video</translation>
+        <translation>Select Videos</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="75"/>
@@ -4883,17 +4883,17 @@ Path: {1}</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="96"/>
         <source>分P</source>
-        <translation>Part</translation>
+        <translation>Parts</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="96"/>
         <source>视频</source>
-        <translation type="unfinished"></translation>
+        <translation>Videos</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="382"/>
         <source>已选 {0}/{1}</source>
-        <translation type="unfinished"></translation>
+        <translation>{0}/{1} Selected</translation>
     </message>
     <message>
         <source>合集</source>
@@ -5920,7 +5920,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../view/cards/task_cards.py" line="305"/>
         <source>文件缺失</source>
-        <translation type="unfinished"></translation>
+        <translation>File missing</translation>
     </message>
     <message>
         <location filename="../../view/cards/task_cards.py" line="308"/>
@@ -5965,7 +5965,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../view/cards/task_cards.py" line="393"/>
         <source>文件缺失，无法校验</source>
-        <translation type="unfinished"></translation>
+        <translation>Cannot verify missing file</translation>
     </message>
     <message>
         <source>文件不存在，无法校验</source>
@@ -6027,7 +6027,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="59"/>
         <source>已选 {0}/{1}</source>
-        <translation type="unfinished"></translation>
+        <translation>{0}/{1} Selected</translation>
     </message>
 </context>
 <context>
@@ -7105,7 +7105,7 @@ System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="107"/>
         <source>选择视频</source>
-        <translation>Select Video</translation>
+        <translation>Select Videos</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="110"/>
@@ -7438,7 +7438,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="292"/>
         <source>选择视频</source>
-        <translation>Select Video</translation>
+        <translation>Select Videos</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="391"/>
