@@ -297,7 +297,7 @@ class ProxySettingCard(CollapsibleSettingCard):
                 if p.proxySchemes is not None and scheme not in p.proxySchemes
             ]
             if incompatible:
-                names = "、".join(incompatible)
+                names = self.tr("、").join(incompatible)
                 self._compatLabel.setText(
                     self.tr("{0} 不支持当前代理协议，将直连；使用 SOCKS5 可兼容全部下载方式").format(names)
                 )
