@@ -145,6 +145,7 @@ export interface ScannedImage {
 
 export interface CommandResult {
   ok: boolean;
+  isDrafted?: boolean;
   message?: string;
   taskId?: string;
   playbackState?: MediaPlaybackState;

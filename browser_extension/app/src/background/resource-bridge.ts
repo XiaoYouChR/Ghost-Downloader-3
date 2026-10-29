@@ -438,9 +438,7 @@ export function createResourceBridge(options: {
           ),
         },
       });
-      if (result.ok) {
-        await openActionPopup();
-      }
+      await openActionPopup(result);
     } catch {
       // Browser download was already intercepted — the user already lost it from the
       // browser's download tray, so a desktop handoff failure here is unrecoverable anyway.
@@ -566,7 +564,7 @@ export function createResourceBridge(options: {
       }
       const resource = await resourceForMediaUrl(selection.url, tabId, payload.title, fallbackPageUrl);
       const result = await sendHttpResourceToDesktop(resource);
-      if (result.ok) { await openActionPopup(); }
+      await openActionPopup(result);
       return result;
     }
 
@@ -579,7 +577,7 @@ export function createResourceBridge(options: {
         resourceForMediaUrl(selection.audio, tabId, payload.title, fallbackPageUrl),
       ]);
       const result = await sendMergeResources([video, audio]);
-      if (result.ok) { await openActionPopup(); }
+      await openActionPopup(result);
       return result;
     }
 
@@ -588,7 +586,7 @@ export function createResourceBridge(options: {
         return { ok: false, message: chrome.i18n.getMessage("errorInvalidDownloadRequest") };
       }
       const result = await sendExternalDownload(selection, payload.title, fallbackPageUrl);
-      if (result.ok) { await openActionPopup(); }
+      await openActionPopup(result);
       return result;
     }
 

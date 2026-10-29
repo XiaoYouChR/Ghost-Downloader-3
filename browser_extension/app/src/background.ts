@@ -40,10 +40,8 @@ function parseExtensions(raw: string): Set<string> {
 }
 
 async function flushQueue(): Promise<void> {
-  const sent = await flush((payload) => desktopBridge.sendRequest(payload));
-  if (sent > 0) {
-    await openActionPopup();
-  }
+  const results = await flush((payload) => desktopBridge.sendRequest<CommandResult>(payload));
+  await openActionPopup(...results);
 }
 
 async function sendTaskOrEnqueue<T extends CommandResult>(payload: Record<string, unknown>, timeoutMs?: number): Promise<T> {
@@ -267,7 +265,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
       title: "",
       payload: { url, headers, filename: "", size: 0, supportsRange: false },
     });
-    if (result.ok) { void openActionPopup(); }
+    void openActionPopup(result);
   })();
 });
 

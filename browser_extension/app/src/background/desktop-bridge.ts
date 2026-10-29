@@ -144,6 +144,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
       const ok = message.status === "created" || message.status === "drafted";
       pending.resolve({
         ok,
+        isDrafted: message.status === "drafted",
         taskId: String(message.taskId ?? ""),
         message: String(message.message ?? ""),
       });

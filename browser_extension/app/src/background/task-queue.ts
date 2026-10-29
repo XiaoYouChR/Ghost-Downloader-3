@@ -19,27 +19,26 @@ export async function enqueue(payload: TaskPayload): Promise<number> {
   return queue.length;
 }
 
-export async function flush(
-  sendFn: (payload: TaskPayload) => Promise<unknown>,
-): Promise<number> {
+export async function flush<T>(
+  sendFn: (payload: TaskPayload) => Promise<T>,
+): Promise<T[]> {
   const queue = await readQueue();
   if (queue.length === 0) {
-    return 0;
+    return [];
   }
 
   const failed: TaskPayload[] = [];
-  let sent = 0;
+  const results: T[] = [];
   for (const payload of queue) {
     try {
-      await sendFn(payload);
-      sent += 1;
+      results.push(await sendFn(payload));
     } catch {
       failed.push(payload);
     }
   }
 
   await writeQueue(failed);
-  return sent;
+  return results;
 }
 
 export async function pendingCount(): Promise<number> {
