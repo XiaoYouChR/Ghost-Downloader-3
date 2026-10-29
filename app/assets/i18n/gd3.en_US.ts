@@ -4503,6 +4503,11 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Missing Proxy Details</translation>
     </message>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="300"/>
+        <source>、</source>
+        <translation>, </translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="302"/>
         <source>{0} 不支持当前代理协议，将直连；使用 SOCKS5 可兼容全部下载方式</source>
         <translation>{0} does not support the current proxy protocol; will connect directly. Use SOCKS5 for compatibility with all download methods</translation>
