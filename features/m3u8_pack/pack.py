@@ -15,7 +15,7 @@ from app.config.cfg import cfg
 from app.i18n import N
 
 from app.models.pack import FeaturePack, TaskParser, FileType
-from app.models.task import PageTaskOptions, Task, TaskOptions
+from app.models.task import PageTaskOptions, Task, TaskError, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
@@ -79,7 +79,14 @@ class M3U8Parser(TaskParser):
             lowered = body.lower()
             isLive = 'type="dynamic"' in lowered or "type='dynamic'" in lowered
         else:
-            playlist = m3u8.loads(body, uri=manifestUrl)
+            try:
+                playlist = m3u8.loads(body, uri=manifestUrl)
+            except Exception as e:
+                # 非标准或加密的 EXT-X-KEY 会让 m3u8 库抛出 TypeError 等内部异常, 用户看不懂
+                raise TaskError(
+                    "无法解析该播放列表，资源可能经过加密或格式不规范，暂不支持下载（{detail}）",
+                    detail=str(e) or type(e).__name__,
+                ) from e
             if playlist.segments:
                 isLive = not playlist.is_endlist
             elif playlist.playlists:
