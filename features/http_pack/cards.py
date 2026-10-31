@@ -17,7 +17,8 @@ class SegmentedProgressBar(QWidget):
         self._isError = False
         self._fillProgress: dict[int, float] = {}
         self._spans: list[tuple[float, float]] = []
-        self._fillTimer = QTimer(self, interval=16)
+        self._fillTimer = QTimer(self)
+        self._fillTimer.setInterval(16)
         self._fillTimer.timeout.connect(self._onFillTimeout)
 
     def setValue(self, value: float):
