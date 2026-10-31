@@ -217,7 +217,9 @@ class HttpParser(TaskParser):
         return any(path.endswith(ext) for ext in DOWNLOADABLE_EXTENSIONS)
 
     async def parse(self, options: TaskOptions) -> Task:
-        if isinstance(options, ResourceTaskOptions) and options.name and options.size > 0:
+        # 浏览器扩展在链接重定向时可能误报不支持 Range, 只有确认支持时才跳过探测 (#867)
+        if (isinstance(options, ResourceTaskOptions) and options.name and options.size > 0
+                and options.canUseRangeRequests):
             file = RemoteFile(
                 name=options.name,
                 fileSize=options.size,
