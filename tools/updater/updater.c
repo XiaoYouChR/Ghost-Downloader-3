@@ -926,9 +926,14 @@ int main(int argc, char *argv[]) {
     logMsg("app exited");
 
 #ifdef _WIN32
-    if (!canWriteDir(appDir)) {
+    /* newDir and backupDir are siblings of appDir, so renaming needs the parent writable too. */
+    wchar_t parentDir[PATH_BUF];
+    wcsncpy(parentDir, appDir, PATH_BUF - 1);
+    parentDir[PATH_BUF - 1] = L'\0';
+    toDirname(parentDir);
+    if (!canWriteDir(appDir) || (parentDir[0] && !canWriteDir(parentDir))) {
         if (!isElevated()) {
-            logMsg("appDir not writable, elevating");
+            logMsg("appDir or its parent not writable, elevating");
             closeLog();
             int elevated = restartElevated(wargc, wargv);
             LocalFree(wargv);
