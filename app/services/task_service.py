@@ -652,11 +652,16 @@ class TaskService:
         self._queue.done(task.taskId)
         self._flushSoon()
         self.taskCompleted.emit(task)
-        if task.hasOutputFile:
-            self._watchFile(task)
-        if task.status == TaskStatus.COMPLETED and task.canSeed and task.shouldSeed:
-            self._seed(task)
-        self._pump()
+        isCompleted = task.status == TaskStatus.COMPLETED
+        shouldSeed = isCompleted and task.canSeed and task.shouldSeed
+        if isCompleted and not shouldSeed and cfg.shouldRemoveCompletedTasks.value:
+            self.delete(task, shouldDeleteFiles=False)
+        else:
+            if task.hasOutputFile:
+                self._watchFile(task)
+            if shouldSeed:
+                self._seed(task)
+            self._pump()
         if self._queue.runningCount() == 0:
             self.tasksAllCompleted.emit()
 
