@@ -313,6 +313,22 @@ async def test_file_disappeared_removes_task_when_enabled(engine, fileWatcher):
     assert engine.taskService.taskById(task.taskId) is None
 
 
+async def test_complete_removes_task_and_keeps_file_when_enabled(engine, downloadFolder):
+    cfg.set(cfg.shouldRemoveCompletedTasks, True)
+    task = buildTask("a.zip")
+
+    engine.taskService.add(task)
+
+    await waitUntil(lambda: engine.taskService.taskById(task.taskId) is None)
+    assert (downloadFolder / "a.zip").read_bytes() == b"downloaded"
+
+
+async def test_complete_keeps_task_when_disabled(engine):
+    task = await addCompleted(engine, "a.zip")
+
+    assert engine.taskService.taskById(task.taskId) is task
+
+
 async def test_resume_removes_missing_task_when_enabled(engine, startEngine):
     cfg.set(cfg.shouldRemoveMissingTasks, True)
     task = await addCompleted(engine, "a.zip")
