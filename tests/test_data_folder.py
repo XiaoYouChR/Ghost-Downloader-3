@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.config.data_folder import PathSerializer
+from app.config.serializers import PathSerializer
 
 
 def relocate(value, oldFolder, newFolder):

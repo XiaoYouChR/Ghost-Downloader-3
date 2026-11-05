@@ -7,7 +7,7 @@ from re import compile
 from urllib.parse import urlsplit
 from urllib.request import getproxies
 
-from app.config.data_folder import PathSerializer
+from app.config.serializers import PathSerializer
 from app.config.paths import APP_DATA_DIR, DOWNLOAD_DIR
 from qfluentwidgets import (
     QConfig,

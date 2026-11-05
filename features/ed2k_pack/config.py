@@ -9,7 +9,7 @@ from app.config.cfg import (
 )
 from app.i18n import N
 
-from app.config.data_folder import PathSerializer
+from app.config.serializers import PathSerializer
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
