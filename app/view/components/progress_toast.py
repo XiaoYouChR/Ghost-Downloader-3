@@ -58,7 +58,8 @@ class ProgressToast(InfoBar):
         self._displayProgress = 0.0
         self._barColor = barColor(UpdateState.DOWNLOADING)
         self._isDismissed = False
-        self._fillTimer = QTimer(self, interval=16)
+        self._fillTimer = QTimer(self)
+        self._fillTimer.setInterval(16)
         self._fillTimer.timeout.connect(self._onFillTick)
         self._retryButton = TransparentToolButton(FluentIcon.SYNC, self)
         self._retryButton.setFixedSize(36, 36)
