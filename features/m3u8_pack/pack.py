@@ -20,7 +20,6 @@ from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
-from http_pack.pack import buildTask
 
 
 MEDIA_SUFFIXES = {
@@ -44,15 +43,6 @@ class M3U8Parser(TaskParser):
         return options.isProbed and options.file.matchType(MANIFEST_SUFFIXES, MANIFEST_CONTENT_TYPES)
 
     async def parse(self, options: TaskOptions) -> Task:
-        try:
-            return await self.parseManifest(options)
-        except Exception as e:
-            if not options.isProbed:
-                raise
-            logger.opt(exception=e).warning("不是有效的流媒体清单，按普通文件下载 {}", options.url)
-            return buildTask(options)
-
-    async def parseManifest(self, options: TaskOptions) -> Task:
         if options.isProbed:
             options = replace(options, url=options.template.url, headers=options.template.headers)
         url = options.url.strip()

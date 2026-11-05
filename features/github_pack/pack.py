@@ -7,7 +7,7 @@ from loguru import logger
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
-from http_pack.pack import buildStep
+from http_pack.pack import buildStep, parseProbed
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
 from .probe import probeUrls, toProxyHeaders
@@ -89,7 +89,7 @@ class GitHubParser(TaskParser):
         return githubConfig.enabled.value and isGitHubFileUrl(options.url) and not options.isProbed
 
     async def parse(self, options: TaskOptions) -> Task:
-        task = await self.pack.parse(await self.probe(options))
+        task = await parseProbed(self.pack.parse, await self.probe(options))
         if type(task) is HttpTask:
             task.packId = "github"
         return task

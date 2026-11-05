@@ -7,14 +7,13 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import libtorrent as lt
-from loguru import logger
 
 from app.i18n import N
 
 from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
-from http_pack.pack import buildTask, fetchContent
+from http_pack.pack import fetchContent
 
 from .config import bittorrentConfig
 from .session import PROXY_SCHEMES, btSession
@@ -53,12 +52,7 @@ class TorrentParser(TaskParser):
 
         localPath = localFilePath(url, {".torrent"})
         if options.isProbed:
-            try:
-                torrentBytes = await fetchContent(options.template)
-                lt.torrent_info(torrentBytes)
-            except Exception as e:
-                logger.opt(exception=e).warning("不是有效的种子，按普通文件下载 {}", url)
-                return buildTask(options)
+            torrentBytes = await fetchContent(options.template)
             sourceType, sourceUrl = "torrent", url
 
         elif localPath is not None:

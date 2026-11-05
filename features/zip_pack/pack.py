@@ -4,12 +4,10 @@ import asyncio
 import zipfile
 from bisect import bisect_right
 
-from loguru import logger
-
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import ResourceTaskOptions, Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
-from http_pack.pack import buildTask, fetchRange
+from http_pack.pack import fetchRange
 from .sparse import SparseView
 from .task import ZipEntry, ZipExtractStep, ZipTask
 
@@ -64,7 +62,7 @@ def buildEntries(infos: list[zipfile.ZipInfo], centralOffset: int) -> list[ZipEn
             index=len(entries),
             relativePath=relativePath,
             size=info.file_size,
-            name=info.filename,
+            innerPath=info.filename,
             localHeaderOffset=info.header_offset,
             windowEnd=starts[bisect_right(starts, info.header_offset)],
         ))
@@ -96,23 +94,19 @@ class ZipParser(TaskParser):
 
     async def parse(self, options: TaskOptions) -> Task:
         size = options.file.fileSize
-        try:
-            tailOffset = max(0, size - TAIL_SIZE)
-            tail = await fetchRange(options.template, tailOffset, size - tailOffset)
-            centralOffset = parseCentralOffset(tail, tailOffset)
-            if size - centralOffset > MAX_CENTRAL_SIZE:
-                raise zipfile.BadZipFile("中央目录过大")
-            if centralOffset < tailOffset:
-                tail = await fetchRange(options.template, centralOffset, tailOffset - centralOffset) + tail
-                tailOffset = centralOffset
-            view = SparseView(size)
-            view.addSegment(tailOffset, tail)
-            metadataEncoding, infos = await asyncio.to_thread(parseInfos, view)
-            entries = await asyncio.to_thread(buildEntries, infos, centralOffset)
-            return buildZipTask(options, entries, tailOffset, metadataEncoding)
-        except Exception as e:
-            logger.opt(exception=e).warning("无法预览压缩包，按普通文件下载 {}", options.url)
-            return buildTask(options)
+        tailOffset = max(0, size - TAIL_SIZE)
+        tail = await fetchRange(options.template, tailOffset, size - tailOffset)
+        centralOffset = parseCentralOffset(tail, tailOffset)
+        if size - centralOffset > MAX_CENTRAL_SIZE:
+            raise zipfile.BadZipFile("中央目录过大")
+        if centralOffset < tailOffset:
+            tail = await fetchRange(options.template, centralOffset, tailOffset - centralOffset) + tail
+            tailOffset = centralOffset
+        view = SparseView(size)
+        view.addSegment(tailOffset, tail)
+        metadataEncoding, infos = await asyncio.to_thread(parseInfos, view)
+        entries = await asyncio.to_thread(buildEntries, infos, centralOffset)
+        return buildZipTask(options, entries, tailOffset, metadataEncoding)
 
 
 class ZipPack(FeaturePack):

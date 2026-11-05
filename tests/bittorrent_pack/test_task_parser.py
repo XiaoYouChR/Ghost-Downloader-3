@@ -5,7 +5,7 @@ import pytest
 from aiohttp import web
 
 from app.models.pack import PackServices
-from app.models.task import TaskOptions
+from app.models.task import TaskError, TaskOptions
 from bittorrent_pack.config import bittorrentConfig
 from bittorrent_pack.pack import BitTorrentPack
 from bittorrent_pack.session import btSession
@@ -66,9 +66,11 @@ async def test_parse_invalid_online_torrent_adds_plain_file(features, startServe
     assert task.name == "movie.torrent"
 
 
-async def test_probe_magnet_link_is_unsupported(features):
-    with pytest.raises(NotImplementedError):
-        await features.probe(TaskOptions(url=f"magnet:?xt=urn:btih:{'0' * 40}"))
+async def test_probe_relink_magnet_link_rejects(features, startServer):
+    task = await features.parse(TaskOptions(url=await startServer(buildRangeHandler(b"x" * 100))))
+
+    with pytest.raises(TaskError):
+        await features.probeRelink(task, TaskOptions(url=f"magnet:?xt=urn:btih:{'0' * 40}"))
 
 
 @pytest.mark.parametrize("infoHash", ["ab" * 20, "AB" * 20, "abcdefgh234567ab" * 2, "ABCDEFGH234567AB" * 2])

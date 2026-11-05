@@ -8,7 +8,7 @@ import pytest
 from aiohttp import web
 
 from app.models.pack import PackServices
-from app.models.task import TaskOptions, TaskStatus
+from app.models.task import TaskError, TaskOptions, TaskStatus
 from http_pack.pack import HttpPack
 from http_pack.task import HttpTask
 from tests.helpers import buildFileContent, buildRangeHandler, waitUntil
@@ -248,8 +248,7 @@ async def test_relink_same_archive_keeps_selection(engine, features, startServer
     engine.taskService.add(task, autoStart=False)
     newUrl = await startArchive(startServer, archive)
 
-    probed = await features.probe(TaskOptions(url=newUrl))
-    assert task.canReuseProgress(probed)
+    probed = await features.probeRelink(task, TaskOptions(url=newUrl))
     engine.taskService.edit(task, {}, probed)
     engine.taskService.start(task)
     await runToCompletion(engine, task)
@@ -258,10 +257,9 @@ async def test_relink_same_archive_keeps_selection(engine, features, startServer
     assert listFolder(downloadFolder) == ["a", "a/readme.txt"]
 
 
-async def test_probe_other_archive_cannot_relink(features, startServer):
+async def test_probe_relink_other_archive_rejects(features, startServer):
     task = await features.parse(TaskOptions(url=await startArchive(startServer, buildArchive())))
+    otherUrl = await startArchive(startServer, buildArchive({"b.txt": b"b"}))
 
-    probed = await features.probe(TaskOptions(url=await startArchive(startServer, buildArchive({"b.txt": b"b"}))))
-
-    assert not task.canReuseProgress(probed)
-    assert not task.canRelinkToOtherContent
+    with pytest.raises(TaskError):
+        await features.probeRelink(task, TaskOptions(url=otherUrl))

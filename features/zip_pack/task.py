@@ -18,7 +18,7 @@ from .sparse import SparseView
 
 @dataclass(kw_only=True)
 class ZipEntry(TaskFile):
-    name: str = ""
+    innerPath: str = ""
     localHeaderOffset: int = 0
     windowEnd: int = 0
 
@@ -118,8 +118,8 @@ def toSpans(files: list[ZipEntry]) -> list[list[ZipEntry]]:
     return spans
 
 
-def extractFile(archive: zipfile.ZipFile, name: str, path: Path) -> None:
-    info = archive.getinfo(name)
+def extractFile(archive: zipfile.ZipFile, innerPath: str, path: Path) -> None:
+    info = archive.getinfo(innerPath)
     with archive.open(info) as source, open(path, "wb") as target:
         shutil.copyfileobj(source, target, 1 << 20)
     with suppress(ValueError):
@@ -176,7 +176,7 @@ class ZipExtractStep(TaskStep):
                             continue
                         target = task.toFilePath(file.index)
                         temporary = Path(f"{path}.out")
-                        await asyncio.to_thread(extractFile, archive, file.name, temporary)
+                        await asyncio.to_thread(extractFile, archive, file.innerPath, temporary)
                         target.parent.mkdir(parents=True, exist_ok=True)
                         os.replace(temporary, target)
                         file.downloadedBytes, file.completed = file.size, True

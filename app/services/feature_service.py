@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 from app.config.cfg import cfg
 from app.config.paths import FEATURES_DIR
-from app.models.task import TaskOptions
+from app.models.task import TaskError, TaskOptions
 from app.platform import file_association
 from app.loader import loadPacks
 
@@ -100,6 +100,15 @@ class FeatureService:
         if parser is None:
             raise ValueError(f"No parser matched: {options.url}")
         return await parser.probe(options)
+
+    async def probeRelink(self, task: Task, options: TaskOptions) -> TaskOptions:
+        try:
+            probed = await self.probe(options)
+        except NotImplementedError:
+            raise TaskError("该链接不能用于更换") from None
+        if not task.canReuseProgress(probed) and not task.canRelinkToOtherContent:
+            raise TaskError("新链接的内容与原任务不同，请重新添加任务")
+        return probed
 
     def match(self, url: str) -> bool:
         options = TaskOptions(url=url)

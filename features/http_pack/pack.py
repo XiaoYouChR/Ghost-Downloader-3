@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from email.message import Message
 from email.utils import collapse_rfc2231_value
@@ -186,6 +187,10 @@ def buildStep(stepType: type[HttpTaskStep], stepIndex: int, url: str, options: T
     return stepType(**{**fields, **kwargs})
 
 
+def toProbed(options: TaskOptions, file: RemoteFile) -> TaskOptions:
+    return replace(options, file=file, template=buildStep(HttpTaskStep, 1, options.url, options, file))
+
+
 def buildTask(options: TaskOptions) -> HttpTask:
     name = options.file.name
     if isinstance(options, ResourceTaskOptions) and options.name:
@@ -198,6 +203,14 @@ def buildTask(options: TaskOptions) -> HttpTask:
     )
     task.addStep(options.template)
     return task
+
+
+async def parseProbed(parse: Callable[[TaskOptions], Awaitable[Task]], probed: TaskOptions) -> Task:
+    try:
+        return await parse(probed)
+    except Exception as e:
+        logger.opt(exception=e).warning("无法按内容解析，按普通文件下载 {}", probed.url)
+        return buildTask(probed)
 
 
 async def fetchRange(step: HttpTaskStep, offset: int, length: int) -> bytes:
@@ -250,16 +263,15 @@ class HttpParser(TaskParser):
         return any(path.endswith(ext) for ext in DOWNLOADABLE_EXTENSIONS)
 
     async def probe(self, options: TaskOptions) -> TaskOptions:
-        file = await probe(options)
-        return replace(options, file=file, template=buildStep(HttpTaskStep, 1, options.url, options, file))
+        return toProbed(options, await probe(options))
 
     async def parse(self, options: TaskOptions) -> Task:
         if options.isProbed:
             return buildTask(options)
         if isinstance(options, ResourceTaskOptions) and options.name and options.size > 0:
             file = RemoteFile(name=options.name, fileSize=options.size, canUseRangeRequests=options.canUseRangeRequests)
-            return buildTask(replace(options, file=file, template=buildStep(HttpTaskStep, 1, options.url, options, file)))
-        return await self.pack.parse(await self.probe(options))
+            return buildTask(toProbed(options, file))
+        return await parseProbed(self.pack.parse, await self.probe(options))
 
 
 class HttpPack(FeaturePack):
