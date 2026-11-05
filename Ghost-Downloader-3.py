@@ -228,7 +228,7 @@ def startApp(application, primaryInstance, isSilent=False):
     taskService.tasksAllCompleted.connect(release)
 
     from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient, notifyParseFailed
-    coroutineRunner.submit(init(coroutineRunner.submit))
+    coroutineRunner.submit(init(coroutineRunner.submit, signalBus.activationRequested.emit))
     taskService.taskCompleted.connect(notifyTaskCompleted)
     taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
     engine.aria2RpcService.parseFailed.connect(notifyParseFailed)

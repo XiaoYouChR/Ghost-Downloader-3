@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,7 +18,8 @@ notifier: DesktopNotifier | None = None
 _submit = None
 
 
-async def init(submit) -> None:
+async def init(submit, activate: Callable[[], None]) -> None:
+    """点击没有自带 on_clicked 的通知时调用 activate。"""
     global _submit
     _submit = submit
     from desktop_notifier import DesktopNotifier as DN, Icon
@@ -32,6 +34,7 @@ async def init(submit) -> None:
 
     global notifier
     notifier = DN(app_name="Ghost Downloader", app_icon=Icon(path=iconPath))
+    notifier.on_clicked = lambda _identifier: activate()
 
 
 def notifyDiskSpaceInsufficient(free: int, needed: int) -> None:
