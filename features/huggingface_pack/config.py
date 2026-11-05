@@ -86,7 +86,7 @@ class HuggingFaceConfig(PackConfig):
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from .setting_cards import HuggingFaceMirrorSiteCard, HuggingFaceTokenCard
 
-        group = CollapsibleSettingCardGroup(self.tr("HuggingFace"), "huggingface", parent)
+        group = CollapsibleSettingCardGroup(self.tr("HuggingFace 下载"), "huggingface", parent)
         group.addSettingCards([
             SwitchSettingCard(
                 FluentIcon.CONNECT, self.tr("启用 HuggingFace 加速"),
