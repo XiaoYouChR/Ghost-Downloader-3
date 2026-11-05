@@ -212,7 +212,7 @@ class Task:
     fileType: ClassVar[type] = TaskFile
     hasOutputFile: ClassVar[bool] = True
     canSeed: ClassVar[bool] = False
-    canRelinkToOtherFile: ClassVar[bool] = True
+    canRelinkToOtherContent: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

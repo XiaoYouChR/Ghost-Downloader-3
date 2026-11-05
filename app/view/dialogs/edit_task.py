@@ -102,8 +102,8 @@ class LiveEditDialog(EditTaskDialog):
             super().accept()
             return
 
-        if not self._task.canRelinkToOtherFile:
-            self._onReparseFailed(TaskError("新链接与原链接不是同一个文件"))
+        if not self._task.canRelinkToOtherContent:
+            self._onReparseFailed(TaskError("新链接的内容与原任务不同，请重新添加任务"))
             return
 
         receivedBytes = self._task.currentSnapshot()[2]

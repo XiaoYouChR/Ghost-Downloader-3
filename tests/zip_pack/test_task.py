@@ -264,4 +264,4 @@ async def test_probe_other_archive_cannot_relink(features, startServer):
     probed = await features.probe(TaskOptions(url=await startArchive(startServer, buildArchive({"b.txt": b"b"}))))
 
     assert not task.canReuseProgress(probed)
-    assert not task.canRelinkToOtherFile
+    assert not task.canRelinkToOtherContent

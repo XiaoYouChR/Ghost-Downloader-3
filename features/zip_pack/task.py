@@ -27,7 +27,7 @@ class ZipEntry(TaskFile):
 class ZipTask(Task):
     packId: str = "zip"
     canEdit = True
-    canRelinkToOtherFile = False
+    canRelinkToOtherContent = False
     fileType = ZipEntry
     tailOffset: int = 0
     metadataEncoding: str = ""
