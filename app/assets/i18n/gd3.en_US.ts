@@ -245,7 +245,7 @@
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="16"/>
         <source>arXiv 下载</source>
-        <translation>arXiv Download</translation>
+        <translation>arXiv</translation>
     </message>
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="19"/>
@@ -255,27 +255,27 @@
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="20"/>
         <source>将论文页、PDF 链接和论文编号下载为以标题命名的 PDF，关闭后按普通链接下载</source>
-        <translation>Download paper pages, PDF links, and paper IDs as PDFs named by title; when disabled, download as regular links</translation>
+        <translation>Download paper links, PDF links, and paper IDs as PDFs named by paper titles; parse as regular links if disabled</translation>
     </message>
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="24"/>
         <source>默认下载 TeX 源码</source>
-        <translation>Download TeX Source by Default</translation>
+        <translation>Download TeX Source By Default</translation>
     </message>
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="25"/>
         <source>新任务默认勾选源码包，可在添加任务时逐个修改</source>
-        <translation>Source archive is checked by default for new tasks; can be changed per task when adding</translation>
+        <translation>Download source archive by default for new tasks; can be modified per task in task draft</translation>
     </message>
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="29"/>
         <source>默认下载 BibTeX</source>
-        <translation>Download BibTeX by Default</translation>
+        <translation>Download BibTeX By Default</translation>
     </message>
     <message>
         <location filename="../../../features/arxiv_pack/config.py" line="30"/>
         <source>新任务默认勾选 .bib 引用文件，可在添加任务时逐个修改</source>
-        <translation>.bib citation file is checked by default for new tasks; can be changed per task when adding</translation>
+        <translation>Download .bib citation file by default for new tasks; can be modified per task in task draft</translation>
     </message>
 </context>
 <context>
@@ -1026,7 +1026,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
         <source>DHT 节点 {nodes}</source>
-        <translation>DHT Nodes {nodes}</translation>
+        <translation>{nodes} DHT node(s)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="152"/>
@@ -1078,12 +1078,12 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="177"/>
         <source>KAD 节点 {nodes}（处于防火墙后）</source>
-        <translation>{nodes} KAD nodes (firewalled)</translation>
+        <translation>{nodes} KAD node(s) (firewalled)</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="178"/>
         <source>KAD 节点 {nodes}</source>
-        <translation>{nodes} KAD nodes</translation>
+        <translation>{nodes} KAD node(s)</translation>
     </message>
     <message>
         <location filename="../../view/components/bootstrap_list.py" line="34"/>
@@ -2000,7 +2000,7 @@ You can adjust options in Settings at any time.</translation>
     </message>
     <message>
         <source>通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器</source>
-        <translation type="vanished">Discover peers via DHT network; when disabled, only eD2k servers are used</translation>
+        <translation type="vanished">Discover peers via DHT network; only eD2k servers are used if disabled</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="65"/>
@@ -2060,7 +2060,7 @@ You can adjust options in Settings at any time.</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="116"/>
         <source>通过 KAD 网络查找来源，关闭后仅使用 eD2k 服务器</source>
-        <translation>Discover sources via the KAD network; when disabled, only eD2k servers are used</translation>
+        <translation>Discover sources via the KAD network; only eD2k servers are used if disabled</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="120"/>
@@ -3030,7 +3030,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="89"/>
         <source>HuggingFace 下载</source>
-        <translation>HuggingFace Download</translation>
+        <translation>HuggingFace</translation>
     </message>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="92"/>
@@ -5438,7 +5438,7 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="476"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
-        <translation>Support for the Aria2 JSON-RPC protocol, enable receiving download links from external tools</translation>
+        <translation>Enable support for the Aria2 JSON-RPC protocol, allow receiving download links from external tools</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="242"/>
@@ -5499,7 +5499,7 @@ caused by file operations or possible disk disconnections</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="248"/>
         <source>若设置，客户端需传入 token 才可创建任务</source>
-        <translation>If set, client must provide this token to create tasks</translation>
+        <translation>If set, clients must provide this token to create tasks</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="250"/>
@@ -5906,7 +5906,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/arxiv_pack/cards.py" line="62"/>
         <source>附属文件</source>
-        <translation>Sidecar Files</translation>
+        <translation>Additional Files</translation>
     </message>
     <message>
         <location filename="../../../features/arxiv_pack/cards.py" line="63"/>
@@ -6741,7 +6741,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/huggingface_pack/i18n.py" line="8"/>
         <source>尚未获得该仓库的访问权限，请先在 {url} 申请；若已获批，请确认 Access Token 有读取 Gated Repo 的权限</source>
-        <translation>You do not yet have access to this repository; please request access at {url}; if already approved, make sure your Access Token has permission to read Gated Repos</translation>
+        <translation>You do&apos;t have access to this repository, please request access at {url}; if already approved, make sure your Access Token allows reading Gated repositories</translation>
     </message>
     <message>
         <location filename="../../../features/wrapped_link_pack/i18n.py" line="3"/>
@@ -7465,7 +7465,7 @@ The next steps will guide you through the basic setup.</translation>
     <message>
         <location filename="../../../features/wrapped_link_pack/pack.py" line="59"/>
         <source>迅雷、快车、QQ 旋风链接</source>
-        <translation>Thunder, FlashGet, and QQ Xuanfeng links</translation>
+        <translation>Thunder, FlashGet, and QQ Xuanfeng proprietary links</translation>
     </message>
 </context>
 <context>
