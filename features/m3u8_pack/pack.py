@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from pathlib import Path
@@ -27,6 +28,8 @@ MEDIA_SUFFIXES = {
     ".ts", ".webm", ".m4a", ".m4v", ".vtt", ".srt",
 }
 MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
+MANIFEST_CONTENT_TYPES = {"application/vnd.apple.mpegurl", "application/x-mpegurl", "application/mpegurl",
+                          "audio/mpegurl", "audio/x-mpegurl", "application/dash+xml"}
 
 
 class M3U8Parser(TaskParser):
@@ -38,11 +41,7 @@ class M3U8Parser(TaskParser):
         lowered = options.url.lower()
         if ".m3u" in lowered or ".mpd" in lowered:
             return True
-        if not options.isProbed:
-            return False
-        contentType = options.file.contentType
-        return (Path(options.file.name).suffix.lower() in MANIFEST_SUFFIXES
-                or "mpegurl" in contentType or "dash+xml" in contentType)
+        return options.isProbed and options.file.matchType(MANIFEST_SUFFIXES, MANIFEST_CONTENT_TYPES)
 
     async def parse(self, options: TaskOptions) -> Task:
         try:
@@ -54,9 +53,10 @@ class M3U8Parser(TaskParser):
             return buildTask(options)
 
     async def parseManifest(self, options: TaskOptions) -> Task:
-        source = options.template if options.isProbed else options
-        url = source.url.strip()
-        headers = dict(source.headers)
+        if options.isProbed:
+            options = replace(options, url=options.template.url, headers=options.template.headers)
+        url = options.url.strip()
+        headers = dict(options.headers)
         outputFolder = options.outputFolder
 
         localPath = localFilePath(url, MANIFEST_SUFFIXES)

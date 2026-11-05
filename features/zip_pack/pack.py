@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import zipfile
-from copy import deepcopy
+from bisect import bisect_right
 
 from loguru import logger
 
-from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import ResourceTaskOptions, Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
@@ -21,7 +21,7 @@ if hasattr(zipfile, "ZIP_ZSTANDARD"):
     SUPPORTED_COMPRESSIONS.add(zipfile.ZIP_ZSTANDARD)
 
 
-def findCentralOffset(tail: bytes, tailOffset: int) -> int:
+def parseCentralOffset(tail: bytes, tailOffset: int) -> int:
     end = tail.rfind(b"PK\x05\x06")
     if end < 0:
         raise zipfile.BadZipFile("找不到中央目录结束记录")
@@ -35,7 +35,7 @@ def findCentralOffset(tail: bytes, tailOffset: int) -> int:
     return tailOffset + end - centralSize
 
 
-def loadInfos(view: SparseView) -> tuple[str, list[zipfile.ZipInfo]]:
+def parseInfos(view: SparseView) -> tuple[str, list[zipfile.ZipInfo]]:
     try:
         with zipfile.ZipFile(view, metadata_encoding="gbk") as archive:
             return "gbk", archive.infolist()
@@ -45,7 +45,7 @@ def loadInfos(view: SparseView) -> tuple[str, list[zipfile.ZipInfo]]:
 
 
 def buildEntries(infos: list[zipfile.ZipInfo], centralOffset: int) -> list[ZipEntry]:
-    starts = sorted({info.header_offset for info in infos} | {centralOffset})
+    starts = sorted({info.header_offset for info in infos if not info.is_dir()} | {centralOffset})
     entries: list[ZipEntry] = []
     relativePaths: set[str] = set()
     for info in sorted(infos, key=lambda info: info.header_offset):
@@ -66,7 +66,7 @@ def buildEntries(infos: list[zipfile.ZipInfo], centralOffset: int) -> list[ZipEn
             size=info.file_size,
             name=info.filename,
             localHeaderOffset=info.header_offset,
-            windowEnd=next(start for start in starts if start > info.header_offset),
+            windowEnd=starts[bisect_right(starts, info.header_offset)],
         ))
     if not entries:
         raise zipfile.BadZipFile("压缩包里没有文件")
@@ -75,29 +75,13 @@ def buildEntries(infos: list[zipfile.ZipInfo], centralOffset: int) -> list[ZipEn
 
 def buildZipTask(options: TaskOptions, entries: list[ZipEntry], tailOffset: int, metadataEncoding: str) -> ZipTask:
     name = options.name if isinstance(options, ResourceTaskOptions) and options.name else options.file.name
-    if name.lower().endswith(".zip"):
-        name = name[:-4]
-    whole = deepcopy(options.template)
-    steps = [whole]
-    for entry in entries:
-        window = deepcopy(options.template)
-        window.stepIndex = 2 * entry.index + 2
-        window.fileIndex = entry.index
-        window.httpByteOffset = entry.localHeaderOffset
-        window.fileSize = entry.windowEnd - entry.localHeaderOffset
-        window.lastModified = ""
-        if window.fileSize < cfg.maxReassignSize.value * 1024:
-            window.subworkerCount = 1
-        steps.append(window)
-        steps.append(ZipExtractStep(stepIndex=2 * entry.index + 3, fileIndex=entry.index))
     return ZipTask(
-        name=toSafeFilename(name, fallback="archive"),
+        name=name,
         url=options.url,
         fileSize=options.file.fileSize,
         outputFolder=options.outputFolder,
         files=entries,
-        steps=steps,
-        archiveSize=options.file.fileSize,
+        steps=[options.template, ZipExtractStep(stepIndex=2)],
         tailOffset=tailOffset,
         metadataEncoding=metadataEncoding,
     )
@@ -107,23 +91,25 @@ class ZipParser(TaskParser):
     priority = 96
 
     def match(self, options: TaskOptions) -> bool:
-        if not options.isProbed or not options.file.canUseRangeRequests or options.file.fileSize <= 0:
-            return False
-        return options.file.name.lower().endswith(".zip") or options.file.contentType in ZIP_CONTENT_TYPES
+        return (options.isProbed and options.file.canUseRangeRequests and options.file.fileSize > 0
+                and options.file.matchType({".zip"}, ZIP_CONTENT_TYPES))
 
     async def parse(self, options: TaskOptions) -> Task:
         size = options.file.fileSize
         try:
             tailOffset = max(0, size - TAIL_SIZE)
             tail = await fetchRange(options.template, tailOffset, size - tailOffset)
-            centralOffset = findCentralOffset(tail, tailOffset)
+            centralOffset = parseCentralOffset(tail, tailOffset)
             if size - centralOffset > MAX_CENTRAL_SIZE:
                 raise zipfile.BadZipFile("中央目录过大")
             if centralOffset < tailOffset:
                 tail = await fetchRange(options.template, centralOffset, tailOffset - centralOffset) + tail
                 tailOffset = centralOffset
-            metadataEncoding, infos = loadInfos(SparseView(size, [(tailOffset, tail)]))
-            return buildZipTask(options, buildEntries(infos, centralOffset), tailOffset, metadataEncoding)
+            view = SparseView(size)
+            view.addSegment(tailOffset, tail)
+            metadataEncoding, infos = await asyncio.to_thread(parseInfos, view)
+            entries = await asyncio.to_thread(buildEntries, infos, centralOffset)
+            return buildZipTask(options, entries, tailOffset, metadataEncoding)
         except Exception as e:
             logger.opt(exception=e).warning("无法预览压缩包，按普通文件下载 {}", options.url)
             return buildTask(options)

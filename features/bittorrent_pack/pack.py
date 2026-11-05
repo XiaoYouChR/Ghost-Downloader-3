@@ -31,7 +31,7 @@ class TorrentParser(TaskParser):
 
     def match(self, options: TaskOptions) -> bool:
         if options.isProbed:
-            return options.file.name.lower().endswith(".torrent") or options.file.contentType == "application/x-bittorrent"
+            return options.file.matchType({".torrent"}, {"application/x-bittorrent"})
         url = options.url.strip()
         if urlparse(url).scheme.lower() == "magnet":
             return True

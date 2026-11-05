@@ -12,7 +12,6 @@ from loguru import logger
 
 from app.config.cfg import cfg, ConfigItem
 from app.install import deleteInstalled
-from app.models.task import TaskError
 from app.platform.filesystem import findExecutable
 
 if TYPE_CHECKING:
@@ -42,8 +41,6 @@ class UriScheme:
 class TaskParser:
     priority: int = 100
     pack: FeaturePack | None = None
-    delegate: Callable[[TaskOptions], Awaitable[Task]] | None = None
-    delegateProbe: Callable[[TaskOptions], Awaitable[TaskOptions]] | None = None
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError
@@ -55,7 +52,7 @@ class TaskParser:
         raise NotImplementedError
 
     async def probe(self, options: TaskOptions) -> TaskOptions:
-        raise TaskError("该链接不能用于更换")
+        raise NotImplementedError
 
 
 class PackConfig:
@@ -276,6 +273,7 @@ class FeaturePack:
 
     parsers: list[type[TaskParser]] = []
     parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
+    probe: Callable[[TaskOptions], Awaitable[TaskOptions]] | None = None
     addTask: Callable[[Task], None] | None = None
     submit: Callable[..., str] | None = None
 

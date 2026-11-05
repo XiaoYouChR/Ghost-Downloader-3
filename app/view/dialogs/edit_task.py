@@ -12,7 +12,7 @@ from app.format import toReadableSize
 from app.view.components.card_groups import OptionCardGroup
 from app.view.components.editors import addRecentFolder
 from app.i18n import toLocalizedError
-from app.models.task import toTaskError
+from app.models.task import TaskError, toTaskError
 
 if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions
@@ -102,6 +102,10 @@ class LiveEditDialog(EditTaskDialog):
             super().accept()
             return
 
+        if not self._task.canRelinkToOtherFile:
+            self._onReparseFailed(TaskError("新链接与原链接不是同一个文件"))
+            return
+
         receivedBytes = self._task.currentSnapshot()[2]
         if receivedBytes > 0:
             confirm = MessageBox(
@@ -121,6 +125,8 @@ class LiveEditDialog(EditTaskDialog):
     def _onReparseFailed(self, error, **_) -> None:
         self._pendingParseId = ""
         self._setInteractive(True)
+        if isinstance(error, NotImplementedError):
+            error = TaskError("该链接不能用于更换")
         InfoBar.error(
             title=self.tr("链接解析失败"),
             content=toLocalizedError(toTaskError(error)),

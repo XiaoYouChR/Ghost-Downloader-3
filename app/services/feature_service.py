@@ -52,6 +52,7 @@ class FeatureService:
         self._packByPackId[pack.packId] = pack
 
         pack.parse = self.parse
+        pack.probe = self.probe
         pack.addTask = self._taskService.add
         pack.submit = self._coroutineRunner.submit
 
@@ -61,8 +62,6 @@ class FeatureService:
         for ParserClass in pack.parsers:
             parser = ParserClass()
             parser.pack = pack
-            parser.delegate = self.parse
-            parser.delegateProbe = self.probe
             self._parsers.append(parser)
         self._parsers.sort(key=lambda p: p.priority)
 

@@ -68,7 +68,7 @@ class GitHubHttpTaskStep(HttpTaskStep):
             except Exception:
                 if not self.fallbackUrls:
                     raise
-                nextUrl = self.fallbackUrls.pop(0)
+                nextUrl, *self.fallbackUrls = self.fallbackUrls
                 logger.warning("GitHub 下载 fallback: {} → {}", self.url, nextUrl)
                 self.url = nextUrl
                 self.headers = toProxyHeaders(self.headers)
@@ -89,7 +89,7 @@ class GitHubParser(TaskParser):
         return githubConfig.enabled.value and isGitHubFileUrl(options.url) and not options.isProbed
 
     async def parse(self, options: TaskOptions) -> Task:
-        task = await self.delegate(await self.probe(options))
+        task = await self.pack.parse(await self.probe(options))
         if type(task) is HttpTask:
             task.packId = "github"
         return task

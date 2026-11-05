@@ -459,7 +459,7 @@ class TaskService:
         wasCompleted = task.status == TaskStatus.COMPLETED
 
         def apply():
-            previous = {file.index for file in task.files if file.selected}
+            previous = task.selectedIndexes
             task.setSelection(selectedSet)
             try:
                 self._store.updatePlaceholders(task)
@@ -477,8 +477,7 @@ class TaskService:
         if self._queue.isRunning(task.taskId):
             for step in task.steps:
                 if step.status == TaskStatus.RUNNING:
-                    fileIndex = step.fileIndex
-                    isRunningDeselected = fileIndex is not None and fileIndex not in selectedSet
+                    isRunningDeselected = not task.isStepSelected(step, selectedSet)
                     break
 
         if isRunningDeselected:

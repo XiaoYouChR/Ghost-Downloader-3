@@ -171,7 +171,7 @@ class CategoryService:
         return ""
 
     def categoryOf(self, task: Task) -> str:
-        if task.files is not None and len(task.files) > 1:
+        if task.isOutputFolder:
             return ""
         return self.matchByName(task.name)
 

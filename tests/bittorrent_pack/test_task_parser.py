@@ -63,3 +63,8 @@ async def test_parse_invalid_online_torrent_adds_plain_file(features, startServe
 
     assert isinstance(task, HttpTask)
     assert task.name == "movie.torrent"
+
+
+async def test_probe_magnet_link_is_unsupported(features):
+    with pytest.raises(NotImplementedError):
+        await features.probe(TaskOptions(url=f"magnet:?xt=urn:btih:{'0' * 40}"))

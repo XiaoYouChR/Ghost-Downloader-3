@@ -296,7 +296,7 @@ class YouTubeTask(Task):
         # 视频大小在 extract 前未知，files 的 size 恒为 0，改从资源步骤汇总
         totalSize = sum(
             s.fileSize for s in self.steps
-            if isinstance(s, FFmpegResourceStep) and self._isStepSelected(s)
+            if isinstance(s, FFmpegResourceStep) and self.isStepSelected(s, self.selectedIndexes)
         )
         self.fileSize = totalSize if totalSize > 0 else int(SpecialFileSize.UNKNOWN)
 
@@ -305,7 +305,7 @@ class YouTubeTask(Task):
         for step in self.steps:
             if self.status != TaskStatus.RUNNING:
                 break
-            if not self._isStepSelected(step):
+            if not self.isStepSelected(step, self.selectedIndexes):
                 continue
             if isinstance(step, YouTubeExtractStep):
                 yield step
@@ -317,7 +317,7 @@ class YouTubeTask(Task):
     def currentSnapshot(self) -> tuple[float, int, int]:
         downloadSteps = [
             s for s in self.steps
-            if not isinstance(s, YouTubeExtractStep) and self._isStepSelected(s)
+            if not isinstance(s, YouTubeExtractStep) and self.isStepSelected(s, self.selectedIndexes)
         ]
         if not downloadSteps:
             return 0.0, 0, 0
@@ -454,7 +454,7 @@ class YouTubeExtractStep(TaskStep):
 
         totalSize = sum(
             s.fileSize for s in self.task.steps
-            if isinstance(s, FFmpegResourceStep) and self.task._isStepSelected(s)
+            if isinstance(s, FFmpegResourceStep) and self.task.isStepSelected(s, self.task.selectedIndexes)
         )
         self.task.fileSize = totalSize if totalSize > 0 else 0
 
@@ -491,7 +491,7 @@ class YouTubeExtractStep(TaskStep):
 
         totalSize = sum(
             s.fileSize for s in self.task.steps
-            if isinstance(s, FFmpegResourceStep) and self.task._isStepSelected(s)
+            if isinstance(s, FFmpegResourceStep) and self.task.isStepSelected(s, self.task.selectedIndexes)
         )
         self.task.fileSize = totalSize if totalSize > 0 else 0
 

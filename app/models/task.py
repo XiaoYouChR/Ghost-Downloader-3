@@ -56,6 +56,9 @@ def toTaskError(error) -> TaskError:
     return TaskError("发生了意外错误：{detail}", detail=str(error) or type(error).__name__)
 
 
+WEB_PAGE_SUFFIXES = {".asp", ".aspx", ".cgi", ".jsp", ".php"}
+
+
 @dataclass(frozen=True)
 class RemoteFile:
     name: str
@@ -63,6 +66,12 @@ class RemoteFile:
     canUseRangeRequests: bool
     lastModified: str = ""
     contentType: str = ""
+
+    def matchType(self, suffixes: set[str], contentTypes: set[str]) -> bool:
+        suffix = Path(self.name).suffix.lower()
+        if suffix and suffix not in WEB_PAGE_SUFFIXES:
+            return suffix in suffixes
+        return self.contentType in contentTypes
 
 
 @dataclass(frozen=True)
@@ -203,6 +212,7 @@ class Task:
     fileType: ClassVar[type] = TaskFile
     hasOutputFile: ClassVar[bool] = True
     canSeed: ClassVar[bool] = False
+    canRelinkToOtherFile: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -308,16 +318,12 @@ class Task:
         for step in self.steps:
             step.setOptions(options)
 
-    def _isStepSelected(self, step: TaskStep) -> bool:
-        if not self.files:
-            return True
-        fileIndex = step.fileIndex
-        if fileIndex is None:
-            return True
-        for file in self.files:
-            if file.index == fileIndex:
-                return file.selected
-        return False
+    @property
+    def selectedIndexes(self) -> set[int]:
+        return {file.index for file in self.files or [] if file.selected}
+
+    def isStepSelected(self, step: TaskStep, selectedIndexes: set[int]) -> bool:
+        return not self.files or step.fileIndex is None or step.fileIndex in selectedIndexes
 
     def _updateFilesFromSteps(self) -> None:
         if not self.files:
@@ -336,11 +342,8 @@ class Task:
                 file.completed = completed[file.index]
 
     def currentSnapshot(self) -> tuple[float, int, int]:
-        if not self.files:
-            steps = self.steps
-        else:
-            selected = {f.index for f in self.files if f.selected}
-            steps = [s for s in self.steps if s.fileIndex is None or s.fileIndex in selected]
+        selectedIndexes = self.selectedIndexes
+        steps = [s for s in self.steps if self.isStepSelected(s, selectedIndexes)]
         if not steps:
             return 0.0, 0, 0
         progress = 0.0
@@ -354,7 +357,8 @@ class Task:
 
     def updateStatus(self) -> TaskStatus:
         self._updateFilesFromSteps()
-        steps = [s for s in self.steps if self._isStepSelected(s)]
+        selectedIndexes = self.selectedIndexes
+        steps = [s for s in self.steps if self.isStepSelected(s, selectedIndexes)]
         if not steps:
             return self.status
         statuses = [step.status for step in steps]
@@ -377,7 +381,8 @@ class Task:
         return self.status
 
     def setStatus(self, status: TaskStatus) -> TaskStatus:
-        steps = [s for s in self.steps if self._isStepSelected(s)]
+        selectedIndexes = self.selectedIndexes
+        steps = [s for s in self.steps if self.isStepSelected(s, selectedIndexes)]
         if not steps:
             self.status = status
             return self.status
@@ -436,7 +441,7 @@ class Task:
         for step in sorted(self.steps, key=lambda step: step.stepIndex):
             if self.status != TaskStatus.RUNNING:
                 break
-            if not self._isStepSelected(step):
+            if not self.isStepSelected(step, self.selectedIndexes):
                 continue
             if step.status == TaskStatus.COMPLETED:
                 continue
@@ -457,26 +462,23 @@ class Task:
     def replaceWith(self, probed: TaskOptions) -> None:
         raise NotImplementedError
 
-    async def runStep(self, step: TaskStep, reportSpeed, waitForSpeedLimit) -> None:
-        try:
-            if step.outputPath:
-                Path(step.outputPath).parent.mkdir(parents=True, exist_ok=True)
-            await step.run(reportSpeed, waitForSpeedLimit)
-        except Exception as e:
-            step.setError(toTaskError(e))
-            raise
-        step.setStatus(TaskStatus.COMPLETED)
-
     async def run(self, reportSpeed, waitForSpeedLimit):
+        currentStep = None
         try:
             for step in self.pendingSteps():
-                await self.runStep(step, reportSpeed, waitForSpeedLimit)
+                currentStep = step
+                if step.outputPath:
+                    Path(step.outputPath).parent.mkdir(parents=True, exist_ok=True)
+                await step.run(reportSpeed, waitForSpeedLimit)
+                step.setStatus(TaskStatus.COMPLETED)
             if self.status == TaskStatus.COMPLETED:
                 deletePath(self.partPath)
         except asyncio.CancelledError:
             logger.info("{} stopped", self.name)
             raise
         except Exception as e:
+            if currentStep is not None:
+                currentStep.setError(toTaskError(e))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
 

@@ -54,7 +54,7 @@ _Avoid_: Part Folder、work folder、temp、cache、Staging（Staging 指更新�
 _Avoid_: merge、overwrite（覆盖指磁盘文件）
 
 **Relink**:
-为同一个文件换一个新地址，通常因为原链接失效。Task 的种类不变：新链接对应另一种 Task 时拒绝；种类相同但内容不同时，经用户确认后丢弃已下载的数据。只有地址会失效的 Task 提供 Relink。
+为同一个文件换一个新地址，通常因为原链接失效。Task 的种类不变：新链接对应另一种 Task 时拒绝；种类相同但内容不同时，经用户确认后丢弃已下载的数据；内容决定了 Selectable File 的 Task（如压缩包）拒绝。只有地址会失效的 Task 提供 Relink。
 _Avoid_: 编辑链接、替换任务（与 Replace 混淆）
 
 **Missing**:
@@ -83,7 +83,7 @@ _Avoid_: totalBytes、content-length
 多文件 Task 内的一个可勾选下载单元——仓库文件、播放列表视频、多分 P 页面或种子文件。
 任何 Task 状态下都允许改变选择；取消选择的文件保留部分进度。
 Task 有多于一个 Selectable File 时，成品是以 Name 命名的文件夹；只有一个时，成品就是这个文件本身。
-压缩包例外：全部选中时，成品是压缩包本身。
+压缩包例外：全部选中时，成品是压缩包本身；部分选中时，成品是以去掉扩展名的 Name 命名的文件夹。
 _Avoid_: 与 Task Files 混淆
 
 **Revive**:

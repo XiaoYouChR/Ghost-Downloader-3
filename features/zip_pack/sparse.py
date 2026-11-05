@@ -6,15 +6,21 @@ from pathlib import Path
 
 
 class SparseView(io.RawIOBase):
-    def __init__(self, size: int, segments: list[tuple[int, bytes | Path]]):
+    def __init__(self, size: int):
         super().__init__()
         self._size = size
-        self._segments = []
-        for start, source in sorted(segments, key=lambda segment: segment[0]):
-            length = len(source) if isinstance(source, bytes) else os.path.getsize(source)
-            self._segments.append((start, start + length, source))
+        self._segments: dict[int, tuple[int, bytes | Path]] = {}
         self._files: dict[Path, io.BufferedReader] = {}
         self._position = 0
+
+    def addSegment(self, start: int, source: bytes | Path) -> None:
+        length = len(source) if isinstance(source, bytes) else os.path.getsize(source)
+        self._segments[start] = (start + length, source)
+
+    def removeSegment(self, start: int) -> None:
+        _, source = self._segments.pop(start)
+        if file := self._files.pop(source, None):
+            file.close()
 
     def readable(self) -> bool:
         return True
@@ -33,7 +39,7 @@ class SparseView(io.RawIOBase):
     def readinto(self, buffer) -> int:
         if self._position >= self._size:
             return 0
-        for start, end, source in self._segments:
+        for start, (end, source) in self._segments.items():
             if start <= self._position < end:
                 length = min(len(buffer), end - self._position)
                 offset = self._position - start

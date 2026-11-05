@@ -259,7 +259,7 @@ class HttpParser(TaskParser):
         if isinstance(options, ResourceTaskOptions) and options.name and options.size > 0:
             file = RemoteFile(name=options.name, fileSize=options.size, canUseRangeRequests=options.canUseRangeRequests)
             return buildTask(replace(options, file=file, template=buildStep(HttpTaskStep, 1, options.url, options, file)))
-        return await self.delegate(await self.probe(options))
+        return await self.pack.parse(await self.probe(options))
 
 
 class HttpPack(FeaturePack):

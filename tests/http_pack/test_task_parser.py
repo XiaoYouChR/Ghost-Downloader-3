@@ -4,7 +4,7 @@ import pytest
 from aiohttp import web
 
 from app.models.pack import PackServices
-from app.models.task import ResourceTaskOptions, TaskError, TaskOptions
+from app.models.task import ResourceTaskOptions, TaskOptions
 from http_pack.pack import HttpPack
 from http_pack.task import HttpTask
 from tests.helpers import buildFileContent, buildRangeHandler
@@ -55,8 +55,3 @@ async def test_parse_resource_with_size_sends_no_request(http, startServer):
 
     assert task.name == "a.zip"
     assert requests == []
-
-
-async def test_probe_link_without_relink_rejects(http):
-    with pytest.raises(TaskError):
-        await http.probe(TaskOptions(url="http://test/a.bin"))

@@ -36,7 +36,7 @@ class ArxivTask(Task):
     def hasSource(self) -> bool:
         return any(isinstance(step, ArxivSourceStep) for step in self.steps)
 
-    def _isStepSelected(self, step: TaskStep) -> bool:
+    def isStepSelected(self, step: TaskStep, selectedIndexes: set[int]) -> bool:
         if isinstance(step, ArxivSourceStep):
             return self.isSourceEnabled
         if isinstance(step, ArxivBibtexStep):
@@ -44,7 +44,7 @@ class ArxivTask(Task):
         return True
 
     def currentSnapshot(self) -> tuple[float, int, int]:
-        steps = [step for step in self.steps if self._isStepSelected(step)]
+        steps = [step for step in self.steps if self.isStepSelected(step, self.selectedIndexes)]
         progress = sum(step.progress for step in steps) / len(steps)
         return progress, sum(step.speed for step in steps), sum(step.receivedBytes for step in steps)
 
@@ -63,5 +63,5 @@ class ArxivTask(Task):
                 deletePath(Path(f"{previousPath}.ghd"))
             else:
                 self.completedAt = 0
-        self.fileSize = sum(step.fileSize for step in self.steps if self._isStepSelected(step) and step.fileSize > 0)
+        self.fileSize = sum(step.fileSize for step in self.steps if self.isStepSelected(step, self.selectedIndexes) and step.fileSize > 0)
         self.updateStatus()
