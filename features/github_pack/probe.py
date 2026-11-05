@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 
 from loguru import logger
 
-from app.models.task import TaskError, TaskOptions
-from http_pack.pack import RemoteFile, probe
+from app.models.task import RemoteFile, TaskError, TaskOptions
+from http_pack.pack import probe
 from .config import GITHUB_PROXY_SITES, githubConfig
 
 PROBE_TARGET = "https://github.com/cli/cli/releases/download/v2.62.0/gh_2.62.0_linux_amd64.tar.gz"

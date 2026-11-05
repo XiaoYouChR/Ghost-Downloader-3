@@ -76,24 +76,20 @@ class FeatureService:
                 schemeToggle.connect(self._registerAssociations)
 
     async def parse(self, options: TaskOptions) -> Task:
-        if not options.clientProfile:
-            from app.client import matchIdentityPreset
-            host = urlparse(options.url).hostname or ""
-            preset = matchIdentityPreset(host)
-            if preset is not None:
-                kwargs = {}
-                if preset["clientProfile"]:
-                    kwargs["clientProfile"] = preset["clientProfile"]
-                if preset["userAgent"]:
-                    kwargs["userAgent"] = preset["userAgent"]
-                if kwargs:
-                    options = replace(options, **kwargs)
+        options = toPresetOptions(options)
 
         for parser in self._parsers:
             if parser.match(options):
                 task = await parser.parse(options)
                 return task
         raise ValueError(f"No parser matched: {options.url}")
+
+    async def probe(self, options: TaskOptions) -> TaskOptions:
+        options = toPresetOptions(options)
+        parser = next((parser for parser in self._parsers if parser.match(options)), None)
+        if parser is None:
+            raise ValueError(f"No parser matched: {options.url}")
+        return await parser.probe(options)
 
     def match(self, url: str) -> bool:
         options = TaskOptions(url=url)
@@ -235,3 +231,18 @@ class FeatureService:
 
         self._coroutineRunner.submit(deactivateAll())
         event.wait()
+
+
+def toPresetOptions(options: TaskOptions) -> TaskOptions:
+    if options.clientProfile:
+        return options
+    from app.client import matchIdentityPreset
+    preset = matchIdentityPreset(urlparse(options.url).hostname or "")
+    if preset is None:
+        return options
+    kwargs = {}
+    if preset["clientProfile"]:
+        kwargs["clientProfile"] = preset["clientProfile"]
+    if preset["userAgent"]:
+        kwargs["userAgent"] = preset["userAgent"]
+    return replace(options, **kwargs) if kwargs else options

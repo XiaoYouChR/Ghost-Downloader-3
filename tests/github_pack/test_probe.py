@@ -5,9 +5,8 @@ import asyncio
 import pytest
 from aiohttp import web
 
-from app.models.task import ResourceTaskOptions, TaskOptions
+from app.models.task import RemoteFile, ResourceTaskOptions, TaskOptions
 from github_pack.probe import matchFile, probeUrls
-from http_pack.pack import RemoteFile
 
 ASSET_URL = "https://github.com/o/r/releases/download/v1/a.tar.gz"
 RAW_URL = "https://raw.githubusercontent.com/o/r/main/README.md"

@@ -12,9 +12,9 @@ from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
-from app.models.task import Task, TaskOptions
+from app.models.task import RemoteFile, Task, TaskOptions
 from app.platform.filesystem import splitStemExt
-from http_pack.pack import RemoteFile, probe
+from http_pack.pack import buildStep, probe
 from http_pack.task import HttpTaskStep
 from .config import arxivConfig
 from .task import ArxivBibtexStep, ArxivSourceStep, ArxivTask
@@ -69,22 +69,6 @@ def buildName(arxivId: ArxivId, version: str, title: str) -> str:
     # 冒号在 Windows 文件名里非法，"BERT: Pre-training" 写作 "BERT - Pre-training" 比写成下划线易读
     title = re.sub(r"\s*:\s*", " - ", title)
     return f"{stem} {title}.pdf"
-
-
-def buildStep(stepType: type[HttpTaskStep], stepIndex: int, url: str, options: TaskOptions,
-              file: RemoteFile | None = None, **kwargs) -> HttpTaskStep:
-    return stepType(
-        stepIndex=stepIndex,
-        url=url,
-        fileSize=file.fileSize if file else 0,
-        headers=dict(options.headers),
-        clientProfile=options.clientProfile,
-        userAgent=options.userAgent,
-        subworkerCount=options.subworkerCount,
-        canUseRangeRequests=file.canUseRangeRequests if file else False,
-        lastModified=file.lastModified if file else "",
-        **kwargs,
-    )
 
 
 async def fetchTitle(options: TaskOptions) -> str:

@@ -7,7 +7,7 @@ from loguru import logger
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
-from http_pack.pack import buildTask
+from http_pack.pack import buildStep
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
 from .probe import probeUrls, toProxyHeaders
@@ -83,12 +83,18 @@ class GitHubHttpTaskStep(HttpTaskStep):
 
 
 class GitHubParser(TaskParser):
-    priority = 90
+    priority = 75
 
     def match(self, options: TaskOptions) -> bool:
-        return githubConfig.enabled.value and isGitHubFileUrl(options.url)
+        return githubConfig.enabled.value and isGitHubFileUrl(options.url) and not options.isProbed
 
     async def parse(self, options: TaskOptions) -> Task:
+        task = await self.delegate(await self.probe(options))
+        if type(task) is HttpTask:
+            task.packId = "github"
+        return task
+
+    async def probe(self, options: TaskOptions) -> TaskOptions:
         originalUrl = options.url
         selected = selectedProxySite()
         urls = [f"{site}/{originalUrl}" for site in GITHUB_PROXY_SITES if site != selected] + [originalUrl]
@@ -105,15 +111,10 @@ class GitHubParser(TaskParser):
 
         logger.info("GitHub 选用 {}", winner)
         headers = options.headers if winner == originalUrl else toProxyHeaders(options.headers)
-        task = buildTask(replace(options, url=winner, headers=headers), file)
+        template = buildStep(HttpTaskStep, 1, winner, replace(options, headers=headers), file)
         if fallbackUrls:
-            githubStep = GitHubHttpTaskStep.build(task.steps[0], fallbackUrls)
-            task.steps[0] = githubStep
-            githubStep._bindTask(task)
-
-        task.url = originalUrl
-        task.packId = "github"
-        return task
+            template = GitHubHttpTaskStep.build(template, fallbackUrls)
+        return replace(options, file=file, template=template)
 
 
 class GitHubPack(FeaturePack):

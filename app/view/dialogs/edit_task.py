@@ -15,7 +15,7 @@ from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 
 if TYPE_CHECKING:
-    from app.models.task import Task
+    from app.models.task import Task, TaskOptions
 
 
 class EditTaskDialog(MessageBoxBase):
@@ -73,7 +73,7 @@ class LiveEditDialog(EditTaskDialog):
         self._setInteractive(False)
         taskOptions = TaskOptions.fromOptions({**options, "url": newUrl})
         self._pendingParseId = self._coroutineRunner.submit(
-            self._featureService.parse(taskOptions),
+            self._featureService.probe(taskOptions),
             done=self._onReparsed,
             failed=self._onReparseFailed,
             options=options,
@@ -94,11 +94,11 @@ class LiveEditDialog(EditTaskDialog):
         self.progressBar.setVisible(not enabled)
         self.yesButton.setEnabled(enabled)
 
-    def _onReparsed(self, newTask: Task, options: dict) -> None:
+    def _onReparsed(self, probed: TaskOptions, options: dict) -> None:
         self._pendingParseId = ""
 
-        if self._task.canReuseProgress(newTask):
-            self._taskService.edit(self._task, options, newTask)
+        if self._task.canReuseProgress(probed):
+            self._taskService.edit(self._task, options, probed)
             super().accept()
             return
 
@@ -115,7 +115,7 @@ class LiveEditDialog(EditTaskDialog):
                 self._setInteractive(True)
                 return
 
-        self._taskService.edit(self._task, options, newTask)
+        self._taskService.edit(self._task, options, probed)
         super().accept()
 
     def _onReparseFailed(self, error, **_) -> None:

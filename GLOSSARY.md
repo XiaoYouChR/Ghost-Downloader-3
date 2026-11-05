@@ -53,6 +53,10 @@ _Avoid_: Part Folder、work folder、temp、cache、Staging（Staging 指更新�
 新 Task 取得旧 Task Record 的路径时，旧 Task Record 被移除、由新 Task 顶替。只移除记录，不删磁盘。
 _Avoid_: merge、overwrite（覆盖指磁盘文件）
 
+**Relink**:
+为同一个文件换一个新地址，通常因为原链接失效。Task 的种类不变：新链接对应另一种 Task 时拒绝；种类相同但内容不同时，经用户确认后丢弃已下载的数据。只有地址会失效的 Task 提供 Relink。
+_Avoid_: 编辑链接、替换任务（与 Replace 混淆）
+
 **Missing**:
 已完成 Task 的成品不在磁盘上。原因可能是删除、移走或改名，应用不区分。
 Missing 的 Task 仍是 COMPLETED，用户可以移除它，也可以开启自动移除。
@@ -186,7 +190,7 @@ _Avoid_: Engine（Bridge 不拥有服务）
 _Avoid_: 直接操作 Task 的状态转换
 
 **Feature Service**:
-拥有 pack 发现、parser 优先级路由和 pack 生命周期。将 Task Options 路由到匹配的 Parser。
+拥有 pack 发现、parser 优先级分派和 pack 生命周期。将 Task Options 分派到匹配的 Parser。
 
 **FeaturePack**:
 全栈垂直切片——从 parser 到 card 自包含。可提供 task parser、card、file type、binary runtime、page 或 setting group。

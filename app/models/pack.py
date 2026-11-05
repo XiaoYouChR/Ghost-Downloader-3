@@ -12,6 +12,7 @@ from loguru import logger
 
 from app.config.cfg import cfg, ConfigItem
 from app.install import deleteInstalled
+from app.models.task import TaskError
 from app.platform.filesystem import findExecutable
 
 if TYPE_CHECKING:
@@ -51,6 +52,9 @@ class TaskParser:
 
     async def parse(self, options: TaskOptions) -> Task:
         raise NotImplementedError
+
+    async def probe(self, options: TaskOptions) -> TaskOptions:
+        raise TaskError("该链接不能用于更换")
 
 
 class PackConfig:

@@ -6,10 +6,10 @@ import pytest
 from aiohttp import web
 
 from app.models.pack import PackServices
-from app.models.task import TaskOptions, TaskStatus
-from arxiv_pack.pack import ArxivPack, ArxivParser, buildName, buildStep, parseArxivId
+from app.models.task import RemoteFile, TaskOptions, TaskStatus
+from arxiv_pack.pack import ArxivPack, ArxivParser, buildName, parseArxivId
 from arxiv_pack.task import ArxivBibtexStep, ArxivSourceStep, ArxivTask
-from http_pack.pack import HttpPack, RemoteFile
+from http_pack.pack import HttpPack, buildStep
 from http_pack.task import HttpTaskStep
 from huggingface_pack.pack import HuggingFacePack
 from tests.helpers import buildRangeHandler, waitUntil

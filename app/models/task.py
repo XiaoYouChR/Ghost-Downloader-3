@@ -57,6 +57,15 @@ def toTaskError(error) -> TaskError:
 
 
 @dataclass(frozen=True)
+class RemoteFile:
+    name: str
+    fileSize: int
+    canUseRangeRequests: bool
+    lastModified: str = ""
+    contentType: str = ""
+
+
+@dataclass(frozen=True)
 class TaskOptions:
     url: str
     outputFolder: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
@@ -65,11 +74,17 @@ class TaskOptions:
     userAgent: str = ""
     sourceUserAgent: str = ""
     subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
+    file: RemoteFile | None = None
+    template: TaskStep | None = None
 
     @classmethod
     def fromOptions(cls, options: dict) -> TaskOptions:
         from app.models.serialization import filterFields
         return cls(**filterFields(cls, options))
+
+    @property
+    def isProbed(self) -> bool:
+        return self.file is not None
 
 
 @dataclass(frozen=True)
@@ -436,35 +451,32 @@ class Task:
                 os.truncate(path, 0)
             deletePath(Path(f"{path}.ghd"))
 
-    def canReuseProgress(self, newTask: Task) -> bool:
+    def canReuseProgress(self, probed: TaskOptions) -> bool:
         return False
 
-    def replaceWith(self, newTask: Task) -> None:
-        self.url = newTask.url
-        self.name = newTask.name
-        self.fileSize = newTask.fileSize
-        self.steps = newTask.steps
-        for step in self.steps:
-            step._bindTask(self)
-        self.updateStatus()
+    def replaceWith(self, probed: TaskOptions) -> None:
+        raise NotImplementedError
+
+    async def runStep(self, step: TaskStep, reportSpeed, waitForSpeedLimit) -> None:
+        try:
+            if step.outputPath:
+                Path(step.outputPath).parent.mkdir(parents=True, exist_ok=True)
+            await step.run(reportSpeed, waitForSpeedLimit)
+        except Exception as e:
+            step.setError(toTaskError(e))
+            raise
+        step.setStatus(TaskStatus.COMPLETED)
 
     async def run(self, reportSpeed, waitForSpeedLimit):
-        currentStep = None
         try:
             for step in self.pendingSteps():
-                currentStep = step
-                if step.outputPath:
-                    Path(step.outputPath).parent.mkdir(parents=True, exist_ok=True)
-                await step.run(reportSpeed, waitForSpeedLimit)
-                step.setStatus(TaskStatus.COMPLETED)
+                await self.runStep(step, reportSpeed, waitForSpeedLimit)
             if self.status == TaskStatus.COMPLETED:
                 deletePath(self.partPath)
         except asyncio.CancelledError:
             logger.info("{} stopped", self.name)
             raise
         except Exception as e:
-            if currentStep is not None:
-                currentStep.setError(toTaskError(e))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
 

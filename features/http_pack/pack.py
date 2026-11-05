@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import replace
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from mimetypes import guess_extension
@@ -15,10 +15,10 @@ from app.config.cfg import cfg
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import (
-    Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
+    RemoteFile, Task, TaskError, TaskOptions, ResourceTaskOptions, SpecialFileSize,
 )
 from app.platform.filesystem import toSafeFilename
-from .task import HttpTask, HttpTaskStep
+from .task import HttpTask, HttpTaskStep, matchRange
 
 
 DOWNLOADABLE_EXTENSIONS = frozenset({
@@ -30,15 +30,6 @@ DOWNLOADABLE_EXTENSIONS = frozenset({
     ".pdf", ".epub",
     ".apk", ".ipa",
 })
-
-
-@dataclass(frozen=True)
-class RemoteFile:
-    name: str
-    fileSize: int
-    canUseRangeRequests: bool
-    lastModified: str = ""
-    contentType: str = ""
 
 
 async def probe(options: TaskOptions) -> RemoteFile:
@@ -179,28 +170,70 @@ async def probe(options: TaskOptions) -> RemoteFile:
     )
 
 
-def buildTask(options: TaskOptions, file: RemoteFile) -> HttpTask:
-    name = file.name
+def buildStep(stepType: type[HttpTaskStep], stepIndex: int, url: str, options: TaskOptions,
+              file: RemoteFile | None = None, **kwargs) -> HttpTaskStep:
+    fields = {
+        "stepIndex": stepIndex,
+        "url": url,
+        "fileSize": file.fileSize if file else 0,
+        "headers": dict(options.headers),
+        "clientProfile": options.clientProfile,
+        "userAgent": options.userAgent,
+        "subworkerCount": options.subworkerCount,
+        "canUseRangeRequests": file.canUseRangeRequests if file else False,
+        "lastModified": file.lastModified if file else "",
+    }
+    return stepType(**{**fields, **kwargs})
+
+
+def buildTask(options: TaskOptions) -> HttpTask:
+    name = options.file.name
     if isinstance(options, ResourceTaskOptions) and options.name:
         name = toSafeFilename(options.name, fallback=f"file_{time_ns()}")
     task = HttpTask(
         name=name,
         url=options.url,
-        fileSize=file.fileSize,
+        fileSize=options.file.fileSize,
         outputFolder=options.outputFolder,
     )
-    task.addStep(HttpTaskStep(
-        stepIndex=1,
-        url=options.url,
-        fileSize=file.fileSize,
-        headers=dict(options.headers),
-        clientProfile=options.clientProfile,
-        userAgent=options.userAgent,
-        subworkerCount=options.subworkerCount,
-        canUseRangeRequests=file.canUseRangeRequests,
-        lastModified=file.lastModified,
-    ))
+    task.addStep(options.template)
     return task
+
+
+async def fetchRange(step: HttpTaskStep, offset: int, length: int) -> bytes:
+    emulation = toEmulation(step.clientProfile or cfg.clientProfile.value, "")
+    client = buildClient(emulation=emulation, userAgent=step.userAgent or None, timeout=30)
+    try:
+        end = offset + length - 1
+        headers = {**step.headers, "range": f"bytes={offset}-{end}", "accept-encoding": "identity"}
+        response = await client.get(step.url, headers=headers)
+        try:
+            status = response.status.as_int()
+            contentRange = bytes(response.headers.get("content-range") or b"")
+            if status != 206 or not matchRange(contentRange, offset, end, None):
+                raise TaskError("服务器拒绝了范围请求，状态码：{status}", status=status)
+            data = bytes(await response.bytes())
+        finally:
+            response.close()
+    finally:
+        client.close()
+    if len(data) != length:
+        raise TaskError("服务器返回的数据不完整")
+    return data
+
+
+async def fetchContent(step: HttpTaskStep) -> bytes:
+    emulation = toEmulation(step.clientProfile or cfg.clientProfile.value, "")
+    client = buildClient(emulation=emulation, userAgent=step.userAgent or None, timeout=30)
+    try:
+        response = await client.get(step.url, headers={**step.headers, "accept-encoding": "identity"})
+        try:
+            response.raise_for_status()
+            return bytes(await response.bytes())
+        finally:
+            response.close()
+    finally:
+        client.close()
 
 
 class HttpParser(TaskParser):
@@ -216,16 +249,17 @@ class HttpParser(TaskParser):
         path = parsed.path.lower()
         return any(path.endswith(ext) for ext in DOWNLOADABLE_EXTENSIONS)
 
+    async def probe(self, options: TaskOptions) -> TaskOptions:
+        file = await probe(options)
+        return replace(options, file=file, template=buildStep(HttpTaskStep, 1, options.url, options, file))
+
     async def parse(self, options: TaskOptions) -> Task:
+        if options.isProbed:
+            return buildTask(options)
         if isinstance(options, ResourceTaskOptions) and options.name and options.size > 0:
-            file = RemoteFile(
-                name=options.name,
-                fileSize=options.size,
-                canUseRangeRequests=options.canUseRangeRequests,
-            )
-        else:
-            file = await probe(options)
-        return buildTask(options, file)
+            file = RemoteFile(name=options.name, fileSize=options.size, canUseRangeRequests=options.canUseRangeRequests)
+            return buildTask(replace(options, file=file, template=buildStep(HttpTaskStep, 1, options.url, options, file)))
+        return await self.delegate(await self.probe(options))
 
 
 class HttpPack(FeaturePack):
