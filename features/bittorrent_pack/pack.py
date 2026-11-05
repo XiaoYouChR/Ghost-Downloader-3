@@ -6,12 +6,14 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import libtorrent as lt
+from loguru import logger
 
 from app.i18n import N
 
 from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
+from http_pack.pack import buildTask, fetchContent
 
 from .config import bittorrentConfig
 from .session import PROXY_SCHEMES, btSession
@@ -28,6 +30,8 @@ class TorrentParser(TaskParser):
     priority = 85
 
     def match(self, options: TaskOptions) -> bool:
+        if options.isProbed:
+            return options.file.name.lower().endswith(".torrent") or options.file.contentType == "application/x-bittorrent"
         url = options.url.strip()
         if urlparse(url).scheme.lower() == "magnet":
             return True
@@ -41,7 +45,16 @@ class TorrentParser(TaskParser):
         webTrackers = mergedTrackers() if bittorrentConfig.enableWebTrackers.value else []
 
         localPath = localFilePath(url, {".torrent"})
-        if localPath is not None:
+        if options.isProbed:
+            try:
+                torrentBytes = await fetchContent(options.template)
+                lt.torrent_info(torrentBytes)
+            except Exception as e:
+                logger.opt(exception=e).warning("不是有效的种子，按普通文件下载 {}", url)
+                return buildTask(options)
+            sourceType, sourceUrl = "torrent", url
+
+        elif localPath is not None:
             torrentBytes = await asyncio.to_thread(localPath.resolve().read_bytes)
             sourceType, sourceUrl = "torrent", str(localPath.resolve())
 
@@ -83,7 +96,7 @@ class TorrentParser(TaskParser):
         name = toSafeFilename(Path(entries[0].relativePath).name, fallback="torrent") if len(entries) == 1 else rootName
 
         steps = [BTTaskStep(stepIndex=1)]
-        if sourceType == "magnet" and bittorrentConfig.saveMagnetFile.value:
+        if (sourceType == "magnet" or options.isProbed) and bittorrentConfig.saveMagnetFile.value:
             steps.append(BTTorrentFileStep(stepIndex=0))
         task = BTTask(
             name=name,

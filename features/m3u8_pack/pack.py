@@ -19,6 +19,7 @@ from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
+from http_pack.pack import buildTask
 
 
 MEDIA_SUFFIXES = {
@@ -35,11 +36,27 @@ class M3U8Parser(TaskParser):
         if localFilePath(options.url, MANIFEST_SUFFIXES) is not None:
             return True
         lowered = options.url.lower()
-        return ".m3u" in lowered or ".mpd" in lowered
+        if ".m3u" in lowered or ".mpd" in lowered:
+            return True
+        if not options.isProbed:
+            return False
+        contentType = options.file.contentType
+        return (Path(options.file.name).suffix.lower() in MANIFEST_SUFFIXES
+                or "mpegurl" in contentType or "dash+xml" in contentType)
 
     async def parse(self, options: TaskOptions) -> Task:
-        url = options.url.strip()
-        headers = dict(options.headers)
+        try:
+            return await self.parseManifest(options)
+        except Exception as e:
+            if not options.isProbed:
+                raise
+            logger.opt(exception=e).warning("不是有效的流媒体清单，按普通文件下载 {}", options.url)
+            return buildTask(options)
+
+    async def parseManifest(self, options: TaskOptions) -> Task:
+        source = options.template if options.isProbed else options
+        url = source.url.strip()
+        headers = dict(source.headers)
         outputFolder = options.outputFolder
 
         localPath = localFilePath(url, MANIFEST_SUFFIXES)
@@ -70,6 +87,8 @@ class M3U8Parser(TaskParser):
         loweredUrl = manifestUrl.lower()
         contentType = responseHeaders.get("content-type", "").lower()
         sample = body.lstrip()[:256].lower()
+        if options.isProbed and not (sample.startswith("#extm3u") or "<mpd" in sample):
+            raise ValueError("不是流媒体清单")
         if ".mpd" in loweredUrl or "dash+xml" in contentType or sample.startswith("<mpd"):
             manifestType = "mpd"
         else:

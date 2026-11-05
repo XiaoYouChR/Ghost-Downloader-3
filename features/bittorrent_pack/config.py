@@ -82,7 +82,7 @@ class BitTorrentConfig(PackConfig):
                 self.tr("稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足"),
                 texts=[self.tr("稀疏分配"), self.tr("预分配")], parent=btGroup),
             SwitchSettingCard(FluentIcon.SAVE, self.tr("保存 Magnet 种子文件"),
-                self.tr("下载 magnet 链接时额外保存 .torrent 文件"), self.saveMagnetFile, btGroup),
+                self.tr("下载 magnet 链接或在线种子时额外保存 .torrent 文件"), self.saveMagnetFile, btGroup),
             SwitchSettingCard(FluentIcon.LIBRARY, self.tr("顺序下载"),
                 self.tr("按文件顺序下载，适合边下边看但通常会影响整体效率"),
                 self.enableSequentialDownload, btGroup),
