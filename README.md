@@ -130,7 +130,7 @@ If you have a suggestion, fork the repo and create a pull request. You can also 
 
 Thanks to all contributors who have participated in this project!
 
-[![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 ## Translation Contributors
 
