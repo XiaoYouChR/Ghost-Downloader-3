@@ -983,6 +983,11 @@ int main(int argc, char *argv[]) {
             logMsg("hpatchz failed");
             deleteDir(newDir);
             closeLog();
+#ifdef _WIN32
+            _wremove(patchFile);
+#else
+            remove(patchFile);
+#endif
             startApp(appExe);
             return EXIT_PATCH_FAILED;
         } else {
