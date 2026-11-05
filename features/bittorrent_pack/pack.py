@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from base64 import b64encode
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
@@ -20,6 +21,12 @@ from .session import PROXY_SCHEMES, btSession
 from .task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
 from .trackers import mergedTrackers, trackerList
 
+INFO_HASH_PATTERN = re.compile(r"[0-9a-f]{40}|[a-z2-7]{32}", re.IGNORECASE)
+
+
+def toMagnetUrl(url: str) -> str:
+    return f"magnet:?xt=urn:btih:{url}" if INFO_HASH_PATTERN.fullmatch(url) else url
+
 
 def refreshTrackerListIfStale() -> None:
     if bittorrentConfig.autoRefreshWebTrackers.value and trackerList.isStale():
@@ -32,13 +39,13 @@ class TorrentParser(TaskParser):
     def match(self, options: TaskOptions) -> bool:
         if options.isProbed:
             return options.file.matchType({".torrent"}, {"application/x-bittorrent"})
-        url = options.url.strip()
+        url = toMagnetUrl(options.url.strip())
         if urlparse(url).scheme.lower() == "magnet":
             return True
         return localFilePath(url, {".torrent"}) is not None
 
     async def parse(self, options: TaskOptions) -> Task:
-        url = options.url.strip()
+        url = toMagnetUrl(options.url.strip())
         outputFolder = options.outputFolder
 
         refreshTrackerListIfStale()

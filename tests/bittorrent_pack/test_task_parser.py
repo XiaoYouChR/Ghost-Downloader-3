@@ -8,6 +8,7 @@ from app.models.pack import PackServices
 from app.models.task import TaskOptions
 from bittorrent_pack.config import bittorrentConfig
 from bittorrent_pack.pack import BitTorrentPack
+from bittorrent_pack.session import btSession
 from bittorrent_pack.task import BTTask
 from http_pack.pack import HttpPack
 from http_pack.task import HttpTask
@@ -68,3 +69,32 @@ async def test_parse_invalid_online_torrent_adds_plain_file(features, startServe
 async def test_probe_magnet_link_is_unsupported(features):
     with pytest.raises(NotImplementedError):
         await features.probe(TaskOptions(url=f"magnet:?xt=urn:btih:{'0' * 40}"))
+
+
+@pytest.mark.parametrize("infoHash", ["ab" * 20, "AB" * 20, "abcdefgh234567ab" * 2, "ABCDEFGH234567AB" * 2])
+def test_match_bare_info_hash(features, infoHash):
+    assert features.match(f"  {infoHash} ")
+
+
+@pytest.mark.parametrize("text", ["ab" * 19, "ab" * 21, "g" + "a" * 39, "abcdefgh234567ab" * 2 + "c", "ab" * 32])
+def test_match_rejects_text_that_is_not_info_hash(features, text):
+    assert not features.match(text)
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning:bittorrent_pack.pack")
+async def test_parse_bare_info_hash_as_magnet_link(features, monkeypatch, tmp_path):
+    infoHash = "AB" * 20
+    torrentBytes = buildTorrent(tmp_path)
+    fetchedUrls = []
+
+    async def fetchMetadata(magnetUri, trackers):
+        fetchedUrls.append(magnetUri)
+        return torrentBytes
+    monkeypatch.setattr(btSession, "fetchMetadata", fetchMetadata)
+
+    task = await features.parse(TaskOptions(url=f" {infoHash} "))
+
+    assert isinstance(task, BTTask)
+    assert task.url == f"magnet:?xt=urn:btih:{infoHash}"
+    assert task.sourceType == "magnet"
+    assert fetchedUrls == [task.url]

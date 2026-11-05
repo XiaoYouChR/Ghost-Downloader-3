@@ -109,6 +109,10 @@ _Avoid_: pending task、unconfirmed task
 在任何入口，Wrapped Link 的表现都与直接给出它的 Inner Link 相同；Task 只记 Inner Link。只解一层。
 _Avoid_: 加密链接（Base64 不是加密）、专用链、转换
 
+**Info Hash**:
+种子内容的标识，写作 40 位十六进制或 32 位 Base32。主动添加时单独给出 Info Hash，表现与只含它的 magnet 链接相同；Task 记 magnet 链接。Passive Capture 不识别。
+_Avoid_: 特征码、哈希链接
+
 **Resource**:
 浏览器扩展捕获的可下载物。由 Browser Service 转换为 Task Options 进入任务创建流程。
 _Avoid_: 与泛义"资源"混淆
