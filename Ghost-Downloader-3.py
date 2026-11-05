@@ -30,7 +30,9 @@ def setupEnvironment():
     from app.view.components.labels import IconBodyLabel
     patchFluentLabelThemeChanged()
     patchStackedWidgetAnimation()
-    patchMaskDialogAnimation()
+    # Wayland 上在绘制中截图会递归重绘，卡住合成器 #1017
+    if sys.platform != "linux":
+        patchMaskDialogAnimation()
     qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
