@@ -1,13 +1,13 @@
 UI_CLASS = "com.xychr.ghostdownloader.features.huggingface_pack.HuggingFaceUi"
 
-def proxySiteList() -> list:
-    from .config import HF_PROXY_SITES
-    return list(HF_PROXY_SITES)
+def mirrorSiteList() -> list:
+    from .config import MIRROR_SITES
+    return list(MIRROR_SITES)
 
 def tokenUrl() -> str:
     from .config import TOKEN_URL
     return TOKEN_URL
 
 async def probeSites() -> dict:
-    from .config import probeProxyLatencies
-    return await probeProxyLatencies()
+    from .config import probeMirrorLatencies
+    return await probeMirrorLatencies()

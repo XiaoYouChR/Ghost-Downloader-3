@@ -3,11 +3,11 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from app.client import buildClient
-from app.config.cfg import BoolValidator, ConfigItem, ConfigValidator
+from app.config.cfg import BoolValidator, ConfigItem, ConfigValidator, OptionsValidator
 from app.models.pack import PackConfig
 
 
-HF_PROXY_SITES = (
+MIRROR_SITES = (
     "https://hf-mirror.com",
 )
 CUSTOM_SITE_KEY = "__custom__"
@@ -15,7 +15,7 @@ PROBE_TARGET = "https://huggingface.co/api/models/gpt2"
 TOKEN_URL = "https://huggingface.co/settings/tokens"
 
 
-def toProxySite(site: str) -> str:
+def toMirrorSite(site: str) -> str:
     value = str(site or "").strip()
     if not value:
         return ""
@@ -24,21 +24,17 @@ def toProxySite(site: str) -> str:
     return value.rstrip("/")
 
 
-def selectedProxySite() -> str:
+def selectedMirrorSite() -> str:
     if huggingFaceConfig.selectedSite.value == CUSTOM_SITE_KEY:
         return huggingFaceConfig.customSite.value
     return huggingFaceConfig.selectedSite.value
 
 
-def accessToken() -> str:
-    return huggingFaceConfig.accessToken.value
-
-
-async def probeProxyLatencies() -> dict[str, int]:
+async def probeMirrorLatencies() -> dict[str, int]:
     import asyncio
     from time import perf_counter
 
-    sites = list(HF_PROXY_SITES)
+    sites = list(MIRROR_SITES)
     custom = huggingFaceConfig.customSite.value
     if custom:
         sites.append(custom)
@@ -60,9 +56,9 @@ async def probeProxyLatencies() -> dict[str, int]:
     return dict(results)
 
 
-class HuggingFaceProxySiteValidator(ConfigValidator):
+class HuggingFaceMirrorSiteValidator(ConfigValidator):
     def validate(self, value) -> bool:
-        site = toProxySite(value)
+        site = toMirrorSite(value)
         if not site:
             return False
         parsed = urlparse(site)
@@ -75,20 +71,20 @@ class HuggingFaceProxySiteValidator(ConfigValidator):
         )
 
     def correct(self, value) -> str:
-        site = toProxySite(value)
+        site = toMirrorSite(value)
         return site if self.validate(site) else ""
 
 
 class HuggingFaceConfig(PackConfig):
     isEnabled = ConfigItem("HuggingFace", "Enabled", True, BoolValidator())
-    selectedSite = ConfigItem("HuggingFace", "SelectedSite", HF_PROXY_SITES[0], HuggingFaceProxySiteValidator())
-    customSite = ConfigItem("HuggingFace", "CustomSite", "", HuggingFaceProxySiteValidator())
+    selectedSite = ConfigItem("HuggingFace", "SelectedSite", MIRROR_SITES[0], OptionsValidator([*MIRROR_SITES, CUSTOM_SITE_KEY]))
+    customSite = ConfigItem("HuggingFace", "CustomSite", "", HuggingFaceMirrorSiteValidator())
     accessToken = ConfigItem("HuggingFace", "AccessToken", "")
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from .setting_cards import HuggingFaceProxySiteCard, HuggingFaceTokenCard
+        from .setting_cards import HuggingFaceMirrorSiteCard, HuggingFaceTokenCard
 
         group = CollapsibleSettingCardGroup(self.tr("HuggingFace"), "huggingface", parent)
         group.addSettingCards([
@@ -97,7 +93,7 @@ class HuggingFaceConfig(PackConfig):
                 self.tr("命中 HuggingFace 链接时，自动改写为所选镜像站"),
                 self.isEnabled, group,
             ),
-            HuggingFaceProxySiteCard(self.submit, group),
+            HuggingFaceMirrorSiteCard(self.submit, group),
             HuggingFaceTokenCard(group),
         ])
         return [group]

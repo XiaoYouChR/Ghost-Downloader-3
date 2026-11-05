@@ -338,6 +338,20 @@ _Avoid_: Mirror、Source、CDN；不简称「代理」（留给 Proxy）
 选站方式之一：每个任务解析时让直连与全部 Proxy Site 竞速，取第一个合格响应。不跨任务记忆胜出者。
 _Avoid_: 测速、最快站（不比较全部结果）
 
+### HuggingFace 加速
+
+**Mirror Site**:
+完整复刻 HuggingFace 接口的第三方站点，以替换域名的方式访问，如 hf-mirror.com。
+_Avoid_: Proxy Site（那是路径前缀转发）、镜像源
+
+**Gated Repo**:
+须由用户在 HuggingFace 网页上同意条款并获批后，才能下载其中文件的仓库。
+_Avoid_: 私有仓库（那是另一种权限）、受保护仓库
+
+**Access Token**:
+用户在 HuggingFace 生成、代表其身份访问 Gated Repo 与私有仓库的凭据。
+_Avoid_: 与 Pair Token 混淆；密钥、API Key
+
 ## Example dialogue
 
 > **Dev:** "用户按暂停时，我们删除 Task 吗？"

@@ -119,6 +119,9 @@ def buildClient(
     url = proxy()
     if url:
         config["proxies"] = [Proxy.all(url)]
+    else:
+        # wreq 未配置代理时会自动读取环境变量中的代理，"不使用"须显式关闭
+        config["no_proxy"] = True
 
     if resolved is not None:
         config["emulation"] = resolved

@@ -10,21 +10,21 @@ from qfluentwidgets import (
 
 from .config import (
     CUSTOM_SITE_KEY,
-    HF_PROXY_SITES,
+    MIRROR_SITES,
     TOKEN_URL,
     huggingFaceConfig,
-    probeProxyLatencies,
+    probeMirrorLatencies,
 )
 
 
-class HuggingFaceProxySiteCard(SettingCard):
+class HuggingFaceMirrorSiteCard(SettingCard):
     def __init__(self, submit, parent=None):
         self.submit = submit
         super().__init__(
             FluentIcon.GLOBE, self.tr("镜像站"),
             self.tr("选择 HuggingFace 镜像站，延迟仅供参考"), parent,
         )
-        self._latencies: dict[str, int | None] = {s: None for s in HF_PROXY_SITES}
+        self._latencies: dict[str, int | None] = {s: None for s in MIRROR_SITES}
         self._isRefreshing = False
         self.comboBox = ComboBox(self)
         self.customSiteEdit = LineEdit(self)
@@ -42,15 +42,15 @@ class HuggingFaceProxySiteCard(SettingCard):
         self.refreshButton.setToolTip(self.tr("刷新延迟"))
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
 
-        for site in HF_PROXY_SITES:
+        for site in MIRROR_SITES:
             self.comboBox.addItem(urlparse(site).netloc or site.rstrip("/"))
         self.comboBox.addItem(self.tr("自定义"))
 
         currentSite = huggingFaceConfig.selectedSite.value
         if currentSite == CUSTOM_SITE_KEY:
-            self.comboBox.setCurrentIndex(len(HF_PROXY_SITES))
-        elif currentSite in HF_PROXY_SITES:
-            self.comboBox.setCurrentIndex(HF_PROXY_SITES.index(currentSite))
+            self.comboBox.setCurrentIndex(len(MIRROR_SITES))
+        elif currentSite in MIRROR_SITES:
+            self.comboBox.setCurrentIndex(MIRROR_SITES.index(currentSite))
         else:
             self.comboBox.setCurrentIndex(0)
         self.customSiteEdit.setText(huggingFaceConfig.customSite.value)
@@ -70,7 +70,7 @@ class HuggingFaceProxySiteCard(SettingCard):
         self.refreshButton.clicked.connect(self.refreshLatencies)
 
     def _refreshLatencyLabels(self) -> None:
-        for i, site in enumerate(HF_PROXY_SITES):
+        for i, site in enumerate(MIRROR_SITES):
             displayName = urlparse(site).netloc or site.rstrip("/")
             latency = self._latencies.get(site)
             if latency is None:
@@ -89,17 +89,17 @@ class HuggingFaceProxySiteCard(SettingCard):
             customLabel = f"{self.tr('自定义')} ({self.tr('超时')})"
         else:
             customLabel = f"{self.tr('自定义')} ({customLatency} ms)"
-        self.comboBox.setItemText(len(HF_PROXY_SITES), customLabel)
+        self.comboBox.setItemText(len(MIRROR_SITES), customLabel)
 
     def _onCurrentIndexChanged(self, index: int) -> None:
         from app.config.cfg import cfg
         if index < 0:
             return
-        if index < len(HF_PROXY_SITES):
-            cfg.set(huggingFaceConfig.selectedSite, HF_PROXY_SITES[index])
+        if index < len(MIRROR_SITES):
+            cfg.set(huggingFaceConfig.selectedSite, MIRROR_SITES[index])
         else:
             cfg.set(huggingFaceConfig.selectedSite, CUSTOM_SITE_KEY)
-        self.customSiteEdit.setVisible(index >= len(HF_PROXY_SITES))
+        self.customSiteEdit.setVisible(index >= len(MIRROR_SITES))
 
     def _onCustomSiteEditingFinished(self) -> None:
         from app.config.cfg import cfg
@@ -109,11 +109,11 @@ class HuggingFaceProxySiteCard(SettingCard):
         if self._isRefreshing:
             return
         self._isRefreshing = True
-        self._latencies = {s: None for s in HF_PROXY_SITES}
+        self._latencies = {s: None for s in MIRROR_SITES}
         self._refreshLatencyLabels()
         self.refreshButton.setEnabled(False)
         self.submit(
-            probeProxyLatencies(),
+            probeMirrorLatencies(),
             done=self._onLatenciesDone, failed=self._onLatenciesFailed,
             owner=self,
         )
