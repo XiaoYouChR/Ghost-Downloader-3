@@ -19,6 +19,7 @@
 [![Issues][issues-shield]][issues-url]
 [![Release][release-shield]][release-url]
 [![Downloads][downloads-shield]][release-url]
+[![AtomGit Downloads][atomgit-downloads-shield]][atomgit-downloads-url]
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 [![Discord](https://img.shields.io/discord/1527965717973176391?style=for-the-badge&logo=discord&logoColor=white&label=Discord&color=%235865F2)](https://discord.gg/fKfhkPumEM)
 
@@ -236,3 +237,5 @@ Copyright © 2023-2026 XiaoYouChR.
 [release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
 [release-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest
 [downloads-shield]: https://img.shields.io/github/downloads/XiaoYouChR/Ghost-Downloader-3/total?style=for-the-badge
+[atomgit-downloads-shield]: https://img.shields.io/badge/dynamic/xml?style=for-the-badge&label=AtomGit%20Downloads&color=red&url=https%3A%2F%2Fgitcode.com%2FXiaoYouChR%2FGhost-Downloader-3%2Fdownload%2Fbadge.svg&query=string%28%2F%2F*%5Blocal-name%28%29%3D%22span%22%20and%20contains%28%40class%2C%22download-num%22%29%5D%29
+[atomgit-downloads-url]: https://gitcode.com/XiaoYouChR/Ghost-Downloader-3/releases

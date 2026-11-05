@@ -15,6 +15,7 @@
 ## 下载器的集大成者
 
 [![AtomGit Stars][atomgit-stars-shield]][atomgit-stars-url]
+[![AtomGit Downloads][atomgit-downloads-shield]][atomgit-downloads-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
@@ -234,6 +235,8 @@ Copyright © 2023-2026 XiaoYouChR.
 [stars-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/stargazers
 [atomgit-stars-shield]: https://img.shields.io/badge/dynamic/xml?style=for-the-badge&label=AtomGit%20Stars&color=red&url=https%3A%2F%2Fgitcode.com%2FXiaoYouChR%2FGhost-Downloader-3%2Fstar%2Fbadge.svg&query=string%28%2F%2F*%5Blocal-name%28%29%3D%22span%22%20and%20contains%28%40class%2C%22star-num%22%29%5D%29
 [atomgit-stars-url]: https://gitcode.com/XiaoYouChR/Ghost-Downloader-3
+[atomgit-downloads-shield]: https://img.shields.io/badge/dynamic/xml?style=for-the-badge&label=AtomGit%20Downloads&color=red&url=https%3A%2F%2Fgitcode.com%2FXiaoYouChR%2FGhost-Downloader-3%2Fdownload%2Fbadge.svg&query=string%28%2F%2F*%5Blocal-name%28%29%3D%22span%22%20and%20contains%28%40class%2C%22download-num%22%29%5D%29
+[atomgit-downloads-url]: https://gitcode.com/XiaoYouChR/Ghost-Downloader-3/releases
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
 [release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
