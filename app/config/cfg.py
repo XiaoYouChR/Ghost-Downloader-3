@@ -7,7 +7,8 @@ from re import compile
 from urllib.parse import urlsplit
 from urllib.request import getproxies
 
-from app.config.paths import DOWNLOAD_DIR
+from app.config.data_folder import PathSerializer
+from app.config.paths import APP_DATA_DIR, DOWNLOAD_DIR
 from qfluentwidgets import (
     QConfig,
     ConfigItem,
@@ -16,7 +17,6 @@ from qfluentwidgets import (
     OptionsValidator,
     RangeConfigItem,
     RangeValidator,
-    FolderValidator,
     ConfigValidator,
     ConfigSerializer,
     EnumSerializer,
@@ -241,8 +241,11 @@ class Config(QConfig):
     downloadFolder = ConfigItem(
         "GeneralDownload", "DownloadFolder",
         "/storage/emulated/0/Download" if IS_ANDROID else str(DOWNLOAD_DIR),
+        serializer=PathSerializer(APP_DATA_DIR),
     )
-    recentFolders = ConfigItem("GeneralDownload", "RecentFolders", [], StringListValidator())
+    recentFolders = ConfigItem(
+        "GeneralDownload", "RecentFolders", [], StringListValidator(), PathSerializer(APP_DATA_DIR),
+    )
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
     nameConflict = OptionsConfigItem(
         "GeneralDownload", "NameConflict", "keepBoth", OptionsValidator(["keepBoth", "overwrite", "ask"])

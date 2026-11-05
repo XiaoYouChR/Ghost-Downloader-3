@@ -5,9 +5,10 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from app.config.cfg import BoolValidator, ConfigItem, FolderValidator
+from app.config.cfg import BoolValidator, ConfigItem
 from app.i18n import N
 
+from app.config.data_folder import PathSerializer
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
@@ -75,7 +76,7 @@ def clearCookies() -> None:
 
 
 class YtDlpConfig(PackConfig):
-    installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", FolderValidator())
+    installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", serializer=PathSerializer(APP_DATA_DIR))
     subtitleLanguages = ConfigItem("YtDlp", "SubtitleLanguages", "en")
     shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())

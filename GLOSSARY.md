@@ -255,12 +255,16 @@ _Avoid_: install dir、program folder
 App Dir 内名为 `GhostDownloader` 的目录。Portable 模式下数据住在这里。
 _Avoid_: 单独说 GhostDownloader 文件夹
 
+**Data Folder**:
+应用数据所在的文件夹。Portable 模式下就是 Portable Folder，否则是系统用户数据目录下的 `GhostDownloader`。Data Folder 内的路径随它一起搬迁。
+_Avoid_: APP_DATA_DIR、数据目录、AppData
+
 **Seed Features**:
 App Dir 内 `features/` 目录。只读的出厂默认 Pack 集合，运行时不修改。
 _Avoid_: factory packs、bundled packs
 
 **Features Dir**:
-APP_DATA_DIR 内 `features/` 目录。可变的 Pack 运行时目录。
+Data Folder 内 `features/` 目录。可变的 Pack 运行时目录。
 _Avoid_: 与 Seed Features 混淆
 
 **Seed**:

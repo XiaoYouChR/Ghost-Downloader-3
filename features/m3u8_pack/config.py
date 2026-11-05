@@ -6,7 +6,6 @@ from pathlib import Path
 from app.config.cfg import (
     BoolValidator,
     ConfigItem,
-    FolderValidator,
     OptionsConfigItem,
     OptionsValidator,
     RangeConfigItem,
@@ -14,6 +13,7 @@ from app.config.cfg import (
 )
 from app.i18n import N
 
+from app.config.data_folder import PathSerializer
 from app.config.paths import APP_DATA_DIR
 from app.install import installArchive
 from app.models.pack import BinaryRuntime, PackConfig
@@ -27,7 +27,7 @@ M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE", mirrors={"gitcode": "XiaoYouChR/N_m3u8DL
 
 
 class M3U8Config(PackConfig):
-    installFolder = ConfigItem("M3U8", "InstallFolder", f"{APP_DATA_DIR}/M3U8DL", FolderValidator())
+    installFolder = ConfigItem("M3U8", "InstallFolder", f"{APP_DATA_DIR}/M3U8DL", serializer=PathSerializer(APP_DATA_DIR))
     associateFileTypes = ConfigItem("M3U8", "AssociateFileTypes", False, BoolValidator())
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))
     threadCount = RangeConfigItem("M3U8", "ThreadCount", 8, RangeValidator(1, 64))
@@ -47,7 +47,7 @@ class M3U8Config(PackConfig):
         "M3U8", "DecryptionEngine", "FFmpeg",
         OptionsValidator(["FFmpeg", "MP4Decrypt", "Shaka Packager"]),
     )
-    decryptionBinaryPath = ConfigItem("M3U8", "DecryptionBinaryPath", "")
+    decryptionBinaryPath = ConfigItem("M3U8", "DecryptionBinaryPath", "", serializer=PathSerializer(APP_DATA_DIR))
     shouldUseMp4RealTimeDecryption = ConfigItem("M3U8", "MP4RealTimeDecryption", True, BoolValidator())
     maxSpeed = RangeConfigItem("M3U8", "MaxSpeed", -1, RangeValidator(-1, 1000000))
     speedUnit = OptionsConfigItem("M3U8", "SpeedUnit", "Mbps", OptionsValidator(["Mbps", "Kbps"]))

@@ -9,6 +9,7 @@ from app.config.cfg import (
 )
 from app.i18n import N
 
+from app.config.data_folder import PathSerializer
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
@@ -35,7 +36,7 @@ DEFAULT_NODE_LIST_SOURCES = ["https://upd.emule-security.org/nodes.dat"]
 
 class ED2kConfig(PackConfig):
     associateUriSchemes = ConfigItem("ED2k", "AssociateUriSchemes", False, BoolValidator())
-    installFolder = ConfigItem("ED2k", "InstallFolder", f"{APP_DATA_DIR}/kelpie")
+    installFolder = ConfigItem("ED2k", "InstallFolder", f"{APP_DATA_DIR}/kelpie", serializer=PathSerializer(APP_DATA_DIR))
     enableKad = ConfigItem("ED2k", "EnableKad", True, BoolValidator())
     enableUpnp = ConfigItem("ED2k", "EnableUPnP", True, BoolValidator())
     listenPort = RangeConfigItem("ED2k", "ListenPort", 0, RangeValidator(0, 65535), restart=True)
