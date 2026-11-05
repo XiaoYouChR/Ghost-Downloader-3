@@ -82,7 +82,7 @@ Task 有多于一个 Selectable File 时，成品是以 Name 命名的文件夹�
 _Avoid_: 与 Task Files 混淆
 
 **Revive**:
-已完成的 Task 因新选中的文件有待下载工作而回到下载状态。仅对 COMPLETED 状态的 Task 生效。
+已完成的 Task 因新选中的文件或新启用的 Side File 有待下载工作而回到下载状态。仅对 COMPLETED 状态的 Task 生效。
 
 ### 任务创建
 
