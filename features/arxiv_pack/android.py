@@ -5,6 +5,7 @@ UI_CLASS = "com.xychr.ghostdownloader.features.arxiv_pack.ArxivUi"
 
 def editFields(task) -> dict:
     fields = {**editHttpFields(task), "isBibtexEnabled": task.isBibtexEnabled}
+    del fields["url"]
     if task.hasSource:
         fields["isSourceEnabled"] = task.isSourceEnabled
     return fields

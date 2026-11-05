@@ -148,10 +148,5 @@ class ArxivPack(FeaturePack):
         return HttpPack.optionCards(self, task, parent)
 
     def editCards(self, task, parent=None):
-        from app.view.components.option_cards import UrlEditCard
         from .cards import SideFileCard
-        return [
-            UrlEditCard(parent, initial=task.url),
-            *self.optionCards(task, parent),
-            SideFileCard(parent, task=task),
-        ]
+        return [*self.optionCards(task, parent), SideFileCard(parent, task=task)]
