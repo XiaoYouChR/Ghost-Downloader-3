@@ -249,6 +249,60 @@
     </message>
 </context>
 <context>
+    <name>ArxivConfig</name>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="16"/>
+        <source>arXiv 下载</source>
+        <translation>arXiv ダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="19"/>
+        <source>解析 arXiv 链接</source>
+        <translation>arXiv リンクを解析</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="20"/>
+        <source>将论文页、PDF 链接和论文编号下载为以标题命名的 PDF，关闭后按普通链接下载</source>
+        <translation>論文ページ、PDFリンク、論文番号をタイトル名のPDFとしてダウンロード。オフの場合は通常のリンクとしてダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="24"/>
+        <source>默认下载 TeX 源码</source>
+        <translation>デフォルトでTeXソースをダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="25"/>
+        <source>新任务默认勾选源码包，可在添加任务时逐个修改</source>
+        <translation>新規タスクではデフォルトでソースパッケージにチェック。タスク追加時に個別に変更可能</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="29"/>
+        <source>默认下载 BibTeX</source>
+        <translation>デフォルトでBibTeXをダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/config.py" line="30"/>
+        <source>新任务默认勾选 .bib 引用文件，可在添加任务时逐个修改</source>
+        <translation>新規タスクではデフォルトで.bib引用ファイルにチェック。タスク追加時に個別に変更可能</translation>
+    </message>
+</context>
+<context>
+    <name>ArxivDraftCard</name>
+    <message>
+        <location filename="../../../features/arxiv_pack/cards.py" line="23"/>
+        <source>TeX 源码</source>
+        <translation>TeX ソース</translation>
+    </message>
+</context>
+<context>
+    <name>ArxivPack</name>
+    <message>
+        <location filename="../../../features/arxiv_pack/pack.py" line="134"/>
+        <source>arXiv 论文</source>
+        <translation>arXiv 論文</translation>
+    </message>
+</context>
+<context>
     <name>BTDraftCard</name>
     <message>
         <source>选择文件</source>
@@ -498,32 +552,32 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="38"/>
         <source>默认音质</source>
-        <translation type="unfinished"></translation>
+        <translation>デフォルト音質</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="39"/>
         <source>选择偏好的音质</source>
-        <translation type="unfinished"></translation>
+        <translation>好みの音質を選択</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="41"/>
         <source>画质或音质不可用时</source>
-        <translation type="unfinished"></translation>
+        <translation>画質または音質が利用不可の場合</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="42"/>
         <source>当选择的画质或音质不可用时的替代策略</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した画質または音質が利用不可の場合の代替戦略</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="43"/>
         <source>选择最高</source>
-        <translation type="unfinished"></translation>
+        <translation>最高を選択</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="43"/>
         <source>选择最低</source>
-        <translation type="unfinished"></translation>
+        <translation>最低を選択</translation>
     </message>
     <message>
         <source>画质不可用时</source>
@@ -599,7 +653,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="481"/>
         <source>选择视频</source>
-        <translation type="unfinished">動画を選択</translation>
+        <translation>動画を選択</translation>
     </message>
     <message>
         <source>选择合集</source>
@@ -672,7 +726,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="735"/>
         <source>选择视频</source>
-        <translation type="unfinished">動画を選択</translation>
+        <translation>動画を選択</translation>
     </message>
     <message>
         <source>选择合集</source>
@@ -682,22 +736,22 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BinaryRuntime</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="186"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="187"/>
         <source>eD2k / eMule</source>
         <translation>eD2k / eMule</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="187"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="188"/>
         <source>支持电驴协议，适合下载经典资源</source>
         <translation>eDonkeyプロトコルをサポート、クラシックなリソースのダウンロードに最適</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="62"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="63"/>
         <source>视频合并</source>
         <translation>動画マージ</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="63"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="64"/>
         <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
         <translation>ビリビリ、YouTubeなどの動画ダウンロードに必須、A/Vトラックを完全なファイルにマージ</translation>
     </message>
@@ -712,12 +766,12 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>HLS、DASHなどのストリーミングプロトコルをサポート、ライブストリーム録画可能</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="141"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="142"/>
         <source>YouTube 下载</source>
         <translation>YouTube ダウンロード</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="142"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="143"/>
         <source>支持 YouTube、Twitter 等数百个视频网站</source>
         <translation>YouTube、Twitterなど数百の動画サイトをサポート</translation>
     </message>
@@ -820,8 +874,12 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="85"/>
+        <source>下载 magnet 链接或在线种子时额外保存 .torrent 文件</source>
+        <translation>マグネットリンクまたはオンライントレントのダウンロード時に.torrentファイルを追加保存</translation>
+    </message>
+    <message>
         <source>下载 magnet 链接时额外保存 .torrent 文件</source>
-        <translation>マグネットリンクダウンロード時に .torrent ファイルを追加保存</translation>
+        <translation type="vanished">マグネットリンクダウンロード時に .torrent ファイルを追加保存</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="86"/>
@@ -954,12 +1012,12 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation type="obsolete">种子文件</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="104"/>
+        <location filename="../../../features/bittorrent_pack/pack.py" line="118"/>
         <source>磁力链接</source>
         <translation>マグネットリンク</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="130"/>
+        <location filename="../../../features/bittorrent_pack/pack.py" line="144"/>
         <source>BitTorrent 种子文件</source>
         <translation>BitTorrent トレントファイル</translation>
     </message>
@@ -987,59 +1045,59 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>DHT ノード {nodes}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="151"/>
-        <location filename="../../../features/ed2k_pack/config.py" line="170"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="152"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="171"/>
         <source>未运行</source>
         <translation>未起動</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="153"/>
-        <location filename="../../../features/ed2k_pack/config.py" line="172"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="154"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="173"/>
         <source>无法连接代理</source>
         <translation>プロキシに接続できません</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="155"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="156"/>
         <source>未连接服务器</source>
         <translation>サーバー未接続</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="157"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="158"/>
         <source>已连接服务器（HighID）</source>
         <translation>サーバー接続済み（HighID）</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="159"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="160"/>
         <source>已连接服务器（LowID，经代理连接时无法获得 HighID）</source>
         <translation>サーバー接続済み（LowID、プロキシ経由接続では HighID を取得できません）</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="161"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="162"/>
         <source>已连接服务器（LowID，运营商 NAT，无法获得 HighID）</source>
         <translation>サーバー接続済み（LowID、キャリア NAT、HighID を取得できません）</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="162"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="163"/>
         <source>已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）</source>
         <translation>サーバー接続済み（LowID、UPnP を有効にするかルーターでリスンポートを転送すると HighID を取得できます）</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="166"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="167"/>
         <source>KAD 已关闭</source>
         <translation>KAD は無効です</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="174"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="175"/>
         <source>代理不转发 UDP，KAD 无法使用</source>
         <translation>プロキシが UDP を転送しないため、KAD は使用できません</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="176"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="177"/>
         <source>KAD 节点 {nodes}（处于防火墙后）</source>
         <translation>KAD ノード {nodes}（ファイアウォール内）</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="177"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="178"/>
         <source>KAD 节点 {nodes}</source>
         <translation>KAD ノード {nodes}</translation>
     </message>
@@ -1838,12 +1896,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>DraftCardGroup</name>
     <message>
-        <location filename="../../view/components/card_groups.py" line="82"/>
+        <location filename="../../view/components/card_groups.py" line="66"/>
+        <source>重试失败项</source>
+        <translation>失敗項目を再試行</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/card_groups.py" line="91"/>
         <source>解析结果</source>
         <translation>解析結果</translation>
     </message>
     <message>
-        <location filename="../../view/components/card_groups.py" line="103"/>
+        <location filename="../../view/components/card_groups.py" line="113"/>
         <source>{0} 个任务</source>
         <translation>{0} 件のタスク</translation>
     </message>
@@ -1922,7 +1985,7 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="61"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="62"/>
         <source>eD2k 下载</source>
         <translation>eD2k ダウンロード</translation>
     </message>
@@ -1955,112 +2018,112 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation type="vanished">分散ハッシュテーブルでノードを検索、無効にすると eD2k サーバーのみ使用</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="64"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
         <source>Kelpie 安装目录</source>
         <translation>Kelpie インストールディレクトリ</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="73"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="74"/>
         <source>未运行</source>
         <translation>未起動</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="75"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="76"/>
         <source>有 eD2k 任务正在下载或做种，结束后才能终止</source>
         <translation>eD2k タスクがダウンロードまたはシード中です。終了後に停止できます</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="76"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="77"/>
         <source>开始 eD2k 任务时会自动重新启动</source>
         <translation>eD2k タスク開始時に自動的に再起動します</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="79"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="80"/>
         <source>终止</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="79"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="80"/>
         <source>终止 Kelpie 进程</source>
         <translation>Kelpie プロセスを停止</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="92"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="93"/>
         <source>服务器列表</source>
         <translation>サーバーリスト</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="96"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="97"/>
         <source>KAD 节点列表</source>
         <translation>KAD ノードリスト</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="106"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="107"/>
         <source>自动更新订阅</source>
         <translation>購読を自動更新</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="107"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="108"/>
         <source>每天在后台更新一次服务器列表和 KAD 节点列表</source>
         <translation>毎日バックグラウンドでサーバーリストと KAD ノードリストを1回更新</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="114"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="115"/>
         <source>启用 KAD</source>
         <translation>KAD を有効化</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="116"/>
         <source>通过 KAD 网络查找来源，关闭后仅使用 eD2k 服务器</source>
         <translation>KAD ネットワークでソースを検索、無効にすると eD2k サーバーのみ使用</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="119"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="120"/>
         <source>启用 UPnP</source>
         <translation>UPnP を有効化</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="120"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="121"/>
         <source>自动配置路由器端口转发</source>
         <translation>ルーターのポート転送を自動構成</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="124"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="125"/>
         <source>监听端口</source>
         <translation>リッスンポート</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="125"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="126"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation>0 はシステムが利用可能なポートを自動割り当て</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="129"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="130"/>
         <source>上传限速</source>
         <translation>アップロード速度制限</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="130"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="131"/>
         <source>0 表示不限速。上传越多积分越高，在别人的队列里排得越靠前，自己下载也越快</source>
         <translation>0 は無制限。アップロードが多いほどスコアが上がり、他のピアのキューで優先され、自分のダウンロードも速くなります</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="134"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="135"/>
         <source>自动停止做种分享率</source>
         <translation>自動停止シード共有率</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="135"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="136"/>
         <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
         <translation>0 は共有率による自動停止無効、100% は共有率 1.0</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="139"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="140"/>
         <source>自动停止做种时长</source>
         <translation>自動停止シード時間</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="140"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="141"/>
         <source>0 表示不按做种时长自动停止</source>
         <translation>0 はシード時間による自動停止無効</translation>
     </message>
@@ -2377,12 +2440,12 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>FFmpegConfig</name>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="42"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="43"/>
         <source>FFmpeg</source>
         <translation>FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="45"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="46"/>
         <source>FFmpeg 安装目录</source>
         <translation>FFmpeg インストールディレクトリ</translation>
     </message>
@@ -2446,6 +2509,14 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <source>无法创建安装任务</source>
         <translation type="vanished">インストールタスクを作成できません</translation>
+    </message>
+</context>
+<context>
+    <name>FailedDraftCard</name>
+    <message>
+        <location filename="../../view/cards/draft_cards.py" line="222"/>
+        <source>重试</source>
+        <translation>再試行</translation>
     </message>
 </context>
 <context>
@@ -2531,73 +2602,87 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>FileSelectDialog</name>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="31"/>
+        <location filename="../../view/dialogs/file_select.py" line="39"/>
         <source>选择下载文件</source>
         <translation>ダウンロードファイルを選択</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="36"/>
+        <location filename="../../view/dialogs/file_select.py" line="44"/>
+        <source>没有匹配的文件</source>
+        <translation>一致するファイルがありません</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/file_select.py" line="47"/>
         <source>全选</source>
         <translation>すべて選択</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="37"/>
+        <location filename="../../view/dialogs/file_select.py" line="48"/>
         <source>全不选</source>
         <translation>すべて選択解除</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="38"/>
+        <location filename="../../view/dialogs/file_select.py" line="49"/>
         <source>反选</source>
         <translation>選択を反転</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="39"/>
+        <location filename="../../view/dialogs/file_select.py" line="50"/>
         <source>按类型选择</source>
         <translation>種類で選択</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="54"/>
+        <location filename="../../view/dialogs/file_select.py" line="65"/>
         <source>应用</source>
         <translation>適用</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="55"/>
+        <location filename="../../view/dialogs/file_select.py" line="66"/>
         <source>取消</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="57"/>
+        <location filename="../../view/dialogs/file_select.py" line="67"/>
+        <source>搜索文件</source>
+        <translation>ファイルを検索</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/file_select.py" line="73"/>
         <source>文件</source>
         <translation>ファイル</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="57"/>
+        <location filename="../../view/dialogs/file_select.py" line="73"/>
         <source>大小</source>
         <translation>サイズ</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="155"/>
+        <location filename="../../view/dialogs/file_select.py" line="158"/>
         <source>其他</source>
         <translation>その他</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="142"/>
-        <location filename="../../view/dialogs/file_select.py" line="155"/>
+        <location filename="../../view/dialogs/file_select.py" line="239"/>
         <source>仅选{0} ({1})</source>
         <translation>のみ選択 {0} ({1})</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="238"/>
+        <location filename="../../view/dialogs/file_select.py" line="245"/>
         <source>已选择 {0}/{1} 个文件，共 {2}</source>
         <translation>{0}/{1} ファイルを選択、合計 {2}</translation>
     </message>
     <message>
         <location filename="../../view/dialogs/file_select.py" line="248"/>
+        <source>，显示 {0} 个</source>
+        <translation>、{0} 件を表示</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/file_select.py" line="258"/>
         <source>至少选择一个文件</source>
         <translation>少なくとも 1 つのファイルを選択してください</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="249"/>
+        <location filename="../../view/dialogs/file_select.py" line="259"/>
         <source>当前没有任何文件被勾选</source>
         <translation>現在選択されているファイルはありません</translation>
     </message>
@@ -2726,7 +2811,7 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>GitHubPack</name>
     <message>
-        <location filename="../../../features/github_pack/pack.py" line="121"/>
+        <location filename="../../../features/github_pack/pack.py" line="122"/>
         <source>GitHub 发布文件与仓库文件</source>
         <translation>GitHub のリリースファイルとリポジトリファイル</translation>
     </message>
@@ -2969,7 +3054,7 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HttpPack</name>
     <message>
-        <location filename="../../../features/http_pack/pack.py" line="233"/>
+        <location filename="../../../features/http_pack/pack.py" line="279"/>
         <source>文件直链（视频、音频、压缩包、安装包、镜像、文档）</source>
         <translation>ファイル直リンク（動画、音声、圧縮ファイル、インストーラー、ディスクイメージ、ドキュメント）</translation>
     </message>
@@ -2977,17 +3062,21 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HuggingFaceConfig</name>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="93"/>
         <source>HuggingFace</source>
-        <translation>HuggingFace</translation>
+        <translation type="vanished">HuggingFace</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="96"/>
+        <location filename="../../../features/huggingface_pack/config.py" line="89"/>
+        <source>HuggingFace 下载</source>
+        <translation>HuggingFace ダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/config.py" line="92"/>
         <source>启用 HuggingFace 加速</source>
         <translation>HuggingFace 高速化を有効化</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="97"/>
+        <location filename="../../../features/huggingface_pack/config.py" line="93"/>
         <source>命中 HuggingFace 链接时，自动改写为所选镜像站</source>
         <translation>HuggingFace リンクにヒット時、選択したミラーサイトに自動リダイレクト</translation>
     </message>
@@ -3004,15 +3093,7 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
 </context>
 <context>
-    <name>HuggingFacePack</name>
-    <message>
-        <location filename="../../../features/huggingface_pack/pack.py" line="203"/>
-        <source>Hugging Face 模型与数据集文件</source>
-        <translation>Hugging Face のモデルとデータセットファイル</translation>
-    </message>
-</context>
-<context>
-    <name>HuggingFaceProxySiteCard</name>
+    <name>HuggingFaceMirrorSiteCard</name>
     <message>
         <location filename="../../../features/huggingface_pack/setting_cards.py" line="24"/>
         <source>镜像站</source>
@@ -3033,6 +3114,33 @@ http://example.com/{mp4,mkv}/video</translation>
         <location filename="../../../features/huggingface_pack/setting_cards.py" line="87"/>
         <source>自定义</source>
         <translation>カスタム</translation>
+    </message>
+</context>
+<context>
+    <name>HuggingFacePack</name>
+    <message>
+        <location filename="../../../features/huggingface_pack/pack.py" line="135"/>
+        <source>Hugging Face 模型与数据集文件</source>
+        <translation>Hugging Face のモデルとデータセットファイル</translation>
+    </message>
+</context>
+<context>
+    <name>HuggingFaceProxySiteCard</name>
+    <message>
+        <source>镜像站</source>
+        <translation type="vanished">ミラーサイト</translation>
+    </message>
+    <message>
+        <source>选择 HuggingFace 镜像站，延迟仅供参考</source>
+        <translation type="vanished">HuggingFace ミラーサイトを選択、遅延は参考値</translation>
+    </message>
+    <message>
+        <source>刷新延迟</source>
+        <translation type="vanished">遅延を更新</translation>
+    </message>
+    <message>
+        <source>自定义</source>
+        <translation type="vanished">カスタム</translation>
     </message>
 </context>
 <context>
@@ -3559,17 +3667,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>M3U8Pack</name>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="254"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="263"/>
         <source>M3U8 / DASH 流媒体</source>
         <translation>M3U8 / DASH ストリーミング</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="319"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="328"/>
         <source>M3U8 播放列表</source>
         <translation>M3U8 プレイリスト</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="325"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="334"/>
         <source>DASH 清单</source>
         <translation>DASH マニフェスト</translation>
     </message>
@@ -3665,7 +3773,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="425"/>
+        <location filename="../../view/windows/main_window.py" line="432"/>
         <source>程序发生异常</source>
         <translation>プログラムで例外が発生しました</translation>
     </message>
@@ -3693,17 +3801,17 @@ FFmpeg: {2}</translation>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="307"/>
+        <location filename="../../view/windows/main_window.py" line="314"/>
         <source>未知</source>
         <translation>不明</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="306"/>
+        <location filename="../../view/windows/main_window.py" line="313"/>
         <source>浏览器扩展</source>
         <translation>ブラウザ拡張</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="303"/>
+        <location filename="../../view/windows/main_window.py" line="310"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -3720,62 +3828,62 @@ FFmpeg: {2}</translation>
 拡張機能内で「自動ペアリング」をクリックした場合のみ許可してください。</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="309"/>
+        <location filename="../../view/windows/main_window.py" line="316"/>
         <source>浏览器扩展配对请求</source>
         <translation>ブラウザ拡張ペアリングリクエスト</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="310"/>
+        <location filename="../../view/windows/main_window.py" line="317"/>
         <source>允许配对</source>
         <translation>ペアリングを許可</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="311"/>
+        <location filename="../../view/windows/main_window.py" line="318"/>
         <source>拒绝</source>
         <translation>拒否</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="321"/>
+        <location filename="../../view/windows/main_window.py" line="328"/>
         <source>浏览器扩展服务无法启动</source>
         <translation>ブラウザ拡張サービスを起動できません</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="324"/>
+        <location filename="../../view/windows/main_window.py" line="331"/>
         <source>Aria2 RPC 兼容服务无法启动</source>
         <translation>Aria2 RPC 互換サービスを起動できません</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="337"/>
+        <location filename="../../view/windows/main_window.py" line="344"/>
         <source>前往设置</source>
         <translation>設定に移動</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="363"/>
+        <location filename="../../view/windows/main_window.py" line="370"/>
         <source>查看详情</source>
         <translation>詳細を表示</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="477"/>
+        <location filename="../../view/windows/main_window.py" line="484"/>
         <source>是否完全退出程序？</source>
         <translation>プログラムを完全に終了しますか？</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="478"/>
+        <location filename="../../view/windows/main_window.py" line="485"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation>バックグラウンド実行時はシステムトレイアイコンから再表示できます。</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="481"/>
+        <location filename="../../view/windows/main_window.py" line="488"/>
         <source>退出程序</source>
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="482"/>
+        <location filename="../../view/windows/main_window.py" line="489"/>
         <source>继续在后台运行</source>
         <translation>引き続きバックグラウンドで実行</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="483"/>
+        <location filename="../../view/windows/main_window.py" line="490"/>
         <source>记住我的选择</source>
         <translation>選択を記憶</translation>
     </message>
@@ -3784,7 +3892,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">バージョン詳細で手動選択してください</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="426"/>
+        <location filename="../../view/windows/main_window.py" line="433"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -3793,7 +3901,7 @@ FFmpeg: {2}</translation>
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="430"/>
+        <location filename="../../view/windows/main_window.py" line="437"/>
         <source>查看日志</source>
         <translation>ログを表示</translation>
     </message>
@@ -3822,17 +3930,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">現在のバージョン {0}、最新バージョン {1}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="349"/>
+        <location filename="../../view/windows/main_window.py" line="356"/>
         <source>检测到新版本</source>
         <translation>新しいバージョンを検出</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="350"/>
+        <location filename="../../view/windows/main_window.py" line="357"/>
         <source>最新版本: {0}</source>
         <translation>最新バージョン: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="357"/>
+        <location filename="../../view/windows/main_window.py" line="364"/>
         <source>立即下载</source>
         <translation>今すぐダウンロード</translation>
     </message>
@@ -3841,7 +3949,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">リリース詳細を表示</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="366"/>
+        <location filename="../../view/windows/main_window.py" line="373"/>
         <source>请作者喝咖啡</source>
         <translation>作者にコーヒーをごちそうする</translation>
     </message>
@@ -4080,22 +4188,22 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ダウンロード</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="83"/>
+        <location filename="../../platform/desktop_notification.py" line="86"/>
         <source>下载完成</source>
         <translation>ダウンロード完了</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="42"/>
+        <location filename="../../platform/desktop_notification.py" line="45"/>
         <source>磁盘空间不足</source>
         <translation>ディスク空き容量不足</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="43"/>
+        <location filename="../../platform/desktop_notification.py" line="46"/>
         <source>剩余 {0}，需要 {1}，任务未自动开始</source>
         <translation>残り {0}、必要 {1}、タスクは自動開始されませんでした</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="54"/>
+        <location filename="../../platform/desktop_notification.py" line="57"/>
         <source>链接解析失败</source>
         <translation>リンクの解析に失敗</translation>
     </message>
@@ -4116,12 +4224,12 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ブラウザ拡張 接続済み</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="86"/>
+        <location filename="../../platform/desktop_notification.py" line="89"/>
         <source>打开文件</source>
         <translation>ファイルを開く</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="87"/>
+        <location filename="../../platform/desktop_notification.py" line="90"/>
         <source>打开文件夹</source>
         <translation>フォルダを開く</translation>
     </message>
@@ -4147,7 +4255,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>OptionCardGroup</name>
     <message>
-        <location filename="../../view/components/card_groups.py" line="172"/>
+        <location filename="../../view/components/card_groups.py" line="182"/>
         <source>下载设置</source>
         <translation>ダウンロード設定</translation>
     </message>
@@ -4463,27 +4571,27 @@ FFmpeg: {2}</translation>
 <context>
     <name>ProgressToast</name>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="89"/>
+        <location filename="../../view/components/progress_toast.py" line="90"/>
         <source>正在下载更新</source>
         <translation>更新をダウンロード中</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="99"/>
+        <location filename="../../view/components/progress_toast.py" line="100"/>
         <source>更新已就绪</source>
         <translation>更新の準備ができました</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="100"/>
+        <location filename="../../view/components/progress_toast.py" line="101"/>
         <source>重启后生效</source>
         <translation>再起動後に有効になります</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="110"/>
+        <location filename="../../view/components/progress_toast.py" line="111"/>
         <source>下载更新失败</source>
         <translation>更新のダウンロードに失敗</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="113"/>
+        <location filename="../../view/components/progress_toast.py" line="114"/>
         <source>未知错误</source>
         <translation>不明なエラー</translation>
     </message>
@@ -4538,7 +4646,12 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="266"/>
         <source>请填写代理地址</source>
-        <translation type="unfinished"></translation>
+        <translation>プロキシアドレスを入力してください</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="300"/>
+        <source>、</source>
+        <translation>、</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="302"/>
@@ -4891,7 +5004,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="71"/>
         <source>选择视频</source>
-        <translation type="unfinished">動画を選択</translation>
+        <translation>動画を選択</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="75"/>
@@ -4921,7 +5034,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="382"/>
         <source>已选 {0}/{1}</source>
-        <translation type="unfinished"></translation>
+        <translation>選択済み {0}/{1}</translation>
     </message>
     <message>
         <source>合集</source>
@@ -4935,7 +5048,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="96"/>
         <source>视频</source>
-        <translation type="unfinished">動画</translation>
+        <translation>動画</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="98"/>
@@ -5413,12 +5526,12 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="122"/>
         <source>自动移除缺失的任务</source>
-        <translation type="unfinished"></translation>
+        <translation>欠落したタスクを自動削除</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="123"/>
         <source>文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルが削除、移動された場合やディスクが接続されていない場合、完了したタスクを自動的にリストから削除</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="243"/>
@@ -5834,6 +5947,19 @@ FFmpeg: {2}</translation>
     </message>
 </context>
 <context>
+    <name>SideFileCard</name>
+    <message>
+        <location filename="../../../features/arxiv_pack/cards.py" line="62"/>
+        <source>附属文件</source>
+        <translation>付属ファイル</translation>
+    </message>
+    <message>
+        <location filename="../../../features/arxiv_pack/cards.py" line="63"/>
+        <source>TeX 源码</source>
+        <translation>TeX ソース</translation>
+    </message>
+</context>
+<context>
     <name>StreamSelectCard</name>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="101"/>
@@ -5965,7 +6091,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/cards/task_cards.py" line="305"/>
         <source>文件缺失</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイル欠落</translation>
     </message>
     <message>
         <location filename="../../view/cards/task_cards.py" line="308"/>
@@ -6010,7 +6136,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/cards/task_cards.py" line="393"/>
         <source>文件缺失，无法校验</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルが欠落しているため検証できません</translation>
     </message>
     <message>
         <source>文件不存在，无法校验</source>
@@ -6072,7 +6198,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="59"/>
         <source>已选 {0}/{1}</source>
-        <translation type="unfinished"></translation>
+        <translation>選択済み {0}/{1}</translation>
     </message>
 </context>
 <context>
@@ -6126,63 +6252,62 @@ FFmpeg: {2}</translation>
 <context>
     <name>TaskDraftDialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="76"/>
+        <location filename="../../view/dialogs/task_draft.py" line="77"/>
         <source>添加任务</source>
         <translation>タスクを追加</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="81"/>
+        <location filename="../../view/dialogs/task_draft.py" line="82"/>
         <source>批量添加</source>
         <translation>一括追加</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="82"/>
-        <location filename="../../view/dialogs/task_draft.py" line="383"/>
+        <location filename="../../view/dialogs/task_draft.py" line="83"/>
+        <location filename="../../view/dialogs/task_draft.py" line="382"/>
         <source>导入文件</source>
         <translation>ファイルをインポート</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="96"/>
+        <location filename="../../view/dialogs/task_draft.py" line="97"/>
         <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
         <translation>複数のダウンロードリンクを追加する場合、1行に1つのリンクのみ入力してください</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="106"/>
+        <location filename="../../view/dialogs/task_draft.py" line="107"/>
         <source>下载</source>
         <translation>ダウンロード</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="108"/>
+        <location filename="../../view/dialogs/task_draft.py" line="109"/>
         <source>稍后下载</source>
         <translation>後でダウンロード</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="114"/>
+        <location filename="../../view/dialogs/task_draft.py" line="115"/>
         <source>取消</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="310"/>
         <source>链接解析失败</source>
-        <translation>リンクの解析に失敗</translation>
+        <translation type="vanished">リンクの解析に失敗</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="320"/>
+        <location filename="../../view/dialogs/task_draft.py" line="319"/>
         <source>无法添加任务</source>
         <translation>タスクを追加できません</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="329"/>
+        <location filename="../../view/dialogs/task_draft.py" line="328"/>
         <source>更改默认文件夹</source>
         <translation>デフォルトフォルダを変更</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="335"/>
+        <location filename="../../view/dialogs/task_draft.py" line="334"/>
         <source>选择默认下载文件夹</source>
         <translation>デフォルトダウンロードフォルダを選択</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="378"/>
+        <location filename="../../view/dialogs/task_draft.py" line="377"/>
         <source>所有可导入文件 ({0})</source>
         <translation>インポート可能な全ファイル ({0})</translation>
     </message>
@@ -6206,6 +6331,16 @@ FFmpeg: {2}</translation>
         <location filename="../../../features/http_pack/i18n.py" line="3"/>
         <source>服务器返回了错误（{status}）</source>
         <translation>サーバーがエラーを返しました（{status}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/http_pack/i18n.py" line="5"/>
+        <source>服务器拒绝了范围请求，状态码：{status}</source>
+        <translation>サーバーが範囲リクエストを拒否しました。ステータスコード: {status}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/http_pack/i18n.py" line="6"/>
+        <source>服务器返回的数据不完整</source>
+        <translation>サーバーが返したデータが不完全です</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/i18n.py" line="7"/>
@@ -6342,6 +6477,16 @@ FFmpeg: {2}</translation>
         <location filename="../../i18n.py" line="38"/>
         <source>无法监听端口 {port}，详情见日志</source>
         <translation>ポート {port} をリッスンできません。詳細はログを参照</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="39"/>
+        <source>该链接不能用于更换</source>
+        <translation>このリンクは変更には使用できません</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="40"/>
+        <source>新链接的内容与原任务不同，请重新添加任务</source>
+        <translation>新しいリンクの内容が元のタスクと異なります。タスクを再追加してください</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/i18n.py" line="3"/>
@@ -6604,6 +6749,46 @@ FFmpeg: {2}</translation>
         <location filename="../../../features/bili_pack/i18n.py" line="13"/>
         <source>字幕下载失败</source>
         <translation>字幕のダウンロードに失敗しました</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/i18n.py" line="3"/>
+        <source>无法解析 HuggingFace 链接</source>
+        <translation>HuggingFace リンクを解析できません</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/i18n.py" line="4"/>
+        <source>无法访问仓库 {repo}（{status}）</source>
+        <translation>リポジトリ {repo} にアクセスできません（{status}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/i18n.py" line="5"/>
+        <source>仓库 {repo} 中没有 {path}</source>
+        <translation>リポジトリ {repo} に {path} がありません</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/i18n.py" line="6"/>
+        <source>该仓库需要授权，请在设置中填写 HuggingFace Access Token</source>
+        <translation>このリポジトリには認証が必要です。設定で HuggingFace Access Token を入力してください</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/i18n.py" line="7"/>
+        <source>HuggingFace Access Token 无效或已过期，请在设置中更新</source>
+        <translation>HuggingFace Access Token が無効または期限切れです。設定で更新してください</translation>
+    </message>
+    <message>
+        <location filename="../../../features/huggingface_pack/i18n.py" line="8"/>
+        <source>尚未获得该仓库的访问权限，请先在 {url} 申请；若已获批，请确认 Access Token 有读取 Gated Repo 的权限</source>
+        <translation>このリポジトリへのアクセス権限がまだありません。まず {url} で申請してください。承認済みの場合は、Access Token に Gated Repo の読み取り権限があることを確認してください</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/i18n.py" line="3"/>
+        <source>无法解析该链接</source>
+        <translation>リンクを解析できません</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/i18n.py" line="4"/>
+        <source>不支持多层包裹的链接</source>
+        <translation>多重ラップされたリンクはサポートされていません</translation>
     </message>
 </context>
 <context>
@@ -7320,6 +7505,14 @@ FFmpeg: {2}</translation>
     </message>
 </context>
 <context>
+    <name>WrappedLinkPack</name>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="59"/>
+        <source>迅雷、快车、QQ 旋风链接</source>
+        <translation>迅雷、快車、QQ旋風リンク</translation>
+    </message>
+</context>
+<context>
     <name>YouTubePack</name>
     <message>
         <location filename="../../../features/yt_dlp_pack/pack.py" line="63"/>
@@ -7330,7 +7523,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>YtDlpConfig</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="89"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="90"/>
         <source>YouTube 下载</source>
         <translation>YouTube ダウンロード</translation>
     </message>
@@ -7347,7 +7540,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">同時にダウンロードする動画チャンク数、高いほど速いがレート制限される可能性あり</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="97"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="98"/>
         <source>运行环境安装目录</source>
         <translation>実行環境のインストールディレクトリ</translation>
     </message>
@@ -7364,22 +7557,22 @@ FFmpeg: {2}</translation>
         <translation type="vanished">使用しない</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="109"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="110"/>
         <source>优先 MP4 格式</source>
         <translation>MP4 形式を優先</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="110"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="111"/>
         <source>优先选择 H.264/MP4 编码，避免输出 WebM/MKV</source>
         <translation>H.264/MP4 コーデックを優先し、WebM/MKV の出力を回避</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="117"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="118"/>
         <source>下载完成后将标题、作者等信息嵌入文件</source>
         <translation>ダウンロード完了後、タイトル、作者などの情報を埋め込み</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="124"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="125"/>
         <source>下载完成后将章节标记嵌入文件</source>
         <translation>ダウンロード完了後、チャプターマークを埋め込み</translation>
     </message>
@@ -7437,7 +7630,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ダウンロード完了後、FFmpeg でカバーをファイルに埋め込み</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="123"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="124"/>
         <source>嵌入章节</source>
         <translation>チャプターを埋め込み</translation>
     </message>
@@ -7446,7 +7639,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ダウンロード完了後、FFmpeg でチャプターマークを埋め込み</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="116"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="117"/>
         <source>嵌入元数据</source>
         <translation>メタデータを埋め込み</translation>
     </message>
@@ -7675,7 +7868,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>self._dialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="46"/>
+        <location filename="../../view/dialogs/task_draft.py" line="47"/>
         <source>添加任务</source>
         <translation>タスクを追加</translation>
     </message>
