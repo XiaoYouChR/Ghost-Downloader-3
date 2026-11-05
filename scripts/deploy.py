@@ -254,7 +254,7 @@ def patchInfoPlist() -> None:
     plist["NSDownloadsFolderUsageDescription"] = "Ghost Downloader 需要访问下载文件夹以管理和删除下载的文件。"
     plist["CFBundleURLTypes"] = [{
         "CFBundleURLName": DESKTOP_ID,
-        "CFBundleURLSchemes": ["ghostdownloader", "magnet", "ed2k", "ftp", "ftps"],
+        "CFBundleURLSchemes": ["ghostdownloader", "magnet", "ed2k", "ftp", "ftps", "thunder", "flashget", "qqdl"],
     }]
     with open(plistPath, "wb") as f:
         plistlib.dump(plist, f)

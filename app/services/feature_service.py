@@ -62,6 +62,7 @@ class FeatureService:
             parser = ParserClass()
             parser.pack = pack
             parser.delegate = self.parse
+            parser.delegateProbe = self.probe
             self._parsers.append(parser)
         self._parsers.sort(key=lambda p: p.priority)
 

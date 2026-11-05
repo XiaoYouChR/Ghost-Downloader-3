@@ -1,0 +1,5 @@
+[pack]
+entry = "pack.py"
+class = "WrappedLinkPack"
+version = "1.0.0"
+gdMinVersion = "4.4.7"

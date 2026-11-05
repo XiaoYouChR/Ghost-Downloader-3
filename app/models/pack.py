@@ -43,6 +43,7 @@ class TaskParser:
     priority: int = 100
     pack: FeaturePack | None = None
     delegate: Callable[[TaskOptions], Awaitable[Task]] | None = None
+    delegateProbe: Callable[[TaskOptions], Awaitable[TaskOptions]] | None = None
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError

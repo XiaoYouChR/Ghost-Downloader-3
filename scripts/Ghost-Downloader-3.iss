@@ -72,6 +72,9 @@ Root: HKCU; Subkey: "Software\Classes\magnet"; Flags: dontcreatekey uninsdeletek
 Root: HKCU; Subkey: "Software\Classes\ed2k"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\ftp"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\ftps"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\thunder"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\flashget"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\qqdl"; Flags: dontcreatekey uninsdeletekey
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\GhostDownloader"

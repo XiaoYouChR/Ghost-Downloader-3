@@ -104,6 +104,11 @@ FeaturePack 提供的能力，将 Task Options 转为 Task。声明优先级和�
 Task 加入失败（如 Output Folder 无法创建）时退回 Task Draft，由用户修改后重新确认。
 _Avoid_: pending task、unconfirmed task
 
+**Wrapped Link**:
+把另一条可下载链接编码包裹起来的链接：迅雷（thunder）、QQ 旋风（qqdl）、快车（flashget）。解出的链接称 Inner Link。
+在任何入口，Wrapped Link 的表现都与直接给出它的 Inner Link 相同；Task 只记 Inner Link。只解一层。
+_Avoid_: 加密链接（Base64 不是加密）、专用链、转换
+
 **Resource**:
 浏览器扩展捕获的可下载物。由 Browser Service 转换为 Task Options 进入任务创建流程。
 _Avoid_: 与泛义"资源"混淆
