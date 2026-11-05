@@ -39,6 +39,7 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = [".", "features"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 qt_api = "pyside6"
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
