@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import replace
 from threading import Event
 from typing import TYPE_CHECKING
@@ -17,6 +18,8 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
+PARSE_LIMIT_PER_HOST = 5
+
 
 class FeatureService:
     def __init__(self, taskService, categoryService, coroutineRunner, runtimeStatusService):
@@ -28,6 +31,7 @@ class FeatureService:
         self._parsers: list[TaskParser] = []
         self._packByPackId: dict[str, FeaturePack] = {}
         self._pagePackMap: dict[type, FeaturePack] = {}
+        self._parseSlotsByHost: dict[str, asyncio.Semaphore] = {}
 
     @property
     def packs(self) -> list[FeaturePack]:
@@ -51,7 +55,7 @@ class FeatureService:
         self._packs.append(pack)
         self._packByPackId[pack.packId] = pack
 
-        pack.parse = self.parse
+        pack.parse = self._parse
         pack.probe = self.probe
         pack.addTask = self._taskService.add
         pack.submit = self._coroutineRunner.submit
@@ -76,13 +80,19 @@ class FeatureService:
                 schemeToggle.connect(self._registerAssociations)
 
     async def parse(self, options: TaskOptions) -> Task:
-        options = toPresetOptions(options)
+        host = urlparse(options.url).hostname
+        if not host:
+            return await self._parse(options)
 
-        for parser in self._parsers:
-            if parser.match(options):
-                task = await parser.parse(options)
-                return task
-        raise ValueError(f"No parser matched: {options.url}")
+        async with self._parseSlotsByHost.setdefault(host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
+            return await self._parse(options)
+
+    async def _parse(self, options: TaskOptions) -> Task:
+        options = toPresetOptions(options)
+        parser = next((parser for parser in self._parsers if parser.match(options)), None)
+        if parser is None:
+            raise ValueError(f"No parser matched: {options.url}")
+        return await parser.parse(options)
 
     async def probe(self, options: TaskOptions) -> TaskOptions:
         options = toPresetOptions(options)

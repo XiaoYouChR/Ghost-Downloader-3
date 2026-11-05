@@ -4,19 +4,39 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Property, QPropertyAnimation, QEasingCurve, Signal, Qt
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QLabel
 from qfluentwidgets import BodyLabel, StrongBodyLabel, ToolTipFilter, isDarkTheme
 
 if TYPE_CHECKING:
     from qfluentwidgets import FluentIconBase
 
 
-class ElidedLabel(QLabel):
-    def paintEvent(self, event) -> None:
-        painter = QPainter(self)
-        metrics = painter.fontMetrics()
-        elided = metrics.elidedText(self.text(), Qt.TextElideMode.ElideRight, self.width())
-        painter.drawText(self.rect(), self.alignment(), elided)
+class ElidedLabel(BodyLabel):
+    def __init__(self, text: str = "", parent=None) -> None:
+        super().__init__(parent)
+        self._fullText = text
+        super().setText(text)
+        self.installEventFilter(ToolTipFilter(self))
+
+    def text(self) -> str:
+        return self._fullText
+
+    def setText(self, text: str) -> None:
+        self._fullText = text
+        self._elide()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._elide()
+
+    def _elide(self) -> None:
+        width = self.contentsRect().width()
+        if width > 0:
+            elided = self.fontMetrics().elidedText(
+                self._fullText, Qt.TextElideMode.ElideRight, width)
+        else:
+            elided = self._fullText
+        super().setText(elided)
+        self.setToolTip(self._fullText if elided != self._fullText else "")
 
 
 class IconLabelBase:

@@ -101,6 +101,7 @@ FeaturePack 提供的能力，将 Task Options 转为 Task。声明优先级和�
 **Task Draft**:
 用户确认前的未确认任务状态。内含一个或多个 Draft Item，每个 Draft Item 跟踪一条 URL，
 处于三个状态之一：Parsing、Resolved（持有 Task）、Failed。Failed 不是终态。
+确认时 Resolved 的加入；Failed 的留在 Task Draft，用户关闭才算放弃；Parsing 的在后台继续，失败时退回 Task Draft。
 Task 加入失败（如 Output Folder 无法创建）时退回 Task Draft，由用户修改后重新确认。
 _Avoid_: pending task、unconfirmed task
 

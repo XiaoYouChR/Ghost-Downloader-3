@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from app.models.task import TaskOptions, TaskStatus
@@ -65,6 +67,31 @@ async def test_parse_failed_link_again(draft, pack):
     assert draft.failCount() == 0
 
 
+async def test_refresh_failed_parses_every_failed_link_again(draft, pack):
+    pack.failingUrls.update([A, B])
+    draft.setUrls([A, B, C])
+    await waitUntil(lambda: draft.failCount() == 2)
+
+    pack.failingUrls.clear()
+    draft.refreshFailed()
+
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in [A, B, C]))
+    assert draft.failCount() == 0
+
+
+async def test_parse_links_from_one_site_five_at_a_time(draft, pack):
+    urls = [f"http://test/{i}.zip" for i in range(7)]
+    pack.heldUrls.update(urls)
+    draft.setUrls(urls)
+
+    await waitUntil(lambda: len(pack.parsedOptions) == 5)
+    await asyncio.sleep(0.1)
+    assert len(pack.parsedOptions) == 5
+    pack.heldUrls.clear()
+
+    await waitUntil(lambda: all(draft.taskByUrl(url) is not None for url in urls))
+
+
 async def test_parse_busy_only_while_parsing(draft):
     busy = []
     draft.parsingBusyChanged.connect(busy.append)
@@ -81,6 +108,35 @@ async def test_add_parsed_tasks_on_confirm(engine, draft):
     draft.confirm()
 
     assert sorted(task.name for task in engine.taskService.tasks) == ["a.zip", "b.zip"]
+
+
+async def test_add_keeps_failed_links_in_draft(engine, draft, pack):
+    pack.failingUrls.add(B)
+    draft.setUrls([A, B])
+    await waitUntil(lambda: draft.taskByUrl(A) is not None and draft.failCount() == 1)
+
+    draft.confirm()
+
+    assert [task.name for task in engine.taskService.tasks] == ["a.zip"]
+    assert draft.urls() == [B]
+    assert draft.failCount() == 1
+
+
+async def test_add_link_failing_after_confirm_returns_to_draft(engine, draft, pack):
+    failures = []
+    draft.parseFailed.connect(lambda url, error: failures.append(url))
+    pack.heldUrls.add(A)
+    pack.failingUrls.add(A)
+    draft.setUrls([A])
+
+    draft.confirm()
+    assert draft.urls() == []
+    pack.heldUrls.clear()
+
+    await waitUntil(lambda: failures == [A])
+    assert draft.urls() == [A]
+    assert draft.failCount() == 1
+    assert engine.taskService.tasks == []
 
 
 @pytest.mark.parametrize(("autoStart", "status"), [(True, TaskStatus.COMPLETED), (False, TaskStatus.WAITING)])

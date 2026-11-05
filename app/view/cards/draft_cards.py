@@ -7,14 +7,14 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, IconWidget, ImageLabel, LineEdit, RoundMenu,
-    ToolTipFilter, TransparentToolButton, isDarkTheme,
+    ToolTipFilter, TransparentToolButton, isDarkTheme, setFont,
 )
 
 from app.config.cfg import cfg
 from app.platform.filesystem import splitStemExt
 from app.format import toReadableSize
 from app.view.components.category_settings import toCategoryName
-from app.view.components.labels import EditableLabel
+from app.view.components.labels import EditableLabel, ElidedLabel
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -193,3 +193,47 @@ class MultiFileDraftCard(DraftCard):
                 selected, len(self._task.files), toReadableSize(self._task.fileSize)
             )
         )
+
+
+class FailedDraftCard(QWidget):
+    refreshRequested = Signal()
+
+    def __init__(self, url: str, reason: str, parent=None):
+        super().__init__(parent)
+        self.iconLabel = ImageLabel(self)
+        self.urlLabel = ElidedLabel(url, self)
+        self.reasonLabel = ElidedLabel(reason, self)
+        self.refreshButton = TransparentToolButton(FluentIcon.SYNC, self)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        from PySide6.QtWidgets import QSizePolicy
+        self.setFixedHeight(35)
+        self.iconLabel.setImage(QFileIconProvider().icon(QFileIconProvider.IconType.File).pixmap(16, 16))
+        self.iconLabel.setFixedSize(16, 16)
+        self.urlLabel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        setFont(self.reasonLabel, 12)
+        self.reasonLabel.setTextColor(QColor(196, 43, 28), QColor(255, 153, 164))
+        self.reasonLabel.setMaximumWidth(260)
+        self.refreshButton.setFixedSize(28, 28)
+        self.refreshButton.setToolTip(self.tr("重试"))
+        self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
+
+    def _initLayout(self) -> None:
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 2, 10, 2)
+        layout.setSpacing(12)
+        layout.addWidget(self.iconLabel)
+        layout.addWidget(self.urlLabel, 1)
+        layout.addWidget(self.reasonLabel)
+        layout.addWidget(self.refreshButton)
+
+    def _bind(self) -> None:
+        self.refreshButton.clicked.connect(self.refreshRequested)
+
+    def paintEvent(self, e) -> None:
+        painter = QPainter(self)
+        painter.fillRect(0, 0, self.width(), 1, QColor(0, 0, 0, 96 if isDarkTheme() else 24))

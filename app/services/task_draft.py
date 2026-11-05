@@ -118,12 +118,19 @@ class TaskDraft:
 
     def refresh(self, url: str) -> None:
         item = self.itemByUrl(url)
-        if item is None or item.error is None:
-            return
-        self._submit(item)
+        if item is not None and item.error is not None:
+            self._resubmit([item])
+
+    def refreshFailed(self) -> None:
+        self._resubmit([item for item in self._items if item.error is not None])
+
+    def _resubmit(self, items: list[DraftItem]) -> None:
+        for item in items:
+            self._submit(item)
         self.parsingBusyChanged.emit(self._isParsing())
-        if item.error is not None:
-            self.parseFailed.emit(url, item.error)
+        for item in items:
+            if item.error is not None:
+                self.parseFailed.emit(item.url, item.error)
         self.itemsChanged.emit()
 
     def _submit(self, item: DraftItem) -> None:
@@ -190,9 +197,9 @@ class TaskDraft:
                 self._coroutineRunner.cancel(item.parseId)
                 item.parseId = ""
 
-        self._items.clear()
+        self._items = [item for item in self._items if item.error is not None]
         self.parsingBusyChanged.emit(self._isParsing())
-        self.itemsCleared.emit()
+        self.itemsChanged.emit()
         for task, error in failures:
             self.addFailed.emit([task], error)
 
@@ -237,7 +244,13 @@ class TaskDraft:
     def _onParseFailed(self, error, item: DraftItem) -> None:
         if item.confirmedOptions is not None:
             item.confirmedOptions = None
-            logger.warning("后台确认任务解析失败: {}", error)
+            item.parseId = ""
+            logger.warning("后台确认任务解析失败 {}: {}", item.url, error)
+            if self.itemByUrl(item.url) is None:
+                item.error = toTaskError(error)
+                self._items.append(item)
+                self.parseFailed.emit(item.url, item.error)
+                self.itemsChanged.emit()
             return
 
         if not item.parseId:

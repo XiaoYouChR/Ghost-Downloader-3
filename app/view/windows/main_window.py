@@ -247,6 +247,7 @@ class MainWindow(MSFluentWindow):
 
     def _bind(self) -> None:
         self._draft.addFailed.connect(self.addTasks)
+        self._draft.parseFailed.connect(self._onDraftParseFailed)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)
@@ -274,8 +275,14 @@ class MainWindow(MSFluentWindow):
             dialog.showMask()
 
     def addTasks(self, tasks: list[Task], error: TaskError | None = None) -> None:
+        self._draftDialog.addParsedTasks(tasks, error)
+        self._openDraftDialog()
+
+    def _onDraftParseFailed(self, url: str, error: TaskError) -> None:
+        self._openDraftDialog()
+
+    def _openDraftDialog(self) -> None:
         dialog = self._draftDialog
-        dialog.addParsedTasks(tasks, error)
         if dialog.isActive:
             return
         if sys.platform == "darwin":

@@ -15,6 +15,7 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import cfg
+from app.view.cards.draft_cards import FailedDraftCard
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit, addRecentFolder
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
@@ -135,6 +136,7 @@ class TaskDraftDialog(MessageBoxBase):
         self._draft.parsingBusyChanged.connect(self.progressBar.setVisible)
         self._draft.parseSucceeded.connect(self._onParseSucceeded)
         self._draft.parseFailed.connect(self._onParseFailed)
+        self.draftGroup.refreshRequested.connect(self._draft.refreshFailed)
         self._draft.itemsChanged.connect(self._onItemsChanged)
         self._draft.itemsCleared.connect(self._onCleared)
 
@@ -304,15 +306,12 @@ class TaskDraftDialog(MessageBoxBase):
         dialog.deleteLater()
 
     def _onParseFailed(self, url: str, error: TaskError) -> None:
+        if url not in self._urls():
+            self.urlEdit.appendPlainText(url)
+        card = FailedDraftCard(url, toLocalizedError(error), self.draftGroup)
+        card.refreshRequested.connect(lambda: self._draft.refresh(url))
+        self.draftGroup.addCard(url, card)
         self._refreshStats()
-        displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
-        InfoBar.error(
-            self.tr("链接解析失败"),
-            f"{displayUrl}\n{toLocalizedError(error)}",
-            duration=5000,
-            position=InfoBarPosition.BOTTOM_RIGHT,
-            parent=self,
-        )
 
     def _showAddError(self, tasks: list[Task], error: TaskError) -> None:
         bar = InfoBar(
@@ -341,7 +340,7 @@ class TaskDraftDialog(MessageBoxBase):
         bar.close()
 
     def _onItemsChanged(self) -> None:
-        self.draftGroup.setUrls(self._draft.urls())
+        self.draftGroup.setUrls([item.url for item in self._draft.items() if item.task or item.error])
         self._refreshStats()
 
     def _onCleared(self) -> None:

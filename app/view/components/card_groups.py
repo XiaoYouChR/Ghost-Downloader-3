@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QColor, QFont, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
-from qfluentwidgets import CaptionLabel, setFont, isDarkTheme
+from qfluentwidgets import CaptionLabel, FluentIcon, ToolTipFilter, TransparentToolButton, setFont, isDarkTheme
 
 from app.view.components.scroll_area import ScrollArea
 
@@ -49,6 +49,7 @@ class TitledCardGroup(QWidget):
 
 
 class DraftCardGroup(TitledCardGroup):
+    refreshRequested = Signal()
     CARD_HEIGHT = 35
     MIN_VISIBLE = 5
 
@@ -59,6 +60,12 @@ class DraftCardGroup(TitledCardGroup):
         self._ratioLabel = CaptionLabel("", self)
         self._ratioLabel.setTextColor(QColor(196, 53, 1), QColor(252, 169, 3))
         self._sizeLabel = CaptionLabel("", self)
+        self._retryButton = TransparentToolButton(FluentIcon.SYNC, self)
+        self._retryButton.setFixedSize(24, 24)
+        self._retryButton.setIconSize(QSize(12, 12))
+        self._retryButton.setToolTip(self.tr("重试失败项"))
+        self._retryButton.installEventFilter(ToolTipFilter(self._retryButton))
+        self._retryButton.hide()
         for label in (self._ratioLabel, self._sizeLabel):
             setFont(label, 13)
             label.setFixedHeight(30)
@@ -75,9 +82,11 @@ class DraftCardGroup(TitledCardGroup):
         headerRow.setSpacing(8)
         headerRow.addWidget(self.headerLabel, 1)
         headerRow.addWidget(self._ratioLabel)
+        headerRow.addWidget(self._retryButton)
         headerRow.addWidget(self._sizeLabel)
         headerRow.addWidget(self._rightPad)
         self.layout().insertLayout(0, headerRow)
+        self._retryButton.clicked.connect(self.refreshRequested)
 
         self.setTitle(self.tr("解析结果"))
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
@@ -85,6 +94,7 @@ class DraftCardGroup(TitledCardGroup):
 
     def updateStats(self, successCount: int, failCount: int, totalSize: int) -> None:
         totalCount = successCount + failCount
+        self._retryButton.setVisible(failCount > 0)
         if totalCount == 0:
             self._ratioLabel.hide()
             self._sizeLabel.hide()

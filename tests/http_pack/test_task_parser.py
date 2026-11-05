@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from aiohttp import web
 
@@ -45,6 +47,15 @@ async def test_parse_unclaimed_link_adds_plain_file(http, startServer):
     assert task.name == "report.bin"
     assert task.fileSize == len(CONTENT)
     assert task.url == f"{url}?id=1"
+
+
+async def test_parse_many_links_to_one_server(http, startServer):
+    url = await startServer(buildNamedHandler("report.bin"))
+
+    tasks = await asyncio.wait_for(
+        asyncio.gather(*(http.parse(TaskOptions(url=f"{url}?id={i}")) for i in range(12))), 10)
+
+    assert [task.name for task in tasks] == ["report.bin"] * 12
 
 
 async def test_parse_resource_with_size_sends_no_request(http, startServer):
