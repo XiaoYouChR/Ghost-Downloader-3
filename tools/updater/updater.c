@@ -223,10 +223,12 @@ static int isElevated(void) {
 }
 
 static int canWriteDir(const wchar_t *dir) {
-    wchar_t probe[PATH_BUF];
-    wsnprintf(probe, PATH_BUF, L"%ls\\.gd_write_probe", dir);
-    HANDLE h = CreateFileW(probe, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-                           FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+    wchar_t path[PATH_BUF];
+    /* "E:" opens the current directory of drive E, not its root. */
+    wsnprintf(path, PATH_BUF, L"%ls\\", dir);
+    HANDLE h = CreateFileW(path, FILE_ADD_SUBDIRECTORY,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (h == INVALID_HANDLE_VALUE)
         return 0;
     CloseHandle(h);
@@ -375,23 +377,6 @@ static int hasFile(const pchar *path) {
 #endif
 }
 
-static int moveDir(const pchar *from, const pchar *to) {
-#ifdef _WIN32
-    for (int i = 0; i < 8; i++) {
-        if (MoveFileW(from, to)) return 0;
-        logMsg("rename \"" PFMT "\" -> \"" PFMT "\" failed (err=%lu), retry %d",
-               from, to, GetLastError(), i + 1);
-        Sleep(200u << (i < 5 ? i : 5));
-    }
-    return -1;
-#else
-    if (rename(from, to) == 0) return 0;
-    logMsg("rename \"" PFMT "\" -> \"" PFMT "\" failed: %s", from, to, strerror(errno));
-    return -1;
-#endif
-}
-
-
 #ifdef _WIN32
 static void deleteDir(const wchar_t *dir) {
     wchar_t buf[PATH_BUF + 2];
@@ -522,6 +507,35 @@ static int copyDir(const char *from, const char *to) {
     return 0;
 }
 #endif
+
+/* On failure, `from` does not change and `to` does not exist. */
+static int moveDir(const pchar *from, const pchar *to) {
+#ifdef _WIN32
+    for (int i = 0; i < 8; i++) {
+        /* For a directory on a different volume, MoveFileW returns ERROR_ACCESS_DENIED, but flags 0 returns ERROR_NOT_SAME_DEVICE. */
+        if (MoveFileExW(from, to, 0)) return 0;
+        DWORD err = GetLastError();
+        if (err == ERROR_NOT_SAME_DEVICE) {
+            logMsg("cross-volume, copying \"" PFMT "\" -> \"" PFMT "\"", from, to);
+            if (copyDir(from, to) != 0) {
+                logMsg("copy failed");
+                deleteDir(to);
+                return -1;
+            }
+            deleteDir(from);
+            return 0;
+        }
+        logMsg("rename \"" PFMT "\" -> \"" PFMT "\" failed (err=%lu), retry %d",
+               from, to, err, i + 1);
+        Sleep(200u << (i < 5 ? i : 5));
+    }
+    return -1;
+#else
+    if (rename(from, to) == 0) return 0;
+    logMsg("rename \"" PFMT "\" -> \"" PFMT "\" failed: %s", from, to, strerror(errno));
+    return -1;
+#endif
+}
 
 static int buildNewPortableFolder(pchar *dst, size_t len,
                                  const pchar *appDir, const pchar *newDir,
@@ -926,16 +940,24 @@ int main(int argc, char *argv[]) {
     logMsg("app exited");
 
 #ifdef _WIN32
-    if (!canWriteDir(appDir)) {
+    /* New Dir and Backup Dir are created next to App Dir. */
+    wchar_t parentDir[PATH_BUF];
+    wcsncpy(parentDir, appDir, PATH_BUF - 1);
+    parentDir[PATH_BUF - 1] = L'\0';
+    toDirname(parentDir);
+    if (!canWriteDir(appDir) || !canWriteDir(parentDir)) {
         if (!isElevated()) {
-            logMsg("appDir not writable, elevating");
+            logMsg("appDir or its parent not writable, elevating");
             closeLog();
             int elevated = restartElevated(wargc, wargv);
+            if (elevated != 0)
+                startApp(appExe);
             LocalFree(wargv);
             return elevated == 0 ? EXIT_OK : EXIT_RENAME_FAILED;
         }
-        logMsg("appDir not writable after elevation");
+        logMsg("appDir or its parent not writable after elevation");
         closeLog();
+        startApp(appExe);
         return EXIT_RENAME_FAILED;
     }
 #endif
@@ -946,13 +968,14 @@ int main(int argc, char *argv[]) {
 
     if (patchFile) {
         if (isStagedDir) {
-            if (!hasDir(newDir)) {
-                logMsg("moving staged dir " PFMT " -> " PFMT, patchFile, newDir);
-                if (moveDir(patchFile, newDir) != 0) {
-                    logMsg("move staged dir failed");
-                    closeLog();
-                    return EXIT_RENAME_FAILED;
-                }
+            /* An existing New Dir can be old or incomplete; Staging has the latest tree. */
+            deleteDir(newDir);
+            logMsg("moving staged dir " PFMT " -> " PFMT, patchFile, newDir);
+            if (hasDir(newDir) || moveDir(patchFile, newDir) != 0) {
+                logMsg("move staged dir failed");
+                closeLog();
+                startApp(appExe);
+                return EXIT_RENAME_FAILED;
             }
         } else if (hasDir(newDir)) {
             logMsg("reusing " PFMT, newDir);
@@ -960,6 +983,7 @@ int main(int argc, char *argv[]) {
             logMsg("hpatchz failed");
             deleteDir(newDir);
             closeLog();
+            startApp(appExe);
             return EXIT_PATCH_FAILED;
         } else {
             logMsg("patch applied");
@@ -978,6 +1002,7 @@ int main(int argc, char *argv[]) {
             openLog(exeDir);
             logMsg("cannot delete patch");
             closeLog();
+            startApp(appExe);
             return EXIT_RENAME_FAILED;
         }
     }
@@ -993,12 +1018,14 @@ int main(int argc, char *argv[]) {
             }
             logMsg("elevation failed or cancelled");
             closeLog();
+            startApp(appExe);
             return EXIT_RENAME_FAILED;
         }
 #endif
         openLog(exeDir);
         logMsg("install failed");
         closeLog();
+        startApp(appExe);
         return EXIT_RENAME_FAILED;
     }
     openLog(exeDir);
