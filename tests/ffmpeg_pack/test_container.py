@@ -188,3 +188,121 @@ def test_parse_progressive_mp4_tail_moov():
     assembled = seg.patchedHeader + mp4[seg.segStart:seg.segEnd]
     assert b"VID_04_" in assembled
     assert b"VID_00_" not in assembled[len(seg.patchedHeader):]
+
+
+def buildFragmentedMp4Header(segmentCount: int, segmentSize: int = 10_000, segmentDuration: int = 2000) -> bytes:
+    ftyp = buildBox(b"ftyp", b"iso5\x00\x00\x02\x00iso5iso6mp41")
+    mvex = buildBox(b"mvex", buildBox(b"trex", b"\x00" * 24))
+    moov = buildBox(b"moov", buildBox(b"mvhd", b"\x00" * 100) + mvex)
+
+    sidxBody = bytearray()
+    sidxBody.extend(b"\x00\x00\x00\x00")  # version 0, flags 0
+    sidxBody.extend(pack(">II", 1, 1000))  # reference_ID=1, timescale=1000
+    sidxBody.extend(pack(">II", 0, 0))  # earliest_presentation_time=0, first_offset=0
+    sidxBody.extend(pack(">HH", 0, segmentCount))
+    for _ in range(segmentCount):
+        sidxBody.extend(pack(">III", segmentSize, segmentDuration, 0x90000000))
+    sidx = buildBox(b"sidx", bytes(sidxBody))
+    return ftyp + moov + sidx + b"\x00\x00\x00\x18moof"
+
+
+def buildEbmlId(ebmlId: int) -> bytes:
+    for length in (1, 2, 3, 4):
+        if ebmlId < (1 << (8 * length)):
+            return ebmlId.to_bytes(length, "big")
+    raise ValueError(ebmlId)
+
+
+def buildVintSize(size: int) -> bytes:
+    for length in range(1, 9):
+        maxVal = (1 << (7 * length)) - 2
+        if size <= maxVal:
+            val = size | (1 << (7 * length))
+            return val.to_bytes(length, "big")
+    raise ValueError(size)
+
+
+def buildUintElement(ebmlId: int, value: int) -> bytes:
+    length = max(1, (value.bit_length() + 7) // 8)
+    payload = value.to_bytes(length, "big")
+    return buildEbmlId(ebmlId) + buildVintSize(len(payload)) + payload
+
+
+def buildWebmHeaderWithCues(cueCount: int, clusterStride: int = 50_000, cueIntervalMs: int = 2000) -> bytes:
+    ebml = buildEbmlId(0x1A45DFA3) + buildVintSize(4) + b"\x42\x86\x81\x01"
+    timecodeScale = buildUintElement(0x2AD7B1, 1_000_000)
+    durationPayload = pack(">d", float(cueCount * cueIntervalMs))
+    durationElem = buildEbmlId(0x4489) + buildVintSize(8) + durationPayload
+    infoPayload = timecodeScale + durationElem
+    info = buildEbmlId(0x1549A966) + buildVintSize(len(infoPayload)) + infoPayload
+
+    cuePoints = bytearray()
+    for i in range(cueCount):
+        cueTime = buildUintElement(0xB3, i * cueIntervalMs)
+        cueClusterPos = buildUintElement(0xF1, 100_000 + i * clusterStride)
+        cueTrackPos = buildEbmlId(0xB7) + buildVintSize(len(cueClusterPos)) + cueClusterPos
+        pointPayload = cueTime + cueTrackPos
+        cuePoints.extend(buildEbmlId(0xBB) + buildVintSize(len(pointPayload)) + pointPayload)
+    cues = buildEbmlId(0x1C53BB6B) + buildVintSize(len(cuePoints)) + bytes(cuePoints)
+    clusterHead = buildEbmlId(0x1F43B675) + buildVintSize(clusterStride)
+    segmentPayload = info + cues + clusterHead
+    segment = buildEbmlId(0x18538067) + b"\x01\xff\xff\xff\xff\xff\xff\xff" + segmentPayload
+    return ebml + segment
+
+
+def test_parse_fragmented_mp4_large_sidx_beyond_head_probe():
+    header = buildFragmentedMp4Header(segmentCount=6000, segmentSize=10_000, segmentDuration=2000)
+    assert len(header) > 65536
+    totalSize = len(header) + 6000 * 10_000
+
+    head = header[:65536]
+    assert parseContainerIndex(head) is None
+
+    moovRange = findMoovRange(head, totalSize)
+    assert moovRange is not None
+    prefix, offset, length = moovRange
+    assert prefix == head
+    assert offset == 65536
+    assert offset + length == len(header) - 8  # right up to the end of sidx
+
+    fullHeader = prefix + header[offset:offset + length]
+    assert findMoovRange(fullHeader, totalSize) == (b"", 0, 0)
+
+    index = parseContainerIndex(fullHeader)
+    assert index is not None
+    assert index.format == "fmp4"
+    assert index.duration == pytest.approx(12000.0)
+
+    seg = buildSegmentRange(fullHeader, index, 3600.0, 3660.0)
+    assert seg is not None
+    assert seg.segStartTime == pytest.approx(3600.0)
+    assert seg.segEnd - seg.segStart == 30 * 10_000
+
+
+def test_parse_webm_large_cues_beyond_head_probe():
+    header = buildWebmHeaderWithCues(cueCount=5000, clusterStride=50_000, cueIntervalMs=2000)
+    assert len(header) > 65536
+    totalSize = len(header) + 5000 * 50_000
+
+    head = header[:65536]
+    assert parseContainerIndex(head) is None
+
+    moovRange = findMoovRange(head, totalSize)
+    assert moovRange is not None
+    prefix, offset, length = moovRange
+    assert prefix == head
+    assert offset == 65536
+    assert offset + length <= len(header)
+
+    fullHeader = prefix + header[offset:offset + length]
+    assert findMoovRange(fullHeader, totalSize) == (b"", 0, 0)
+
+    index = parseContainerIndex(fullHeader)
+    assert index is not None
+    assert index.format == "webm"
+    assert index.duration == pytest.approx(10000.0)
+
+    seg = buildSegmentRange(fullHeader, index, 3600.0, 3660.0)
+    assert seg is not None
+    assert seg.segStartTime == pytest.approx(3600.0)
+    assert seg.segEnd - seg.segStart == 31 * 50_000

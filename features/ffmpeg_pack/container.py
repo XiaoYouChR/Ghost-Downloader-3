@@ -61,6 +61,8 @@ def buildTimeSuffix(startTime: float, endTime: float) -> str:
 def findMoovRange(head: bytes, fileSize: int) -> tuple[bytes, int, int] | None:
     if len(head) < 8:
         return None
+    if head[:4] == b"\x1a\x45\xdf\xa3":
+        return findWebmIndexRange(head, fileSize)
     firstType = head[4:8]
     if firstType not in TOP_LEVEL_MP4_BOXES:
         return None
@@ -107,12 +109,22 @@ def findMoovRange(head: bytes, fileSize: int) -> tuple[bytes, int, int] | None:
             if sidxEnd <= len(head):
                 return b"", 0, 0
             if sidxEnd <= MAX_MOOV_SIZE and (fileSize <= 0 or sidxEnd <= fileSize):
-                return b"", 0, sidxEnd
+                return head, len(head), sidxEnd - len(head)
             return None
-        if moovPos + moovSize <= len(head):
+        moovEnd = moovPos + moovSize
+        if moovEnd <= len(head):
+            hasMvex = any(
+                boxType == b"mvex"
+                for boxType, _, _, _, _ in parseBoxList(head, moovPos + 8, moovEnd)
+            )
+            if hasMvex and (fileSize <= 0 or len(head) < fileSize):
+                extraLen = min(65536, fileSize - len(head)) if fileSize > 0 else 65536
+                return head, len(head), extraLen
             return b"", 0, 0
-        if moovSize > MAX_MOOV_SIZE or (fileSize > 0 and moovPos + moovSize > fileSize):
+        if moovSize > MAX_MOOV_SIZE or (fileSize > 0 and moovEnd > fileSize):
             return None
+        if mdatEnd == 0:
+            return head, len(head), moovEnd - len(head)
         return ftypBytes, moovPos, moovSize
 
     if mdatEnd > 0 and fileSize > mdatEnd:
@@ -1096,12 +1108,51 @@ EBML_ID_INFO = 0x1549A966
 EBML_ID_TIMESTAMP_SCALE = 0x2AD7B1
 EBML_ID_DURATION = 0x4489
 EBML_ID_CUES = 0x1C53BB6B
+EBML_ID_CLUSTER = 0x1F43B675
 EBML_ID_CUE_POINT = 0xBB
 EBML_ID_CUE_TIME = 0xB3
 EBML_ID_CUE_TRACK_POSITIONS = 0xB7
 EBML_ID_CUE_CLUSTER_POSITION = 0xF1
 
 EBML_MASTER_IDS = {EBML_ID_SEGMENT, EBML_ID_CUES, EBML_ID_CUE_POINT, EBML_ID_CUE_TRACK_POSITIONS}
+
+
+def findWebmIndexRange(head: bytes, fileSize: int) -> tuple[bytes, int, int] | None:
+    try:
+        _, pos = parseEbmlElementId(head, 0)
+        ebmlSize, pos = parseEbmlVarInt(head, pos)
+        pos += ebmlSize
+        segId, pos = parseEbmlElementId(head, pos)
+        if segId != EBML_ID_SEGMENT:
+            return None
+        _, pos = parseEbmlVarInt(head, pos)
+    except ValueError:
+        return None
+
+    while pos < len(head):
+        try:
+            elemId, nextPos = parseEbmlElementId(head, pos)
+            elemSize, nextPos = parseEbmlVarInt(head, nextPos)
+        except ValueError:
+            if fileSize <= 0 or len(head) < fileSize:
+                extraLen = min(65536, fileSize - len(head)) if fileSize > 0 else 65536
+                return head, len(head), extraLen
+            return None
+        elemEnd = nextPos + elemSize
+        if elemId == EBML_ID_CUES:
+            if elemEnd <= len(head):
+                return b"", 0, 0
+            if elemEnd <= MAX_MOOV_SIZE and (fileSize <= 0 or elemEnd <= fileSize):
+                return head, len(head), elemEnd - len(head)
+            return None
+        if elemId == EBML_ID_CLUSTER:
+            return None
+        if elemEnd > len(head):
+            if elemEnd <= MAX_MOOV_SIZE and (fileSize <= 0 or elemEnd <= fileSize):
+                return head, len(head), elemEnd - len(head)
+            return None
+        pos = elemEnd
+    return None
 
 
 def parseWebmInfoDuration(data: bytes, start: int, end: int) -> float:
@@ -1139,7 +1190,7 @@ def parseWebmHeader(data: bytes) -> tuple[int, float, list[tuple[int, int]]]:
 
     duration = 0.0
     cues: list[tuple[int, int]] = []
-    limit = min(len(data), segmentDataOffset + 65536)
+    limit = len(data)
 
     while pos < limit:
         try:
@@ -1148,11 +1199,17 @@ def parseWebmHeader(data: bytes) -> tuple[int, float, list[tuple[int, int]]]:
         except ValueError:
             break
 
-        if elemId == EBML_ID_INFO and nextPos + elemSize <= len(data):
+        if elemId == EBML_ID_INFO:
+            if nextPos + elemSize > len(data):
+                raise ValueError("truncated WebM Info element")
             duration = parseWebmInfoDuration(data, nextPos, nextPos + elemSize)
             pos = nextPos + elemSize
         elif elemId == EBML_ID_CUES:
-            cues = parseCuesElement(data, nextPos, min(len(data), nextPos + elemSize))
+            if nextPos + elemSize > len(data):
+                raise ValueError("truncated WebM Cues element")
+            cues = parseCuesElement(data, nextPos, nextPos + elemSize)
+            break
+        elif elemId == EBML_ID_CLUSTER:
             break
         elif elemId in EBML_MASTER_IDS:
             pos = nextPos
@@ -1173,11 +1230,10 @@ def parseCuesElement(data: bytes, start: int, end: int) -> list[tuple[int, int]]
     cues: list[tuple[int, int]] = []
     pos = start
     while pos < end:
-        try:
-            elemId, nextPos = parseEbmlElementId(data, pos)
-            elemSize, nextPos = parseEbmlVarInt(data, nextPos)
-        except ValueError:
-            break
+        elemId, nextPos = parseEbmlElementId(data, pos)
+        elemSize, nextPos = parseEbmlVarInt(data, nextPos)
+        if nextPos + elemSize > end:
+            raise ValueError("truncated WebM CuePoint element")
         if elemId == EBML_ID_CUE_POINT:
             cueTime, cuePos = parseCuePoint(data, nextPos, nextPos + elemSize)
             if cueTime >= 0 and cuePos >= 0:

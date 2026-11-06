@@ -88,7 +88,7 @@ async def probeContainerIndex(
     firstLen = min(fileSize, probeSize) if hasKnownSize else probeSize
     if firstLen <= 0:
         return None
-    head = await fetchRange(
+    headerData = await fetchRange(
         url, 0, firstLen,
         headers=headers,
         clientProfile=clientProfile,
@@ -96,20 +96,22 @@ async def probeContainerIndex(
         sourceUserAgent=sourceUserAgent,
         requireExactLength=hasKnownSize,
     )
-    headerData = head
-    moovRange = findMoovRange(head, fileSize)
-    if moovRange is not None:
+    for _ in range(3):
+        moovRange = findMoovRange(headerData, fileSize)
+        if moovRange is None:
+            break
         prefix, offset, length = moovRange
-        if length > 0:
-            extra = await fetchRange(
-                url, offset, length,
-                headers=headers,
-                clientProfile=clientProfile,
-                userAgent=userAgent,
-                sourceUserAgent=sourceUserAgent,
-                requireExactLength=True,
-            )
-            headerData = prefix + extra
+        if length <= 0:
+            break
+        extra = await fetchRange(
+            url, offset, length,
+            headers=headers,
+            clientProfile=clientProfile,
+            userAgent=userAgent,
+            sourceUserAgent=sourceUserAgent,
+            requireExactLength=hasKnownSize,
+        )
+        headerData = prefix + extra
     index = parseContainerIndex(headerData)
     if index is None or index.duration <= 0:
         return None
@@ -127,6 +129,7 @@ class FFmpegResourceStep(HttpTaskStep):
     endTime: float = field(default=0, repr=False)
     headerData: bytes = field(default=b"", repr=False)
     containerIndex: ContainerIndex | None = field(default=None, repr=False)
+    _patchedHeader: bytes = field(default=b"", init=False, repr=False)
 
     @property
     def outputPath(self) -> str:
@@ -134,9 +137,17 @@ class FFmpegResourceStep(HttpTaskStep):
             return self.task.outputPath
         return str(toResourcePath(self.task, self.role, self.extension))
 
-    async def _prepareSegmentRange(self) -> bytes:
+    async def updateSegmentRange(self) -> None:
+        if self.startTime <= 0 and self.endTime <= 0:
+            self.httpByteOffset = 0
+            self.segStartTime = 0.0
+            self._patchedHeader = b""
+            if self.rawFileSize > 0:
+                self.fileSize = self.rawFileSize
+            return
+
         if not self.headerData or self.containerIndex is None:
-            probeSize = (self.probeEndByte + 1) if self.probeEndByte > 0 else HEAD_PROBE_SIZE
+            probeSize = max(HEAD_PROBE_SIZE, self.probeEndByte + 1)
             try:
                 probed = await probeContainerIndex(
                     self.url,
@@ -146,6 +157,8 @@ class FFmpegResourceStep(HttpTaskStep):
                     clientProfile=self.clientProfile,
                     userAgent=self.userAgent,
                 )
+            except TaskError:
+                raise
             except Exception as e:
                 logger.warning("segment range probe failed for {}: {}", self.url, e)
                 probed = None
@@ -160,38 +173,38 @@ class FFmpegResourceStep(HttpTaskStep):
                 self.httpByteOffset = segRange.segStart
                 self.fileSize = segRange.segEnd - segRange.segStart
                 self.segStartTime = segRange.segStartTime
-                return segRange.patchedHeader
+                self._patchedHeader = segRange.patchedHeader
+                return
 
-        logger.warning("segment range parsing unavailable for {}, falling back to full stream", self.url)
-        self.httpByteOffset = 0
-        self.segStartTime = 0.0
-        return b""
+        raise TaskError("无法解析媒体索引，无法截取片段")
 
     async def run(
         self,
         reportSpeed: Callable[[int], None],
         waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
-        patchedHeader = b""
         if self.startTime > 0 or self.endTime > 0:
-            patchedHeader = await self._prepareSegmentRange()
+            if not self._patchedHeader:
+                await self.updateSegmentRange()
         else:
             self.httpByteOffset = 0
             self.segStartTime = 0.0
+            self._patchedHeader = b""
             if self.rawFileSize > 0:
                 self.fileSize = self.rawFileSize
 
         await super().run(reportSpeed, waitForSpeedLimit)
 
-        if patchedHeader:
+        if self._patchedHeader:
             path = Path(self.outputPath)
             if path.exists():
                 tmp = path.with_suffix(f"{path.suffix}.tmp")
                 with open(tmp, "wb") as f:
-                    f.write(patchedHeader)
+                    f.write(self._patchedHeader)
                     with open(path, "rb") as seg:
                         shutil.copyfileobj(seg, f)
                 tmp.replace(path)
+            self._patchedHeader = b""
 
 
 @dataclass(kw_only=True)

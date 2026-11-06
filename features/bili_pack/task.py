@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import shutil
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-
-from loguru import logger
 
 from app.models.task import Task, TaskError, TaskFile, TaskStep, TaskStatus, SpecialFileSize, deletePlaceholder
 
 from app.platform.filesystem import toSafeFilename
 from app.i18n import N
 from http_pack.task import HttpTaskStep
-from ffmpeg_pack.task import FFmpegStep
+from ffmpeg_pack.container import buildTimeSuffix
+from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep
 from .config import AUDIO_QUALITY_LABELS, AUDIO_QUALITY_VALUES
 from .stream import buildSize, fetchPlayurl, probeSize, toStreamUrl
 
@@ -91,13 +89,6 @@ def subtitleChoices(task: BilibiliTask) -> list[tuple[str, str]]:
     return choices
 
 
-def buildTimeSuffix(startTime: int, endTime: int) -> str:
-    def fmt(sec: int) -> str:
-        m, s = divmod(sec, 60)
-        return f"{m:02d}m{s:02d}s"
-    return f"[{fmt(startTime)}-{fmt(endTime)}]"
-
-
 def parseSegmentBaseEndByte(streams: list[dict], url: str) -> int:
     for s in streams:
         if toStreamUrl(s) == url:
@@ -105,7 +96,7 @@ def parseSegmentBaseEndByte(streams: list[dict], url: str) -> int:
             indexRange = segBase.get("indexRange") or segBase.get("index_range") or ""
             if indexRange and "-" in indexRange:
                 return int(indexRange.split("-")[1])
-    return 4095
+    return 0
 
 
 def toResourcePath(task: Task, fileIndex: int, role: str) -> Path:
@@ -446,8 +437,9 @@ class BilibiliCoverStep(HttpTaskStep):
 
 
 @dataclass(kw_only=True)
-class BilibiliVideoStep(HttpTaskStep):
+class BilibiliVideoStep(FFmpegResourceStep):
     _task: BilibiliTask = field(repr=False, init=False)
+    role: str = "video"
     fileIndex: int = 0
 
     @property
@@ -477,52 +469,25 @@ class BilibiliVideoStep(HttpTaskStep):
             self.task.requestedQn = usedQn
         if page:
             self.url = page.videoUrl
+            self.rawFileSize = page.videoSize
             self.fileSize = page.videoSize
             self.headers = dict(page.headers)
+            self.startTime = page.startTime
+            self.endTime = page.endTime
+            self.probeEndByte = parseSegmentBaseEndByte(page._videoStreams, self.url)
         if not self.url:
             raise TaskError("未获取到视频流地址")
-        if page and (page.startTime or page.endTime):
-            await self._updateSegmentRange(page)
-        else:
+        if not (page and (page.startTime or page.endTime)):
             size = await probeSize(self.url, self.headers)
-            self.fileSize = size if size > 0 else SpecialFileSize.UNKNOWN
+            self.rawFileSize = size if size > 0 else SpecialFileSize.UNKNOWN
+            self.fileSize = self.rawFileSize
         await super().run(reportSpeed, waitForSpeedLimit)
-
-    async def _updateSegmentRange(self, page: BiliPage) -> None:
-        from app.client import buildClient
-        from ffmpeg_pack.container import buildMp4SegmentRange
-
-        endByte = parseSegmentBaseEndByte(page._videoStreams, self.url)
-        client = buildClient()
-        try:
-            headers = {**self.headers, "range": f"bytes=0-{endByte}", "accept-encoding": "identity"}
-            response = await client.get(self.url, headers=headers)
-            try:
-                headerData = bytes(await response.bytes())
-            finally:
-                response.close()
-        finally:
-            client.close()
-
-        try:
-            segRange = buildMp4SegmentRange(headerData, page.startTime, page.endTime)
-        except Exception as e:
-            logger.warning("segment range parsing failed for {}: {}", self.url, e)
-            return
-
-        self.httpByteOffset = segRange.segStart
-        self.fileSize = segRange.segEnd - segRange.segStart
-
-        for mergeStep in self.task.steps:
-            if isinstance(mergeStep, BilibiliMergeStep) and mergeStep.fileIndex == self.fileIndex:
-                mergeStep.patchedVideoHeader = segRange.patchedHeader
-                mergeStep.segStartTime = segRange.segStartTime
-                break
 
 
 @dataclass(kw_only=True)
-class BilibiliAudioStep(HttpTaskStep):
+class BilibiliAudioStep(FFmpegResourceStep):
     _task: BilibiliTask = field(repr=False, init=False)
+    role: str = "audio"
     fileIndex: int = 0
 
     @property
@@ -552,56 +517,25 @@ class BilibiliAudioStep(HttpTaskStep):
             self.task.requestedQn = usedQn
         if page:
             self.url = page.audioUrl
+            self.rawFileSize = page.audioSize
             self.fileSize = page.audioSize
             self.headers = dict(page.headers)
+            self.startTime = page.startTime
+            self.endTime = page.endTime
+            self.probeEndByte = parseSegmentBaseEndByte(page._audioStreams, self.url)
         if not self.url:
             return
-        if page and (page.startTime or page.endTime):
-            await self._updateSegmentRange(page)
-        else:
+        if not (page and (page.startTime or page.endTime)):
             size = await probeSize(self.url, self.headers)
-            self.fileSize = size if size > 0 else SpecialFileSize.UNKNOWN
+            self.rawFileSize = size if size > 0 else SpecialFileSize.UNKNOWN
+            self.fileSize = self.rawFileSize
         await super().run(reportSpeed, waitForSpeedLimit)
-
-    async def _updateSegmentRange(self, page: BiliPage) -> None:
-        from app.client import buildClient
-        from ffmpeg_pack.container import buildMp4SegmentRange
-
-        endByte = parseSegmentBaseEndByte(page._audioStreams, self.url)
-        client = buildClient()
-        try:
-            headers = {**self.headers, "range": f"bytes=0-{endByte}", "accept-encoding": "identity"}
-            response = await client.get(self.url, headers=headers)
-            try:
-                headerData = bytes(await response.bytes())
-            finally:
-                response.close()
-        finally:
-            client.close()
-
-        try:
-            segRange = buildMp4SegmentRange(headerData, page.startTime, page.endTime)
-        except Exception as e:
-            logger.warning("segment range parsing failed for {}: {}", self.url, e)
-            return
-
-        self.httpByteOffset = segRange.segStart
-        self.fileSize = segRange.segEnd - segRange.segStart
-
-        for mergeStep in self.task.steps:
-            if isinstance(mergeStep, BilibiliMergeStep) and mergeStep.fileIndex == self.fileIndex:
-                mergeStep.patchedAudioHeader = segRange.patchedHeader
-                mergeStep.segStartTime = segRange.segStartTime
-                break
 
 
 @dataclass(kw_only=True)
 class BilibiliMergeStep(FFmpegStep):
     _task: BilibiliTask = field(repr=False, init=False)
     fileIndex: int = 0
-    patchedVideoHeader: bytes = field(default=b"", repr=False)
-    patchedAudioHeader: bytes = field(default=b"", repr=False)
-    segStartTime: float = field(default=0.0, repr=False)
 
     @property
     def task(self) -> BilibiliTask:
@@ -620,44 +554,25 @@ class BilibiliMergeStep(FFmpegStep):
         return toResourcePath(self.task, self.fileIndex, "audio")
 
     @property
-    def _timeRange(self) -> tuple[int, int] | None:
+    def _timeRange(self) -> tuple[float, float] | None:
         page = pageByIndex(self.task, self.fileIndex)
         if page and (page.startTime or page.endTime):
             return page.startTime, page.endTime
-        return None
-
-    def _buildTrimArgs(self) -> tuple[list[str], list[str]]:
-        tr = self._timeRange
-        if not tr:
-            return [], []
-        relSS = tr[0] - self.segStartTime
-        return ["-ss", str(relSS)], ["-t", str(tr[1] - tr[0])]
+        return super()._timeRange
 
     async def run(
         self,
         reportSpeed: Callable[[int], None],
         waitForSpeedLimit: Callable[[int], Awaitable[None]],
     ) -> None:
-        for header, path in [
-            (self.patchedVideoHeader, self._videoPath),
-            (self.patchedAudioHeader, self._audioPath),
-        ]:
-            if header and path.exists():
-                tmp = path.with_suffix(".tmp")
-                with open(tmp, "wb") as f:
-                    f.write(header)
-                    with open(path, "rb") as seg:
-                        shutil.copyfileobj(seg, f)
-                tmp.replace(path)
-
         sources = [p for p in (self._videoPath, self._audioPath) if p.exists()]
         if not sources:
             deletePlaceholder(Path(self.outputPath))
             return
 
         if self._timeRange:
-            preArgs, postArgs = self._buildTrimArgs()
-            await self._runMerge(sources, sourceArgs=preArgs, outputArgs=[*postArgs, "-f", "mp4"])
+            _, postArgs = self._buildTrimArgs(sources[0])
+            await self._runMerge(sources, outputArgs=[*postArgs, "-f", "mp4"])
         elif len(sources) == 2:
             await self._runMerge(sources)
         else:

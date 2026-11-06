@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import importlib
 import io
-import shutil
 import tempfile
 import threading
 from collections.abc import Awaitable, Callable, Iterable, Iterator
@@ -420,49 +419,16 @@ class YouTubeExtractStep(TaskStep):
         return False
 
     async def _updateSegmentRanges(self, file: YouTubeFile) -> None:
-        from app.client import buildClient, toEmulation
-        from app.config.cfg import cfg
-        from ffmpeg_pack.container import buildMp4SegmentRange, buildWebmSegmentRange
-
         for step in self.task.steps:
-            if step.fileIndex != self.fileIndex or not isinstance(step, YouTubeResourceStep):
+            if step.fileIndex != self.fileIndex:
                 continue
-            if not step.url:
-                continue
-            emulation = toEmulation(step.clientProfile or cfg.clientProfile.value, "")
-            client = buildClient(emulation=emulation, userAgent=step.userAgent or None)
-            try:
-                headers = {**step.headers, "range": "bytes=0-4095", "accept-encoding": "identity"}
-                response = await client.get(step.url, headers=headers)
-                try:
-                    headerData = bytes(await response.bytes())
-                finally:
-                    response.close()
-            finally:
-                client.close()
-
-            isWebm = step.extension in ("webm", "mkv")
-            builder = buildWebmSegmentRange if isWebm else buildMp4SegmentRange
-            try:
-                segRange = builder(headerData, file.startTime, file.endTime)
-            except Exception as e:
-                logger.warning("segment range parsing failed for {}: {}", step.url, e)
-                continue
-
-            step.httpByteOffset = segRange.segStart
-            step.fileSize = segRange.segEnd - segRange.segStart
-
-            stepLang = step.language
-            for mergeStep in self.task.steps:
-                if (isinstance(mergeStep, YouTubeMergeStep)
-                        and mergeStep.fileIndex == self.fileIndex
-                        and mergeStep.language == stepLang):
-                    if step.role == "video" and not stepLang:
-                        mergeStep.patchedVideoHeader = segRange.patchedHeader
-                    else:
-                        mergeStep.patchedAudioHeader = segRange.patchedHeader
-                    mergeStep.segStartTime = segRange.segStartTime
-                    break
+            if isinstance(step, YouTubeResourceStep) and step.url:
+                step.startTime = file.startTime
+                step.endTime = file.endTime
+                await step.updateSegmentRange()
+            elif isinstance(step, YouTubeMergeStep):
+                step.startTime = file.startTime
+                step.endTime = file.endTime
 
         totalSize = sum(
             s.fileSize for s in self.task.steps
@@ -485,7 +451,8 @@ class YouTubeExtractStep(TaskStep):
                     step.url = ""
                     continue
                 step.url = fmt["url"]
-                step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
+                step.rawFileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
+                step.fileSize = step.rawFileSize
                 step.extension = fmt.get("ext") or ("mp4" if step.role == "video" else "m4a")
                 step.canUseRangeRequests = True
                 step.subworkerCount = cfg.preBlockNum.value
@@ -534,7 +501,8 @@ class YouTubeExtractStep(TaskStep):
                 continue
             fmt = langFormats[0]
             step.url = fmt["url"]
-            step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
+            step.rawFileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
+            step.fileSize = step.rawFileSize
             step.extension = fmt.get("ext") or "m4a"
             step.canUseRangeRequests = True
             step.subworkerCount = subworkerCount
@@ -564,8 +532,13 @@ class YouTubeResourceStep(FFmpegResourceStep):
         reportSpeed: Callable[[int], None],
         waitForSpeedLimit: Callable[[int], Awaitable[None]],
     ) -> None:
-        if self.url:
-            await super().run(reportSpeed, waitForSpeedLimit)
+        if not self.url:
+            return
+        file = next((f for f in (self.task.files or []) if f.index == self.fileIndex), None)
+        if file:
+            self.startTime = file.startTime
+            self.endTime = file.endTime
+        await super().run(reportSpeed, waitForSpeedLimit)
 
 
 @dataclass(kw_only=True)
@@ -604,9 +577,6 @@ class YouTubeMergeStep(FFmpegStep):
     metadataTitle: str = ""
     metadataArtist: str = ""
     chapters: list[dict[str, Any]] = field(default_factory=list)
-    patchedVideoHeader: bytes = field(default=b"", repr=False)
-    patchedAudioHeader: bytes = field(default=b"", repr=False)
-    segStartTime: float = field(default=0.0, repr=False)
 
     @property
     def task(self) -> YouTubeTask:
@@ -627,38 +597,17 @@ class YouTubeMergeStep(FFmpegStep):
         return toResourcePath(self.task, self.fileIndex, "audio", self.language, self.audioExtension)
 
     @property
-    def _timeRange(self) -> tuple[int, int] | None:
-        if not self.task.files:
-            return None
-        for f in self.task.files:
+    def _timeRange(self) -> tuple[float, float] | None:
+        for f in self.task.files or []:
             if f.index == self.fileIndex and (f.startTime or f.endTime):
                 return f.startTime, f.endTime
-        return None
-
-    def _buildTrimArgs(self) -> tuple[list[str], list[str]]:
-        tr = self._timeRange
-        if not tr:
-            return [], []
-        relSS = tr[0] - self.segStartTime
-        return ["-ss", str(relSS)], ["-t", str(tr[1] - tr[0])]
+        return super()._timeRange
 
     async def run(
         self,
         reportSpeed: Callable[[int], None],
         waitForSpeedLimit: Callable[[int], Awaitable[None]],
     ) -> None:
-        for header, path in [
-            (self.patchedVideoHeader, self._videoPath),
-            (self.patchedAudioHeader, self._audioPath),
-        ]:
-            if header and path.exists():
-                tmp = path.with_suffix(".tmp")
-                with open(tmp, "wb") as f:
-                    f.write(header)
-                    with open(path, "rb") as seg:
-                        shutil.copyfileobj(seg, f)
-                tmp.replace(path)
-
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 
@@ -681,7 +630,7 @@ class YouTubeMergeStep(FFmpegStep):
             await self._runWithMetadata([singleInput])
 
     async def _runWithMetadata(self, sources: list[Path]) -> None:
-        preArgs, postArgs = self._buildTrimArgs()
+        _, postArgs = self._buildTrimArgs(sources[0])
         chaptersFile = self._createChaptersFile() if self.chapters else None
         outputArgs = list(postArgs)
         if chaptersFile:
@@ -696,7 +645,6 @@ class YouTubeMergeStep(FFmpegStep):
         try:
             await self._runMerge(
                 sources,
-                sourceArgs=preArgs,
                 extraInputArgs=["-f", "ffmetadata", "-i", chaptersFile] if chaptersFile else [],
                 outputArgs=outputArgs,
             )
