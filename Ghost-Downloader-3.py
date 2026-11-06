@@ -212,14 +212,14 @@ def startApp(application, primaryInstance, isSilent=False):
     if sys.platform == "darwin":
         from app.view.shell.mac_status_item import MacStatusItem
         from app.view.shell.dock import setupDock
-        statusItem = MacStatusItem(taskService)
+        statusItem = MacStatusItem(taskService, show)
         statusItem.show()
         speedMeter.speedChanged.connect(statusItem.setSpeed)
         application.statusItem = statusItem
         setupDock(speedMeter, taskService)
     else:
         from app.view.shell.tray import SystemTrayIcon
-        tray = SystemTrayIcon(taskService, speedMeter, QIcon(":/image/logo.png"), parent=application)
+        tray = SystemTrayIcon(taskService, speedMeter, show, QIcon(":/image/logo.png"), parent=application)
         tray.show()
     if sys.platform == "linux":
         from app.platform.taskbar import setLauncherProgress

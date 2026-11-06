@@ -4932,26 +4932,38 @@ Data will be copied to new location and the program will then exit. Por favor ma
 <context>
     <name>SystemTrayIcon</name>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="97"/>
-        <location filename="../../view/shell/tray.py" line="181"/>
+        <location filename="../../view/shell/mac_status_item.py" line="105"/>
+        <location filename="../../view/shell/tray.py" line="183"/>
         <source>仪表盘</source>
         <translation>Panel</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="98"/>
-        <location filename="../../view/shell/tray.py" line="183"/>
+        <location filename="../../view/shell/mac_status_item.py" line="106"/>
+        <location filename="../../view/shell/tray.py" line="185"/>
+        <source>新建任务</source>
+        <translation>Nueva tarea</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/mac_status_item.py" line="107"/>
+        <location filename="../../view/shell/tray.py" line="187"/>
         <source>全部开始</source>
         <translation>Iniciar todo</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="99"/>
-        <location filename="../../view/shell/tray.py" line="185"/>
+        <location filename="../../view/shell/mac_status_item.py" line="108"/>
+        <location filename="../../view/shell/tray.py" line="189"/>
         <source>全部暂停</source>
         <translation>Pausar todo</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="100"/>
-        <location filename="../../view/shell/tray.py" line="188"/>
+        <location filename="../../view/shell/mac_status_item.py" line="109"/>
+        <location filename="../../view/shell/tray.py" line="191"/>
+        <source>设置</source>
+        <translation>Ajustes</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/mac_status_item.py" line="111"/>
+        <location filename="../../view/shell/tray.py" line="194"/>
         <source>退出程序</source>
         <translation>Salir</translation>
     </message>

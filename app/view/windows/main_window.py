@@ -160,7 +160,7 @@ class MainWindow(MSFluentWindow):
         )
         self._addPage(SettingPage, FluentIcon.SETTING, self.tr("设置"),
                       NavigationItemPosition.BOTTOM)
-        self._showPage(TaskPage)
+        self.showPage(TaskPage)
 
     def setupPacks(self) -> None:
         for PageClass in self._featureService.pages():
@@ -184,10 +184,10 @@ class MainWindow(MSFluentWindow):
                  position: NavigationItemPosition) -> None:
         self.navigationInterface.addItem(
             routeKey=pageClass.__name__, icon=icon, text=text,
-            onClick=lambda: self._showPage(pageClass), position=position,
+            onClick=lambda: self.showPage(pageClass), position=position,
         )
 
-    def _showPage(self, pageClass: type[QWidget]) -> None:
+    def showPage(self, pageClass: type[QWidget]) -> None:
         routeKey = pageClass.__name__
         page = self._pages.get(routeKey)
         if page is None:
@@ -342,7 +342,7 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         settingButton = PushButton(FluentIcon.SETTING, self.tr("前往设置"))
-        settingButton.clicked.connect(lambda: (infoBar.close(), self._showPage(SettingPage)))
+        settingButton.clicked.connect(lambda: (infoBar.close(), self.showPage(SettingPage)))
         infoBar.addWidget(settingButton)
         infoBar.show()
 

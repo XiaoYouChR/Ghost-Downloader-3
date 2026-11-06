@@ -21,7 +21,8 @@ from Foundation import NSData
 
 from app.config.cfg import cfg
 from app.format import toReadableSize
-from app.signal_bus import signalBus
+from app.view.pages.setting_page import SettingPage
+from app.view.pages.task_page import TaskPage
 
 
 class MenuTarget(NSObject):
@@ -40,16 +41,22 @@ class MenuTarget(NSObject):
             self.owner._statusItem.setMenu_(self.owner._menu)
             self.owner._button.performClick_(None)
         else:
-            signalBus.activationRequested.emit()
+            self.owner._show()
 
     def showDashboard_(self, sender):
-        signalBus.activationRequested.emit()
+        self.owner._show().showPage(TaskPage)
+
+    def newTask_(self, sender):
+        self.owner._show().addUrls([])
 
     def startAll_(self, sender):
         self.owner._taskService.startAll()
 
     def pauseAll_(self, sender):
         self.owner._taskService.pauseAll()
+
+    def openSettings_(self, sender):
+        self.owner._show().showPage(SettingPage)
 
     def quitApp_(self, sender):
         QApplication.instance().quit()
@@ -58,8 +65,9 @@ class MenuTarget(NSObject):
 class MacStatusItem:
     ICON_SIZE = 16
 
-    def __init__(self, taskService):
+    def __init__(self, taskService, show):
         self._taskService = taskService
+        self._show = show
         self._statusItem = NSStatusBar.systemStatusBar().statusItemWithLength_(
             NSVariableStatusItemLength
         )
@@ -71,8 +79,8 @@ class MacStatusItem:
         self._target.owner = self
 
         self._menu = self._buildMenu()
-        self._startAllItem = self._menu.itemAtIndex_(1)
-        self._pauseAllItem = self._menu.itemAtIndex_(2)
+        self._startAllItem = self._menu.itemAtIndex_(2)
+        self._pauseAllItem = self._menu.itemAtIndex_(3)
 
         self._button.setTarget_(self._target)
         self._button.setAction_("onClicked:")
@@ -93,12 +101,19 @@ class MacStatusItem:
         menu = NSMenu.alloc().init()
         menu.setAutoenablesItems_(False)
         menu.setDelegate_(self._target)
-        for title, selector, key, symbol in (
+        for entry in (
             (QCoreApplication.translate("SystemTrayIcon", "仪表盘"), "showDashboard:", "", "gauge.open.with.lines.needle.33percent"),
+            (QCoreApplication.translate("SystemTrayIcon", "新建任务"), "newTask:", "", "plus"),
             (QCoreApplication.translate("SystemTrayIcon", "全部开始"), "startAll:", "", "play.fill"),
             (QCoreApplication.translate("SystemTrayIcon", "全部暂停"), "pauseAll:", "", "pause.fill"),
+            (QCoreApplication.translate("SystemTrayIcon", "设置"), "openSettings:", "", "gearshape"),
+            None,
             (QCoreApplication.translate("SystemTrayIcon", "退出程序"), "quitApp:", "q", "power"),
         ):
+            if entry is None:
+                menu.addItem_(NSMenuItem.separatorItem())
+                continue
+            title, selector, key, symbol = entry
             item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, selector, key)
             item.setTarget_(self._target)
             image = NSImage.imageWithSystemSymbolName_accessibilityDescription_(symbol, None)

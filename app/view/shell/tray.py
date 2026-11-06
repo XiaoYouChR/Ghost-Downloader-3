@@ -12,7 +12,8 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.signal_bus import signalBus
+from app.view.pages.setting_page import SettingPage
+from app.view.pages.task_page import TaskPage
 
 
 class GhostIcon(FluentIconBase, Enum):
@@ -171,19 +172,24 @@ else:
 class SystemTrayIcon(QSystemTrayIcon):
     NAME = "Ghost Downloader"
 
-    def __init__(self, taskService, speedMeter, icon: QIcon, parent=None):
+    def __init__(self, taskService, speedMeter, show, icon: QIcon, parent=None):
         super().__init__(icon, parent)
         self._taskService = taskService
         self._speedMeter = speedMeter
+        self._show = show
         self.setToolTip(self.NAME)
 
         self._menu = TrayMenu()
         self._menu.addAction(Action(GhostIcon.GHOST, self.tr("仪表盘"), self._menu,
-                                    triggered=lambda: signalBus.activationRequested.emit()))
+                                    triggered=lambda: self._show().showPage(TaskPage)))
+        self._menu.addAction(Action(FluentIcon.ADD, self.tr("新建任务"), self._menu,
+                                    triggered=lambda: self._show().addUrls([])))
         self._menu.addAction(Action(FluentIcon.PLAY, self.tr("全部开始"), self._menu,
                                     triggered=self._taskService.startAll))
         self._menu.addAction(Action(FluentIcon.PAUSE, self.tr("全部暂停"), self._menu,
                                     triggered=self._taskService.pauseAll))
+        self._menu.addAction(Action(FluentIcon.SETTING, self.tr("设置"), self._menu,
+                                    triggered=lambda: self._show().showPage(SettingPage)))
         self._menu.addSeparator()
         self._menu.addAction(Action(FluentIcon.CLOSE, self.tr("退出程序"), self._menu,
                                     triggered=QApplication.instance().quit))
@@ -195,7 +201,7 @@ class SystemTrayIcon(QSystemTrayIcon):
 
     def _onActivated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
-            signalBus.activationRequested.emit()
+            self._show()
 
     def _onSpeedChanged(self, speed: int) -> None:
         if speed > 0:
