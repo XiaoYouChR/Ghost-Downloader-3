@@ -380,43 +380,49 @@ async function shouldBypassDownload(): Promise<boolean> {
 
 async function takeBrowserDownload(
   downloadItem: chrome.downloads.DownloadItem,
-  options: { eraseFromHistory?: boolean } = {},
+  suggest?: () => void,
 ) {
-  if (await shouldBypassDownload()) {
-    return;
-  }
-
-  const finalUrl = downloadItem.finalUrl || downloadItem.url;
-  await ready;
-
-  if (!shouldTakeDownloads || !/^https?:/i.test(finalUrl)) {
-    return;
-  }
-
-  if (skipDomains.size > 0 && downloadItem.referrer) {
-    const referrerDomain = domainFromUrl(downloadItem.referrer);
-    if (referrerDomain && skipDomains.has(referrerDomain)) { return; }
-  }
-
-  if (skipExtensions.size > 0) {
-    const filename = downloadItem.filename || new URL(finalUrl).pathname.split("/").pop() || "";
-    const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-    if (ext && skipExtensions.has(ext)) { return; }
-  }
-
-  if (minTakeSizeKB > 0) {
-    const totalBytes = downloadItem.totalBytes ?? -1;
-    if (totalBytes < 0 && !shouldTakeUnknownSize) { return; }
-    if (totalBytes >= 0 && totalBytes < minTakeSizeKB * 1024) { return; }
-  }
-
+  let isCancelled = false;
   try {
-    await cancelDownload(downloadItem.id);
-    if (options.eraseFromHistory) {
-      await eraseDownloadFromHistory(downloadItem.id);
+    if (await shouldBypassDownload()) {
+      return;
     }
-  } catch {
-    // Cleanup failed but the browser will still finish the download as fallback.
+
+    const finalUrl = downloadItem.finalUrl || downloadItem.url;
+    await ready;
+
+    if (!shouldTakeDownloads || !/^https?:/i.test(finalUrl)) {
+      return;
+    }
+
+    if (skipDomains.size > 0 && downloadItem.referrer) {
+      const referrerDomain = domainFromUrl(downloadItem.referrer);
+      if (referrerDomain && skipDomains.has(referrerDomain)) { return; }
+    }
+
+    if (skipExtensions.size > 0) {
+      const filename = downloadItem.filename || new URL(finalUrl).pathname.split("/").pop() || "";
+      const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
+      if (ext && skipExtensions.has(ext)) { return; }
+    }
+
+    if (minTakeSizeKB > 0) {
+      const totalBytes = downloadItem.totalBytes ?? -1;
+      if (totalBytes < 0 && !shouldTakeUnknownSize) { return; }
+      if (totalBytes >= 0 && totalBytes < minTakeSizeKB * 1024) { return; }
+    }
+
+    try {
+      await cancelDownload(downloadItem.id);
+      isCancelled = true;
+      await eraseDownloadFromHistory(downloadItem.id);
+    } catch {
+      // Cleanup failed but the browser will still finish the download as fallback.
+    }
+  } finally {
+    if (!isCancelled) {
+      suggest?.();
+    }
   }
 
   await resourceBridge.routeBrowserDownload(downloadItem);
@@ -429,12 +435,12 @@ function sendReply(sendResponse: (response?: unknown) => void, response: Promise
 
 if (supportsDownloadDeterminingFilename()) {
   chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
-    suggest();
-    void takeBrowserDownload(downloadItem);
+    void takeBrowserDownload(downloadItem, suggest);
+    return true;
   });
 } else if (chrome.downloads.onCreated?.addListener) {
   chrome.downloads.onCreated.addListener((downloadItem) => {
-    void takeBrowserDownload(downloadItem, { eraseFromHistory: true });
+    void takeBrowserDownload(downloadItem);
   });
 }
 
