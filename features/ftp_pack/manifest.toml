@@ -1,5 +1,5 @@
 [pack]
 entry = "pack.py"
 class = "FtpPack"
-version = "1.1.2"
-gdMinVersion = "4.4.5"
+version = "1.2.0"
+gdMinVersion = "4.5.0"

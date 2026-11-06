@@ -2,5 +2,5 @@
 entry = "pack.py"
 class = "M3U8Pack"
 dependencies = ["ffmpeg_pack"]
-version = "1.1.4"
-gdMinVersion = "4.4.7"
+version = "1.2.0"
+gdMinVersion = "4.5.0"
