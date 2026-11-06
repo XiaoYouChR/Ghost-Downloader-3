@@ -316,7 +316,7 @@ def translateBrowserLocale(locale: str, localeName: str) -> None:
     response = fetchTranslation(system, user)
     translations = parseBrowserResponse(response)
 
-    merged = {**existing}
+    merged = {k: v for k, v in existing.items() if k in source}
     filled = 0
     for key, trans in translations.items():
         if key in source:
@@ -345,8 +345,8 @@ def checkBrowserLocales(locales: dict[str, str]) -> int:
     for locale in locales:
         chromeLocale = BROWSER_LOCALE_MAP.get(locale, locale)
         existing = parseBrowserMessages(BROWSER_I18N_DIR / chromeLocale / "messages.json")
-        missing = len(source) - len(existing)
-        total += max(missing, 0)
+        missing = len(set(source) - set(existing))
+        total += missing
         if missing > 0:
             print(f"  browser:{locale}: {missing} untranslated")
         else:
