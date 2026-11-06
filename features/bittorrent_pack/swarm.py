@@ -59,14 +59,15 @@ class TrackerInfo:
 
 
 def toTorrentMeta(torrentData: bytes) -> TorrentMeta:
-    info = lt.torrent_info(torrentData)
+    params = lt.load_torrent_buffer(torrentData)
+    info = params.ti
     hashes = info.info_hashes()
     return TorrentMeta(
         infoHashV1=str(hashes.v1) if hashes.has_v1() else "",
         infoHashV2=str(hashes.v2) if hashes.has_v2() else "",
-        comment=info.comment(),
-        creator=info.creator(),
-        createdAt=info.creation_date(),
+        comment=params.comment,
+        creator=params.created_by,
+        createdAt=params.creation_date,
         pieceCount=info.num_pieces(),
         pieceSize=info.piece_length(),
         isPrivate=info.priv(),

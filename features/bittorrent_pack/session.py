@@ -177,14 +177,15 @@ class BTSession:
         self._ensureSession()
 
         params = lt.parse_magnet_uri(magnetUri)
+        magnetTrackers = list(params.trackers)
         params.trackers = list(dict.fromkeys(
-            t for g in (params.trackers, trackers) for t in g if t
+            t for g in (magnetTrackers, trackers) for t in g if t
         ))
         tempDir = Path(gettempdir()) / "ghost_downloader_bt_metadata"
         tempDir.mkdir(parents=True, exist_ok=True)
         params.save_path = str(tempDir)
         params.storage_mode = lt.storage_mode_t.storage_mode_sparse
-        params.flags |= lt.torrent_flags.default_dont_download | lt.torrent_flags.update_subscribe
+        params.flags |= lt.torrent_flags.default_dont_download
 
         hashes = params.info_hashes if params.ti is None else params.ti.info_hashes()
         if hashes.has_v1() and self._session.find_torrent(hashes.v1).is_valid():
@@ -202,7 +203,10 @@ class BTSession:
 
         try:
             ti = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
-            return lt.bencode(lt.create_torrent(ti).generate())
+            torrent = lt.add_torrent_params()
+            torrent.ti = ti
+            torrent.trackers = magnetTrackers
+            return lt.bencode(lt.write_torrent_file(torrent, lt.write_flags.allow_missing_piece_layer))
         except asyncio.TimeoutError:
             raise TimeoutError("等待 magnet 元数据超时")
         finally:
@@ -346,11 +350,11 @@ class BTSession:
             return
         from app.config.paths import APP_DATA_DIR
         try:
-            state = self._session.save_state(
+            state = self._session.session_state(
                 lt.save_state_flags_t.save_dht_state
             )
             (APP_DATA_DIR / DHT_STATE_FILE).write_bytes(
-                lt.bencode(state)
+                lt.write_session_params_buf(state, lt.save_state_flags_t.save_dht_state)
             )
         except Exception as e:
             logger.warning("保存 DHT 状态失败: {}", e)
@@ -365,10 +369,11 @@ class BTSession:
             except Exception as e:
                 logger.opt(exception=e).warning("读取 BitTorrent resume 数据失败")
 
+        torrentParams = lt.load_torrent_buffer(params.torrentData)
         if ltParams is None:
-            ltParams = lt.add_torrent_params()
-            ltParams.ti = lt.torrent_info(params.torrentData)
-            ltParams.flags |= lt.torrent_flags.update_subscribe
+            ltParams = torrentParams
+        elif ltParams.ti is None:
+            ltParams.ti = torrentParams.ti
 
         ltParams.save_path = params.savePath
         ltParams.storage_mode = (
@@ -377,6 +382,7 @@ class BTSession:
             else lt.storage_mode_t.storage_mode_sparse
         )
         ltParams.file_priorities = params.filePriorities
+        ltParams.renamed_files = params.fileRenames
         if bittorrentConfig.enableSequentialDownload.value:
             ltParams.flags |= lt.torrent_flags.sequential_download
         else:
@@ -396,12 +402,7 @@ class BTSession:
                     raise TaskError("该种子已在下载中")
             self._session.remove_torrent(stale)
 
-        handle = self._session.add_torrent(ltParams)
-
-        for index, newPath in params.fileRenames.items():
-            handle.rename_file(index, newPath)
-
-        return handle
+        return self._session.add_torrent(ltParams)
 
     async def _saveResumeAndRemove(self, entry: ActiveTorrent, taskId: str) -> None:
         try:

@@ -71,7 +71,6 @@ class TorrentParser(TaskParser):
             sourceType, sourceUrl = "torrent", str(localPath.resolve())
 
         elif urlparse(url).scheme.lower() == "magnet":
-            magnetTrackers = list(lt.parse_magnet_uri(url).trackers)
             torrentBytes = await btSession.fetchMetadata(url, webTrackers)
             sourceType, sourceUrl = "magnet", url
 
@@ -82,23 +81,23 @@ class TorrentParser(TaskParser):
             raise ValueError("种子文件为空")
 
         try:
-            ti = lt.torrent_info(torrentBytes)
+            params = lt.load_torrent_buffer(torrentBytes)
         except Exception as e:
             raise ValueError(f"无效的 BitTorrent 种子文件：{e}") from e
 
-        torrentTrackers = [str(t.url).strip() for t in ti.trackers()]
-        allSources = (magnetTrackers, torrentTrackers, webTrackers) if sourceType == "magnet" else (torrentTrackers, webTrackers)
-        trackers = list(dict.fromkeys(t for g in allSources for t in g if t))
+        trackers = list(dict.fromkeys(
+            t.strip() for g in (params.trackers, webTrackers) for t in g if t.strip()
+        ))
 
-        fileStorage = ti.files()
+        layout = params.ti.layout()
         entries: list[BTFile] = [
             BTFile(
                 index=i,
-                relativePath=fileStorage.file_path(i),
-                size=fileStorage.file_size(i),
+                relativePath=layout.file_path(i),
+                size=layout.file_size(i),
             )
-            for i in range(ti.num_files())
-            if not (fileStorage.file_flags(i) & lt.file_storage.flag_pad_file)
+            for i in range(layout.num_files())
+            if not (layout.file_flags(i) & lt.file_storage.flag_pad_file)
         ]
 
         if not entries:

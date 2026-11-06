@@ -46,7 +46,6 @@ def buildNamedHandler(content: bytes, name: str):
     return handler
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:bittorrent_pack.pack")
 async def test_parse_online_torrent_adds_its_files(features, startServer, tmp_path):
     url = await startServer(buildNamedHandler(buildTorrent(tmp_path), "movie.torrent"))
 
@@ -66,7 +65,6 @@ async def test_parse_invalid_online_torrent_adds_plain_file(features, startServe
     assert task.name == "movie.torrent"
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:bittorrent_pack.pack")
 async def test_relink_torrent_to_http_task_rejects(engine, features, startServer, tmp_path):
     task = await features.parse(TaskOptions(url=await startServer(buildRangeHandler(b"x" * 100))))
     btTask = await features.parse(TaskOptions(url=await startServer(buildNamedHandler(buildTorrent(tmp_path), "movie.torrent"))))
@@ -85,7 +83,6 @@ def test_match_rejects_text_that_is_not_info_hash(features, text):
     assert not features.match(text)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning:bittorrent_pack.pack")
 async def test_parse_bare_info_hash_as_magnet_link(features, monkeypatch, tmp_path):
     infoHash = "AB" * 20
     torrentBytes = buildTorrent(tmp_path)
