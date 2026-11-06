@@ -108,7 +108,12 @@ class Aria2RpcService:
     taskDraftRequested = Signal(list, object)
     parseFailed = Signal(str, object)
 
-    def __init__(self, coroutineRunner, parse, addTask) -> None:
+    def __init__(
+        self,
+        coroutineRunner: CoroutineRunner,
+        parse: Callable[[TaskOptions], Awaitable[Task]],
+        addTask: Callable[..., bool],
+    ) -> None:
         self._coroutineRunner = coroutineRunner
         self._parse = parse
         self._addTask = addTask

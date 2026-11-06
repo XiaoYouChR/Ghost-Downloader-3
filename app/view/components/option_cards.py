@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtCore import QCoreApplication, Qt
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, IconWidget, LineEdit, RoundMenu, Slider,
@@ -34,7 +36,7 @@ def toProfileLabel(value: str) -> str:
     return f"{head} {version}" if version else value
 
 
-def buildProfileMenu(parent, onPick, *, includeAuto: bool = True) -> RoundMenu:
+def buildProfileMenu(parent: QWidget, onPick: Callable[[str], None], *, includeAuto: bool = True) -> RoundMenu:
     from app.client import profileFamilies, profileVersions
 
     menu = RoundMenu(parent=parent)
@@ -71,20 +73,20 @@ def buildProfileMenu(parent, onPick, *, includeAuto: bool = True) -> RoundMenu:
 
 class OptionCard(QWidget):
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, Any]:
         return {}
 
     def reset(self) -> None:
         pass
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.fillRect(0, 0, self.width(), 1, QColor(0, 0, 0, 96 if isDarkTheme() else 24))
 
 
 class OutputFolderCard(OptionCard):
 
-    def __init__(self, parent=None, *, initial: Path | None = None):
+    def __init__(self, parent: QWidget | None = None, *, initial: Path | None = None) -> None:
         super().__init__(parent)
         from app.view.components.editors import FolderPicker
 
@@ -106,7 +108,7 @@ class OutputFolderCard(OptionCard):
         layout.addStretch(1)
         layout.addWidget(self.folderPicker, stretch=3)
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, Path]:
         return {"outputFolder": Path(self.folderPicker.path())}
 
     def reset(self) -> None:
@@ -115,7 +117,7 @@ class OutputFolderCard(OptionCard):
 
 class SubworkerCountCard(OptionCard):
 
-    def __init__(self, parent=None, *, initial: int = 0):
+    def __init__(self, parent: QWidget | None = None, *, initial: int = 0) -> None:
         super().__init__(parent)
         self.setFixedHeight(50)
         self.iconWidget = IconWidget(FluentIcon.CLOUD, self)
@@ -143,7 +145,7 @@ class SubworkerCountCard(OptionCard):
         layout.addWidget(self.slider)
         layout.addSpacing(16)
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, int]:
         return {"subworkerCount": self.slider.value()}
 
     def reset(self) -> None:
@@ -156,7 +158,7 @@ class SubworkerCountCard(OptionCard):
 
 class ClientProfileCard(OptionCard):
 
-    def __init__(self, parent=None, *, initial: str = "", initialUserAgent: str = ""):
+    def __init__(self, parent: QWidget | None = None, *, initial: str = "", initialUserAgent: str = "") -> None:
         from qfluentwidgets import DropDownPushButton
         from app.config.cfg import cfg
 
@@ -193,7 +195,7 @@ class ClientProfileCard(OptionCard):
         layout.addStretch(1)
         layout.addWidget(self.button)
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, str]:
         result = {"clientProfile": self._value}
         if self._userAgent:
             result["userAgent"] = self._userAgent
@@ -226,7 +228,7 @@ class ClientProfileCard(OptionCard):
 
 class UrlEditCard(OptionCard):
 
-    def __init__(self, parent=None, *, initial: str = ""):
+    def __init__(self, parent: QWidget | None = None, *, initial: str = "") -> None:
         super().__init__(parent)
         self.setFixedHeight(50)
         self._initial = initial
@@ -244,7 +246,7 @@ class UrlEditCard(OptionCard):
         layout.addStretch(1)
         layout.addWidget(self.urlEdit, stretch=3)
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, str]:
         return {"url": self.urlEdit.text().strip()}
 
     def reset(self) -> None:
@@ -253,7 +255,7 @@ class UrlEditCard(OptionCard):
 
 class HeadersEditCard(OptionCard):
 
-    def __init__(self, parent=None, *, initial: dict[str, str] | None = None):
+    def __init__(self, parent: QWidget | None = None, *, initial: dict[str, str] | None = None) -> None:
         from app.view.components.headers_editor import HeadersEditor
 
         super().__init__(parent)
@@ -288,7 +290,7 @@ class HeadersEditCard(OptionCard):
         self.vBoxLayout.addLayout(self.titleRowLayout)
         self.vBoxLayout.addWidget(self.headersEditor)
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, dict[str, str]]:
         return {"headers": self.headersEditor.headers()}
 
     def reset(self) -> None:

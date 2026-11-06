@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.config.cfg import (
     BoolValidator,
@@ -22,6 +24,10 @@ from app.platform.arch import MACHINE_ARCH
 from app.platform.filesystem import findExecutable
 from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE", mirrors={"gitcode": "XiaoYouChR/N_m3u8DL-RE-mirror"})
 
@@ -168,7 +174,7 @@ class M3U8Runtime(BinaryRuntime):
         suffix = ".exe" if sys.platform == "win32" else ""
         return [self.installFolder() / f"N_m3u8DL-RE{suffix}"]
 
-    async def install(self, version: str, onProgress) -> None:
+    async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
         if sys.platform == "win32":
             target = "win-arm64" if MACHINE_ARCH == "arm64" else "win-x64"
         elif sys.platform == "darwin":

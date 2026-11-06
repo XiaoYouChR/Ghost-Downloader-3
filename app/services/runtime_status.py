@@ -9,6 +9,7 @@ from app.models.task import TaskError, toTaskError
 
 if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
+    from app.services.coroutine_runner import CoroutineRunner
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ class RuntimeStatus:
 class RuntimeStatusService:
     statusChanged = Signal(object)
 
-    def __init__(self, coroutineRunner):
+    def __init__(self, coroutineRunner: CoroutineRunner) -> None:
         self._coroutineRunner = coroutineRunner
         self._statuses: dict[str, RuntimeStatus] = {}
         self._workIds: dict[str, str] = {}

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap
-from PySide6.QtWidgets import QHBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 
 from qfluentwidgets import (
     BodyLabel,
@@ -18,6 +19,9 @@ from qfluentwidgets import (
     SettingCard,
     SubtitleLabel,
 )
+
+if TYPE_CHECKING:
+    from .account import BilibiliAccount
 
 
 def toQrPixmap(content: str, size: int = 240) -> QPixmap:
@@ -35,7 +39,7 @@ def toQrPixmap(content: str, size: int = 240) -> QPixmap:
 
 
 class ScanLoginDialog(MessageBoxBase):
-    def __init__(self, account, parent=None):
+    def __init__(self, account: BilibiliAccount, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._account = account
         self._loginUrl = ""
@@ -69,13 +73,13 @@ class ScanLoginDialog(MessageBoxBase):
         self._bind()
         self.reloadQrCode()
 
-    def _initWidget(self):
+    def _initWidget(self) -> None:
         self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.statusLabel.setWordWrap(True)
         self.tipLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.tipLabel.setWordWrap(True)
 
-    def _initLayout(self):
+    def _initLayout(self) -> None:
         buttonLayout = QHBoxLayout()
         buttonLayout.setSpacing(12)
         buttonLayout.addWidget(self.refreshButton)
@@ -91,12 +95,12 @@ class ScanLoginDialog(MessageBoxBase):
         self.viewLayout.addSpacing(6)
         self.viewLayout.addLayout(buttonLayout)
 
-    def _bind(self):
+    def _bind(self) -> None:
         self.refreshButton.clicked.connect(self.reloadQrCode)
         self.openBrowserButton.clicked.connect(self._onOpenBrowser)
         self._account.qrStateChanged.connect(self._onQrState, owner=self)
 
-    def reloadQrCode(self):
+    def reloadQrCode(self) -> None:
         self.qrLabel.setPixmap(QPixmap())
         self.qrLabel.setFixedSize(240, 240)
         self.statusLabel.setText(self.tr("正在获取二维码..."))
@@ -104,7 +108,7 @@ class ScanLoginDialog(MessageBoxBase):
         self._loginUrl = ""
         self._account.startQrLogin()
 
-    def _onQrState(self, statusCode: int, text: str):
+    def _onQrState(self, statusCode: int, text: str) -> None:
         from .account import QR_EXPIRED, QR_LOGIN_SUCCESS, QR_UNSCANNED, QR_SCANNED
         if statusCode == QR_LOGIN_SUCCESS:
             self.statusLabel.setText(self.tr("登录成功，正在导入 Cookie..."))
@@ -126,17 +130,17 @@ class ScanLoginDialog(MessageBoxBase):
                 QCoreApplication.translate("TaskErrors", text) if text else str(statusCode)
             )
 
-    def _onOpenBrowser(self):
+    def _onOpenBrowser(self) -> None:
         if self._loginUrl:
             QDesktopServices.openUrl(QUrl(self._loginUrl))
 
-    def done(self, code):
+    def done(self, code: int) -> None:
         self._account.cancelQrLogin()
         super().done(code)
 
 
 class EditCookieDialog(MessageBoxBase):
-    def __init__(self, parent=None, initialCookie: str = ""):
+    def __init__(self, parent: QWidget | None = None, initialCookie: str = "") -> None:
         super().__init__(parent)
 
         self.widget.setFixedSize(420, 500)
@@ -157,7 +161,7 @@ class EditCookieDialog(MessageBoxBase):
 
 
 class BilibiliLoginSettingCard(SettingCard):
-    def __init__(self, account, parent=None):
+    def __init__(self, account: BilibiliAccount, parent: QWidget | None = None) -> None:
         self._account = account
         super().__init__(
             FluentIcon.VIEW, self.tr("账号登录"),
@@ -171,7 +175,7 @@ class BilibiliLoginSettingCard(SettingCard):
         self._bind()
         self.refreshLoginInfo()
 
-    def _initLayout(self):
+    def _initLayout(self) -> None:
         self.hBoxLayout.addWidget(self.scanButton, 0)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.editButton, 0)
@@ -179,13 +183,13 @@ class BilibiliLoginSettingCard(SettingCard):
         self.hBoxLayout.addWidget(self.logoutButton, 0)
         self.hBoxLayout.addSpacing(16)
 
-    def _bind(self):
+    def _bind(self) -> None:
         self.scanButton.clicked.connect(self._onScanLogin)
         self.editButton.clicked.connect(self._onEditCookie)
         self.logoutButton.clicked.connect(self._onLogout)
         self._account.accountChanged.connect(self.refreshLoginInfo, owner=self)
 
-    def refreshLoginInfo(self):
+    def refreshLoginInfo(self) -> None:
         if self._account.isLoggedIn:
             uname = self._account.username or "-"
             mid = self._account.mid or "-"
@@ -199,12 +203,12 @@ class BilibiliLoginSettingCard(SettingCard):
         self.editButton.setEnabled(True)
         self.logoutButton.setEnabled(self._account.isLoggedIn)
 
-    def _onScanLogin(self):
+    def _onScanLogin(self) -> None:
         dialog = ScanLoginDialog(self._account, self.window())
         dialog.exec()
         dialog.deleteLater()
 
-    def _onEditCookie(self):
+    def _onEditCookie(self) -> None:
         from .account import toCookie
         dialog = EditCookieDialog(self.window(), self._account.cookie)
         if not dialog.exec():
@@ -219,7 +223,7 @@ class BilibiliLoginSettingCard(SettingCard):
 
         self._account.setCookie(newCookie)
 
-    def _onLogout(self):
+    def _onLogout(self) -> None:
         self.scanButton.setEnabled(False)
         self.editButton.setEnabled(False)
         self.logoutButton.setEnabled(False)

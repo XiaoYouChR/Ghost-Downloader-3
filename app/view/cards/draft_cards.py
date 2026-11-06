@@ -17,7 +17,10 @@ from app.view.components.category_settings import toCategoryName
 from app.view.components.labels import EditableLabel, ElidedLabel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from app.models.task import Task
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
     from app.view.dialogs.file_select import FileSelectDialog
 
 
@@ -25,7 +28,14 @@ class DraftCard(QWidget):
     categoryPicked = Signal(str)
     editRequested = Signal()
 
-    def __init__(self, task: Task, categoryService, coroutineRunner, probeConflict, parent=None):
+    def __init__(
+        self,
+        task: Task,
+        categoryService: CategoryService,
+        coroutineRunner: CoroutineRunner,
+        probeConflict: Callable[[Task], str | None],
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self._task = task
         self._categoryService = categoryService

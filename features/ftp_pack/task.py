@@ -4,10 +4,12 @@ import asyncio
 import os
 import ssl
 from asyncio import CancelledError
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from struct import pack, unpack
+from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
 import aioftp
@@ -117,7 +119,7 @@ class FtpSubworker:
 class FtpFile(TaskFile):
     remotePath: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.remotePath = toPosixPath(self.remotePath)
         self.relativePath = toPosixPath(self.relativePath)
 
@@ -130,6 +132,11 @@ class FtpStep(TaskStep):
     canUseRangeRequests: bool = False
     isAccelerated: bool = False
     subworkerCount: int = 8
+    _task: FtpTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> FtpTask:
+        return self._task
 
     @property
     def canPause(self) -> bool:
@@ -143,18 +150,18 @@ class FtpStep(TaskStep):
     def recordPath(self) -> Path:
         return Path(f"{self.outputPath}.ghd")
 
-    def setOptions(self, options: dict) -> None:
+    def setOptions(self, options: dict[str, Any]) -> None:
         if "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
-    def setStatus(self, status: TaskStatus):
+    def setStatus(self, status: TaskStatus) -> None:
         if status == TaskStatus.COMPLETED:
             self.receivedBytes = self.fileSize
         super().setStatus(status)
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> FtpStep:
-        ftpFile: FtpFile = file
+        ftpFile = cast(FtpFile, file)
         return cls(
             stepIndex=file.index + 1,
             fileIndex=file.index,
@@ -307,7 +314,11 @@ class FtpStep(TaskStep):
             if recordFile is not None:
                 recordFile.close()
 
-    def _closeTransfer(self, client: aioftp.Client | None, stream):
+    def _closeTransfer(
+        self,
+        client: aioftp.Client | None,
+        stream: aioftp.DataConnectionThrottleStreamIO | None,
+    ) -> None:
         with suppress(Exception):
             if stream is not None:
                 stream.close()
@@ -315,7 +326,7 @@ class FtpStep(TaskStep):
             client.close()
 
     async def _runSubworker(self, subworker: FtpSubworker, fd: int) -> None:
-        ftpTask: FtpTask = self.task
+        ftpTask = self.task
 
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
@@ -404,14 +415,14 @@ class FtpStep(TaskStep):
 
             self._reassignSubworker()
 
-    def _startSubworkerTask(self, subworker: FtpSubworker):
+    def _startSubworkerTask(self, subworker: FtpSubworker) -> None:
         if self._stopping:
             return
         task = asyncio.create_task(self._runSubworker(subworker, self._fd))
         self._subworkerTasks.add(task)
         task.add_done_callback(self._subworkerTasks.discard)
 
-    async def _stopSubworkerTasks(self):
+    async def _stopSubworkerTasks(self) -> None:
         if self._stopping:
             return
         self._stopping = True
@@ -424,7 +435,11 @@ class FtpStep(TaskStep):
                 with suppress(Exception, CancelledError):
                     t.result()
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         self._reportSpeed = reportSpeed
         self._waitForSpeedLimit = waitForSpeedLimit
         self._subworkers: list[FtpSubworker] = []
@@ -497,10 +512,11 @@ class FtpTask(Task):
     packId: str = "ftp"
     canEdit = True
     fileType = FtpFile
+    files: list[FtpFile] = field(default_factory=list)
     connectionInfo: FtpConnectionInfo
     sourceType: str = "file"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if isinstance(self.connectionInfo, dict):
             self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
         super().__post_init__()

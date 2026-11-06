@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 
 from app.models.task import Task, TaskStep, TaskStatus
 from .config import ed2kConfig
@@ -42,8 +43,18 @@ class ED2kTask(Task):
 
 @dataclass(kw_only=True)
 class ED2kTaskStep(TaskStep):
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        task: ED2kTask = self.task
+    _task: ED2kTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> ED2kTask:
+        return self._task
+
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
+        task = self.task
         async with ed2kSession.run(task, isSeed=False) as progresses:
             async for progress in progresses:
                 task.uploadedBytes = progress.uploaded

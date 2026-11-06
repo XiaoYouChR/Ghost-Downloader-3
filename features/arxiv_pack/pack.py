@@ -4,6 +4,7 @@ import asyncio
 import re
 from dataclasses import dataclass, replace
 from html import unescape
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from loguru import logger
@@ -14,10 +15,16 @@ from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import RemoteFile, Task, TaskOptions
 from app.platform.filesystem import splitStemExt
-from http_pack.pack import buildStep, probe
+from http_pack.pack import buildOptionCards, buildStep, probe
 from http_pack.task import HttpTaskStep
 from .config import arxivConfig
 from .task import ArxivBibtexStep, ArxivSourceStep, ArxivTask
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 ARXIV_ORIGIN = "https://arxiv.org"
 ARXIV_HOSTS = {"arxiv.org", "export.arxiv.org"}
@@ -135,18 +142,18 @@ class ArxivPack(FeaturePack):
     config = arxivConfig
     parsers = [ArxivParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from http_pack.cards import HttpTaskCard
         return HttpTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import ArxivDraftCard
         return ArxivDraftCard
 
-    def optionCards(self, task, parent=None):
-        from http_pack.pack import HttpPack
-        return HttpPack.optionCards(self, task, parent)
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildOptionCards(task, parent)
 
-    def editCards(self, task, parent=None):
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from .cards import SideFileCard
-        return [*self.optionCards(task, parent), SideFileCard(parent, task=task)]
+        arxivTask: ArxivTask = task  # type: ignore[assignment]
+        return [*self.optionCards(task, parent), SideFileCard(parent, task=arxivTask)]

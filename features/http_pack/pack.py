@@ -6,6 +6,7 @@ from email.message import Message
 from email.utils import collapse_rfc2231_value
 from mimetypes import guess_extension
 from time import time_ns
+from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote, urlparse, parse_qs
 
 from loguru import logger
@@ -19,6 +20,11 @@ from app.models.task import (
 )
 from app.platform.filesystem import toSafeFilename
 from .task import HttpTask, HttpTaskStep
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 
 DOWNLOADABLE_EXTENSIONS = frozenset({
@@ -170,8 +176,14 @@ async def probe(options: TaskOptions) -> RemoteFile:
     )
 
 
-def buildStep(stepType: type[HttpTaskStep], stepIndex: int, url: str, options: TaskOptions,
-              file: RemoteFile | None = None, **kwargs) -> HttpTaskStep:
+def buildStep[S: HttpTaskStep](
+    stepType: type[S],
+    stepIndex: int,
+    url: str,
+    options: TaskOptions,
+    file: RemoteFile | None = None,
+    **kwargs: Any,
+) -> S:
     fields = {
         "stepIndex": stepIndex,
         "url": url,
@@ -222,33 +234,41 @@ class HttpParser(TaskParser):
         return await self.delegate(replace(options, file=await probe(options)))
 
 
+def buildOptionCards(task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+    from app.view.components.option_cards import (
+        ClientProfileCard, HeadersEditCard, OutputFolderCard, SubworkerCountCard,
+    )
+    step = task.steps[0] if task.steps else None
+    if not isinstance(step, HttpTaskStep):
+        return []
+    return [
+        OutputFolderCard(parent, initial=task.outputFolder),
+        HeadersEditCard(parent, initial=step.headers),
+        ClientProfileCard(parent, initial=step.clientProfile, initialUserAgent=step.userAgent),
+        SubworkerCountCard(parent, initial=step.subworkerCount),
+    ]
+
+
+def buildEditCards(task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+    from app.view.components.option_cards import UrlEditCard
+    return [
+        UrlEditCard(parent, initial=task.url),
+        *buildOptionCards(task, parent),
+    ]
+
+
 class HttpPack(FeaturePack):
     packId = "http"
     capturedLinks = N("HttpPack", "文件直链（视频、音频、压缩包、安装包、镜像、文档）")
     parsers = [HttpParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import HttpTaskCard
         return HttpTaskCard
 
-    def optionCards(self, task, parent=None):
-        from app.view.components.option_cards import (
-            ClientProfileCard, HeadersEditCard, OutputFolderCard, SubworkerCountCard,
-        )
-        step = task.steps[0] if task.steps else None
-        if not isinstance(step, HttpTaskStep):
-            return []
-        return [
-            OutputFolderCard(parent, initial=task.outputFolder),
-            HeadersEditCard(parent, initial=step.headers),
-            ClientProfileCard(parent, initial=step.clientProfile, initialUserAgent=step.userAgent),
-            SubworkerCountCard(parent, initial=step.subworkerCount),
-        ]
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildOptionCards(task, parent)
 
-    def editCards(self, task, parent=None):
-        from app.view.components.option_cards import UrlEditCard
-        return [
-            UrlEditCard(parent, initial=task.url),
-            *self.optionCards(task, parent),
-        ]
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildEditCards(task, parent)
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from qfluentwidgets import ComboBox, FluentIcon, LineEdit, SettingCard, ToolButton, ToolTipFilter
@@ -7,11 +9,14 @@ from qfluentwidgets import ComboBox, FluentIcon, LineEdit, SettingCard, ToolButt
 from .config import AUTO_SITE_KEY, CUSTOM_SITE_KEY, GITHUB_PROXY_SITES, githubConfig
 from .probe import PROBE_TIMEOUT, PROBE_UNAVAILABLE, probeProxyLatencies
 
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
 SITE_OPTIONS = [AUTO_SITE_KEY, *GITHUB_PROXY_SITES, CUSTOM_SITE_KEY]
 
 
 class GitHubProxySiteCard(SettingCard):
-    def __init__(self, submit, parent=None):
+    def __init__(self, submit: Callable[..., str], parent: QWidget | None = None):
         self.submit = submit
         super().__init__(
             FluentIcon.GLOBE, self.tr("代理站"),
@@ -27,7 +32,7 @@ class GitHubProxySiteCard(SettingCard):
         self._initLayout()
         self._bind()
 
-    def _initWidget(self):
+    def _initWidget(self) -> None:
         self.comboBox.setMinimumWidth(260)
         self.customSiteEdit.setPlaceholderText("https://example.com/")
         self.customSiteEdit.setClearButtonEnabled(True)
@@ -45,7 +50,7 @@ class GitHubProxySiteCard(SettingCard):
         self.customSiteEdit.setText(githubConfig.customSite.value)
         self.customSiteEdit.setVisible(currentSite == CUSTOM_SITE_KEY)
 
-    def _initLayout(self):
+    def _initLayout(self) -> None:
         self.hBoxLayout.addWidget(self.comboBox)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.customSiteEdit)
@@ -53,7 +58,7 @@ class GitHubProxySiteCard(SettingCard):
         self.hBoxLayout.addWidget(self.refreshButton)
         self.hBoxLayout.addSpacing(16)
 
-    def _bind(self):
+    def _bind(self) -> None:
         self.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
         self.customSiteEdit.editingFinished.connect(self._onCustomSiteEditingFinished)
         self.refreshButton.clicked.connect(self.refreshLatencies)
@@ -67,7 +72,7 @@ class GitHubProxySiteCard(SettingCard):
             return self.tr("超时")
         return f"{latency} ms"
 
-    def _refreshLatencyLabels(self):
+    def _refreshLatencyLabels(self) -> None:
         for i, site in enumerate(GITHUB_PROXY_SITES, start=1):
             displayName = urlparse(site).netloc or site.rstrip("/")
             tag = self._latencyTag(self._latencies.get(site))
@@ -80,18 +85,18 @@ class GitHubProxySiteCard(SettingCard):
         customLabel = f"{self.tr('自定义')} ({tag})" if tag else self.tr("自定义")
         self.comboBox.setItemText(SITE_OPTIONS.index(CUSTOM_SITE_KEY), customLabel)
 
-    def _onCurrentIndexChanged(self, index: int):
+    def _onCurrentIndexChanged(self, index: int) -> None:
         from app.config.cfg import cfg
         if index < 0:
             return
         cfg.set(githubConfig.selectedSite, SITE_OPTIONS[index])
         self.customSiteEdit.setVisible(SITE_OPTIONS[index] == CUSTOM_SITE_KEY)
 
-    def _onCustomSiteEditingFinished(self):
+    def _onCustomSiteEditingFinished(self) -> None:
         from app.config.cfg import cfg
         cfg.set(githubConfig.customSite, self.customSiteEdit.text().strip())
 
-    def refreshLatencies(self):
+    def refreshLatencies(self) -> None:
         if self._isRefreshing:
             return
         self._isRefreshing = True
@@ -104,13 +109,13 @@ class GitHubProxySiteCard(SettingCard):
             owner=self,
         )
 
-    def _onLatenciesDone(self, latencies: dict[str, int]):
+    def _onLatenciesDone(self, latencies: dict[str, int]) -> None:
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
         self._latencies.update(latencies)
         self._refreshLatencyLabels()
 
-    def _onLatenciesFailed(self, error):
+    def _onLatenciesFailed(self, error: BaseException) -> None:
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
 

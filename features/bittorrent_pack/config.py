@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from app.config.cfg import (
     BoolValidator,
     ConfigItem,
@@ -7,9 +9,14 @@ from app.config.cfg import (
     OptionsValidator,
     RangeConfigItem,
     RangeValidator,
+    StringListValidator,
 )
 from app.i18n import N
 from app.models.pack import PackConfig
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 DEFAULT_TRACKER_LIST_SOURCES = [
     "https://trackerslist.com/best.txt",
@@ -17,16 +24,6 @@ DEFAULT_TRACKER_LIST_SOURCES = [
     "https://ngosang.github.io/trackerslist/trackers_best.txt",
     "https://newtrackon.com/api/stable",
 ]
-
-
-class StringListValidator:
-    def validate(self, value) -> bool:
-        return isinstance(value, list) and all(isinstance(i, str) for i in value)
-
-    def correct(self, value) -> list:
-        if not isinstance(value, list):
-            return []
-        return [i for i in value if isinstance(i, str)]
 
 
 class BitTorrentConfig(PackConfig):
@@ -103,7 +100,7 @@ class BitTorrentConfig(PackConfig):
         btGroup.addSettingCards(cards)
         return [btGroup]
 
-    async def _probeDhtText(self) -> tuple[str, dict]:
+    async def _probeDhtText(self) -> tuple[str, dict[str, int]]:
         from .session import btSession
         nodes = await btSession.probeDhtNodes()
         return ("", {}) if nodes is None else (N("BootstrapList", "DHT 节点 {nodes}"), {"nodes": nodes})

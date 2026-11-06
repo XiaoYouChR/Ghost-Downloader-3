@@ -1,20 +1,29 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from app.client import buildClient
 from app.i18n import N
-from app.models.pack import FeaturePack, TaskParser
+from app.models.pack import FeaturePack, PackServices, TaskParser
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
 from .config import bilibiliConfig
-from .parse import buildFavoritePages, buildPages, matchFavoriteVideo, parseBiliUrl, toHttps
+from .parse import BiliUrl, buildFavoritePages, buildPages, matchFavoriteVideo, parseBiliUrl, toHttps
 from .stream import buildSize, fetchPlayurl, toStreamUrl
 from .task import BiliPage, BilibiliTask
 
+if TYPE_CHECKING:
+    import wreq
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
+
 
 class BilibiliParser(TaskParser):
+    pack: BilibiliPack
     priority = 50
 
     def match(self, options: TaskOptions) -> bool:
@@ -128,9 +137,9 @@ class BilibiliParser(TaskParser):
             client.close()
 
 
-async def fetchFavorite(client, favoriteId: int) -> tuple[list[BiliPage], str, str]:
-    medias: list[dict] = []
-    info: dict = {}
+async def fetchFavorite(client: wreq.Client, favoriteId: int) -> tuple[list[BiliPage], str, str]:
+    medias: list[dict[str, Any]] = []
+    info: dict[str, Any] = {}
     pageNumber = 1
     while True:
         data = await fetchApi(
@@ -144,7 +153,7 @@ async def fetchFavorite(client, favoriteId: int) -> tuple[list[BiliPage], str, s
             break
         pageNumber += 1
 
-    pageLists: dict[str, list[dict]] = {}
+    pageLists: dict[str, list[dict[str, Any]]] = {}
     for media in filter(matchFavoriteVideo, medias):
         hasFirstCid = bool((media.get("ugc") or {}).get("first_cid"))
         if int(media.get("page") or 1) > 1 or not hasFirstCid:
@@ -158,7 +167,7 @@ async def fetchFavorite(client, favoriteId: int) -> tuple[list[BiliPage], str, s
     return pages, title, toHttps(info.get("cover") or "")
 
 
-async def fetchApi(client, url: str):
+async def fetchApi(client: wreq.Client, url: str) -> Any:
     response = await client.get(url, headers={"referer": "https://www.bilibili.com"})
     if response.status.as_int() == 412:
         raise ValueError("Bilibili 拦截了请求（412 风控），请稍后再试")
@@ -169,7 +178,7 @@ async def fetchApi(client, url: str):
     return payload.get("data")
 
 
-async def fetchView(client, biliUrl) -> dict:
+async def fetchView(client: wreq.Client, biliUrl: BiliUrl) -> dict[str, Any]:
     videoId = biliUrl.videoId
     if not videoId and biliUrl.seasonId:
         listUrl = (
@@ -205,22 +214,22 @@ class BilibiliPack(FeaturePack):
     config = bilibiliConfig
     parsers = [BilibiliParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import BilibiliTaskCard
         return BilibiliTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import BilibiliDraftCard
         return BilibiliDraftCard
 
-    def __init__(self, services):
+    def __init__(self, services: PackServices) -> None:
         super().__init__(services)
         self.account = BilibiliAccount(services.coroutineRunner)
         self.config._account = self.account
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
 
-    async def activate(self):
+    async def activate(self) -> None:
         self.account.fetchAccountInfo()

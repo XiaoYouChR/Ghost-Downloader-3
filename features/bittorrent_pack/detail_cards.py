@@ -14,6 +14,8 @@ from .session import btSession
 from .swarm import SwarmInfo, TrackerStatus, toEndpointText, toTorrentMeta
 
 if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.services.coroutine_runner import CoroutineRunner
     from .swarm import PeerInfo, TrackerInfo
     from .task import BTTask
 
@@ -27,7 +29,7 @@ def toCountText(count: int) -> str:
 
 
 class TorrentCard(DetailCard):
-    def __init__(self, task: BTTask, coroutineRunner, parent=None):
+    def __init__(self, task: BTTask, coroutineRunner: CoroutineRunner, parent: QWidget | None = None) -> None:
         super().__init__(self.tr("种子"), parent)
         self._task = task
         self._coroutineRunner = coroutineRunner
@@ -94,7 +96,7 @@ class TorrentCard(DetailCard):
 
 
 class TrackerCard(DetailCard):
-    def __init__(self, task: BTTask, coroutineRunner, parent=None):
+    def __init__(self, task: BTTask, coroutineRunner: CoroutineRunner, parent: QWidget | None = None) -> None:
         super().__init__(self.tr("Tracker"), parent)
         self._task = task
         self._coroutineRunner = coroutineRunner
@@ -134,7 +136,7 @@ class TrackerCard(DetailCard):
 
 
 class PeerCard(DetailCard):
-    def __init__(self, task: BTTask, coroutineRunner, parent=None):
+    def __init__(self, task: BTTask, coroutineRunner: CoroutineRunner, parent: QWidget | None = None) -> None:
         super().__init__(self.tr("Peer"), parent)
         self._task = task
         self._coroutineRunner = coroutineRunner

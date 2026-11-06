@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from app.client import buildClient
 from app.config.cfg import BoolValidator, ConfigItem, ConfigValidator, OptionsValidator
 from app.models.pack import PackConfig
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
 MIRROR_SITES = (

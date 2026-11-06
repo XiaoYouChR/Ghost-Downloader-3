@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -21,6 +22,7 @@ from app.update import parseVersion
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
 COOKIE_DOMAIN = ".youtube.com"
@@ -82,7 +84,7 @@ class YtDlpConfig(PackConfig):
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
     shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
 
-    def settingGroups(self, parent: QWidget) -> list:
+    def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SelectFolderSettingCard
@@ -212,7 +214,7 @@ class YouTubeRuntime(BinaryRuntime):
             return [folder / "yt_dlp"]
         return [folder / "yt_dlp", folder / ("qjs.exe" if sys.platform == "win32" else "qjs")]
 
-    async def install(self, version: str, onProgress) -> None:
+    async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
         folder = self.installFolder()
         if not IS_ANDROID:
             qjsTag = (await fetchLatestRelease(QJS_REPO)).version

@@ -4,10 +4,12 @@ import asyncio
 import os
 import shutil
 import zipfile
+from collections.abc import Awaitable, Callable, Iterable
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 from app.models.task import Task, TaskError, TaskFile, TaskStatus, TaskStep, deletePlaceholder
 from app.platform.filesystem import deletePath, splitStemExt
@@ -27,16 +29,17 @@ class ZipTask(Task):
     packId: str = "zip"
     canEdit = True
     fileType = ZipEntry
+    files: list[ZipEntry] = field(default_factory=list)
     tailOffset: int = 0
     metadataEncoding: str = ""
 
     @property
     def archiveStep(self) -> HttpTaskStep:
-        return self.steps[0]
+        return cast(HttpTaskStep, self.steps[0])
 
     @property
     def extractStep(self) -> ZipExtractStep:
-        return self.steps[1]
+        return cast(ZipExtractStep, self.steps[1])
 
     @property
     def isWhole(self) -> bool:
@@ -66,7 +69,7 @@ class ZipTask(Task):
         isWhole = len(selectedIndexes) == len(self.files)
         return not isWhole if isinstance(step, ZipExtractStep) else isWhole
 
-    def setSelection(self, selectedIndexes):
+    def setSelection(self, selectedIndexes: Iterable[int]) -> None:
         super().setSelection(selectedIndexes)
         if self.isWhole:
             self.fileSize = self.archiveStep.fileSize
@@ -134,8 +137,18 @@ def extractFile(archive: zipfile.ZipFile, innerPath: str, path: Path) -> None:
 
 @dataclass(kw_only=True)
 class ZipExtractStep(TaskStep):
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        task: ZipTask = self.task
+    _task: ZipTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> ZipTask:
+        return self._task
+
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
+        task = self.task
         self._reportSpeed, self._waitForSpeedLimit = reportSpeed, waitForSpeedLimit
         self._spans: list[tuple[HttpTaskStep, list[ZipEntry]]] = []
         task.partPath.mkdir(parents=True, exist_ok=True)

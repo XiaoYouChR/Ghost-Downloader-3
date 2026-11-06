@@ -9,7 +9,7 @@ from enum import StrEnum
 from io import BytesIO
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from loguru import logger
 
@@ -21,6 +21,11 @@ from app.signal import Signal
 from app.update import isNewer
 
 from app.models.task import MergeTaskOptions, PageTaskOptions, ResourceTaskOptions, Task, TaskError, TaskOptions, TaskStatus
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.task_service import TaskService
 
 @dataclass
 class BrowserClientSession:
@@ -171,7 +176,15 @@ class BrowserService:
     taskDraftRequested = Signal(list, object)
     extensionUpdated = Signal(str)
 
-    def __init__(self, coroutineRunner, taskService, speedChanged, parse, loadCrx, extensionFolder: Path):
+    def __init__(
+        self,
+        coroutineRunner: CoroutineRunner,
+        taskService: TaskService,
+        speedChanged: Signal,
+        parse: Callable[[TaskOptions], Awaitable[Task]],
+        loadCrx: Callable[[], bytes],
+        extensionFolder: Path,
+    ) -> None:
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService
         self._parse = parse

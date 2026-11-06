@@ -6,11 +6,12 @@ import io
 import shutil
 import tempfile
 import threading
-from collections.abc import Iterable, Iterator
+from collections.abc import Awaitable, Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from itertools import count
 from pathlib import Path
 from time import time
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
@@ -209,6 +210,7 @@ class YouTubeTask(Task):
     packId: str = "ytdlp"
     canEdit = True
     fileType = YouTubeFile
+    files: list[YouTubeFile] | None = None
     maxVideoHeight: int = 0
     maxAudioBitrate: int = 0
     isVideoEnabled: bool = True
@@ -219,8 +221,9 @@ class YouTubeTask(Task):
     coverUrl: str = ""
     isCoverEnabled: bool = False
     isPlaylist: bool = False
+    _mediaInfo: dict[str, Any] = field(default_factory=dict, repr=False, init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
         if any(isinstance(s, YouTubeSubtitleStep) and not s.language for s in self.steps):
             self.updateSteps()
@@ -291,7 +294,7 @@ class YouTubeTask(Task):
         self.steps = steps
         self.updateStatus()
 
-    def setSelection(self, selectedIndexes) -> None:
+    def setSelection(self, selectedIndexes: Iterable[int]) -> None:
         super().setSelection(selectedIndexes)
         # 视频大小在 extract 前未知，files 的 size 恒为 0，改从资源步骤汇总
         totalSize = sum(
@@ -336,11 +339,20 @@ class YouTubeTask(Task):
 
 @dataclass(kw_only=True)
 class YouTubeExtractStep(TaskStep):
+    _task: YouTubeTask = field(repr=False, init=False)
     canPause = False
     fileIndex: int = 0
     videoUrl: str = ""
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    @property
+    def task(self) -> YouTubeTask:
+        return self._task
+
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         if not self.task.isVideoEnabled and not self.task.isAudioEnabled:
             return
 
@@ -535,30 +547,48 @@ class YouTubeExtractStep(TaskStep):
 
 @dataclass(kw_only=True)
 class YouTubeResourceStep(FFmpegResourceStep):
+    _task: YouTubeTask = field(repr=False, init=False)
     fileIndex: int = 0
     language: str = ""
+
+    @property
+    def task(self) -> YouTubeTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
         return str(toResourcePath(self.task, self.fileIndex, self.role, self.language, self.extension))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         if self.url:
             await super().run(reportSpeed, waitForSpeedLimit)
 
 
 @dataclass(kw_only=True)
 class YouTubeSubtitleStep(HttpTaskStep):
+    _task: YouTubeTask = field(repr=False, init=False)
     fileIndex: int = 0
     language: str = ""
     canUseRangeRequests: bool = False
     subworkerCount: int = 1
 
     @property
+    def task(self) -> YouTubeTask:
+        return self._task
+
+    @property
     def outputPath(self) -> str:
         return str(self.task.toSidePath(self.fileIndex, f"{toSafeFilename(self.language, fallback='subtitle')}.vtt"))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         if self.url:
             await super().run(reportSpeed, waitForSpeedLimit)
         else:
@@ -567,15 +597,20 @@ class YouTubeSubtitleStep(HttpTaskStep):
 
 @dataclass(kw_only=True)
 class YouTubeMergeStep(FFmpegStep):
+    _task: YouTubeTask = field(repr=False, init=False)
     fileIndex: int = 0
     videoUrl: str = ""
     language: str = ""
     metadataTitle: str = ""
     metadataArtist: str = ""
-    chapters: list[dict] = field(default_factory=list)
+    chapters: list[dict[str, Any]] = field(default_factory=list)
     patchedVideoHeader: bytes = field(default=b"", repr=False)
     patchedAudioHeader: bytes = field(default=b"", repr=False)
     segStartTime: float = field(default=0.0, repr=False)
+
+    @property
+    def task(self) -> YouTubeTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -607,7 +642,11 @@ class YouTubeMergeStep(FFmpegStep):
         relSS = tr[0] - self.segStartTime
         return ["-ss", str(relSS)], ["-t", str(tr[1] - tr[0])]
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         for header, path in [
             (self.patchedVideoHeader, self._videoPath),
             (self.patchedAudioHeader, self._audioPath),
@@ -684,6 +723,11 @@ class YouTubeMergeStep(FFmpegStep):
 
 @dataclass(kw_only=True)
 class YouTubeCoverStep(HttpTaskStep):
+    _task: YouTubeTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> YouTubeTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -691,6 +735,10 @@ class YouTubeCoverStep(HttpTaskStep):
             return ""
         return str(self.task.toSidePath(None, "jpg"))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         if self.url and self.task.isCoverEnabled:
             await super().run(reportSpeed, waitForSpeedLimit)

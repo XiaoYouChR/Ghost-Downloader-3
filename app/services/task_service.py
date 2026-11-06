@@ -18,6 +18,13 @@ from app.platform.filesystem import deletePath, isExisting, splitStemExt
 from app.checksum import toChecksum
 from app.models.task import Task, TaskError, TaskOptions, TaskStatus, deletePlaceholder
 from app.signal import Signal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PySide6.QtCore import QFileSystemWatcher
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.speed_meter import SpeedMeter
 
 
 @dataclass
@@ -284,9 +291,15 @@ class TaskService:
     overwriteFailed = Signal(object)
     editFailed = Signal(object, object)
 
-    def __init__(self, coroutineRunner, categoryService, speedMeter, fileWatcher,
-                 deleteRecoverably: Callable[[Path], bool],
-                 nameConflictChoice: Callable[[], NameConflictChoice]):
+    def __init__(
+        self,
+        coroutineRunner: CoroutineRunner,
+        categoryService: CategoryService,
+        speedMeter: SpeedMeter,
+        fileWatcher: QFileSystemWatcher,
+        deleteRecoverably: Callable[[Path], bool],
+        nameConflictChoice: Callable[[], NameConflictChoice],
+    ) -> None:
         self._coroutineRunner = coroutineRunner
         self._nameConflictChoice = nameConflictChoice
         self._categoryService = categoryService

@@ -13,6 +13,7 @@ from .kelpie import Link, Source
 from .session import ed2kSession
 
 if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
     from .task import ED2kTask
 
 PART_SIZE = 9728000
@@ -62,7 +63,7 @@ def toChannelText(channel: str) -> str:
 
 
 class ED2kCard(DetailCard):
-    def __init__(self, task: ED2kTask, parent=None):
+    def __init__(self, task: ED2kTask, parent: QWidget | None = None) -> None:
         super().__init__(self.tr("eD2k"), parent)
         self._task = task
         self.hashRow = InfoRow(self.tr("文件哈希"), self.card)
@@ -108,7 +109,7 @@ class ED2kCard(DetailCard):
 
 
 class ED2kSourceCard(DetailCard):
-    def __init__(self, task: ED2kTask, parent=None):
+    def __init__(self, task: ED2kTask, parent: QWidget | None = None) -> None:
         super().__init__(self.tr("来源"), parent)
         self._task = task
         self.table = DetailTable(

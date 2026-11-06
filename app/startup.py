@@ -1,7 +1,17 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 
-def loadResources(application):
+if TYPE_CHECKING:
+    from app.engine import Engine
+    from app.platform.application import Application
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.speed_meter import SpeedMeter
+    from app.services.update_service import UpdateService
+
+
+def loadResources(application: Application) -> None:
     from PySide6.QtCore import QResource
     from app.config.paths import EXECUTABLE_DIR
 
@@ -9,13 +19,13 @@ def loadResources(application):
     loadTranslators(application)
 
 
-def loadTranslators(application):
+def loadTranslators(application: Application) -> None:
     from PySide6.QtCore import QLocale, QTranslator
     from app.config.cfg import cfg
 
     translator = QTranslator(application)
 
-    def setLocale():
+    def setLocale() -> None:
         localeName = cfg.language.value.value
         locale = QLocale() if localeName == "Auto" else QLocale(localeName)
         application.removeTranslator(translator)
@@ -27,7 +37,7 @@ def loadTranslators(application):
     cfg.language.valueChanged.connect(setLocale)
 
 
-def createEngine(application):
+def createEngine(application: Application) -> Engine:
     import sys
     from PySide6.QtCore import QFileSystemWatcher, QTimer
     from shiboken6 import isValid
@@ -50,7 +60,7 @@ def createEngine(application):
                   deleteRecoverably)
 
 
-def deleteBackupDir():
+def deleteBackupDir() -> None:
     import shutil
     import sys
     from app.config.paths import EXECUTABLE_DIR
@@ -82,7 +92,7 @@ def deleteLegacyAppIdFiles() -> bool:
     return bool(existing)
 
 
-def loadPacks(featureService, coroutineRunner, speedMeter):
+def loadPacks(featureService: FeatureService, coroutineRunner: CoroutineRunner, speedMeter: SpeedMeter) -> None:
     from app.models.pack import PackConfig, PackServices
     from app.services.update_service import installPendingPacks
     from app.config.paths import FEATURES_DIR, SEED_FEATURES_DIR
@@ -99,7 +109,7 @@ def loadPacks(featureService, coroutineRunner, speedMeter):
     PackConfig.load()
 
 
-def checkUpdateAtStartup(updateService):
+def checkUpdateAtStartup(updateService: UpdateService) -> None:
     from app.config.cfg import cfg
     if not cfg.shouldCheckUpdateAtStartup.value:
         return

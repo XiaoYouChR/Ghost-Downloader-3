@@ -4,6 +4,7 @@ import asyncio
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, unquote, urlparse
 
 import m3u8
@@ -14,11 +15,17 @@ from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.i18n import N
 
-from app.models.pack import FeaturePack, TaskParser, FileType
+from app.models.pack import BinaryRuntime, FeaturePack, PackServices, TaskParser, FileType
 from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 
 MEDIA_SUFFIXES = {
@@ -193,7 +200,7 @@ class M3U8Parser(TaskParser):
         task.addStep(step)
         return task
 
-    def _parseStreams(self, body: str, manifestType: str) -> list[dict]:
+    def _parseStreams(self, body: str, manifestType: str) -> list[dict[str, Any]]:
         try:
             if manifestType == "mpd":
                 return self._mpdStreams(body)
@@ -202,7 +209,7 @@ class M3U8Parser(TaskParser):
             logger.warning("枚举可选视频流失败: {}", repr(e))
             return []
 
-    def _hlsStreams(self, body: str) -> list[dict]:
+    def _hlsStreams(self, body: str) -> list[dict[str, Any]]:
         playlist = m3u8.loads(body)
         streams = []
         for variant in playlist.playlists:
@@ -218,7 +225,7 @@ class M3U8Parser(TaskParser):
             })
         return streams
 
-    def _mpdStreams(self, body: str) -> list[dict]:
+    def _mpdStreams(self, body: str) -> list[dict[str, Any]]:
         mpd = MPEGDASHParser.parse(body)
         if not mpd.periods:
             return []
@@ -260,25 +267,25 @@ class M3U8Pack(FeaturePack):
     capturedLinks = N("M3U8Pack", "M3U8 / DASH 流媒体")
     parsers = [M3U8Parser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         if getattr(task, "isLive", False):
             from .cards import M3U8LiveTaskCard
             return M3U8LiveTaskCard
         from .cards import M3U8TaskCard
         return M3U8TaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import M3U8DraftCard
         return M3U8DraftCard
 
-    def __init__(self, services):
+    def __init__(self, services: PackServices) -> None:
         self.config = m3u8Config
         super().__init__(services)
 
-    def runtimes(self):
+    def runtimes(self) -> list[BinaryRuntime]:
         return [m3u8Runtime]
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: M3U8Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import HeadersEditCard, OutputFolderCard
         from .cards import StreamSelectCard, RecordLimitCard, DecryptionKeyCard, MuxImportCard
         from .task import M3U8TaskStep
@@ -287,7 +294,7 @@ class M3U8Pack(FeaturePack):
         if not isinstance(step, M3U8TaskStep):
             return []
 
-        cards = [
+        cards: list[OptionCard] = [
             OutputFolderCard(parent, initial=task.outputFolder),
             HeadersEditCard(parent, initial=step.headers),
         ]
@@ -299,7 +306,7 @@ class M3U8Pack(FeaturePack):
         cards.append(MuxImportCard(parent, initial=step.muxImports))
         return cards
 
-    def editCards(self, task, parent=None):
+    def editCards(self, task: M3U8Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import HeadersEditCard, OutputFolderCard
         from .cards import RecordLimitCard, DecryptionKeyCard, MuxImportCard
         from .task import M3U8TaskStep
@@ -308,7 +315,7 @@ class M3U8Pack(FeaturePack):
         if not isinstance(step, M3U8TaskStep):
             return []
 
-        cards = [
+        cards: list[OptionCard] = [
             OutputFolderCard(parent, initial=task.outputFolder),
             HeadersEditCard(parent, initial=step.headers),
         ]
@@ -318,7 +325,7 @@ class M3U8Pack(FeaturePack):
         cards.append(MuxImportCard(parent, initial=step.muxImports))
         return cards
 
-    def fileTypes(self):
+    def fileTypes(self) -> list[FileType]:
         return [
             FileType(
                 extensions=(".m3u8", ".m3u"),

@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, parse_qs, quote
 
 from app.i18n import N
-from app.models.pack import FeaturePack, TaskParser
+from app.models.pack import BinaryRuntime, FeaturePack, PackServices, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
 from loguru import logger
 
 from .config import ytDlpConfig, youTubeRuntime
 from .task import YouTubeTask
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 
@@ -63,22 +70,22 @@ class YouTubePack(FeaturePack):
     capturedLinks = N("YouTubePack", "YouTube 视频")
     parsers = [YouTubeParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import YtDlpTaskCard
         return YtDlpTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import YtDlpDraftCard
         return YtDlpDraftCard
 
-    def __init__(self, services):
+    def __init__(self, services: PackServices) -> None:
         self.config = ytDlpConfig
         super().__init__(services)
 
-    def runtimes(self):
+    def runtimes(self) -> list[BinaryRuntime]:
         return [youTubeRuntime]
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import OutputFolderCard
         return [
             OutputFolderCard(parent, initial=task.outputFolder),

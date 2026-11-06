@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 from app.config.cfg import cfg
 from app.services.aria2_rpc import Aria2RpcService
 from app.services.browser_service import BrowserService
@@ -11,9 +15,20 @@ from app.services.runtime_status import RuntimeStatusService
 from app.services.speed_meter import SpeedMeter
 from app.services.task_service import NameConflictChoice, TaskService
 
+if TYPE_CHECKING:
+    from PySide6.QtCore import QFileSystemWatcher
+    from app.services.coroutine_runner import CoroutineRunner
+
 
 class Engine:
-    def __init__(self, coroutineRunner, fileWatcher, loadCrx, extensionFolder, deleteRecoverably) -> None:
+    def __init__(
+        self,
+        coroutineRunner: CoroutineRunner,
+        fileWatcher: QFileSystemWatcher,
+        loadCrx: Callable[[], bytes],
+        extensionFolder: Path,
+        deleteRecoverably: Callable[[Path], bool],
+    ) -> None:
         self.coroutineRunner = coroutineRunner
         self.categoryService = CategoryService()
         self.speedMeter = SpeedMeter(coroutineRunner)

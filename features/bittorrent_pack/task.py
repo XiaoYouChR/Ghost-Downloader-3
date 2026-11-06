@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from base64 import b64decode, b64encode
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 class BTFile(TaskFile):
     priority: int = 4
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.relativePath = toPosixPath(self.relativePath)
 
 
@@ -27,6 +28,7 @@ class BTTask(Task):
     canEdit = True
     canSeed = True
     fileType = BTFile
+    files: list[BTFile] = field(default_factory=list)
     sourceType: str = "torrent"
     torrentData: str = ""
     resumeData: str = ""
@@ -40,7 +42,7 @@ class BTTask(Task):
     downloadRate: int = 0
     uploadRate: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.files:
             self.files = [
                 item if isinstance(item, BTFile) else BTFile(**item)
@@ -69,7 +71,7 @@ class BTTask(Task):
     def priorities(self) -> list[int]:
         return [f.priority if f.selected else 0 for f in self.files]
 
-    def setSelection(self, selectedIndexes: set[int]):
+    def setSelection(self, selectedIndexes: set[int]) -> None:
         if not selectedIndexes:
             raise ValueError("至少需要选择一个文件")
         changed = False
@@ -159,15 +161,25 @@ class BTTask(Task):
 
 @dataclass(kw_only=True)
 class BTTaskStep(TaskStep):
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    _task: BTTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> BTTask:
+        return self._task
+
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         from .session import btSession, TorrentProgress
 
-        task: BTTask = self.task
+        task = self.task
 
         if task.countSelected <= 0:
             raise TaskError("至少需要选择一个文件")
 
-        def onProgress(p: TorrentProgress):
+        def onProgress(p: TorrentProgress) -> None:
             task.updateStats(p)
             if p.totalWanted > 0:
                 task.fileSize = p.totalWanted
@@ -207,11 +219,20 @@ class BTTaskStep(TaskStep):
 
 @dataclass(kw_only=True)
 class BTTorrentFileStep(TaskStep):
+    _task: BTTask = field(repr=False, init=False)
     canPause = False
+
+    @property
+    def task(self) -> BTTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
         return str(self.task.outputFolder / f"{self.task.name}.torrent")
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         Path(self.outputPath).write_bytes(b64decode(self.task.torrentData))

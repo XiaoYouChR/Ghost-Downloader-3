@@ -1,17 +1,26 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from threading import Thread
-from typing import Any
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from loguru import logger
 
+if TYPE_CHECKING:
+    from PySide6.QtCore import QObject
+
 
 class CoroutineRunner:
 
-    def __init__(self, dispatcher: Callable[[Callable], None], isAlive: Callable[[Any], bool] | None = None, *, loop: asyncio.AbstractEventLoop):
+    def __init__(
+        self,
+        dispatcher: Callable[[Callable[[], None]], None],
+        isAlive: Callable[[object], bool] | None = None,
+        *,
+        loop: asyncio.AbstractEventLoop,
+    ) -> None:
         self._dispatcher = dispatcher
         self._isAlive = isAlive
         self._loop = loop
@@ -19,21 +28,21 @@ class CoroutineRunner:
         self._pending: dict[str, tuple] = {}
         self._running: dict[str, asyncio.Task] = {}
 
-    def _run(self):
+    def _run(self) -> None:
         self._loop.run_forever()
         self._loop.close()
 
-    def start(self):
+    def start(self) -> None:
         self._thread.start()
 
-    def submit(
+    def submit[T](
         self,
-        work,
-        done: Callable = None,
-        failed: Callable = None,
-        *args,
-        owner=None,
-        **kwargs,
+        work: Coroutine[object, object, T],
+        done: Callable[..., object] | None = None,
+        failed: Callable[..., object] | None = None,
+        *args: object,
+        owner: QObject | None = None,
+        **kwargs: object,
     ) -> str:
         workId = f"wrk_{uuid4().hex}"
         if owner is not None:
@@ -72,11 +81,11 @@ class CoroutineRunner:
         self._loop.call_soon_threadsafe(schedule)
         return workId
 
-    def cancel(self, workId: str, finished: Callable = None) -> bool:
+    def cancel(self, workId: str, finished: Callable[[], object] | None = None) -> bool:
         self._pending.pop(workId, None)
         task = self._running.pop(workId, None)
         if task is not None:
-            def scheduleCancel():
+            def scheduleCancel() -> None:
                 if finished is not None:
                     task.add_done_callback(lambda _: self.post(finished))
                 task.cancel()
@@ -86,8 +95,8 @@ class CoroutineRunner:
             finished()
         return False
 
-    def post(self, callback: Callable, *args, **kwargs) -> None:
-        def wrapper():
+    def post(self, callback: Callable[..., object], *args: object, **kwargs: object) -> None:
+        def wrapper() -> None:
             try:
                 callback(*args, **kwargs)
             except Exception as e:
@@ -95,12 +104,12 @@ class CoroutineRunner:
 
         self._dispatcher(wrapper)
 
-    def _guard(self, owner, callback: Callable) -> Callable | None:
+    def _guard(self, owner: QObject, callback: Callable[..., object] | None) -> Callable[..., None] | None:
         if callback is None:
             return None
         isAlive = self._isAlive
 
-        def guarded(*args, **kwargs):
+        def guarded(*args: object, **kwargs: object) -> None:
             if isAlive is None or isAlive(owner):
                 callback(*args, **kwargs)
 

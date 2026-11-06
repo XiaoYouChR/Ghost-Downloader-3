@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from asyncio import CancelledError
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, fields as dc_fields, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from loguru import logger
@@ -10,9 +12,15 @@ from loguru import logger
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
+from http_pack.pack import buildEditCards, buildOptionCards
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
 from .probe import probeUrls, toProxyHeaders
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 GITHUB_HOSTS = {
     "api.github.com",
@@ -56,7 +64,7 @@ class GitHubHttpTaskStep(HttpTaskStep):
     fallbackUrls: list[str] = field(default_factory=list)
 
     @classmethod
-    def build(cls, step: HttpTaskStep, fallbackUrls: list[str]):
+    def build(cls, step: HttpTaskStep, fallbackUrls: list[str]) -> GitHubHttpTaskStep:
         kwargs = {f.name: getattr(step, f.name) for f in dc_fields(HttpTaskStep) if f.init}
         return cls(**kwargs, fallbackUrls=fallbackUrls)
 
@@ -65,7 +73,11 @@ class GitHubHttpTaskStep(HttpTaskStep):
         step._bindTask(self.task)
         return step
 
-    async def run(self, reportSpeed, waitForSpeedLimit):
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         while True:
             try:
                 await super().run(reportSpeed, waitForSpeedLimit)
@@ -130,14 +142,12 @@ class GitHubPack(FeaturePack):
     config = githubConfig
     parsers = [GitHubParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from http_pack.cards import HttpTaskCard
         return HttpTaskCard
 
-    def optionCards(self, task, parent=None):
-        from http_pack.pack import HttpPack
-        return HttpPack.optionCards(self, task, parent)
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildOptionCards(task, parent)
 
-    def editCards(self, task, parent=None):
-        from http_pack.pack import HttpPack
-        return HttpPack.editCards(self, task, parent)
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildEditCards(task, parent)

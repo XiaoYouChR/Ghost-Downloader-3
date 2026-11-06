@@ -4,6 +4,7 @@ import asyncio
 import re
 from base64 import b64encode
 from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import libtorrent as lt
@@ -20,6 +21,13 @@ from .config import bittorrentConfig
 from .session import PROXY_SCHEMES, btSession
 from .task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
 from .trackers import mergedTrackers, trackerList
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
+    from app.view.dialogs.task_drawer import DetailCard
 
 INFO_HASH_PATTERN = re.compile(r"[0-9a-f]{40}|[a-z2-7]{32}", re.IGNORECASE)
 
@@ -130,24 +138,24 @@ class BitTorrentPack(FeaturePack):
     proxySchemes = PROXY_SCHEMES
     parsers = [TorrentParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import BTTaskCard
         return BTTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import BTDraftCard
         return BTDraftCard
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
 
-    def detailCards(self, task, parent=None):
+    def detailCards(self, task: BTTask, parent: QWidget | None = None) -> list[DetailCard]:
         from .detail_cards import PeerCard, TorrentCard, TrackerCard
         runner = self._services.coroutineRunner
         return [TorrentCard(task, runner, parent), TrackerCard(task, runner, parent), PeerCard(task, runner, parent)]
 
-    def fileTypes(self):
+    def fileTypes(self) -> list[FileType]:
         return [
             FileType(
                 extensions=(".torrent",),
@@ -160,9 +168,9 @@ class BitTorrentPack(FeaturePack):
     def uriSchemes(self) -> list[UriScheme]:
         return [UriScheme("magnet", "Magnet")]
 
-    async def activate(self):
+    async def activate(self) -> None:
         btSession.open()
         refreshTrackerListIfStale()
 
-    async def deactivate(self):
+    async def deactivate(self) -> None:
         await btSession.close()

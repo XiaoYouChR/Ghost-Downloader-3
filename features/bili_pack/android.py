@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from .account import (
+    BilibiliAccount,
     QR_EXPIRED,
     QR_GOT_URL,
     QR_LOGIN_FAILED,
@@ -13,15 +15,20 @@ from .account import (
     QR_UNSCANNED,
 )
 
+if TYPE_CHECKING:
+    from app.signal import Signal
+    from .pack import BilibiliPack
+    from .task import BilibiliTask
+
 UI_CLASS = "com.xychr.ghostdownloader.features.bili_pack.BilibiliUi"
 
 
-def qualityOptions() -> list[dict]:
+def qualityOptions() -> list[dict[str, int | str]]:
     from .config import QUALITY_VALUES, QUALITY_LABELS
     return [{"value": v, "label": l} for v, l in zip(QUALITY_VALUES, QUALITY_LABELS)]
 
 
-def audioQualityOptions() -> list[dict]:
+def audioQualityOptions() -> list[dict[str, int | str]]:
     from .config import AUDIO_QUALITY_VALUES, AUDIO_QUALITY_LABELS
     return [{"value": v, "label": l} for v, l in zip(AUDIO_QUALITY_VALUES, AUDIO_QUALITY_LABELS)]
 
@@ -42,26 +49,26 @@ class QrState:
     message: str = ""
 
 
-_account = None
+_account: BilibiliAccount | None = None
 _qr = QrState()
 _loginUrl = ""
 
 
-def init(pack) -> dict:
+def init(pack: BilibiliPack) -> dict[str, Signal]:
     global _account
     _account = pack.account
     _account.qrStateChanged.connect(_onQrStateChanged)
     return {"accountState": _account.accountChanged, "qrState": _account.qrStateChanged}
 
 
-def taskFields(task) -> dict:
+def taskFields(task: BilibiliTask) -> dict[str, str | bool]:
     return {
         "fileSelectKind": "videos" if task.hasManyVideos else "pages",
         "canSelectFiles": task.isVideoEnabled or task.isAudioEnabled,
     }
 
 
-def fileFields(task) -> dict:
+def fileFields(task: BilibiliTask) -> dict[int, dict[str, int]]:
     return {
         page.index: {
             "startTime": page.startTime,
@@ -71,7 +78,7 @@ def fileFields(task) -> dict:
     }
 
 
-def applyFileEdits(task, edits: dict):
+def applyFileEdits(task: BilibiliTask, edits: dict[str, Any]) -> None:
     from .task import setTimeRanges
 
     trim = {int(i): (v[0], v[1]) for i, v in (edits.get("trim") or {}).items()}
@@ -81,7 +88,7 @@ def applyFileEdits(task, edits: dict):
         setFileName(task, int(index), name)
 
 
-def fileGroups(task) -> dict[int, list[str]]:
+def fileGroups(task: BilibiliTask) -> dict[int, list[str]]:
     if not task.hasManyVideos:
         return {}
     return {
@@ -90,11 +97,11 @@ def fileGroups(task) -> dict[int, list[str]]:
     }
 
 
-def toDraftOptions(pairs) -> list[dict]:
+def toDraftOptions(pairs: list[tuple[str, str]]) -> list[dict[str, str]]:
     return [{"key": key, "label": label} for key, label in pairs]
 
 
-def draftFields(task) -> dict:
+def draftFields(task: BilibiliTask) -> dict[str, Any]:
     from .task import (
         audioTiers, currentAudioTier, currentVideoTier, subtitleChoices, videoTiers,
     )
@@ -128,7 +135,7 @@ def draftFields(task) -> dict:
     }
 
 
-def setControl(task, controlId: str, value: str):
+def setControl(task: BilibiliTask, controlId: str, value: str) -> None:
     if controlId == "video":
         task.isVideoEnabled = bool(value)
         if value:
@@ -144,11 +151,11 @@ def setControl(task, controlId: str, value: str):
     task.update()
 
 
-def setSubtitles(task, languages: str):
+def setSubtitles(task: BilibiliTask, languages: str) -> None:
     task.setSubtitleLanguages([lan for lan in languages.split(",") if lan])
 
 
-def setTrim(task, startTime: int, endTime: int):
+def setTrim(task: BilibiliTask, startTime: int, endTime: int) -> None:
     if not task.files:
         return
     duration = task.files[0]._duration
@@ -159,12 +166,12 @@ def setTrim(task, startTime: int, endTime: int):
     task.update()
 
 
-def setFileName(task, index: int, name: str):
+def setFileName(task: BilibiliTask, index: int, name: str) -> None:
     from .task import setFileName as _setFileName
     _setFileName(task, index, name)
 
 
-async def probePreview(task):
+async def probePreview(task: BilibiliTask) -> dict[str, Any]:
     import re
     from urllib.parse import urlparse
     from app.client import buildClient
@@ -202,7 +209,8 @@ async def probePreview(task):
 
 # ---- account state (called by Kotlin via packState/requestPack) ----
 
-def accountState() -> dict:
+def accountState() -> dict[str, bool | str]:
+    assert _account is not None
     return {
         "isLoggedIn": _account.isLoggedIn,
         "username": _account.username,
@@ -212,45 +220,53 @@ def accountState() -> dict:
     }
 
 
-def qrState() -> dict:
+def qrState() -> dict[str, str]:
     return {"status": _qr.status, "url": _loginUrl, "message": _qr.message}
 
 
-def setCookie(cookie: str):
+def setCookie(cookie: str) -> None:
+    assert _account is not None
     _account.setCookie(cookie)
 
 
-def logout():
+def logout() -> None:
+    assert _account is not None
     _account.logout()
 
 
-def startQrLogin():
+def startQrLogin() -> None:
     global _qr, _loginUrl
+    assert _account is not None
     _qr, _loginUrl = QrState(), ""
     _account.startQrLogin()
 
 
-def cancelQrLogin():
+def cancelQrLogin() -> None:
+    assert _account is not None
     _account.cancelQrLogin()
 
 
-async def fetchCaptcha() -> dict:
+async def fetchCaptcha() -> dict[str, str]:
+    assert _account is not None
     return await _account.fetchCaptcha()
 
 
-async def fetchCountries() -> dict:
+async def fetchCountries() -> dict[str, Any]:
+    assert _account is not None
     return await _account.fetchCountries()
 
 
-async def sendSmsCode(cid: int, tel: str, captcha: str):
+async def sendSmsCode(cid: int, tel: str, captcha: str) -> None:
+    assert _account is not None
     await _account.sendSmsCode(cid, tel, json.loads(captcha))
 
 
-async def loginSms(cid: int, tel: str, code: str):
+async def loginSms(cid: int, tel: str, code: str) -> None:
+    assert _account is not None
     await _account.loginSms(cid, tel, code)
 
 
-def _onQrStateChanged(code: int, text: str):
+def _onQrStateChanged(code: int, text: str) -> None:
     global _qr, _loginUrl
     status = QR_STATUS.get(code, "failed")
     if status == "ready":

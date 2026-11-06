@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.config.paths import APP_DATA_DIR
 from app.i18n import N
-from app.models.pack import FeaturePack, TaskParser, UriScheme
+from app.models.pack import BinaryRuntime, FeaturePack, PackServices, TaskParser, UriScheme
 from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, kelpieRuntime
@@ -14,6 +15,11 @@ from .kelpie import PROXY_SCHEMES, Error, Kelpie, Link, Network
 from .lists import nodeList, serverList
 from .session import buildSettings, ed2kSession, toTaskError
 from .task import ED2kTask, ED2kTaskStep
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.task_cards import TaskCard
+    from app.view.dialogs.task_drawer import DetailCard
 
 
 def createKelpie(onNetwork: Callable[[Network | None], None]) -> Kelpie:
@@ -52,29 +58,29 @@ class ED2kPack(FeaturePack):
     parsers = [ED2kParser]
     proxySchemes = PROXY_SCHEMES
 
-    def __init__(self, services):
+    def __init__(self, services: PackServices) -> None:
         super().__init__(services)
         ed2kSession.open(services.coroutineRunner, createKelpie)
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import ED2kTaskCard
         return ED2kTaskCard
 
-    def detailCards(self, task, parent=None):
+    def detailCards(self, task: ED2kTask, parent: QWidget | None = None) -> list[DetailCard]:
         from .detail_cards import ED2kCard, ED2kSourceCard
         return [ED2kCard(task, parent), ED2kSourceCard(task, parent)]
 
     def uriSchemes(self) -> list[UriScheme]:
         return [UriScheme("ed2k", "eD2k")]
 
-    def runtimes(self):
+    def runtimes(self) -> list[BinaryRuntime]:
         return [kelpieRuntime]
 
-    async def activate(self):
+    async def activate(self) -> None:
         if ed2kConfig.shouldRefreshLists.value:
             for bootstrapList in (serverList, nodeList):
                 if bootstrapList.isStale():
                     asyncio.ensure_future(bootstrapList.refresh())
 
-    async def deactivate(self):
+    async def deactivate(self) -> None:
         await ed2kSession.close()

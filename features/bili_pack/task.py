@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import shutil
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -159,12 +161,12 @@ class BiliPage(TaskFile):
     audioSize: int = 0
     startTime: int = 0
     endTime: int = 0
-    headers: dict = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     subworkerCount: int = 8
-    subtitles: list[dict] = field(default_factory=list)
+    subtitles: list[dict[str, Any]] = field(default_factory=list)
     _duration: int = field(default=0, repr=False)
-    _videoStreams: list[dict] = field(default_factory=list, repr=False)
-    _audioStreams: list[dict] = field(default_factory=list, repr=False)
+    _videoStreams: list[dict[str, Any]] = field(default_factory=list, repr=False)
+    _audioStreams: list[dict[str, Any]] = field(default_factory=list, repr=False)
 
 
 @dataclass(kw_only=True, eq=False)
@@ -172,6 +174,7 @@ class BilibiliTask(Task):
     packId: str = "bili"
     canEdit = True
     fileType = BiliPage
+    files: list[BiliPage] = field(default_factory=list)
     coverUrl: str = ""
     coverSize: int = 0
     isVideoEnabled: bool = True
@@ -185,7 +188,7 @@ class BilibiliTask(Task):
     _acceptQualities: list[int] = field(default_factory=list, repr=False)
     _qualityLabels: list[str] = field(default_factory=list, repr=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
         if any(not f.relativePath.endswith((".mp4", ".m4a")) for f in self.files or []):
             self._baseName = self._baseName or Path(self.name).stem
@@ -225,7 +228,7 @@ class BilibiliTask(Task):
         selected = sum(1 for g in groups if any(p.selected for p in g))
         return selected, len(groups)
 
-    def setSelection(self, selectedIndexes) -> None:
+    def setSelection(self, selectedIndexes: Iterable[int]) -> None:
         super().setSelection(selectedIndexes)
         if self.isCoverEnabled:
             self.fileSize += self.coverSize
@@ -248,7 +251,7 @@ class BilibiliTask(Task):
             stem = f"{Path(self.name).stem}{self._pageSuffix(page)}"
             page.relativePath = toSafeFilename(f"{stem}.{extension}", fallback=f"P{page.pageNumber}.{extension}")
 
-    def setName(self, name: str):
+    def setName(self, name: str) -> None:
         super().setName(name)
         self._baseName = Path(self.name).stem
 
@@ -431,6 +434,11 @@ class BilibiliTask(Task):
 
 @dataclass(kw_only=True)
 class BilibiliCoverStep(HttpTaskStep):
+    _task: BilibiliTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> BilibiliTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -439,7 +447,12 @@ class BilibiliCoverStep(HttpTaskStep):
 
 @dataclass(kw_only=True)
 class BilibiliVideoStep(HttpTaskStep):
+    _task: BilibiliTask = field(repr=False, init=False)
     fileIndex: int = 0
+
+    @property
+    def task(self) -> BilibiliTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -449,7 +462,11 @@ class BilibiliVideoStep(HttpTaskStep):
             return str(toResourcePath(self.task, self.fileIndex, "video"))
         return str(self.task.toFilePath(self.fileIndex))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         page = pageByIndex(self.task, self.fileIndex)
         if page and not page.videoUrl:
             from .config import bilibiliConfig
@@ -505,7 +522,12 @@ class BilibiliVideoStep(HttpTaskStep):
 
 @dataclass(kw_only=True)
 class BilibiliAudioStep(HttpTaskStep):
+    _task: BilibiliTask = field(repr=False, init=False)
     fileIndex: int = 0
+
+    @property
+    def task(self) -> BilibiliTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -515,7 +537,11 @@ class BilibiliAudioStep(HttpTaskStep):
             return str(toResourcePath(self.task, self.fileIndex, "audio"))
         return str(self.task.toFilePath(self.fileIndex))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         page = pageByIndex(self.task, self.fileIndex)
         if page and not page.audioUrl:
             from .config import bilibiliConfig
@@ -571,10 +597,15 @@ class BilibiliAudioStep(HttpTaskStep):
 
 @dataclass(kw_only=True)
 class BilibiliMergeStep(FFmpegStep):
+    _task: BilibiliTask = field(repr=False, init=False)
     fileIndex: int = 0
     patchedVideoHeader: bytes = field(default=b"", repr=False)
     patchedAudioHeader: bytes = field(default=b"", repr=False)
     segStartTime: float = field(default=0.0, repr=False)
+
+    @property
+    def task(self) -> BilibiliTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -602,7 +633,11 @@ class BilibiliMergeStep(FFmpegStep):
         relSS = tr[0] - self.segStartTime
         return ["-ss", str(relSS)], ["-t", str(tr[1] - tr[0])]
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         for header, path in [
             (self.patchedVideoHeader, self._videoPath),
             (self.patchedAudioHeader, self._audioPath),
@@ -631,15 +666,24 @@ class BilibiliMergeStep(FFmpegStep):
 
 @dataclass(kw_only=True)
 class BilibiliSubtitleStep(TaskStep):
+    _task: BilibiliTask = field(repr=False, init=False)
     canPause = False
     fileIndex: int = 0
     language: str = ""
 
     @property
+    def task(self) -> BilibiliTask:
+        return self._task
+
+    @property
     def outputPath(self) -> str:
         return str(self.task.toSidePath(self.fileIndex, f"{toSafeFilename(self.language, fallback='subtitle')}.srt"))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         from app.client import buildClient
 
         page = pageByIndex(self.task, self.fileIndex)

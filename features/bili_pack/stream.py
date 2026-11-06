@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import urllib.parse
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
@@ -9,23 +10,13 @@ from app.client import buildClient
 from .config import bilibiliConfig
 
 if TYPE_CHECKING:
+    import wreq
     from .task import BiliPage
 
 ALL_DASH_STREAMS = 4048
 
 
-class NoopRunner:
-    def submit(self, *a, **k):
-        return ""
-
-    def cancel(self, *a, **k):
-        pass
-
-    def post(self, *a, **k):
-        pass
-
-
-def toStreamUrl(s: dict) -> str:
+def toStreamUrl(s: dict[str, Any]) -> str:
     url = s.get("baseUrl") or s.get("base_url") or ""
     if url:
         return url
@@ -35,13 +26,13 @@ def toStreamUrl(s: dict) -> str:
     return ""
 
 
-def buildSize(stream: dict | None, duration: int) -> int:
+def buildSize(stream: dict[str, Any] | None, duration: int) -> int:
     if not stream or duration <= 0:
         return 0
     return int(stream.get("bandwidth") or 0) * duration // 8
 
 
-async def probeSize(url: str, headers: dict | None = None) -> int:
+async def probeSize(url: str, headers: dict[str, str] | None = None) -> int:
     if not url:
         return 0
     client = buildClient()
@@ -131,15 +122,14 @@ async def fetchPlayurl(
     page: BiliPage,
     *,
     qn: int,
-    headers: dict,
-    signParams=None,
+    headers: dict[str, str],
+    signParams: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
     audioQn: int,
 ) -> tuple[list[int], list[str], int]:
     if signParams is None:
-        from .account import BilibiliAccount
-        account = BilibiliAccount(NoopRunner())
-        await account.fetchWbiKeys()
-        signParams = account.signParams
+        from .account import fetchWbiMixinKey, signWbiParams
+        mixinKey = await fetchWbiMixinKey()
+        signParams = lambda params: signWbiParams(params, mixinKey)
 
     cookie = headers.get("cookie") or headers.get("Cookie") or ""
     client = buildClient(headers={"cookie": cookie} if cookie else None)
@@ -183,7 +173,7 @@ async def fetchPlayurl(
         client.close()
 
 
-async def fetchBuvid(client) -> str:
+async def fetchBuvid(client: wreq.Client) -> str:
     try:
         response = await client.get("https://api.bilibili.com/x/frontend/finger/spi")
         payload = await response.json()
@@ -193,7 +183,7 @@ async def fetchBuvid(client) -> str:
         return ""
 
 
-async def fetchSubtitles(client, page: BiliPage) -> list[dict]:
+async def fetchSubtitles(client: wreq.Client, page: BiliPage) -> list[dict[str, Any]]:
     try:
         params: dict = {"cid": page.cid}
         if page.bvid:

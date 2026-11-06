@@ -46,9 +46,11 @@ if TYPE_CHECKING:
     from app.services.browser_service import BrowserService, PairRequest
     from app.services.category_service import CategoryService
     from app.services.coroutine_runner import CoroutineRunner
+    from app.services.plan import Plan
     from app.services.speed_meter import SpeedMeter
     from app.services.feature_service import FeatureService
     from app.services.task_service import TaskService
+    from app.services.update_service import UpdateInfo, UpdateService
 
 
 class DropOverlay(QWidget):
@@ -95,10 +97,10 @@ class MainWindow(MSFluentWindow):
         categoryService: CategoryService,
         speedMeter: SpeedMeter,
         coroutineRunner: CoroutineRunner,
-        plan,
-        updateService=None,
-        parent=None,
-    ):
+        plan: Plan,
+        updateService: UpdateService | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self._macVisualEffectView = None

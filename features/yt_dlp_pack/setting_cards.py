@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QCoreApplication, Qt
-from PySide6.QtWidgets import QHBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
     CaptionLabel, FluentIcon, PushButton, SettingCard, ToolButton, ToolTipFilter,
 )
@@ -12,7 +12,7 @@ from .config import clearCookies, hasCookieFile, saveCookies
 
 class CookieSettingCard(SettingCard):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
             FluentIcon.CERTIFICATE,
             QCoreApplication.translate("YtDlpConfig", "YouTube Cookie"),

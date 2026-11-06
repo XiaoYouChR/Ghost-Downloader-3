@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import Qt, QRectF, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
@@ -10,7 +12,7 @@ FILL_EASING = 0.25
 
 
 class SegmentedProgressBar(QWidget):
-    def __init__(self, step: HttpTaskStep, parent=None):
+    def __init__(self, step: HttpTaskStep, parent: QWidget | None = None):
         super().__init__(parent)
         self._step = step
         self._isPaused = False
@@ -21,11 +23,11 @@ class SegmentedProgressBar(QWidget):
         self._fillTimer.setInterval(16)
         self._fillTimer.timeout.connect(self._onFillTimeout)
 
-    def setValue(self, value: float):
+    def setValue(self, value: float) -> None:
         self._fillTimer.start()
         self._onFillTimeout()
 
-    def _onFillTimeout(self):
+    def _onFillTimeout(self) -> None:
         live = {sw.start: sw.position for sw in list(self._step.subworkers)}
         fresh = not self._fillProgress
         settled = True
@@ -44,13 +46,13 @@ class SegmentedProgressBar(QWidget):
             self._fillTimer.stop()
         self.update()
 
-    def setError(self, isError: bool):
+    def setError(self, isError: bool) -> None:
         self._isError = isError
         if not isError:
             self._isPaused = False
         self.update()
 
-    def pause(self):
+    def pause(self) -> None:
         self._isPaused = True
         self.update()
 
@@ -73,7 +75,7 @@ class SegmentedProgressBar(QWidget):
                 merged.append((start, end))
         return merged
 
-    def paintEvent(self, event: QPaintEvent):
+    def paintEvent(self, event: QPaintEvent) -> None:
         fileSize = self._step.fileSize
         if fileSize <= 0 or not self._spans:
             return

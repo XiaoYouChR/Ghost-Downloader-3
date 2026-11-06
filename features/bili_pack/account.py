@@ -5,11 +5,16 @@ import time
 import urllib.parse
 from functools import reduce
 from hashlib import md5
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlparse
 
 from app.client import buildClient
 from app.signal import Signal
 from .config import bilibiliConfig
+
+if TYPE_CHECKING:
+    import wreq
+    from app.services.coroutine_runner import CoroutineRunner
 
 MIXIN_KEY_ENC_TAB = [
     46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,
@@ -46,7 +51,7 @@ PASSPORT_HEADERS = {
 }
 
 
-def cookiesFrom(response) -> dict[str, str]:
+def cookiesFrom(response: wreq.Response) -> dict[str, str]:
     return {c.name: c.value for c in response.cookies
             if c.name in COOKIE_ORDER and c.value}
 
@@ -68,11 +73,45 @@ def toCookie(raw: str) -> str:
     return "; ".join(f"{n}={parts[n]}" for n in ordered + extra)
 
 
+def toMixinKey(data: dict[str, Any]) -> str:
+    wbiImg = data.get("wbi_img") or {}
+    imgUrl = str(wbiImg.get("img_url") or "")
+    subUrl = str(wbiImg.get("sub_url") or "")
+    imgKey = imgUrl.rsplit("/", 1)[-1].split(".")[0] if imgUrl else ""
+    subKey = subUrl.rsplit("/", 1)[-1].split(".")[0] if subUrl else ""
+    if not (imgKey and subKey):
+        return ""
+    orig = imgKey + subKey
+    return reduce(lambda s, i: s + orig[i], MIXIN_KEY_ENC_TAB, "")[:32]
+
+
+def signWbiParams(params: dict[str, Any], mixinKey: str) -> dict[str, Any]:
+    if not mixinKey:
+        return params
+    params["wts"] = round(time.time())
+    params = dict(sorted(params.items()))
+    params = {k: "".join(c for c in str(v) if c not in "!'()*") for k, v in params.items()}
+    query = urllib.parse.urlencode(params)
+    params["w_rid"] = md5((query + mixinKey).encode()).hexdigest()
+    return params
+
+
+async def fetchWbiMixinKey() -> str:
+    client = buildClient()
+    try:
+        response = await client.get(LOGIN_INFO_API)
+        response.raise_for_status()
+        payload = await response.json()
+        return toMixinKey(payload.get("data") or {})
+    finally:
+        client.close()
+
+
 class BilibiliAccount:
     accountChanged = Signal()
     qrStateChanged = Signal(int, str)
 
-    def __init__(self, coroutineRunner):
+    def __init__(self, coroutineRunner: CoroutineRunner) -> None:
         self._coroutineRunner = coroutineRunner
         self._username = ""
         self._mid = ""
@@ -102,36 +141,23 @@ class BilibiliAccount:
     def vip(self) -> str:
         return self._vip
 
-    def _updateWbiKeys(self, data: dict) -> None:
-        wbiImg = data.get("wbi_img") or {}
-        imgUrl = str(wbiImg.get("img_url") or "")
-        subUrl = str(wbiImg.get("sub_url") or "")
-        imgKey = imgUrl.rsplit("/", 1)[-1].split(".")[0] if imgUrl else ""
-        subKey = subUrl.rsplit("/", 1)[-1].split(".")[0] if subUrl else ""
-        if imgKey and subKey:
-            orig = imgKey + subKey
-            self._mixinKey = reduce(lambda s, i: s + orig[i], MIXIN_KEY_ENC_TAB, "")[:32]
+    def _updateWbiKeys(self, data: dict[str, Any]) -> None:
+        if key := toMixinKey(data):
+            self._mixinKey = key
 
-    def signParams(self, params: dict) -> dict:
-        if not self._mixinKey:
-            return params
-        params["wts"] = round(time.time())
-        params = dict(sorted(params.items()))
-        params = {k: "".join(c for c in str(v) if c not in "!'()*") for k, v in params.items()}
-        query = urllib.parse.urlencode(params)
-        params["w_rid"] = md5((query + self._mixinKey).encode()).hexdigest()
-        return params
+    def signParams(self, params: dict[str, Any]) -> dict[str, Any]:
+        return signWbiParams(params, self._mixinKey)
 
     # ── QR login (wreq via coroutineRunner) ──
 
-    def startQrLogin(self):
+    def startQrLogin(self) -> None:
 
         self.cancelQrLogin()
         self._qrWorkId = self._coroutineRunner.submit(
             self._pollQrLogin(), done=self._onQrLoginDone, failed=self._onQrLoginFailed,
         )
 
-    def cancelQrLogin(self):
+    def cancelQrLogin(self) -> None:
         if self._qrWorkId:
     
             self._coroutineRunner.cancel(self._qrWorkId)
@@ -186,7 +212,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    def _onQrLoginDone(self, cookie: str | None):
+    def _onQrLoginDone(self, cookie: str | None) -> None:
         self._qrWorkId = ""
         if cookie is None:
             return
@@ -196,20 +222,20 @@ class BilibiliAccount:
         else:
             self.qrStateChanged.emit(QR_LOGIN_FAILED, "登录成功，但未能提取到有效 Cookie")
 
-    def _onQrLoginFailed(self, error):
+    def _onQrLoginFailed(self, error: Exception) -> None:
         self._qrWorkId = ""
         self.qrStateChanged.emit(QR_LOGIN_FAILED, str(error))
 
     # ── cookie / logout / account info (wreq via coroutineRunner) ──
 
-    def setCookie(self, cookie: str):
+    def setCookie(self, cookie: str) -> None:
         from app.config.cfg import cfg
 
 
         cookie = toCookie(cookie)
         oldCookie = self.cookie
         if oldCookie and oldCookie != cookie:
-            def onDone(_):
+            def onDone(_: object) -> None:
                 cfg.set(bilibiliConfig.userCookie, cookie)
                 self.accountChanged.emit()
                 if cookie:
@@ -221,25 +247,17 @@ class BilibiliAccount:
             if cookie:
                 self.fetchAccountInfo()
 
-    def logout(self):
+    def logout(self) -> None:
 
         self._coroutineRunner.submit(self._logout(), done=self._onLogoutDone, failed=self._onLogoutFailed)
 
-    def fetchAccountInfo(self):
+    def fetchAccountInfo(self) -> None:
 
         self._coroutineRunner.submit(self._fetchAccountInfo(), done=self._onAccountInfoDone)
 
     async def fetchWbiKeys(self) -> None:
-        if self._mixinKey:
-            return
-        client = buildClient()
-        try:
-            response = await client.get(LOGIN_INFO_API)
-            response.raise_for_status()
-            payload = await response.json()
-            self._updateWbiKeys(payload.get("data") or {})
-        finally:
-            client.close()
+        if not self._mixinKey:
+            self._mixinKey = await fetchWbiMixinKey()
 
     async def _logout(self) -> bool:
         cookie = self.cookie
@@ -273,7 +291,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def _fetchAccountInfo(self) -> dict:
+    async def _fetchAccountInfo(self) -> dict[str, Any]:
         cookie = self.cookie
         if not cookie:
             return {"isLoggedIn": False, "uname": ""}
@@ -314,7 +332,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    def _onLogoutDone(self, shouldClear: bool):
+    def _onLogoutDone(self, shouldClear: bool) -> None:
         if shouldClear:
             from app.config.cfg import cfg
             cfg.set(bilibiliConfig.userCookie, "")
@@ -323,10 +341,10 @@ class BilibiliAccount:
             self._vip = ""
             self.accountChanged.emit()
 
-    def _onLogoutFailed(self, error: str):
+    def _onLogoutFailed(self, error: Exception) -> None:
         self.accountChanged.emit()
 
-    def _onAccountInfoDone(self, result: dict):
+    def _onAccountInfoDone(self, result: dict[str, Any]) -> None:
         self._username = result.get("uname", "")
         self._mid = result.get("mid", "")
         self._vip = result.get("vip", "")
@@ -337,7 +355,7 @@ class BilibiliAccount:
 
     # ── SMS login (caller blocks on the engine loop) ──
 
-    async def fetchCaptcha(self) -> dict:
+    async def fetchCaptcha(self) -> dict[str, str]:
         client = buildClient()
         try:
             response = await client.get(CAPTCHA_API, query={"source": SMS_SOURCE})
@@ -357,7 +375,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def fetchCountries(self) -> dict:
+    async def fetchCountries(self) -> dict[str, Any]:
         client = buildClient()
         try:
             response = await client.get(COUNTRY_LIST_API)
@@ -375,7 +393,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def _fetchZone(self, client) -> int:
+    async def _fetchZone(self, client: wreq.Client) -> int:
         try:
             response = await client.get(ZONE_API)
             response.raise_for_status()
@@ -384,7 +402,7 @@ class BilibiliAccount:
             return DEFAULT_ZONE
         return int((payload.get("data") or {}).get("country_code") or DEFAULT_ZONE)
 
-    async def sendSmsCode(self, cid: int, tel: str, captcha: dict):
+    async def sendSmsCode(self, cid: int, tel: str, captcha: dict[str, str]) -> None:
         client = buildClient(headers=PASSPORT_HEADERS)
         try:
             response = await client.post(SMS_SEND_API, query={
@@ -403,7 +421,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def loginSms(self, cid: int, tel: str, code: str):
+    async def loginSms(self, cid: int, tel: str, code: str) -> None:
         client = buildClient(headers=PASSPORT_HEADERS)
         try:
             response = await client.post(SMS_LOGIN_API, query={

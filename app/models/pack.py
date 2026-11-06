@@ -19,9 +19,15 @@ if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions
     from app.services.coroutine_runner import CoroutineRunner
     from app.services.speed_meter import SpeedMeter
-    from PySide6.QtCore import Signal
+    from PySide6.QtCore import SignalInstance
     from PySide6.QtWidgets import QWidget
+    from qfluentwidgets import FluentIconBase
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+    from app.view.components.setting_cards import RuntimeCard
+    from app.view.dialogs.task_drawer import DetailCard
 
 
 @dataclass(frozen=True)
@@ -40,8 +46,8 @@ class UriScheme:
 
 class TaskParser:
     priority: int = 100
-    pack: FeaturePack | None = None
-    delegate: Callable[[TaskOptions], Awaitable[Task]] | None = None
+    pack: FeaturePack
+    delegate: Callable[[TaskOptions], Awaitable[Task]]
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError
@@ -54,10 +60,10 @@ class TaskParser:
 
 
 class PackConfig:
-    createRuntimeCard: Callable[..., QWidget] | None = None
+    createRuntimeCard: Callable[[BinaryRuntime, QWidget | None], RuntimeCard] | None = None
     submit: Callable[..., str] | None = None
-    associateFileTypes: ConfigItem | None = None
-    associateUriSchemes: ConfigItem | None = None
+    associateFileTypes: ConfigItem[bool] | None = None
+    associateUriSchemes: ConfigItem[bool] | None = None
     _items: dict[str, ConfigItem] = {}
 
     def __init_subclass__(cls, **kwargs):
@@ -98,12 +104,12 @@ class PackConfig:
             return self.associateUriSchemes.value
         return True
 
-    def fileAssociationToggle(self) -> Signal | None:
+    def fileAssociationToggle(self) -> SignalInstance | None:
         if self.associateFileTypes is not None:
             return self.associateFileTypes.valueChanged
         return None
 
-    def uriSchemeAssociationToggle(self) -> Signal | None:
+    def uriSchemeAssociationToggle(self) -> SignalInstance | None:
         if self.associateUriSchemes is not None:
             return self.associateUriSchemes.valueChanged
         return None
@@ -181,7 +187,7 @@ class BinaryRuntime:
 
 
 class PackPage:
-    icon: ...
+    icon: FluentIconBase
     title: str = ""
 
 
@@ -277,19 +283,19 @@ class FeaturePack:
     def __init__(self, services: PackServices):
         self._services = services
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         return None
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         return None
 
-    def optionCards(self, task: Task, parent=None) -> list[QWidget]:
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         return []
 
-    def editCards(self, task: Task, parent=None) -> list[QWidget]:
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         return self.optionCards(task, parent)
 
-    def detailCards(self, task: Task, parent=None) -> list[QWidget]:
+    def detailCards(self, task: Task, parent: QWidget | None = None) -> list[DetailCard]:
         return []
 
     def runtimes(self) -> list[BinaryRuntime]:
@@ -304,8 +310,8 @@ class FeaturePack:
     def pages(self) -> list[type[PackPage]]:
         return []
 
-    async def activate(self):
+    async def activate(self) -> None:
         pass
 
-    async def deactivate(self):
+    async def deactivate(self) -> None:
         pass

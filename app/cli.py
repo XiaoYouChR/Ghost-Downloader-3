@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.config.cfg import cfg, currentHeaders
 from app.config.constants import VERSION
@@ -11,6 +12,9 @@ from app.models.task import Task, TaskError, TaskOptions, TaskStatus, toTaskErro
 from app.platform.instance import Invocation, Reply
 from app.platform.url_scheme import isLaunchUri, isWakeUri
 from app.services.task_service import NameConflictChoice
+
+if TYPE_CHECKING:
+    from app.services.task_service import TaskService
 
 OUTPUT_CONTRACT = """\
 stdout is one JSON object: {"result": ...} on success, {"error": {"code", "message"}} on failure.
@@ -140,8 +144,14 @@ def toHeaders(lines: list[str]) -> dict[str, str]:
 
 
 class Cli:
-    def __init__(self, taskService, parse, submit, open: Callable[[list[str]], None],
-                 activate: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        taskService: TaskService,
+        parse: Callable[[TaskOptions], Awaitable[Task]],
+        submit: Callable[..., str],
+        open: Callable[[list[str]], object],
+        activate: Callable[[], object],
+    ) -> None:
         self._taskService = taskService
         self._parse = parse
         self._submit = submit

@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from app.config.cfg import BoolValidator, ConfigItem
 from app.models.pack import PackConfig
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
 class ArxivConfig(PackConfig):

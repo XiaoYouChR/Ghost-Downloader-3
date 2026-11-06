@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from enum import auto, IntEnum
 from pathlib import Path
 from time import time
-from collections.abc import Iterable
-from typing import ClassVar
+from collections.abc import Awaitable, Callable, Iterable
+from typing import Any, ClassVar, Self
 from uuid import uuid4
 
 from loguru import logger
@@ -38,19 +38,19 @@ class SpecialFileSize(IntEnum):
 
 
 class TaskError(Exception):
-    def __init__(self, message: str, **params):
+    def __init__(self, message: str, **params: Any):
         super().__init__(message)
         self.message = message
         self.params = params
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message.format_map(self.params) if self.params else self.message
 
-    def toDict(self) -> dict:
+    def toDict(self) -> dict[str, Any]:
         return {"message": self.message, "params": {k: str(v) for k, v in self.params.items()}}
 
 
-def toTaskError(error) -> TaskError:
+def toTaskError(error: BaseException) -> TaskError:
     if isinstance(error, TaskError):
         return error
     return TaskError("发生了意外错误：{detail}", detail=str(error) or type(error).__name__)
@@ -141,15 +141,16 @@ class TaskStep:
     receivedBytes: int = 0
     speed: int = 0
     error: TaskError | None = field(default=None, repr=False, init=False)
+    _task: Task = field(repr=False, init=False)
 
-    def _bindTask(self, task: Task):
+    def _bindTask(self, task: Task) -> None:
         self._task = task
 
     @property
     def task(self) -> Task:
         return self._task
 
-    def setStatus(self, status: TaskStatus):
+    def setStatus(self, status: TaskStatus) -> None:
         self.status = status
         if status == TaskStatus.COMPLETED:
             self.progress = 100
@@ -171,7 +172,7 @@ class TaskStep:
         if hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def reset(self):
+    def reset(self) -> None:
         self.status = TaskStatus.WAITING
         self.progress = 0
         self.receivedBytes = 0
@@ -180,10 +181,14 @@ class TaskStep:
         if hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def setOptions(self, options: dict) -> None:
+    def setOptions(self, options: dict[str, Any]) -> None:
         pass
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         raise NotImplementedError
 
     @property
@@ -194,12 +199,12 @@ class TaskStep:
     def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
         raise NotImplementedError
 
-    def toDict(self) -> dict:
+    def toDict(self) -> dict[str, Any]:
         from app.models.serialization import toDict
         return toDict(self)
 
     @classmethod
-    def fromDict(cls, data) -> TaskStep:
+    def fromDict(cls, data: Any) -> Self:
         from app.models.serialization import fromDict
         return fromDict(data, cls)
 
@@ -208,7 +213,7 @@ class TaskStep:
 class Task:
     _registry: ClassVar[dict[str, type[Task]]] = {}
     canEdit: ClassVar[bool] = False
-    fileType: ClassVar[type] = TaskFile
+    fileType: ClassVar[type[TaskFile]] = TaskFile
     hasOutputFile: ClassVar[bool] = True
     canSeed: ClassVar[bool] = False
 
@@ -298,16 +303,16 @@ class Task:
                 return step.error
         return None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.name = toSafeFilename(self.name, fallback="download")
         for step in self.steps:
             step._bindTask(self)
         self.updateStatus()
 
-    def setName(self, name: str):
+    def setName(self, name: str) -> None:
         self.name = toSafeFilename(name, fallback=self.name or "download")
 
-    def setOptions(self, options: dict) -> None:
+    def setOptions(self, options: dict[str, Any]) -> None:
         newFolder = options.get("outputFolder")
         if isinstance(newFolder, (str, Path)):
             self.outputFolder = Path(newFolder)
@@ -417,16 +422,16 @@ class Task:
             step.error = None
         return self.updateStatus()
 
-    def addStep(self, step: TaskStep):
+    def addStep(self, step: TaskStep) -> None:
         step._bindTask(self)
         self.steps.append(step)
         self.updateStatus()
 
-    def removeStep(self, step: TaskStep):
+    def removeStep(self, step: TaskStep) -> None:
         self.steps.remove(step)
         self.updateStatus()
 
-    def setSelection(self, selectedIndexes: list[int]):
+    def setSelection(self, selectedIndexes: Iterable[int]) -> None:
         if self.files is None:
             return
         selectedSet = set(selectedIndexes)
@@ -445,7 +450,7 @@ class Task:
                 continue
             yield step
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> None:
         for path in self.placeholderPaths:
             if path.is_dir():
                 for child in path.iterdir():
@@ -457,7 +462,11 @@ class Task:
     def relink(self, newTask: Task) -> None:
         raise TaskError("该链接不能用于更换")
 
-    async def run(self, reportSpeed, waitForSpeedLimit):
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         currentStep = None
         try:
             for step in self.pendingSteps():
@@ -490,14 +499,14 @@ class Task:
     async def runSeeding(self, isManual: bool) -> None:
         raise NotImplementedError
 
-    def toDict(self) -> dict:
+    def toDict(self) -> dict[str, Any]:
         from app.models.serialization import toDict
         return toDict(self)
 
     @classmethod
-    def fromDict(cls, data) -> Task:
+    def fromDict(cls, data: Any) -> Self:
         from app.models.serialization import fromDict
         return fromDict(data, cls)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.taskId)

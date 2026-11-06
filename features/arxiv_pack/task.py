@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from app.models.task import Task, TaskStatus, TaskStep
 from app.platform.filesystem import deletePath
@@ -11,6 +12,11 @@ from http_pack.task import HttpTaskStep
 @dataclass(kw_only=True)
 class ArxivSourceStep(HttpTaskStep):
     suffix: str = "tar.gz"
+    _task: ArxivTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> ArxivTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -19,6 +25,11 @@ class ArxivSourceStep(HttpTaskStep):
 
 @dataclass(kw_only=True)
 class ArxivBibtexStep(HttpTaskStep):
+    _task: ArxivTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> ArxivTask:
+        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -48,7 +59,7 @@ class ArxivTask(Task):
         progress = sum(step.progress for step in steps) / len(steps)
         return progress, sum(step.speed for step in steps), sum(step.receivedBytes for step in steps)
 
-    def setOptions(self, options: dict) -> None:
+    def setOptions(self, options: dict[str, Any]) -> None:
         super().setOptions(options)
         previousPaths = [(step, step.outputPath) for step in self.steps]
         self.isSourceEnabled = options.get("isSourceEnabled", self.isSourceEnabled)
@@ -63,5 +74,8 @@ class ArxivTask(Task):
                 deletePath(Path(f"{previousPath}.ghd"))
             else:
                 self.completedAt = 0
-        self.fileSize = sum(step.fileSize for step in self.steps if self.isStepSelected(step, self.selectedIndexes) and step.fileSize > 0)
+        self.fileSize = sum(
+            step.fileSize for step in self.steps
+            if isinstance(step, HttpTaskStep) and self.isStepSelected(step, self.selectedIndexes) and step.fileSize > 0
+        )
         self.updateStatus()

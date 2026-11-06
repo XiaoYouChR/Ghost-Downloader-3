@@ -1,6 +1,8 @@
 """HuggingFace 加速的设置卡片（View）。config.py 只留配置数据。"""
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from qfluentwidgets import (
@@ -16,9 +18,12 @@ from .config import (
     probeMirrorLatencies,
 )
 
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
 
 class HuggingFaceMirrorSiteCard(SettingCard):
-    def __init__(self, submit, parent=None):
+    def __init__(self, submit: Callable[..., str], parent: QWidget | None = None):
         self.submit = submit
         super().__init__(
             FluentIcon.GLOBE, self.tr("镜像站"),
@@ -124,13 +129,13 @@ class HuggingFaceMirrorSiteCard(SettingCard):
         self._latencies.update(latencies)
         self._refreshLatencyLabels()
 
-    def _onLatenciesFailed(self, error) -> None:
+    def _onLatenciesFailed(self, error: BaseException) -> None:
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
 
 
 class HuggingFaceTokenCard(SettingCard):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(
             FluentIcon.FINGERPRINT, self.tr("Access Token"),
             self.tr("用于下载需要授权的模型（如 Llama、Mistral）"), parent,

@@ -5,10 +5,12 @@ import errno
 import os
 import sys
 from asyncio import TaskGroup, CancelledError
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
+from typing import Any
 
 from loguru import logger
 from wreq import HeaderMap
@@ -113,7 +115,7 @@ class HttpTaskStep(TaskStep):
     def canPause(self) -> bool:
         return self.canUseRangeRequests
 
-    def setOptions(self, options: dict) -> None:
+    def setOptions(self, options: dict[str, Any]) -> None:
         if "headers" in options:
             self.headers = options["headers"]
         if "clientProfile" in options:
@@ -450,7 +452,11 @@ class HttpTaskStep(TaskStep):
 
             self._reassignSubworker()
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         self._reportSpeed = reportSpeed
         self._waitForSpeedLimit = waitForSpeedLimit
         self._speedHistory: list[int] = []

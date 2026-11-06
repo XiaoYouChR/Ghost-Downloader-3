@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -145,7 +146,7 @@ class ED2kConfig(PackConfig):
         runtimeCard.refreshStatus()
         return [group]
 
-    async def _probeServerText(self) -> tuple[str, dict]:
+    async def _probeServerText(self) -> tuple[str, dict[str, int]]:
         from .session import ed2kSession
         network = ed2kSession.network
         if network is None:
@@ -162,7 +163,7 @@ class ED2kConfig(PackConfig):
             return N("BootstrapList", "已连接服务器（LowID，运营商 NAT，无法获得 HighID）"), {}
         return N("BootstrapList", "已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）"), {}
 
-    async def _probeKadText(self) -> tuple[str, dict]:
+    async def _probeKadText(self) -> tuple[str, dict[str, int]]:
         if not self.enableKad.value:
             return N("BootstrapList", "KAD 已关闭"), {}
         from .session import ed2kSession
@@ -206,7 +207,7 @@ class KelpieRuntime(BinaryRuntime):
     def installedPaths(self) -> list[Path]:
         return [self.installFolder() / ("kelpie.exe" if sys.platform == "win32" else "kelpie")]
 
-    async def install(self, version: str, onProgress) -> None:
+    async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
         tag = version or await self.fetchLatestVersion()
         binary = self.installedPaths()[0]
         downloadPath = binary.with_name(f"{binary.name}.download")

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from app.models.pack import FeaturePack, TaskParser
+from app.models.pack import BinaryRuntime, FeaturePack, TaskParser
 from app.models.task import MergeTaskOptions, Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ffmpegConfig, ffmpegRuntime
 from .task import FFmpegResourceStep, FFmpegStep
+
+if TYPE_CHECKING:
+    from http_pack.task import HttpTaskStep
 
 
 class MergeParser(TaskParser):
@@ -25,8 +29,8 @@ class MergeParser(TaskParser):
         videoTask = await self.delegate(options.video)
         audioTask = await self.delegate(options.audio)
 
-        videoStep = videoTask.steps[0]
-        audioStep = audioTask.steps[0]
+        videoStep: HttpTaskStep = videoTask.steps[0]  # type: ignore[assignment]
+        audioStep: HttpTaskStep = audioTask.steps[0]  # type: ignore[assignment]
         videoExt = Path(videoTask.name or urlparse(videoStep.url).path).suffix.lstrip(".").lower()
         audioExt = Path(audioTask.name or urlparse(audioStep.url).path).suffix.lstrip(".").lower()
 
@@ -74,5 +78,5 @@ class FFmpegPack(FeaturePack):
     config = ffmpegConfig
     parsers = [MergeParser]
 
-    def runtimes(self):
+    def runtimes(self) -> list[BinaryRuntime]:
         return [ffmpegRuntime]

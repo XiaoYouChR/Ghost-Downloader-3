@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import PurePosixPath
+from typing import TYPE_CHECKING
 from urllib.parse import quote, unquote, urlparse
 
 from app.client import buildClient
@@ -15,13 +16,19 @@ from .task import (
     buildAuthHeaders, buildRepoUrl, probeSite, toAuthError, toSiteUrl,
 )
 
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
+
 REPO_PATTERN = re.compile(
     r"^/(?P<type>(?:datasets|spaces)/)?(?P<org>[^/]+)/(?P<repo>[^/]+)"
     r"(?:/(?:resolve|blob|tree)/(?P<rev>[^/]+)(?:/(?P<path>.+))?)?$"
 )
 
 
-def parseHuggingFaceUrl(url: str) -> dict | None:
+def parseHuggingFaceUrl(url: str) -> dict[str, str] | None:
     parsed = urlparse(url)
     host = (parsed.hostname or "").lower().removeprefix("www.")
     if host not in {"huggingface.co"}:
@@ -136,14 +143,14 @@ class HuggingFacePack(FeaturePack):
     config = huggingFaceConfig
     parsers = [HuggingFaceParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import HuggingFaceTaskCard
         return HuggingFaceTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import HuggingFaceDraftCard
         return HuggingFaceDraftCard
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]

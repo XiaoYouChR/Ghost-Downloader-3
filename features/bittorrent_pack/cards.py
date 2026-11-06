@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N
 from PySide6.QtWidgets import QFileIconProvider
 from qfluentwidgets import FluentIcon
@@ -8,11 +10,13 @@ from app.view.cards.draft_cards import MultiFileDraftCard
 from app.view.cards.task_cards import ETA_FIELD, SIZE_FIELD, FieldSpec, MultiFileTaskCard
 from app.view.components.labels import IconBodyLabel
 from app.view.dialogs.file_select import FileSelectDialog
-from .task import BTTask
+from .task import BTFile, BTTask
 
 
 class TorrentFileSelectDialog(FileSelectDialog):
-    def _fileDisplayPath(self, file) -> str:
+    _task: BTTask
+
+    def _fileDisplayPath(self, file: BTFile) -> str:
         return self._task.toRelativePath(file)
 
 
@@ -59,13 +63,14 @@ SILENT_STATES = frozenset({
 
 
 class BTDraftCard(MultiFileDraftCard):
+    _task: BTTask
     fileSelectDialog = TorrentFileSelectDialog
 
     @property
     def task(self) -> BTTask:
         return self._task
 
-    def _initWidget(self):
+    def _initWidget(self) -> None:
         super()._initWidget()
         icon = QFileIconProvider.IconType.Folder if self.task.isOutputFolder else QFileIconProvider.IconType.File
         self.iconLabel.setImage(QFileIconProvider().icon(icon).pixmap(16, 16))
@@ -73,6 +78,7 @@ class BTDraftCard(MultiFileDraftCard):
 
 
 class BTTaskCard(MultiFileTaskCard):
+    _task: BTTask
     uploadLabel: IconBodyLabel
     fileSelectDialog = TorrentFileSelectDialog
     infoFields = [
@@ -80,7 +86,11 @@ class BTTaskCard(MultiFileTaskCard):
         BT_PEERS_FIELD,
     ]
 
-    def _refreshForStatus(self, task):
+    @property
+    def task(self) -> BTTask:
+        return self._task
+
+    def _refreshForStatus(self, task: BTTask) -> None:
         super()._refreshForStatus(task)
         if task.isSeeding and not self._isFileMissing:
             self._setStatus(self.tr("，").join([self.tr("做种中"), *self._toSeedingParts(task)]))

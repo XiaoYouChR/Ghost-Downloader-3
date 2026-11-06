@@ -12,6 +12,11 @@ from loguru import logger
 
 from app.models.task import TaskError
 from app.signal import Signal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.config.cfg import ConfigItem, RangeConfigItem
+    from app.services.coroutine_runner import CoroutineRunner
 
 Handle = Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
 
@@ -58,7 +63,14 @@ def createSocket(host: str, port: int) -> socket.socket:
 class PortListener:
     stateChanged = Signal(object)
 
-    def __init__(self, coroutineRunner, handle: Handle, *, isEnabled, port) -> None:
+    def __init__(
+        self,
+        coroutineRunner: CoroutineRunner,
+        handle: Handle,
+        *,
+        isEnabled: ConfigItem[bool],
+        port: RangeConfigItem,
+    ) -> None:
         self._coroutineRunner = coroutineRunner
         self._handle = handle
         self._isEnabled = isEnabled

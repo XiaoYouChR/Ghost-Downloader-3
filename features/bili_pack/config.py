@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from app.config.cfg import ConfigItem, OptionsConfigItem, OptionsValidator
 from app.models.pack import PackConfig
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+    from .account import BilibiliAccount
 
 QUALITY_VALUES = [16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]
 QUALITY_LABELS = [
@@ -13,6 +20,7 @@ AUDIO_QUALITY_LABELS = ["64K", "132K", "192K", "杜比全景声", "Hi-Res"]
 
 
 class BilibiliConfig(PackConfig):
+    _account: BilibiliAccount
     userCookie = ConfigItem("Bilibili", "UserCookie", "")
     defaultQuality = OptionsConfigItem(
         "Bilibili", "DefaultQuality", 80, OptionsValidator(QUALITY_VALUES),
@@ -24,7 +32,7 @@ class BilibiliConfig(PackConfig):
         "Bilibili", "AlternativeQuality", "max", OptionsValidator(["max", "min"]),
     )
 
-    def settingGroups(self, parent):
+    def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from .setting_cards import BilibiliLoginSettingCard

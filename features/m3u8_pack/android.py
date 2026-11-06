@@ -1,13 +1,19 @@
 """Android View adapter for M3U8Pack."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from app.i18n import N
 from app.models.task import TaskStatus
 
+if TYPE_CHECKING:
+    from .task import M3U8Task, M3U8TaskStep
+
 UI_CLASS = "com.xychr.ghostdownloader.features.m3u8_pack.M3u8Ui"
 
 
-def editFields(task) -> dict:
-    step = task.steps[0]
+def editFields(task: M3U8Task) -> dict[str, Any]:
+    step: M3U8TaskStep = task.steps[0]
     return {
         "headers": dict(step.headers),
         **({"recordLimit": step.recordLimit} if task.isLive else {}),
@@ -17,14 +23,14 @@ def editFields(task) -> dict:
     }
 
 
-def optionFields(task) -> dict:
+def optionFields(task: M3U8Task) -> dict[str, Any]:
     if len(task.streams) <= 1:
         return {}
-    step = task.steps[0]
+    step: M3U8TaskStep = task.steps[0]
     return {"streams": toStreamOptions(task.streams), "selectVideo": step.selectVideo}
 
 
-def toStreamOptions(streams: list) -> list[dict]:
+def toStreamOptions(streams: list[dict[str, Any]]) -> list[dict[str, str]]:
     options = [{"key": "", "label": "默认（最佳）"}]
     for stream in streams:
         width, height = stream.get("width", 0), stream.get("height", 0)
@@ -38,10 +44,10 @@ def toStreamOptions(streams: list) -> list[dict]:
     return options
 
 
-def taskFields(task) -> dict:
+def taskFields(task: M3U8Task) -> dict[str, Any]:
     if not task.isLive:
         return {}
-    step = task.steps[0] if task.steps else None
+    step: M3U8TaskStep | None = task.steps[0] if task.steps else None
     isRunning = task.status == TaskStatus.RUNNING
     waiting = step is not None and step.liveStatus == "Waiting"
     return {
@@ -56,6 +62,7 @@ def taskFields(task) -> dict:
     }
 
 
-def stop(task) -> None:
+def stop(task: M3U8Task) -> None:
     if task.isLive and task.status == TaskStatus.RUNNING and task.steps:
-        task.steps[0].terminate()
+        step: M3U8TaskStep = task.steps[0]
+        step.terminate()

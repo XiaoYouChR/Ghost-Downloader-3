@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,7 +51,11 @@ class FFmpegStep(TaskStep):
     def _audioPath(self) -> Path:
         return toResourcePath(self.task, "audio", self.audioExtension)
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         await self._runMerge([self._videoPath, self._audioPath])
 
     async def _runMerge(
@@ -117,7 +121,7 @@ class FFmpegStep(TaskStep):
                     await progressTask
             raise
 
-    async def _readProgress(self, stream: asyncio.StreamReader, totalDuration: float):
+    async def _readProgress(self, stream: asyncio.StreamReader, totalDuration: float) -> None:
         while True:
             rawLine = await stream.readline()
             if not rawLine:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import PurePosixPath
+from typing import TYPE_CHECKING
 from urllib.parse import unquote, urlparse
 
 from loguru import logger
@@ -18,6 +19,12 @@ from .task import (
     FtpStep,
     FtpTask,
 )
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 
 class FtpParser(TaskParser):
@@ -128,21 +135,21 @@ class FtpPack(FeaturePack):
     proxySchemes = PROXY_SCHEMES
     parsers = [FtpParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import FtpTaskCard
         return FtpTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import FtpDraftCard
         return FtpDraftCard
 
     def uriSchemes(self) -> list[UriScheme]:
         return [UriScheme("ftp", "FTP"), UriScheme("ftps", "FTPS")]
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
         step = task.steps[0] if task.steps else None
-        if step is None:
+        if not isinstance(step, FtpStep):
             return []
         return [
             OutputFolderCard(parent, initial=task.outputFolder),

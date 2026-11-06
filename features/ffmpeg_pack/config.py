@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.i18n import N
 
@@ -17,6 +19,10 @@ from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, fetchReleaseAsset
 from app.checksum import parseChecksum, toChecksum
 from app.install import installArchive
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
 FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-FFmpeg"})
@@ -116,7 +122,7 @@ class FFmpegRuntime(BinaryRuntime):
         suffix = ".exe" if sys.platform == "win32" else ""
         return [folder / f"ffmpeg{suffix}", folder / f"ffprobe{suffix}", folder / "VERSION"]
 
-    async def install(self, version: str, onProgress) -> None:
+    async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
         tag = version or (await fetchLatestRelease(FFMPEG_REPO)).version
         extension = "zip" if sys.platform == "win32" else "tar.gz"
         asset = f"ffmpeg-{buildAssetTarget()}.{extension}"

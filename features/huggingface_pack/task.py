@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
 from app.client import buildClient
@@ -22,7 +23,7 @@ def buildRepoUrl(repoType: str, repoId: str) -> str:
     return f"{API_BASE}/{typePrefix}{repoId}"
 
 
-def toAuthError(status: int, hasToken: bool, repoUrl: str) -> TaskError | None:
+def toAuthError(status: int | None, hasToken: bool, repoUrl: str) -> TaskError | None:
     """没有 Token 时 Mirror Site 返回 403、官方站返回 401，所以先看 Token 再看状态码。"""
     if status not in (401, 403):
         return None
@@ -66,11 +67,21 @@ class HuggingFaceFile(TaskFile):
 
 @dataclass(kw_only=True)
 class HuggingFaceStep(HttpTaskStep):
+    _task: HuggingFaceTask = field(repr=False, init=False)
+
+    @property
+    def task(self) -> HuggingFaceTask:
+        return self._task
+
     @property
     def outputPath(self) -> str:
         return str(self.task.toFilePath(self.fileIndex))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         # Task.run 记录 Step 的错误，所以鉴权提示须在这里换上
         try:
             await super().run(reportSpeed, waitForSpeedLimit)
@@ -82,9 +93,9 @@ class HuggingFaceStep(HttpTaskStep):
             raise authError from e
 
     @classmethod
-    def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
+    def fromFile(cls, file: TaskFile, task: Task) -> HuggingFaceStep:
         from app.config.cfg import cfg
-        hfFile: HuggingFaceFile = file
+        hfFile: HuggingFaceFile = file  # type: ignore[assignment]
         return cls(
             stepIndex=file.index + 1,
             url=hfFile.downloadUrl,
@@ -100,11 +111,12 @@ class HuggingFaceTask(Task):
     packId: str = "huggingface"
     canEdit = True
     fileType = HuggingFaceFile
+    files: list[HuggingFaceFile] = field(default_factory=list)
     repoId: str = ""
     repoType: str = "model"
     revision: str = "main"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
         # 旧存档中被取消勾选的文件没有 Step，按 files 补建
         if self.files:
@@ -117,9 +129,13 @@ class HuggingFaceTask(Task):
     def countSelected(self) -> int:
         return sum(1 for f in self.files if f.selected) if self.files else 0
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
+    ) -> None:
         # 按当前设置刷新 Step，修改 Token 或 Mirror Site 后重试即可生效
-        steps = list(self.pendingSteps())
+        steps = [s for s in self.pendingSteps() if isinstance(s, HuggingFaceStep)]
         if steps:
             token = huggingFaceConfig.accessToken.value
             site = await probeSite(steps[0].url, token)

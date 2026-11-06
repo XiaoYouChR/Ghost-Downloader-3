@@ -27,6 +27,9 @@ from app.i18n import toLocalizedError
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.category_service import CategoryService
+    from app.services.feature_service import FeatureService
+    from app.services.task_service import TaskService
     from qfluentwidgets import MessageBoxBase
 
 
@@ -164,7 +167,14 @@ class TaskCard(CardWidget):
     openFolderButton: ToolButton
     deleteButton: TransparentToolButton
 
-    def __init__(self, task: Task, taskService, featureService, categoryService, parent=None):
+    def __init__(
+        self,
+        task: Task,
+        taskService: TaskService,
+        featureService: FeatureService,
+        categoryService: CategoryService,
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self._task = task
         self._taskService = taskService

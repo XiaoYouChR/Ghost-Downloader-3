@@ -8,6 +8,7 @@ from .task import HuggingFaceTask
 
 class HuggingFaceDraftCard(MultiFileDraftCard):
     fileSelectDialog = FileSelectDialog
+    _task: HuggingFaceTask
 
     @property
     def task(self) -> HuggingFaceTask:
@@ -16,3 +17,8 @@ class HuggingFaceDraftCard(MultiFileDraftCard):
 
 class HuggingFaceTaskCard(MultiFileTaskCard):
     fileSelectDialog = FileSelectDialog
+    _task: HuggingFaceTask
+
+    @property
+    def task(self) -> HuggingFaceTask:
+        return self._task

@@ -1,6 +1,13 @@
 """Android View adapter for BittorrentPack."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from app.i18n import N
 from app.models.task import TaskStatus
+
+if TYPE_CHECKING:
+    from .task import BTTask
 
 UI_CLASS = "com.xychr.ghostdownloader.features.bittorrent_pack.BitTorrentUi"
 
@@ -13,7 +20,7 @@ STATE_TEXT = {
 }
 
 
-def toStatusText(task) -> str:
+def toStatusText(task: BTTask) -> str:
     if task.isSeeding:
         return N("TaskState", "做种中")
     if task.status == TaskStatus.COMPLETED:
@@ -21,7 +28,7 @@ def toStatusText(task) -> str:
     return STATE_TEXT.get(task.stateText, "")
 
 
-def taskFields(task) -> dict:
+def taskFields(task: BTTask) -> dict[str, Any]:
     return {
         "progressMode": "hidden" if task.isSeeding else "determinate",
         "statusText": toStatusText(task),
@@ -35,7 +42,7 @@ def taskFields(task) -> dict:
     }
 
 
-async def trackerListState() -> dict:
+async def trackerListState() -> dict[str, Any]:
     from dataclasses import asdict
     from .config import bittorrentConfig
     from .session import btSession
@@ -52,7 +59,7 @@ async def trackerListState() -> dict:
     }
 
 
-def setTrackerList(sources: str, custom: str):
+def setTrackerList(sources: str, custom: str) -> None:
     from app.config.cfg import cfg
     from .config import bittorrentConfig
 
@@ -60,7 +67,7 @@ def setTrackerList(sources: str, custom: str):
     cfg.set(bittorrentConfig.webTrackerCustomList, custom)
 
 
-async def refreshTrackerList() -> dict:
+async def refreshTrackerList() -> dict[str, Any]:
     from .trackers import trackerList
 
     await trackerList.refresh()

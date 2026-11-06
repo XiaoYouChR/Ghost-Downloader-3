@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+from typing import TYPE_CHECKING
 
 from app.config.cfg import cfg
 from app.signal import Signal
 
+if TYPE_CHECKING:
+    from app.services.coroutine_runner import CoroutineRunner
+
 
 class SpeedMeter:
     speedChanged = Signal()
-    def __init__(self, coroutineRunner):
+    def __init__(self, coroutineRunner: CoroutineRunner) -> None:
         self._coroutineRunner = coroutineRunner
         self._bytes = 0
         self._currentSpeed = 0

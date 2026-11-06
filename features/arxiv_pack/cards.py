@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import QHBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CheckBox, FluentIcon, IconWidget
 
 from app.format import toReadableSize
@@ -12,6 +12,7 @@ from .task import ArxivTask
 
 
 class ArxivDraftCard(DraftCard):
+    _task: ArxivTask
 
     @property
     def task(self) -> ArxivTask:
@@ -49,7 +50,7 @@ class ArxivDraftCard(DraftCard):
 
 class SideFileCard(OptionCard):
 
-    def __init__(self, parent=None, *, task: ArxivTask):
+    def __init__(self, parent: QWidget | None = None, *, task: ArxivTask):
         super().__init__(parent)
         self._task = task
         self._initWidget()
@@ -76,7 +77,7 @@ class SideFileCard(OptionCard):
         layout.addWidget(self.sourceCheckBox)
         layout.addWidget(self.bibtexCheckBox)
 
-    def options(self) -> dict:
+    def options(self) -> dict[str, bool]:
         return {
             "isSourceEnabled": self._task.hasSource and self.sourceCheckBox.isChecked(),
             "isBibtexEnabled": self.bibtexCheckBox.isChecked(),

@@ -4,24 +4,79 @@ import json
 import sys
 from enum import Enum
 from re import compile
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 from urllib.request import getproxies
 
 from app.config.serializers import PathSerializer
 from app.config.paths import APP_DATA_DIR, DOWNLOAD_DIR
-from qfluentwidgets import (
-    QConfig,
-    ConfigItem,
-    OptionsConfigItem,
-    BoolValidator,
-    OptionsValidator,
-    RangeConfigItem,
-    RangeValidator,
-    ConfigValidator,
-    ConfigSerializer,
-    EnumSerializer,
-    Theme,
-)
+
+if TYPE_CHECKING:
+    from PySide6.QtCore import SignalInstance
+    from qfluentwidgets import (
+        BoolValidator,
+        ConfigSerializer,
+        ConfigValidator,
+        EnumSerializer,
+        OptionsValidator,
+        QConfig,
+        RangeValidator,
+        Theme,
+    )
+
+    class ConfigItem[T]:
+        group: str
+        name: str
+        validator: ConfigValidator
+        serializer: ConfigSerializer
+        restart: bool
+        defaultValue: T
+        valueChanged: SignalInstance
+
+        def __init__(
+            self,
+            group: str,
+            name: str,
+            default: T,
+            validator: ConfigValidator | None = None,
+            serializer: ConfigSerializer | None = None,
+            restart: bool = False,
+        ) -> None: ...
+
+        @property
+        def value(self) -> T: ...
+
+        @value.setter
+        def value(self, v: T) -> None: ...
+
+        @property
+        def key(self) -> str: ...
+
+        def serialize(self) -> object: ...
+
+        def deserializeFrom(self, value: object) -> None: ...
+
+    class RangeConfigItem(ConfigItem[int]):
+        @property
+        def range(self) -> tuple[int, int]: ...
+
+    class OptionsConfigItem[T](ConfigItem[T]):
+        @property
+        def options(self) -> list[T]: ...
+else:
+    from qfluentwidgets import (
+        QConfig,
+        ConfigItem,
+        OptionsConfigItem,
+        BoolValidator,
+        OptionsValidator,
+        RangeConfigItem,
+        RangeValidator,
+        ConfigValidator,
+        ConfigSerializer,
+        EnumSerializer,
+        Theme,
+    )
 
 from app.platform.android import IS_ANDROID
 
@@ -133,10 +188,10 @@ class ThemeSerializer(ConfigSerializer):
 
 
 class StringListValidator(ConfigValidator):
-    def validate(self, value) -> bool:
+    def validate(self, value: object) -> bool:
         return isinstance(value, list) and all(isinstance(i, str) for i in value)
 
-    def correct(self, value) -> list:
+    def correct(self, value: object) -> list[str]:
         if not isinstance(value, list):
             return []
         return [i for i in value if isinstance(i, str)]
@@ -243,7 +298,7 @@ class Config(QConfig):
         "/storage/emulated/0/Download" if IS_ANDROID else str(DOWNLOAD_DIR),
         serializer=PathSerializer(APP_DATA_DIR),
     )
-    recentFolders = ConfigItem(
+    recentFolders: ConfigItem[list[str]] = ConfigItem(
         "GeneralDownload", "RecentFolders", [], StringListValidator(), PathSerializer(APP_DATA_DIR),
     )
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
@@ -320,7 +375,7 @@ class Config(QConfig):
         OptionsValidator(CloseMode), EnumSerializer(CloseMode),
     )
     isClipboardListenerEnabled = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
-    clipboardIgnoredPacks = ConfigItem("Software", "ClipboardIgnoredPacks", [], StringListValidator())
+    clipboardIgnoredPacks: ConfigItem[list[str]] = ConfigItem("Software", "ClipboardIgnoredPacks", [], StringListValidator())
     geometry = ConfigItem(
         "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),
     )
@@ -329,8 +384,8 @@ class Config(QConfig):
     hasCompletedOobe = ConfigItem("Software", "HasCompletedOobe", False, BoolValidator())
 
     # UI 状态
-    expandedSettingGroups = ConfigItem("UI", "ExpandedSettingGroups", [], StringListValidator())
-    settingGroupOrder = ConfigItem("UI", "SettingGroupOrder", [], StringListValidator())
+    expandedSettingGroups: ConfigItem[list[str]] = ConfigItem("UI", "ExpandedSettingGroups", [], StringListValidator())
+    settingGroupOrder: ConfigItem[list[str]] = ConfigItem("UI", "SettingGroupOrder", [], StringListValidator())
 
     # 网络
     clientProfile = ConfigItem("Network", "ClientProfile", "auto", ClientProfileValidator())
@@ -358,7 +413,7 @@ def currentHeadersPresetIndex() -> int:
     return min(cfg.currentHeadersPreset.value, len(cfg.headersPresets.value) - 1)
 
 
-def currentHeaders() -> dict:
+def currentHeaders() -> dict[str, str]:
     return dict(cfg.headersPresets.value[currentHeadersPresetIndex()]["headers"])
 
 

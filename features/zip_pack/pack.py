@@ -3,16 +3,23 @@ from __future__ import annotations
 import asyncio
 import zipfile
 from bisect import bisect_right
+from typing import TYPE_CHECKING
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import ResourceTaskOptions, Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
-from http_pack.pack import buildStep
+from http_pack.pack import buildEditCards, buildOptionCards, buildStep
 from http_pack.task import HttpTaskStep, matchRange
 from .sparse import SparseView
 from .task import ZipEntry, ZipExtractStep, ZipTask
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.cards.draft_cards import DraftCard
+    from app.view.cards.task_cards import TaskCard
+    from app.view.components.option_cards import OptionCard
 
 TAIL_SIZE = (64 << 10) + 98
 MAX_CENTRAL_SIZE = 4 << 20
@@ -139,18 +146,16 @@ class ZipPack(FeaturePack):
     packId = "zip"
     parsers = [ZipParser]
 
-    def taskCardClass(self, task: Task) -> type | None:
+    def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import ZipTaskCard
         return ZipTaskCard
 
-    def draftCardClass(self, task: Task) -> type | None:
+    def draftCardClass(self, task: Task) -> type[DraftCard] | None:
         from .cards import ZipDraftCard
         return ZipDraftCard
 
-    def optionCards(self, task, parent=None):
-        from http_pack.pack import HttpPack
-        return HttpPack.optionCards(self, task, parent)
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildOptionCards(task, parent)
 
-    def editCards(self, task, parent=None):
-        from http_pack.pack import HttpPack
-        return HttpPack.editCards(self, task, parent)
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
+        return buildEditCards(task, parent)

@@ -11,7 +11,7 @@ from loguru import logger
 from app.models.pack import PackManifest
 
 if TYPE_CHECKING:
-    from app.models.pack import FeaturePack
+    from app.models.pack import FeaturePack, PackServices
 
 
 def seedPacks(seedDir: Path, targetDir: Path) -> None:
@@ -41,7 +41,7 @@ def seedPacks(seedDir: Path, targetDir: Path) -> None:
         logger.info("种子 Pack 已同步: {} {}", packDir.name, seedManifest.version)
 
 
-def loadPacks(featuresDir: Path, services=None) -> list[FeaturePack]:
+def loadPacks(featuresDir: Path, services: PackServices | None = None) -> list[FeaturePack]:
     from app.config.constants import VERSION
     from app.update import parseVersion
 
@@ -75,7 +75,7 @@ def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
     ordered: list[PackManifest] = []
     skipped: set[str] = set()
 
-    def visit(name: str):
+    def visit(name: str) -> None:
         if name in visited:
             return
         if name in skipped:
@@ -104,7 +104,7 @@ def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
     return [m for m in ordered if m.name not in skipped]
 
 
-def loadManifest(manifest: PackManifest, services=None) -> FeaturePack | None:
+def loadManifest(manifest: PackManifest, services: PackServices | None = None) -> FeaturePack | None:
     moduleName = manifest.name
     try:
         spec = importlib.util.spec_from_file_location(

@@ -3,9 +3,11 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -98,9 +100,9 @@ class M3U8Task(Task):
     canEdit = True
     manifestType: str = "m3u8"
     isLive: bool = False
-    streams: list[dict] = field(default_factory=list)
+    streams: list[dict[str, Any]] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
         # 直播流不存在断点：PAUSED/RUNNING 只可能是退出竞争或崩溃残留，
         # 录制在进程结束的一刻就已终结，加载时校正为已完成
@@ -117,6 +119,7 @@ class M3U8Task(Task):
 
 @dataclass(kw_only=True)
 class M3U8TaskStep(TaskStep):
+    _task: M3U8Task = field(repr=False, init=False)
     headers: dict[str, str] = field(default_factory=dict)
     threadCount: int = 8
     retryCount: int = 3
@@ -155,6 +158,10 @@ class M3U8TaskStep(TaskStep):
     liveTotal: str = ""
 
     @property
+    def task(self) -> M3U8Task:
+        return self._task
+
+    @property
     def canPause(self) -> bool:
         return not self.task.isLive
 
@@ -170,7 +177,7 @@ class M3U8TaskStep(TaskStep):
     def _saveName(self) -> str:
         return Path(self.task.name).stem
 
-    def setOptions(self, options: dict) -> None:
+    def setOptions(self, options: dict[str, Any]) -> None:
         if "headers" in options:
             self.headers = options["headers"]
         if "selectVideo" in options:
@@ -288,7 +295,7 @@ class M3U8TaskStep(TaskStep):
 
         return args
 
-    def parseOutputLine(self, line: str):
+    def parseOutputLine(self, line: str) -> None:
         text = line.strip()
         if not text:
             return
@@ -328,7 +335,7 @@ class M3U8TaskStep(TaskStep):
             self.liveStatus = recordMatch.group(3)
             self.speed = 0 if recordMatch.group(4) == "-" else toBytes(recordMatch.group(5), recordMatch.group(6))
 
-    async def _readOutput(self, stream: asyncio.StreamReader):
+    async def _readOutput(self, stream: asyncio.StreamReader) -> None:
         rawChunks = []
         buffer = ""
         while True:
@@ -374,7 +381,11 @@ class M3U8TaskStep(TaskStep):
         os.replace(found, target)
         return True
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
         self._stopping = False
         self._process = None
 

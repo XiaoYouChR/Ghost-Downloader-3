@@ -12,7 +12,7 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.models.task import TaskStatus
+from app.models.task import TaskStatus, TaskStep
 from app.platform.filesystem import toSafeFilename
 from app.view.cards.draft_cards import DraftCard
 from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, SPEED_FIELD, ETA_FIELD
@@ -21,7 +21,7 @@ from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .task import (
-    YouTubeExtractStep, YouTubeMergeStep, YouTubeResourceStep, YouTubeSubtitleStep,
+    YouTubeExtractStep, YouTubeFile, YouTubeMergeStep, YouTubeResourceStep, YouTubeSubtitleStep,
     YouTubeTask, buildFormatPair, probeFormats, probePlaylist, parseLanguages,
 )
 
@@ -29,7 +29,7 @@ from .task import (
 from .choices import buildVideoTiers, buildAudioTiers, buildSubtitleChoices, buildAudioLanguageChoices
 
 
-def toStepLabel(step) -> str:
+def toStepLabel(step: TaskStep) -> str:
     if isinstance(step, YouTubeExtractStep):
         return N("YtDlpTaskCard", "提取信息")
     if isinstance(step, YouTubeResourceStep):
@@ -99,7 +99,7 @@ COL_END = 3
 
 class VideoSelectDialog(MessageBoxBase):
 
-    def __init__(self, task, parent=None):
+    def __init__(self, task: YouTubeTask, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._task = task
         self._files = task.files or []
@@ -216,7 +216,9 @@ class VideoSelectDialog(MessageBoxBase):
             if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
         }
 
-    def updateTimeRanges(self, files) -> None:
+    def updateTimeRanges(self, files: list[YouTubeFile] | None) -> None:
+        if not files:
+            return
         for row in range(self.treeModel.rowCount()):
             fileIndex = self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
             startText = self.treeModel.item(row, COL_START).text() if self.treeModel.item(row, COL_START) else ""
@@ -229,6 +231,11 @@ class VideoSelectDialog(MessageBoxBase):
 
 
 class YtDlpDraftCard(DraftCard):
+    _task: YouTubeTask
+
+    @property
+    def task(self) -> YouTubeTask:
+        return self._task
 
     def _initWidget(self) -> None:
         super()._initWidget()
@@ -575,9 +582,14 @@ class YtDlpDraftCard(DraftCard):
 
 
 class YtDlpTaskCard(MultiFileTaskCard):
+    _task: YouTubeTask
     fileSelectDialog = VideoSelectDialog
     infoFields = [SPEED_FIELD, ETA_FIELD, YTDLP_SIZE_FIELD]
     nameFormats = {TaskStatus.RUNNING: toYtDlpNameText}
+
+    @property
+    def task(self) -> YouTubeTask:
+        return self._task
 
     def _onSelectFilesClicked(self) -> None:
         dialog = VideoSelectDialog(self._task, self.window())
