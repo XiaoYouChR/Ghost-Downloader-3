@@ -360,7 +360,7 @@
   "invertSelection": {
     "message": "Invert Selection"
   },
-  "itemCount_popup_pages_ImagesPage_tsx": {
+  "itemCount": {
     "message": "$1 items"
   },
   "launchDesktop": {
@@ -581,9 +581,6 @@
     "message": "Select $1"
   },
   "sendCount": {
-    "message": "Send ($1)"
-  },
-  "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "Send ($1)"
   },
   "sendCurrentMediaToGhostDownloader": {

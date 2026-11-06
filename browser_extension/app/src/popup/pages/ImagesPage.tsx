@@ -290,7 +290,7 @@ export function ImagesPage({
           onClick={() => setIsFilterOpen(!isFilterOpen)}
         />
         <Badge appearance="outline" color="informative" size="small">
-          {chrome.i18n.getMessage("itemCount_popup_pages_ImagesPage_tsx", [String(filteredImages.length)])}
+          {chrome.i18n.getMessage("itemCount", [String(filteredImages.length)])}
         </Badge>
       </div>
 
@@ -374,7 +374,7 @@ export function ImagesPage({
             size="small"
             onClick={() => void sendSelected()}
           >
-            {chrome.i18n.getMessage("sendCount_popup_pages_ImagesPage_tsx", [String(selectedImages.length)])}
+            {chrome.i18n.getMessage("sendCount", [String(selectedImages.length)])}
           </Button>
         </div>
       )}

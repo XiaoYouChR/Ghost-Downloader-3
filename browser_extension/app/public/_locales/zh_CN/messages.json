@@ -416,7 +416,7 @@
   "invertSelection": {
     "message": "反选"
   },
-  "itemCount_popup_pages_ImagesPage_tsx": {
+  "itemCount": {
     "message": "$1 项",
     "placeholders": {
       "1": {
@@ -664,15 +664,6 @@
       "1": {
         "content": "$1",
         "example": "3"
-      }
-    }
-  },
-  "sendCount_popup_pages_ImagesPage_tsx": {
-    "message": "发送 ($1)",
-    "placeholders": {
-      "1": {
-        "content": "$1",
-        "example": "5"
       }
     }
   },

@@ -363,9 +363,6 @@
   "itemCount": {
     "message": "$1 itens"
   },
-  "itemCount_popup_pages_ImagesPage_tsx": {
-    "message": "$1 itens"
-  },
   "launchDesktop": {
     "message": "Iniciar desktop"
   },
@@ -584,9 +581,6 @@
     "message": "Selecionar $1"
   },
   "sendCount": {
-    "message": "Enviar ($1)"
-  },
-  "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "Enviar ($1)"
   },
   "sendCurrentMediaToGhostDownloader": {

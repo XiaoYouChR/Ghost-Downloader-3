@@ -363,9 +363,6 @@
   "itemCount": {
     "message": "$1 項目"
   },
-  "itemCount_popup_pages_ImagesPage_tsx": {
-    "message": "$1 項目"
-  },
   "launchDesktop": {
     "message": "デスクトップ版を起動"
   },
@@ -584,9 +581,6 @@
     "message": "$1 を選択"
   },
   "sendCount": {
-    "message": "送信 ($1)"
-  },
-  "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "送信 ($1)"
   },
   "sendCurrentMediaToGhostDownloader": {

@@ -363,9 +363,6 @@
   "itemCount": {
     "message": "$1 элементов"
   },
-  "itemCount_popup_pages_ImagesPage_tsx": {
-    "message": "$1 элементов"
-  },
   "launchDesktop": {
     "message": "Запустить десктопную версию"
   },
@@ -584,9 +581,6 @@
     "message": "Выбрать $1"
   },
   "sendCount": {
-    "message": "Отправить ($1)"
-  },
-  "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "Отправить ($1)"
   },
   "sendCurrentMediaToGhostDownloader": {

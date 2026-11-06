@@ -363,9 +363,6 @@
   "itemCount": {
     "message": "$1 項"
   },
-  "itemCount_popup_pages_ImagesPage_tsx": {
-    "message": "$1 項"
-  },
   "launchDesktop": {
     "message": "啟動桌面版"
   },
@@ -584,9 +581,6 @@
     "message": "選擇 $1"
   },
   "sendCount": {
-    "message": "傳送 ($1)"
-  },
-  "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "傳送 ($1)"
   },
   "sendCurrentMediaToGhostDownloader": {
