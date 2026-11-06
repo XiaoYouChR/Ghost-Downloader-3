@@ -444,7 +444,7 @@ class MediaAttribution {
         const session = this.sessionByMediaSourceId.get(signal.mediaSourceId);
         if (!session) { return; }
         session.sourceUrlsByMime.set(signal.mimeType, signal.urls);
-        console.log(`${LOG_PREFIX} ${session.id} ${signal.mimeType} samples come from`, signal.urls);
+        console.log(`${LOG_PREFIX} ${session.id} samples come from`, signal.mimeType, signal.urls);
         this.notifyResolveListener(session, session.state, "source-matched");
         return;
       }

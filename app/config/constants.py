@@ -1,10 +1,10 @@
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
-VERSION = "4.4.7"
+VERSION = "4.5.0"
 BUILD_VERSION = VERSION.split("-")[0]
 DESKTOP_ID = "com.xychr.ghostdownloader"
 DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")
-LATEST_EXTENSION_VERSION = "2.2.0"
+LATEST_EXTENSION_VERSION = "2.3.1"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 DONATE_URL = "https://gd.xychr.com/docs/donate/"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
