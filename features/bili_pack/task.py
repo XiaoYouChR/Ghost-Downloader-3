@@ -490,7 +490,7 @@ class BilibiliVideoStep(HttpTaskStep):
 
     async def _updateSegmentRange(self, page: BiliPage) -> None:
         from app.client import buildClient
-        from app.container import buildMp4SegmentRange
+        from ffmpeg_pack.container import buildMp4SegmentRange
 
         endByte = parseSegmentBaseEndByte(page._videoStreams, self.url)
         client = buildClient()
@@ -565,7 +565,7 @@ class BilibiliAudioStep(HttpTaskStep):
 
     async def _updateSegmentRange(self, page: BiliPage) -> None:
         from app.client import buildClient
-        from app.container import buildMp4SegmentRange
+        from ffmpeg_pack.container import buildMp4SegmentRange
 
         endByte = parseSegmentBaseEndByte(page._audioStreams, self.url)
         client = buildClient()

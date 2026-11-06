@@ -422,7 +422,7 @@ class YouTubeExtractStep(TaskStep):
     async def _updateSegmentRanges(self, file: YouTubeFile) -> None:
         from app.client import buildClient, toEmulation
         from app.config.cfg import cfg
-        from app.container import buildMp4SegmentRange, buildWebmSegmentRange
+        from ffmpeg_pack.container import buildMp4SegmentRange, buildWebmSegmentRange
 
         for step in self.task.steps:
             if step.fileIndex != self.fileIndex or not isinstance(step, YouTubeResourceStep):

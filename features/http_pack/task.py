@@ -63,13 +63,25 @@ class HttpTask(Task):
     canEdit = True
 
     def relink(self, newTask: Task) -> None:
-        if newTask.packId not in {"http", "github", "zip"}:
+        if newTask.packId not in {"http", "github", "zip", "ffmpeg"}:
             raise TaskError("该链接不能用于更换")
         old, new = self.steps[0], newTask.steps[0]
         if not new.canUseRangeRequests:
             raise TaskError("该链接不能用于更换")
         if self.fileSize <= 0 or new.fileSize != self.fileSize:
             raise TaskError("新链接的内容与原任务不同，请重新添加任务")
+        if type(new) is not HttpTaskStep and newTask.packId != "github":
+            new = HttpTaskStep(
+                stepIndex=old.stepIndex,
+                url=new.url,
+                fileSize=new.fileSize,
+                headers=dict(new.headers),
+                clientProfile=new.clientProfile,
+                userAgent=new.userAgent,
+                subworkerCount=new.subworkerCount,
+                canUseRangeRequests=new.canUseRangeRequests,
+                lastModified=new.lastModified,
+            )
         new.status = TaskStatus.PAUSED if old.status in {TaskStatus.RUNNING, TaskStatus.FAILED} else old.status
         new.progress, new.receivedBytes = old.progress, old.receivedBytes
         new._bindTask(self)

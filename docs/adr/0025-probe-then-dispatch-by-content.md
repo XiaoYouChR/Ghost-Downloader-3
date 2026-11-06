@@ -13,5 +13,5 @@ Relink 是"同一个文件换一个新地址"，直接将新链接 `parse` 出�
 ## Consequences
 
 - GitHubParser 排在格式 parser 之前（priority 75），GitHub 上的 zip、种子、m3u8 先选站再按内容认领；它只为未 probe 的链接选站。
-- 浏览器扩展给出名字和大小的资源仍不 probe，也就不按内容识别，避免一次性链接被多余的请求耗掉。
-- `Task.relink` 接收新解析出的 Task；只有支持更换链接的 Task（`HttpTask`、`ZipTask`）实现 `relink`，且只接受同一文件的新地址。
+- 浏览器扩展给出名字和大小的资源不额外发起 `probe`；其中已标明支持 Range 的资源（非一次性链接）直接构造 `RemoteFile` 经 `delegate` 按内容分派，不支持 Range 的直接按普通文件处理，避免一次性链接被多余的请求耗掉。
+- `Task.relink` 接收新解析出的 Task；只有支持更换链接的 Task（`HttpTask`、`ZipTask`、`FFmpegTask`）实现 `relink`，且只接受同一文件的新地址。

@@ -89,6 +89,10 @@ _Avoid_: 与 Task Files 混淆
 **Revive**:
 已完成的 Task 因新选中的文件或新启用的 Side File 有待下载工作而回到下载状态。仅对 COMPLETED 状态的 Task 生效。
 
+**Trim**:
+只下载音视频在指定起止时间内的片段。单文件 Task 启用时 Name 附加起止时间，多文件 Task 启用时对应 Selectable File 的文件名附加起止时间。
+_Avoid_: clip、cut、slice、剪辑
+
 ### 任务创建
 
 **Task Options**:
