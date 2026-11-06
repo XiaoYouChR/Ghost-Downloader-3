@@ -682,5 +682,89 @@
   },
   "openPopupOnSent": {
     "message": "發送任務後彈出擴展窗口"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "圖片"
+  },
+  "filterArchive": {
+    "message": "壓縮檔"
+  },
+  "filterDocument": {
+    "message": "文件"
+  },
+  "filterSpreadsheet": {
+    "message": "試算表"
+  },
+  "filterOther": {
+    "message": "其他"
+  },
+  "moreKinds": {
+    "message": "更多類型"
+  },
+  "sortByTime": {
+    "message": "時間"
+  },
+  "sortBySize": {
+    "message": "大小"
+  },
+  "sortByName": {
+    "message": "名稱"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "搜尋名稱或連結"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "沒有匹配的資源"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "換個關鍵字，或清除篩選條件。"
+  },
+  "clearFilters": {
+    "message": "清除篩選"
+  },
+  "sortByStatus": {
+    "message": "狀態"
+  },
+  "sortAscending": {
+    "message": "正序"
+  },
+  "sortDescending": {
+    "message": "倒序"
+  },
+  "searchTasksPlaceholder": {
+    "message": "搜尋任務名稱"
+  },
+  "noMatchingTasksTitle": {
+    "message": "沒有匹配的任務"
+  },
+  "noMatchingTasksDescription": {
+    "message": "換個關鍵字試試。"
+  },
+  "moreOptions": {
+    "message": "更多選項"
+  },
+  "removeCompletedTasks": {
+    "message": "移除已完成的任務"
+  },
+  "removeMissingTasks": {
+    "message": "移除缺失的任務"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "$1 個任務移除失敗"
+  },
+  "mediaButtonStyle": {
+    "message": "媒體按鈕樣式"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "標準"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "精簡"
+  },
+  "mediaButtonStyleHint": {
+    "message": "精簡樣式只顯示圖示"
   }
 }

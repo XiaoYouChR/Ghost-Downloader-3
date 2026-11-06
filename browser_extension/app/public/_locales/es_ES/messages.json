@@ -682,5 +682,89 @@
   },
   "openPopupOnSent": {
     "message": "Abrir ventana emergente al enviar tarea"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "Imagen"
+  },
+  "filterArchive": {
+    "message": "Archivo comprimido"
+  },
+  "filterDocument": {
+    "message": "Documento"
+  },
+  "filterSpreadsheet": {
+    "message": "Hoja de cálculo"
+  },
+  "filterOther": {
+    "message": "Otro"
+  },
+  "moreKinds": {
+    "message": "Más tipos"
+  },
+  "sortByTime": {
+    "message": "Tiempo"
+  },
+  "sortBySize": {
+    "message": "Tamaño"
+  },
+  "sortByName": {
+    "message": "Nombre"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "Buscar nombre o enlace"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "No hay recursos coincidentes"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "Prueba con otra palabra clave o borra los filtros."
+  },
+  "clearFilters": {
+    "message": "Borrar filtros"
+  },
+  "sortByStatus": {
+    "message": "Estado"
+  },
+  "sortAscending": {
+    "message": "Ascendente"
+  },
+  "sortDescending": {
+    "message": "Descendente"
+  },
+  "searchTasksPlaceholder": {
+    "message": "Buscar nombre de tarea"
+  },
+  "noMatchingTasksTitle": {
+    "message": "No hay tareas coincidentes"
+  },
+  "noMatchingTasksDescription": {
+    "message": "Prueba con otra palabra clave."
+  },
+  "moreOptions": {
+    "message": "Más opciones"
+  },
+  "removeCompletedTasks": {
+    "message": "Eliminar tareas completadas"
+  },
+  "removeMissingTasks": {
+    "message": "Eliminar tareas con archivos eliminados"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "Fallo al eliminar $1 tareas"
+  },
+  "mediaButtonStyle": {
+    "message": "Estilo del botón de medios"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "Estándar"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "Compacto"
+  },
+  "mediaButtonStyleHint": {
+    "message": "El estilo compacto solo muestra el icono."
   }
 }

@@ -682,5 +682,89 @@
   },
   "openPopupOnSent": {
     "message": "Открывать всплывающее окно при отправке задачи"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "Изображения"
+  },
+  "filterArchive": {
+    "message": "Архивы"
+  },
+  "filterDocument": {
+    "message": "Документы"
+  },
+  "filterSpreadsheet": {
+    "message": "Таблицы"
+  },
+  "filterOther": {
+    "message": "Другое"
+  },
+  "moreKinds": {
+    "message": "Больше типов"
+  },
+  "sortByTime": {
+    "message": "Время"
+  },
+  "sortBySize": {
+    "message": "Размер"
+  },
+  "sortByName": {
+    "message": "Название"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "Поиск по названию или ссылке"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "Нет подходящих ресурсов"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "Измените ключевое слово или сбросьте фильтры."
+  },
+  "clearFilters": {
+    "message": "Сбросить фильтры"
+  },
+  "sortByStatus": {
+    "message": "Статус"
+  },
+  "sortAscending": {
+    "message": "По возрастанию"
+  },
+  "sortDescending": {
+    "message": "По убыванию"
+  },
+  "searchTasksPlaceholder": {
+    "message": "Поиск по названию задачи"
+  },
+  "noMatchingTasksTitle": {
+    "message": "Нет подходящих задач"
+  },
+  "noMatchingTasksDescription": {
+    "message": "Попробуйте другое ключевое слово."
+  },
+  "moreOptions": {
+    "message": "Дополнительные параметры"
+  },
+  "removeCompletedTasks": {
+    "message": "Удалить завершённые задачи"
+  },
+  "removeMissingTasks": {
+    "message": "Удалить отсутствующие задачи"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "Не удалось удалить задачи: $1"
+  },
+  "mediaButtonStyle": {
+    "message": "Стиль кнопки медиа"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "Стандартный"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "Компактный"
+  },
+  "mediaButtonStyleHint": {
+    "message": "В компактном стиле отображаются только значки"
   }
 }

@@ -87,37 +87,37 @@
 <context>
     <name>ArxivConfig</name>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="16"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="22"/>
         <source>arXiv 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="19"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="25"/>
         <source>解析 arXiv 链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="20"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="26"/>
         <source>将论文页、PDF 链接和论文编号下载为以标题命名的 PDF，关闭后按普通链接下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="24"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="30"/>
         <source>默认下载 TeX 源码</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="25"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="31"/>
         <source>新任务默认勾选源码包，可在添加任务时逐个修改</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="29"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="35"/>
         <source>默认下载 BibTeX</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="30"/>
+        <location filename="../../../features/arxiv_pack/config.py" line="36"/>
         <source>新任务默认勾选 .bib 引用文件，可在添加任务时逐个修改</source>
         <translation type="unfinished"></translation>
     </message>
@@ -125,7 +125,7 @@
 <context>
     <name>ArxivDraftCard</name>
     <message>
-        <location filename="../../../features/arxiv_pack/cards.py" line="23"/>
+        <location filename="../../../features/arxiv_pack/cards.py" line="24"/>
         <source>TeX 源码</source>
         <translation type="unfinished"></translation>
     </message>
@@ -133,7 +133,7 @@
 <context>
     <name>ArxivPack</name>
     <message>
-        <location filename="../../../features/arxiv_pack/pack.py" line="134"/>
+        <location filename="../../../features/arxiv_pack/pack.py" line="141"/>
         <source>arXiv 论文</source>
         <translation type="unfinished"></translation>
     </message>
@@ -141,64 +141,64 @@
 <context>
     <name>BTTaskCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="105"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="115"/>
         <source>分享率 {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="49"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="86"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="53"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="96"/>
         <source>做种中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="44"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="48"/>
         <source>校验已有文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="45"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="49"/>
         <source>检查续传状态</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="46"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="50"/>
         <source>获取元数据</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="47"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="51"/>
         <source>下载中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="48"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="52"/>
         <source>下载完成</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="50"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="54"/>
         <source>分配文件中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="51"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="55"/>
         <source>等待校验</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="52"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="56"/>
         <source>已暂停下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="86"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="100"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="96"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="110"/>
         <source>，</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="107"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="117"/>
         <source>已做种 {0}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -307,47 +307,47 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BilibiliConfig</name>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="32"/>
+        <location filename="../../../features/bili_pack/config.py" line="40"/>
         <source>Bilibili 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="35"/>
+        <location filename="../../../features/bili_pack/config.py" line="43"/>
         <source>默认画质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="36"/>
+        <location filename="../../../features/bili_pack/config.py" line="44"/>
         <source>选择偏好的视频画质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="38"/>
+        <location filename="../../../features/bili_pack/config.py" line="46"/>
         <source>默认音质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="39"/>
+        <location filename="../../../features/bili_pack/config.py" line="47"/>
         <source>选择偏好的音质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="41"/>
+        <location filename="../../../features/bili_pack/config.py" line="49"/>
         <source>画质或音质不可用时</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="42"/>
+        <location filename="../../../features/bili_pack/config.py" line="50"/>
         <source>当选择的画质或音质不可用时的替代策略</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="43"/>
+        <location filename="../../../features/bili_pack/config.py" line="51"/>
         <source>选择最高</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="43"/>
+        <location filename="../../../features/bili_pack/config.py" line="51"/>
         <source>选择最低</source>
         <translation type="unfinished"></translation>
     </message>
@@ -355,27 +355,27 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BilibiliDraftCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="451"/>
+        <location filename="../../../features/bili_pack/cards.py" line="456"/>
         <source>最佳画质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="452"/>
+        <location filename="../../../features/bili_pack/cards.py" line="457"/>
         <source>最佳音质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="465"/>
+        <location filename="../../../features/bili_pack/cards.py" line="470"/>
         <source>截取片段</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="481"/>
+        <location filename="../../../features/bili_pack/cards.py" line="486"/>
         <source>选择分P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="481"/>
+        <location filename="../../../features/bili_pack/cards.py" line="486"/>
         <source>选择视频</source>
         <translation type="unfinished"></translation>
     </message>
@@ -388,38 +388,38 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BilibiliLoginSettingCard</name>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="163"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="167"/>
         <source>账号登录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="164"/>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="197"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="168"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="201"/>
         <source>状态：未登录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="166"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="170"/>
         <source>扫码登录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="167"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="171"/>
         <source>导入 Cookie</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="194"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="198"/>
         <source>状态：已登录 用户名：{0} UID：{1} 会员状态：{2}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="226"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="230"/>
         <source>正在退出登录...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="168"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="172"/>
         <source>退出登录</source>
         <translation type="unfinished"></translation>
     </message>
@@ -427,7 +427,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BilibiliPack</name>
     <message>
-        <location filename="../../../features/bili_pack/pack.py" line="204"/>
+        <location filename="../../../features/bili_pack/pack.py" line="229"/>
         <source>哔哩哔哩视频、番剧</source>
         <translation type="unfinished"></translation>
     </message>
@@ -435,12 +435,12 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BilibiliTaskCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="735"/>
+        <location filename="../../../features/bili_pack/cards.py" line="745"/>
         <source>选择分P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="735"/>
+        <location filename="../../../features/bili_pack/cards.py" line="745"/>
         <source>选择视频</source>
         <translation type="unfinished"></translation>
     </message>
@@ -448,42 +448,42 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BinaryRuntime</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="187"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="188"/>
         <source>eD2k / eMule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="188"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="189"/>
         <source>支持电驴协议，适合下载经典资源</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="63"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="69"/>
         <source>视频合并</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="64"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="70"/>
         <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="147"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="153"/>
         <source>M3U8 / 直播下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="148"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="154"/>
         <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="142"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="144"/>
         <source>YouTube 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="143"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="145"/>
         <source>支持 YouTube、Twitter 等数百个视频网站</source>
         <translation type="unfinished"></translation>
     </message>
@@ -491,152 +491,152 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BitTorrentConfig</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="63"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="60"/>
         <source>BitTorrent 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="63"/>
         <source>监听端口</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="64"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="65"/>
         <source>元数据超时</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
         <source>解析 magnet 链接时等待元数据的最长时间</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
         <source>连接数上限</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="71"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
         <source>单个 BT 任务对应 session 的最大连接数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="72"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
         <source>上传限速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="73"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
         <source>0 表示不限速，单位为 session 级别的 KB/s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="75"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="72"/>
         <source>自动停止做种分享率</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="76"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="73"/>
         <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="78"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="75"/>
         <source>自动停止做种时长</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="79"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="76"/>
         <source>0 表示不按做种时长自动停止</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="81"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="78"/>
         <source>文件分配模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="79"/>
         <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="80"/>
         <source>稀疏分配</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="80"/>
         <source>预分配</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="84"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="81"/>
         <source>保存 Magnet 种子文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="86"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
         <source>顺序下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="87"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="84"/>
         <source>按文件顺序下载，适合边下边看但通常会影响整体效率</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
         <source>附加 Tracker 列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
         <source>把 Tracker 列表合并到新建的 BT 任务中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
         <source>自动更新订阅</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
         <source>每天在后台更新一次 Tracker 列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="99"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
         <source>Tracker 列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="89"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="86"/>
         <source>启用 DHT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="85"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
         <source>下载 magnet 链接或在线种子时额外保存 .torrent 文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="87"/>
         <source>允许通过 DHT 网络发现 peers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="88"/>
         <source>启用 LSD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="89"/>
         <source>在局域网中广播并发现同一 torrent 的 peers</source>
         <translation type="unfinished"></translation>
     </message>
@@ -644,12 +644,12 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BitTorrentPack</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="118"/>
+        <location filename="../../../features/bittorrent_pack/pack.py" line="136"/>
         <source>磁力链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="144"/>
+        <location filename="../../../features/bittorrent_pack/pack.py" line="162"/>
         <source>BitTorrent 种子文件</source>
         <translation type="unfinished"></translation>
     </message>
@@ -657,64 +657,64 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>BootstrapList</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
+        <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
         <source>DHT 节点 {nodes}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="152"/>
-        <location filename="../../../features/ed2k_pack/config.py" line="171"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="153"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="172"/>
         <source>未运行</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="154"/>
-        <location filename="../../../features/ed2k_pack/config.py" line="173"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="155"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="174"/>
         <source>无法连接代理</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="156"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="157"/>
         <source>未连接服务器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="158"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="159"/>
         <source>已连接服务器（HighID）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="160"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="161"/>
         <source>已连接服务器（LowID，经代理连接时无法获得 HighID）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="162"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="163"/>
         <source>已连接服务器（LowID，运营商 NAT，无法获得 HighID）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="163"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="164"/>
         <source>已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="167"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="168"/>
         <source>KAD 已关闭</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="175"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="176"/>
         <source>代理不转发 UDP，KAD 无法使用</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="177"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="178"/>
         <source>KAD 节点 {nodes}（处于防火墙后）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="178"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="179"/>
         <source>KAD 节点 {nodes}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -953,12 +953,12 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>CatalogCard</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="181"/>
+        <location filename="../../../features/jack_yao/pack.py" line="183"/>
         <source>下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="185"/>
+        <location filename="../../../features/jack_yao/pack.py" line="187"/>
         <source>观看视频</source>
         <translation type="unfinished"></translation>
     </message>
@@ -966,33 +966,33 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>CatalogDownloadDialog</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="225"/>
-        <location filename="../../../features/jack_yao/pack.py" line="227"/>
+        <location filename="../../../features/jack_yao/pack.py" line="232"/>
+        <location filename="../../../features/jack_yao/pack.py" line="234"/>
         <source>选择版本</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="227"/>
+        <location filename="../../../features/jack_yao/pack.py" line="234"/>
         <source>选择你想下载的版本</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="232"/>
+        <location filename="../../../features/jack_yao/pack.py" line="239"/>
         <source>更新日志</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="242"/>
+        <location filename="../../../features/jack_yao/pack.py" line="249"/>
         <source>开始下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="243"/>
+        <location filename="../../../features/jack_yao/pack.py" line="250"/>
         <source>取消</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="265"/>
+        <location filename="../../../features/jack_yao/pack.py" line="272"/>
         <source>下载失败</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1000,7 +1000,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>CatalogPage</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="111"/>
+        <location filename="../../../features/jack_yao/pack.py" line="113"/>
         <source>加载失败，请检查网络后重试
 </source>
         <translation type="unfinished"></translation>
@@ -1209,22 +1209,22 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>ClientProfileCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="25"/>
+        <location filename="../../view/components/option_cards.py" line="27"/>
         <source>自动（匹配来源）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="27"/>
+        <location filename="../../view/components/option_cards.py" line="29"/>
         <source>不模拟（原样发送）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="29"/>
+        <location filename="../../view/components/option_cards.py" line="31"/>
         <source>{0}（最新）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="169"/>
+        <location filename="../../view/components/option_cards.py" line="171"/>
         <source>模拟身份</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1264,13 +1264,13 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>DecryptionKeyCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="177"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="195"/>
         <source>解密密钥</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="187"/>
-        <location filename="../../../features/m3u8_pack/cards.py" line="211"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="205"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="229"/>
         <source>选择 KEY 文本文件</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1278,18 +1278,18 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>DraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="60"/>
+        <location filename="../../view/cards/draft_cards.py" line="70"/>
         <source>编辑任务参数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="64"/>
+        <location filename="../../view/cards/draft_cards.py" line="74"/>
         <source>下载目录中已有同名文件，下载时按设置处理</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="122"/>
-        <location filename="../../view/cards/draft_cards.py" line="127"/>
+        <location filename="../../view/cards/draft_cards.py" line="132"/>
+        <location filename="../../view/cards/draft_cards.py" line="137"/>
         <source>未分类</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1297,17 +1297,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>DraftCardGroup</name>
     <message>
-        <location filename="../../view/components/card_groups.py" line="66"/>
+        <location filename="../../view/components/card_groups.py" line="71"/>
         <source>重试失败项</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/components/card_groups.py" line="91"/>
+        <location filename="../../view/components/card_groups.py" line="96"/>
         <source>解析结果</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/components/card_groups.py" line="113"/>
+        <location filename="../../view/components/card_groups.py" line="118"/>
         <source>{0} 个任务</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1315,7 +1315,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>DropOverlay</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="68"/>
+        <location filename="../../view/windows/main_window.py" line="70"/>
         <source>松开以添加任务</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1323,62 +1323,62 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>ED2kCard</name>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="66"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="67"/>
         <source>eD2k</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="68"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="69"/>
         <source>文件哈希</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="69"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="70"/>
         <source>AICH 根哈希</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="70"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="71"/>
         <source>分块</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="71"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="72"/>
         <source>速度</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="72"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="73"/>
         <source>来源</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="73"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="74"/>
         <source>暂缓</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="74"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="75"/>
         <source>已上传</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="75"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="76"/>
         <source>分享率</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="98"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="99"/>
         <source>下载 {0}，上传 {1}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="100"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="101"/>
         <source>传输中 {0}，共 {1}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="106"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="107"/>
         <source>{0}，已做种 {1}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1386,117 +1386,117 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="62"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="63"/>
         <source>eD2k 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="66"/>
         <source>Kelpie 安装目录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="74"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="75"/>
         <source>未运行</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="76"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="77"/>
         <source>有 eD2k 任务正在下载或做种，结束后才能终止</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="77"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="78"/>
         <source>开始 eD2k 任务时会自动重新启动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="80"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
         <source>终止</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="80"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
         <source>终止 Kelpie 进程</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="93"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="94"/>
         <source>服务器列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="97"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="98"/>
         <source>KAD 节点列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="107"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="108"/>
         <source>自动更新订阅</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="108"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="109"/>
         <source>每天在后台更新一次服务器列表和 KAD 节点列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="116"/>
         <source>启用 KAD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="116"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="117"/>
         <source>通过 KAD 网络查找来源，关闭后仅使用 eD2k 服务器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="120"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="121"/>
         <source>启用 UPnP</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="121"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="122"/>
         <source>自动配置路由器端口转发</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="125"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="126"/>
         <source>监听端口</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="126"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="127"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="130"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="131"/>
         <source>上传限速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="131"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="132"/>
         <source>0 表示不限速。上传越多积分越高，在别人的队列里排得越靠前，自己下载也越快</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="135"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="136"/>
         <source>自动停止做种分享率</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="136"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="137"/>
         <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="140"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="141"/>
         <source>自动停止做种时长</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="141"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="142"/>
         <source>0 表示不按做种时长自动停止</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1504,7 +1504,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>ED2kPack</name>
     <message>
-        <location filename="../../../features/ed2k_pack/pack.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/pack.py" line="56"/>
         <source>eD2k 链接</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1512,82 +1512,82 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>ED2kSourceCard</name>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="35"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="36"/>
         <source>传输中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="37"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="38"/>
         <source>排队 #{0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="39"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="40"/>
         <source>排队</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="41"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="42"/>
         <source>连接中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="43"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="44"/>
         <source>暂缓</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="51"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="52"/>
         <source>链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="53"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="54"/>
         <source>服务器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="57"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="58"/>
         <source>来源交换</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="59"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="60"/>
         <source>对方连入</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="112"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="113"/>
         <source>来源</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
         <source>地址</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
         <source>客户端</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
         <source>状态</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
         <source>下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="115"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
         <source>渠道</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="117"/>
+        <location filename="../../../features/ed2k_pack/detail_cards.py" line="118"/>
         <source>任务运行时显示</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1620,23 +1620,23 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="78"/>
-        <location filename="../../../features/ed2k_pack/cards.py" line="80"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="83"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="85"/>
         <source>，</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="78"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="83"/>
         <source>做种中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="85"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="90"/>
         <source>分享率 {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="87"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="92"/>
         <source>已做种 {0}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1644,27 +1644,27 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>EditCookieDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="143"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="147"/>
         <source>保存</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="144"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="148"/>
         <source>取消</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="146"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="150"/>
         <source>手动导入 Cookie</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="148"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="152"/>
         <source>请粘贴浏览器导出的完整 Cookie，留空后保存可清空当前 Cookie</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="151"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="155"/>
         <source>请在此输入用户 Cookie</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1672,17 +1672,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>EditTaskDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="27"/>
+        <location filename="../../view/dialogs/edit_task.py" line="26"/>
         <source>编辑任务参数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="33"/>
+        <location filename="../../view/dialogs/edit_task.py" line="32"/>
         <source>应用</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="34"/>
+        <location filename="../../view/dialogs/edit_task.py" line="33"/>
         <source>取消</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1781,20 +1781,28 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>FFmpegConfig</name>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="43"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="49"/>
         <source>FFmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="46"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="52"/>
         <source>FFmpeg 安装目录</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FFmpegDraftCard</name>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/cards.py" line="40"/>
+        <source>截取片段</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>FailedDraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="222"/>
+        <location filename="../../view/cards/draft_cards.py" line="232"/>
         <source>重试</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1942,7 +1950,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>FtpPack</name>
     <message>
-        <location filename="../../../features/ftp_pack/pack.py" line="126"/>
+        <location filename="../../../features/ftp_pack/pack.py" line="133"/>
         <source>FTP / FTPS 链接</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1950,17 +1958,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>GitHubConfig</name>
     <message>
-        <location filename="../../../features/github_pack/config.py" line="84"/>
+        <location filename="../../../features/github_pack/config.py" line="89"/>
         <source>GitHub 加速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/config.py" line="86"/>
+        <location filename="../../../features/github_pack/config.py" line="91"/>
         <source>启用 GitHub 加速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/config.py" line="87"/>
+        <location filename="../../../features/github_pack/config.py" line="92"/>
         <source>经代理站下载 GitHub 文件，不可用时自动切换其他站点或直连</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1968,7 +1976,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>GitHubPack</name>
     <message>
-        <location filename="../../../features/github_pack/pack.py" line="122"/>
+        <location filename="../../../features/github_pack/pack.py" line="141"/>
         <source>GitHub 发布文件与仓库文件</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1976,38 +1984,38 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>GitHubProxySiteCard</name>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="17"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="22"/>
         <source>代理站</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="18"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="23"/>
         <source>选择 GitHub 反向代理站，延迟仅供参考</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="35"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="40"/>
         <source>刷新延迟</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="38"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="43"/>
         <source>自动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="41"/>
-        <location filename="../../../features/github_pack/setting_cards.py" line="80"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="46"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="85"/>
         <source>自定义</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="65"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="70"/>
         <source>不可用</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="67"/>
+        <location filename="../../../features/github_pack/setting_cards.py" line="72"/>
         <source>超时</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2056,7 +2064,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>HeadersEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="262"/>
+        <location filename="../../view/components/option_cards.py" line="264"/>
         <source>请求标头</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2187,7 +2195,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>HttpPack</name>
     <message>
-        <location filename="../../../features/http_pack/pack.py" line="279"/>
+        <location filename="../../../features/http_pack/pack.py" line="262"/>
         <source>文件直链（视频、音频、压缩包、安装包、镜像、文档）</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2195,17 +2203,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>HuggingFaceConfig</name>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="89"/>
+        <location filename="../../../features/huggingface_pack/config.py" line="94"/>
         <source>HuggingFace 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="92"/>
+        <location filename="../../../features/huggingface_pack/config.py" line="97"/>
         <source>启用 HuggingFace 加速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="93"/>
+        <location filename="../../../features/huggingface_pack/config.py" line="98"/>
         <source>命中 HuggingFace 链接时，自动改写为所选镜像站</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2213,23 +2221,23 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>HuggingFaceMirrorSiteCard</name>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="24"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="29"/>
         <source>镜像站</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="25"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="30"/>
         <source>选择 HuggingFace 镜像站，延迟仅供参考</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="42"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="47"/>
         <source>刷新延迟</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="47"/>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="87"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="52"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="92"/>
         <source>自定义</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2237,7 +2245,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>HuggingFacePack</name>
     <message>
-        <location filename="../../../features/huggingface_pack/pack.py" line="135"/>
+        <location filename="../../../features/huggingface_pack/pack.py" line="142"/>
         <source>Hugging Face 模型与数据集文件</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2245,17 +2253,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>HuggingFaceTokenCard</name>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="135"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="140"/>
         <source>Access Token</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="136"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="141"/>
         <source>用于下载需要授权的模型（如 Llama、Mistral）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="143"/>
+        <location filename="../../../features/huggingface_pack/setting_cards.py" line="148"/>
         <source>获取 Token</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2362,17 +2370,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>LiveEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="108"/>
-        <source>确认更换链接</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../view/dialogs/edit_task.py" line="109"/>
-        <source>新链接与原链接的内容不一致，将清除已下载的 {0} 数据，是否继续？</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../view/dialogs/edit_task.py" line="125"/>
         <source>链接解析失败</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2380,13 +2378,13 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>LoadingWidget</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="124"/>
-        <location filename="../../../features/jack_yao/pack.py" line="148"/>
+        <location filename="../../../features/jack_yao/pack.py" line="126"/>
+        <location filename="../../../features/jack_yao/pack.py" line="150"/>
         <source>正在加载...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="128"/>
+        <location filename="../../../features/jack_yao/pack.py" line="130"/>
         <source>重试</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2394,277 +2392,277 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>M3U8Config</name>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="73"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="79"/>
         <source>N_m3u8DL-RE 安装目录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="79"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
         <source>输出容器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="80"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="86"/>
         <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="81"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="87"/>
         <source>分片线程数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="82"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
         <source>传给 N_m3u8DL-RE 的下载线程数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="83"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
         <source>分片重试次数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="84"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
         <source>单个分片下载失败时的最大重试次数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
         <source>请求超时</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
         <source>HTTP 请求超时时间</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="87"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
         <source>自动选择最佳轨道</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="70"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="76"/>
         <source>M3U8 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
         <source>默认选择最佳音视频轨道</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
         <source>并发下载音视频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
         <source>同时下载已选择的音频、视频和字幕轨道</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
         <source>追加 URL 参数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="92"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
         <source>把输入链接上的 Query 参数追加到分片请求</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
         <source>二进制合并</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
         <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
         <source>校验分片数量</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
         <source>下载完成后检查实际分片数是否与预期一致</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
         <source>直播保留原始分片</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
         <source>实时合并录制时仍保留下载的原始分片</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
         <source>录制时通过管道交给 ffmpeg 实时混流为封装容器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
         <source>直播校正 VTT 字幕</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
         <source>根据音频起始时间校正 VTT 字幕时间轴</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
         <source>直播刷新等待时间</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="110"/>
         <source>两次拉取直播清单之间的等待秒数，0 为自动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="111"/>
         <source>直播每次取片数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="112"/>
         <source>每次刷新最多取走的分片数量，0 为自动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
         <source>解密引擎</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
         <source>调用的第三方解密程序</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
         <source>解密引擎二进制路径</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="110"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
         <source>MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="135"/>
         <source>默认拉取全部音频与字幕轨道</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="112"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
         <source>MP4 实时解密</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
         <source>下载 MP4 分片时实时解密</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
         <source>限速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
         <source>最大下载速度，-1 为不限速</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
         <source>限速单位</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="117"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
         <source>限速数值的单位</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
         <source>广告过滤</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
         <source>匹配广告分片 URL 的正则表达式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
         <source>正则表达式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
         <source>字幕格式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
         <source>字幕输出格式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
         <source>不写入日期信息</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
         <source>混流时不写入日期信息</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
         <source>保留图形分片</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="131"/>
         <source>把图形字幕转图片后保留原始分片</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="132"/>
         <source>完成后删除临时文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="133"/>
         <source>下载完成后删除分片临时目录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="134"/>
         <source>下载全部音轨与字幕</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="136"/>
         <source>自定义混流参数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="131"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="137"/>
         <source>自定义 --mux-after-done，留空则按输出容器自动混流</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
         <source>直播管道混流</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2672,17 +2670,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>M3U8LiveTaskCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="56"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="69"/>
         <source>等待中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="57"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="70"/>
         <source>录制中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="86"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="104"/>
         <source>录制已结束</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2690,17 +2688,17 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>M3U8Pack</name>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="263"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="267"/>
         <source>M3U8 / DASH 流媒体</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="328"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="332"/>
         <source>M3U8 播放列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="334"/>
+        <location filename="../../../features/m3u8_pack/pack.py" line="338"/>
         <source>DASH 清单</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2708,37 +2706,37 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="432"/>
+        <location filename="../../view/windows/main_window.py" line="434"/>
         <source>程序发生异常</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="151"/>
+        <location filename="../../view/windows/main_window.py" line="153"/>
         <source>下载任务</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="155"/>
+        <location filename="../../view/windows/main_window.py" line="157"/>
         <source>新建任务</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="161"/>
+        <location filename="../../view/windows/main_window.py" line="163"/>
         <source>设置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="314"/>
+        <location filename="../../view/windows/main_window.py" line="316"/>
         <source>未知</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="313"/>
+        <location filename="../../view/windows/main_window.py" line="315"/>
         <source>浏览器扩展</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="310"/>
+        <location filename="../../view/windows/main_window.py" line="312"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -2749,94 +2747,94 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="316"/>
+        <location filename="../../view/windows/main_window.py" line="318"/>
         <source>浏览器扩展配对请求</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="317"/>
+        <location filename="../../view/windows/main_window.py" line="319"/>
         <source>允许配对</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="318"/>
+        <location filename="../../view/windows/main_window.py" line="320"/>
         <source>拒绝</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="328"/>
+        <location filename="../../view/windows/main_window.py" line="330"/>
         <source>浏览器扩展服务无法启动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="331"/>
+        <location filename="../../view/windows/main_window.py" line="333"/>
         <source>Aria2 RPC 兼容服务无法启动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="344"/>
+        <location filename="../../view/windows/main_window.py" line="346"/>
         <source>前往设置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="370"/>
+        <location filename="../../view/windows/main_window.py" line="372"/>
         <source>查看详情</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="433"/>
+        <location filename="../../view/windows/main_window.py" line="435"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="437"/>
+        <location filename="../../view/windows/main_window.py" line="439"/>
         <source>查看日志</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="484"/>
+        <location filename="../../view/windows/main_window.py" line="486"/>
         <source>是否完全退出程序？</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="485"/>
+        <location filename="../../view/windows/main_window.py" line="487"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="488"/>
+        <location filename="../../view/windows/main_window.py" line="490"/>
         <source>退出程序</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="489"/>
+        <location filename="../../view/windows/main_window.py" line="491"/>
         <source>继续在后台运行</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="490"/>
+        <location filename="../../view/windows/main_window.py" line="492"/>
         <source>记住我的选择</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="356"/>
+        <location filename="../../view/windows/main_window.py" line="358"/>
         <source>检测到新版本</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="357"/>
+        <location filename="../../view/windows/main_window.py" line="359"/>
         <source>最新版本: {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="364"/>
+        <location filename="../../view/windows/main_window.py" line="366"/>
         <source>立即下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="373"/>
+        <location filename="../../view/windows/main_window.py" line="375"/>
         <source>请作者喝咖啡</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2880,12 +2878,12 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>MultiFileDraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="163"/>
+        <location filename="../../view/cards/draft_cards.py" line="173"/>
         <source>选择文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="192"/>
+        <location filename="../../view/cards/draft_cards.py" line="202"/>
         <source>{0}/{1} 个文件 · {2}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2893,7 +2891,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="571"/>
+        <location filename="../../view/cards/task_cards.py" line="581"/>
         <source>{0}/{1} 个文件</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2901,7 +2899,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>MuxImportCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="225"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="243"/>
         <source>导入音轨/字幕</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3013,7 +3011,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>OptionCardGroup</name>
     <message>
-        <location filename="../../view/components/card_groups.py" line="182"/>
+        <location filename="../../view/components/card_groups.py" line="187"/>
         <source>下载设置</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3021,12 +3019,12 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>OutputFolderCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="94"/>
+        <location filename="../../view/components/option_cards.py" line="96"/>
         <source>选择下载路径</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="95"/>
+        <location filename="../../view/components/option_cards.py" line="97"/>
         <source>默认</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3047,7 +3045,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>PackPage</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="52"/>
+        <location filename="../../../features/jack_yao/pack.py" line="54"/>
         <source>资源下载</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3055,37 +3053,37 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>PeerCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="138"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="140"/>
         <source>Peer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="142"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
         <source>地址</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="142"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
         <source>客户端</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="142"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
         <source>下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="142"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
         <source>上传</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="146"/>
         <source>任务运行时显示</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="162"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="164"/>
         <source>{0}
 {1}
 标志 {2}  进度 {3}</source>
@@ -3510,63 +3508,63 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>ScanLoginDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="45"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="49"/>
         <source>关闭</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="47"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="51"/>
         <source>扫码登录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="49"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="53"/>
         <source>使用哔哩哔哩手机客户端扫描下方二维码，并在手机端确认登录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="57"/>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="102"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="61"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="106"/>
         <source>正在获取二维码...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="59"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="63"/>
         <source>二维码有效期约 180 秒，失效后可点击&quot;刷新二维码&quot;重新生成</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="63"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="67"/>
         <source>刷新二维码</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="64"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="68"/>
         <source>打开登录链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="116"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="120"/>
         <source>请使用哔哩哔哩客户端扫码</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="119"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="123"/>
         <source>等待扫码</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="121"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="125"/>
         <source>二维码已扫码，请在手机端确认登录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="123"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="127"/>
         <source>二维码已失效，请点击&quot;刷新二维码&quot;重新生成</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="110"/>
+        <location filename="../../../features/bili_pack/setting_cards.py" line="114"/>
         <source>登录成功，正在导入 Cookie...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3705,7 +3703,7 @@ http://example.com/{mp4,mkv}/video</source>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="57"/>
-        <location filename="../../view/pages/setting_page.py" line="370"/>
+        <location filename="../../view/pages/setting_page.py" line="378"/>
         <source>关于</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3775,12 +3773,13 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="193"/>
+        <location filename="../../view/pages/setting_page.py" line="200"/>
         <source>启用浏览器扩展</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="462"/>
+        <location filename="../../view/pages/setting_page.py" line="200"/>
+        <location filename="../../view/pages/setting_page.py" line="473"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3800,44 +3799,44 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="267"/>
+        <location filename="../../view/pages/setting_page.py" line="275"/>
         <source>应用主题</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="268"/>
+        <location filename="../../view/pages/setting_page.py" line="276"/>
         <source>更改应用程序的外观</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="277"/>
         <source>浅色</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="277"/>
         <source>深色</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="277"/>
         <source>跟随系统设置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="274"/>
-        <location filename="../../view/pages/setting_page.py" line="281"/>
+        <location filename="../../view/pages/setting_page.py" line="282"/>
+        <location filename="../../view/pages/setting_page.py" line="289"/>
         <source>窗口背景透明材质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="275"/>
-        <location filename="../../view/pages/setting_page.py" line="282"/>
+        <location filename="../../view/pages/setting_page.py" line="283"/>
+        <location filename="../../view/pages/setting_page.py" line="290"/>
         <source>设置窗口背景透明效果和透明材质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="261"/>
+        <location filename="../../view/pages/setting_page.py" line="269"/>
         <source>界面缩放</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3932,67 +3931,67 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="187"/>
+        <location filename="../../view/pages/setting_page.py" line="193"/>
         <source>服务端口</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="188"/>
+        <location filename="../../view/pages/setting_page.py" line="194"/>
         <source>浏览器扩展连接使用的端口</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="198"/>
+        <location filename="../../view/pages/setting_page.py" line="205"/>
         <source>接管下载时进入草稿模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="199"/>
+        <location filename="../../view/pages/setting_page.py" line="206"/>
         <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="210"/>
+        <location filename="../../view/pages/setting_page.py" line="218"/>
         <source>允许浏览器扩展唤醒</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="211"/>
+        <location filename="../../view/pages/setting_page.py" line="219"/>
         <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="222"/>
+        <location filename="../../view/pages/setting_page.py" line="230"/>
         <source>关联 {0} 文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="223"/>
+        <location filename="../../view/pages/setting_page.py" line="231"/>
         <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="230"/>
+        <location filename="../../view/pages/setting_page.py" line="238"/>
         <source>处理 {0} 链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="231"/>
+        <location filename="../../view/pages/setting_page.py" line="239"/>
         <source>点击 {0} 链接时唤起 Ghost Downloader</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="237"/>
+        <location filename="../../view/pages/setting_page.py" line="245"/>
         <source>启用 Aria2 RPC 兼容</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="476"/>
+        <location filename="../../view/pages/setting_page.py" line="487"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="242"/>
+        <location filename="../../view/pages/setting_page.py" line="250"/>
         <source>监听端口</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4037,296 +4036,306 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="243"/>
+        <location filename="../../view/pages/setting_page.py" line="187"/>
+        <source>自动选择端口</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="188"/>
+        <source>端口冲突时自动切换至可用候选端口</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="251"/>
         <source>Aria2 RPC 默认端口为 16800</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="247"/>
+        <location filename="../../view/pages/setting_page.py" line="255"/>
         <source>令牌</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="248"/>
+        <location filename="../../view/pages/setting_page.py" line="256"/>
         <source>若设置，客户端需传入 token 才可创建任务</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="250"/>
+        <location filename="../../view/pages/setting_page.py" line="258"/>
         <source>可选</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="254"/>
+        <location filename="../../view/pages/setting_page.py" line="262"/>
         <source>模拟浏览器指纹</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="255"/>
+        <location filename="../../view/pages/setting_page.py" line="263"/>
         <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="262"/>
+        <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>改变应用程序界面的缩放比例, 0% 为自动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="288"/>
+        <location filename="../../view/pages/setting_page.py" line="296"/>
         <source>在 Dock 栏中显示程序</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="289"/>
+        <location filename="../../view/pages/setting_page.py" line="297"/>
         <source>关闭后可通过菜单栏图标继续使用程序</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="293"/>
+        <location filename="../../view/pages/setting_page.py" line="301"/>
         <source>在 Dock 图标上显示实时速度</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="294"/>
+        <location filename="../../view/pages/setting_page.py" line="302"/>
         <source>下载时在程序坞图标上叠加当前速度</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="301"/>
+        <location filename="../../view/pages/setting_page.py" line="309"/>
         <source>在菜单栏显示实时速度</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="302"/>
+        <location filename="../../view/pages/setting_page.py" line="310"/>
         <source>下载时在菜单栏图标旁显示当前速度</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="306"/>
+        <location filename="../../view/pages/setting_page.py" line="314"/>
         <source>语言</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="307"/>
+        <location filename="../../view/pages/setting_page.py" line="315"/>
         <source>设置界面的首选语言</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="308"/>
+        <location filename="../../view/pages/setting_page.py" line="316"/>
         <source>使用系统设置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="321"/>
+        <location filename="../../view/pages/setting_page.py" line="329"/>
         <source>切换到用户模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="322"/>
-        <location filename="../../view/pages/setting_page.py" line="328"/>
+        <location filename="../../view/pages/setting_page.py" line="330"/>
+        <location filename="../../view/pages/setting_page.py" line="336"/>
         <source>数据存储模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
+        <location filename="../../view/pages/setting_page.py" line="331"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="327"/>
+        <location filename="../../view/pages/setting_page.py" line="335"/>
         <source>切换到 Portable 模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="329"/>
+        <location filename="../../view/pages/setting_page.py" line="337"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="341"/>
         <source>命令行工具</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="334"/>
+        <location filename="../../view/pages/setting_page.py" line="342"/>
         <source>安装后可在终端中使用 ghd 命令添加和管理任务</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="338"/>
+        <location filename="../../view/pages/setting_page.py" line="346"/>
         <source>在应用程序启动时检查更新</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="347"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="345"/>
+        <location filename="../../view/pages/setting_page.py" line="353"/>
         <source>关闭主窗口时</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="346"/>
+        <location filename="../../view/pages/setting_page.py" line="354"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="347"/>
+        <location filename="../../view/pages/setting_page.py" line="355"/>
         <source>关闭时询问</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="347"/>
+        <location filename="../../view/pages/setting_page.py" line="355"/>
         <source>继续在后台运行</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="347"/>
+        <location filename="../../view/pages/setting_page.py" line="355"/>
         <source>退出程序</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
+        <location filename="../../view/pages/setting_page.py" line="365"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="366"/>
+        <location filename="../../view/pages/setting_page.py" line="374"/>
         <source>查看详情</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="366"/>
+        <location filename="../../view/pages/setting_page.py" line="374"/>
         <source>功能包</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="375"/>
         <source>管理已安装的功能包</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="480"/>
+        <location filename="../../view/pages/setting_page.py" line="491"/>
         <source>正在端口 {} 上监听</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="510"/>
+        <location filename="../../view/pages/setting_page.py" line="521"/>
         <source>卸载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="510"/>
+        <location filename="../../view/pages/setting_page.py" line="521"/>
         <source>安装</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="533"/>
         <source>已卸载命令行工具</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="525"/>
+        <location filename="../../view/pages/setting_page.py" line="536"/>
         <source>新打开的终端即可使用 ghd</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="527"/>
+        <location filename="../../view/pages/setting_page.py" line="538"/>
         <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="528"/>
+        <location filename="../../view/pages/setting_page.py" line="539"/>
         <source>已安装命令行工具</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="534"/>
+        <location filename="../../view/pages/setting_page.py" line="545"/>
         <source>卸载命令行工具失败</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="534"/>
+        <location filename="../../view/pages/setting_page.py" line="545"/>
         <source>安装命令行工具失败</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="542"/>
+        <location filename="../../view/pages/setting_page.py" line="553"/>
         <source>用户模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="542"/>
+        <location filename="../../view/pages/setting_page.py" line="553"/>
         <source>Portable 模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="544"/>
+        <location filename="../../view/pages/setting_page.py" line="555"/>
         <source>切换数据存储模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="556"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="565"/>
+        <location filename="../../view/pages/setting_page.py" line="576"/>
         <source>正在检查更新...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="577"/>
+        <location filename="../../view/pages/setting_page.py" line="588"/>
         <source>当前已是最新版本</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="574"/>
+        <location filename="../../view/pages/setting_page.py" line="585"/>
         <source>检查更新失败</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="574"/>
+        <location filename="../../view/pages/setting_page.py" line="585"/>
         <source>无法获取最新版本信息</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="590"/>
+        <location filename="../../view/pages/setting_page.py" line="601"/>
         <source>搜索设置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="314"/>
+        <location filename="../../view/pages/setting_page.py" line="322"/>
         <source>开机启动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="315"/>
+        <location filename="../../view/pages/setting_page.py" line="323"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="375"/>
+        <location filename="../../view/pages/setting_page.py" line="383"/>
         <source>打开作者的个人空间</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="376"/>
+        <location filename="../../view/pages/setting_page.py" line="384"/>
         <source>了解作者</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="376"/>
+        <location filename="../../view/pages/setting_page.py" line="384"/>
         <source>发现更多 {} 的作品</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="355"/>
-        <location filename="../../view/pages/setting_page.py" line="356"/>
+        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="364"/>
         <source>提供反馈</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4336,63 +4345,63 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="359"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>查看日志</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="370"/>
-        <location filename="../../view/pages/setting_page.py" line="565"/>
+        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="576"/>
         <source>检查更新</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="426"/>
+        <location filename="../../view/pages/setting_page.py" line="437"/>
         <source>已配置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="426"/>
+        <location filename="../../view/pages/setting_page.py" line="437"/>
         <source>重启软件后生效</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="434"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>已复制配对令牌</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="440"/>
+        <location filename="../../view/pages/setting_page.py" line="451"/>
         <source>已重新生成配对令牌</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="440"/>
+        <location filename="../../view/pages/setting_page.py" line="451"/>
         <source>新令牌已复制到剪贴板</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="455"/>
+        <location filename="../../view/pages/setting_page.py" line="466"/>
         <source>解包失败</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="466"/>
+        <location filename="../../view/pages/setting_page.py" line="477"/>
         <source>未连接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="468"/>
+        <location filename="../../view/pages/setting_page.py" line="479"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="470"/>
+        <location filename="../../view/pages/setting_page.py" line="481"/>
         <source>已连接 v{} (商店安装)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="487"/>
+        <location filename="../../view/pages/setting_page.py" line="498"/>
         <source>选择导出路径</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4400,12 +4409,12 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>SideFileCard</name>
     <message>
-        <location filename="../../../features/arxiv_pack/cards.py" line="62"/>
+        <location filename="../../../features/arxiv_pack/cards.py" line="63"/>
         <source>附属文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/cards.py" line="63"/>
+        <location filename="../../../features/arxiv_pack/cards.py" line="64"/>
         <source>TeX 源码</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4413,7 +4422,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>StreamSelectCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="101"/>
+        <location filename="../../../features/m3u8_pack/cards.py" line="119"/>
         <source>默认（最佳）</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4454,7 +4463,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>SubworkerCountCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="123"/>
+        <location filename="../../view/components/option_cards.py" line="125"/>
         <source>预分配线程数</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4514,127 +4523,127 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>TaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="81"/>
+        <location filename="../../view/cards/task_cards.py" line="84"/>
         <source>暂停/继续</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="88"/>
+        <location filename="../../view/cards/task_cards.py" line="91"/>
         <source>选择文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="128"/>
+        <location filename="../../view/cards/task_cards.py" line="131"/>
         <source>计算校验值</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="135"/>
+        <location filename="../../view/cards/task_cards.py" line="138"/>
         <source>打开文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="141"/>
+        <location filename="../../view/cards/task_cards.py" line="144"/>
         <source>打开文件夹</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="142"/>
+        <location filename="../../view/cards/task_cards.py" line="145"/>
         <source>删除</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="305"/>
+        <location filename="../../view/cards/task_cards.py" line="315"/>
         <source>文件缺失</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="308"/>
+        <location filename="../../view/cards/task_cards.py" line="318"/>
         <source>完成于 {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="311"/>
+        <location filename="../../view/cards/task_cards.py" line="321"/>
         <source>任务已经完成</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="321"/>
+        <location filename="../../view/cards/task_cards.py" line="331"/>
         <source>下载过程中发生错误，请稍后重试</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="327"/>
+        <location filename="../../view/cards/task_cards.py" line="337"/>
         <source>任务已经暂停</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="329"/>
+        <location filename="../../view/cards/task_cards.py" line="339"/>
         <source>任务正在等待</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="379"/>
+        <location filename="../../view/cards/task_cards.py" line="389"/>
         <source>删除任务</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="379"/>
+        <location filename="../../view/cards/task_cards.py" line="389"/>
         <source>确定要删除这个下载任务吗？</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="380"/>
+        <location filename="../../view/cards/task_cards.py" line="390"/>
         <source>同时删除已下载的文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="393"/>
+        <location filename="../../view/cards/task_cards.py" line="403"/>
         <source>文件缺失，无法校验</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="396"/>
+        <location filename="../../view/cards/task_cards.py" line="406"/>
         <source>更多</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="434"/>
+        <location filename="../../view/cards/task_cards.py" line="444"/>
         <source>任务详情</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="439"/>
+        <location filename="../../view/cards/task_cards.py" line="449"/>
         <source>复制下载链接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="444"/>
+        <location filename="../../view/cards/task_cards.py" line="454"/>
         <source>编辑任务参数...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="448"/>
+        <location filename="../../view/cards/task_cards.py" line="458"/>
         <source>移到最前</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="452"/>
+        <location filename="../../view/cards/task_cards.py" line="462"/>
         <source>重新下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="457"/>
+        <location filename="../../view/cards/task_cards.py" line="467"/>
         <source>移动到分类</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="459"/>
+        <location filename="../../view/cards/task_cards.py" line="469"/>
         <source>未分类</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="33"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="37"/>
         <source>{0}/{1} Peers</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5406,43 +5415,43 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>TaskState</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="8"/>
+        <location filename="../../../features/bittorrent_pack/android.py" line="15"/>
         <source>校验已有文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="9"/>
+        <location filename="../../../features/bittorrent_pack/android.py" line="16"/>
         <source>检查续传状态</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="10"/>
+        <location filename="../../../features/bittorrent_pack/android.py" line="17"/>
         <source>获取元数据</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="11"/>
+        <location filename="../../../features/bittorrent_pack/android.py" line="18"/>
         <source>分配文件中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="12"/>
+        <location filename="../../../features/bittorrent_pack/android.py" line="19"/>
         <source>等待校验</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="18"/>
-        <location filename="../../../features/ed2k_pack/android.py" line="37"/>
+        <location filename="../../../features/bittorrent_pack/android.py" line="25"/>
+        <location filename="../../../features/ed2k_pack/android.py" line="46"/>
         <source>做种中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/android.py" line="49"/>
+        <location filename="../../../features/m3u8_pack/android.py" line="55"/>
         <source>等待中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/android.py" line="49"/>
+        <location filename="../../../features/m3u8_pack/android.py" line="55"/>
         <source>录制中</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5458,88 +5467,88 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>TorrentCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="31"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="33"/>
         <source>种子</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="34"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="36"/>
         <source>Info Hash v1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="35"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="37"/>
         <source>Info Hash v2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="36"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="38"/>
         <source>注释</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="37"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="39"/>
         <source>创建者</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="38"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="40"/>
         <source>创建时间</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="39"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="41"/>
         <source>分块</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="40"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="42"/>
         <source>做种</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="41"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="43"/>
         <source>下载者</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="42"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="44"/>
         <source>可用副本</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="43"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="45"/>
         <source>已上传</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="44"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="46"/>
         <source>已下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="45"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="47"/>
         <source>分享率</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="46"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="48"/>
         <source>下次汇报</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="61"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="63"/>
         <source>（私有）</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="84"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="86"/>
         <source>{0}，已做种 {1}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="88"/>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="89"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="90"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="91"/>
         <source>已连接 {0}，共 {1}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5570,67 +5579,67 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>TrackerCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="98"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="100"/>
         <source>Tracker</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="102"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
         <source>地址</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="102"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
         <source>状态</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="102"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
         <source>做种</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="102"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
         <source>下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="102"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
         <source>Peer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="106"/>
         <source>任务运行时显示</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="127"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="129"/>
         <source>工作中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="128"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="130"/>
         <source>更新中</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="129"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="131"/>
         <source>未联系</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="130"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="132"/>
         <source>出错</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="131"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="133"/>
         <source>已禁用</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="133"/>
+        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="135"/>
         <source>{0}：{1}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5638,7 +5647,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>UrlEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="235"/>
+        <location filename="../../view/components/option_cards.py" line="237"/>
         <source>下载链接</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5723,7 +5732,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="59"/>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="56"/>
         <source>迅雷、快车、QQ 旋风链接</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5731,7 +5740,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>YouTubePack</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/pack.py" line="63"/>
+        <location filename="../../../features/yt_dlp_pack/pack.py" line="70"/>
         <source>YouTube 视频</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5739,32 +5748,32 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>YtDlpConfig</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="90"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="92"/>
         <source>YouTube 下载</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="98"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="100"/>
         <source>运行环境安装目录</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="110"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="112"/>
         <source>优先 MP4 格式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="111"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="113"/>
         <source>优先选择 H.264/MP4 编码，避免输出 WebM/MKV</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="118"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="120"/>
         <source>下载完成后将标题、作者等信息嵌入文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="125"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="127"/>
         <source>下载完成后将章节标记嵌入文件</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5805,12 +5814,12 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="124"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="126"/>
         <source>嵌入章节</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="117"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="119"/>
         <source>嵌入元数据</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5818,52 +5827,52 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>YtDlpDraftCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="245"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="252"/>
         <source>音频语言</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="250"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="266"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="433"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="257"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="273"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="440"/>
         <source>最佳画质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="251"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="267"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="434"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="258"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="274"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="441"/>
         <source>最佳音质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="257"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="441"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="264"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="448"/>
         <source>自动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="274"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="281"/>
         <source>截取片段</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="292"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="299"/>
         <source>选择视频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="391"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="398"/>
         <source>选择音频语言</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="569"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="576"/>
         <source>未找到播放列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="574"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="581"/>
         <source>加载播放列表失败</source>
         <translation type="unfinished"></translation>
     </message>

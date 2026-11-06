@@ -682,5 +682,89 @@
   },
   "openPopupOnSent": {
     "message": "Open extension popup after sending task"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "Images"
+  },
+  "filterArchive": {
+    "message": "Archives"
+  },
+  "filterDocument": {
+    "message": "Documents"
+  },
+  "filterSpreadsheet": {
+    "message": "Spreadsheets"
+  },
+  "filterOther": {
+    "message": "Other"
+  },
+  "moreKinds": {
+    "message": "More Types"
+  },
+  "sortByTime": {
+    "message": "Time"
+  },
+  "sortBySize": {
+    "message": "Size"
+  },
+  "sortByName": {
+    "message": "Name"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "Search name or URL"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "No matching resources"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "Try another keyword or clear the filters."
+  },
+  "clearFilters": {
+    "message": "Clear Filters"
+  },
+  "sortByStatus": {
+    "message": "Status"
+  },
+  "sortAscending": {
+    "message": "Ascending"
+  },
+  "sortDescending": {
+    "message": "Descending"
+  },
+  "searchTasksPlaceholder": {
+    "message": "Search task names"
+  },
+  "noMatchingTasksTitle": {
+    "message": "No matching tasks"
+  },
+  "noMatchingTasksDescription": {
+    "message": "Try another keyword."
+  },
+  "moreOptions": {
+    "message": "More Options"
+  },
+  "removeCompletedTasks": {
+    "message": "Remove Completed Tasks"
+  },
+  "removeMissingTasks": {
+    "message": "Remove Missing Tasks"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "Failed to remove $1 task(s)"
+  },
+  "mediaButtonStyle": {
+    "message": "Media Button Style"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "Standard"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "Compact"
+  },
+  "mediaButtonStyleHint": {
+    "message": "Compact style shows icons only"
   }
 }

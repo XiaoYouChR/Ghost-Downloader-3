@@ -682,5 +682,89 @@
   },
   "openPopupOnSent": {
     "message": "タスク送信時にポップアップを開く"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "画像"
+  },
+  "filterArchive": {
+    "message": "圧縮ファイル"
+  },
+  "filterDocument": {
+    "message": "文書"
+  },
+  "filterSpreadsheet": {
+    "message": "表計算"
+  },
+  "filterOther": {
+    "message": "その他"
+  },
+  "moreKinds": {
+    "message": "その他の種類"
+  },
+  "sortByTime": {
+    "message": "時間"
+  },
+  "sortBySize": {
+    "message": "サイズ"
+  },
+  "sortByName": {
+    "message": "名前"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "名前またはリンクを検索"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "一致するリソースがありません"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "別のキーワードに変更するか、フィルター条件をクリアしてください。"
+  },
+  "clearFilters": {
+    "message": "フィルターをクリア"
+  },
+  "sortByStatus": {
+    "message": "状態"
+  },
+  "sortAscending": {
+    "message": "昇順"
+  },
+  "sortDescending": {
+    "message": "降順"
+  },
+  "searchTasksPlaceholder": {
+    "message": "タスク名を検索"
+  },
+  "noMatchingTasksTitle": {
+    "message": "一致するタスクがありません"
+  },
+  "noMatchingTasksDescription": {
+    "message": "別のキーワードを試してみてください。"
+  },
+  "moreOptions": {
+    "message": "その他のオプション"
+  },
+  "removeCompletedTasks": {
+    "message": "完了したタスクを削除"
+  },
+  "removeMissingTasks": {
+    "message": "削除済みのタスクを削除"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "$1 個のタスクの削除に失敗しました"
+  },
+  "mediaButtonStyle": {
+    "message": "メディアボタンのスタイル"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "標準"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "コンパクト"
+  },
+  "mediaButtonStyleHint": {
+    "message": "コンパクトスタイルではアイコンのみを表示します"
   }
 }
