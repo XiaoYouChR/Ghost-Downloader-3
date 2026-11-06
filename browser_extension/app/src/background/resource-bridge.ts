@@ -50,6 +50,7 @@ type NetworkResponseMeta = {
   mime: string;
   filename: string;
   supportsRange: boolean;
+  cookie: string;
 };
 
 type DesktopRequestSender = <T extends CommandResult>(payload: Record<string, unknown>, timeoutMs?: number) => Promise<T>;
@@ -217,9 +218,10 @@ export function createResourceBridge(options: {
   }
 
   function toResponseMeta(headers: chrome.webRequest.HttpHeader[] | undefined): NetworkResponseMeta {
-    const meta: NetworkResponseMeta = { size: 0, mime: "", filename: "", supportsRange: false };
+    const meta: NetworkResponseMeta = { size: 0, mime: "", filename: "", supportsRange: false, cookie: "" };
     let contentLengthSize = 0;
     let contentRangeSize = 0;
+    const cookies: string[] = [];
     for (const header of headers ?? []) {
       const name = (header.name ?? "").toLowerCase();
       const value = (header.value ?? "").trim();
@@ -242,9 +244,16 @@ export function createResourceBridge(options: {
         const size = Number.parseInt(value.split("/")[1] ?? "", 10);
         contentRangeSize = Number.isFinite(size) && size > 0 ? size : contentRangeSize;
         meta.supportsRange = true;
+      } else if (name === "set-cookie") {
+        const pair = value.split(";", 1)[0]?.trim() ?? "";
+        const eqIndex = pair.indexOf("=");
+        if (eqIndex > 0 && eqIndex < pair.length - 1) {
+          cookies.push(pair);
+        }
       }
     }
     meta.size = contentRangeSize || contentLengthSize;
+    meta.cookie = cookies.join("; ");
     return meta;
   }
 
@@ -320,11 +329,10 @@ export function createResourceBridge(options: {
   ) {
     const headerSnapshot = cache.headerSnapshotByUrl(url);
     const headers = {
-      ...(headerSnapshot?.headers ?? {}),
+      ...cache.headersForUrl(url, pageUrl || tab?.url || ""),
       ...(parts.extraHeaders ?? {}),
     };
-    const referer = headers.referer || pageUrl || tab?.url || "";
-    if (referer) { headers.referer = referer; }
+    const referer = headers.referer || "";
 
     cache.add({
       id: `${tabId}:${urlWithoutHash(url, true)}`,
@@ -360,10 +368,19 @@ export function createResourceBridge(options: {
 
   async function captureNetworkResource(details: chrome.webRequest.OnResponseStartedDetails) {
     const meta = toResponseMeta(details.responseHeaders);
+    if (details.statusCode >= 400 || meta.mime === "text/html" || meta.mime === "application/xhtml+xml") {
+      return;
+    }
     meta.mime = mimeFromUrl(details.url) || meta.mime;
     const responseSupportsRange = meta.supportsRange || details.statusCode === 206;
-    if (isCapturableUrl(details.url) && (responseSupportsRange || meta.size > 0)) {
-      cache.setHeaderSnapshot(details.url, {}, details.tabId > 0 ? details.tabId : lastActiveTabId, responseSupportsRange, meta.size);
+    if (isCapturableUrl(details.url) && (meta.cookie || responseSupportsRange || meta.size > 0)) {
+      cache.setHeaderSnapshot(
+        details.url,
+        meta.cookie ? { cookie: meta.cookie } : {},
+        details.tabId > 0 ? details.tabId : lastActiveTabId,
+        responseSupportsRange,
+        meta.size,
+      );
     }
 
     if (!shouldCapture(details.url, details.type, fileExtension(meta.filename || filenameFromUrl(details.url)), meta.mime)) {
@@ -384,25 +401,6 @@ export function createResourceBridge(options: {
     });
   }
 
-  async function captureRequestResource(details: chrome.webRequest.OnSendHeadersDetails) {
-    if (!shouldCapture(details.url, details.type, fileExtension(filenameFromUrl(details.url)), mimeFromUrl(details.url))) {
-      return;
-    }
-
-    const tabId = details.tabId > 0 ? details.tabId : (lastActiveTabId ?? await currentTabId());
-    if (!tabId) {
-      return;
-    }
-
-    const tab = await findTab(tabId);
-    addResource(details.url, tabId, tab, initiatorOf(details), {
-      filename: basenameOf(filenameFromUrl(details.url)) || "resource",
-      mime: mimeFromUrl(details.url),
-      size: 0,
-      supportsRange: false,
-    });
-  }
-
   async function routeBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
     const matchedResource = cache.resourceByUrl(finalUrl) ?? cache.resourceByUrl(downloadItem.url);
@@ -413,10 +411,7 @@ export function createResourceBridge(options: {
       || "resource";
 
     const headerSnapshot = cache.headerSnapshotByUrl(finalUrl) ?? cache.headerSnapshotByUrl(downloadItem.url);
-    const headers = { ...(headerSnapshot?.headers ?? {}) };
-    if (downloadItem.referrer && !headers.referer) {
-      headers.referer = downloadItem.referrer;
-    }
+    const headers = cache.headersForUrl(finalUrl, downloadItem.referrer);
 
     try {
       const result = await options.sendDesktopRequest<CommandResult>({
@@ -519,11 +514,8 @@ export function createResourceBridge(options: {
     }
 
     const snapshot = cache.headerSnapshotByUrl(url);
-    const headers: Record<string, string> = {
-      ...(snapshot?.headers ?? cache.headersForPage(url)),
-    };
-    const referer = headers.referer || fallbackPageUrl;
-    if (referer) { headers.referer = referer; }
+    const headers = cache.headersForUrl(url, fallbackPageUrl);
+    const referer = headers.referer || "";
     const synthesized: Resource = {
       id,
       tabId,
@@ -607,7 +599,7 @@ export function createResourceBridge(options: {
         url: selection.pageUrl,
         pageUrl: fallbackPageUrl || selection.pageUrl,
         pageTitle: title || "",
-        headers: cache.headersForPage(selection.pageUrl),
+        headers: cache.headersForUrl(selection.pageUrl),
       },
     }, 120_000);
   }
@@ -747,13 +739,12 @@ export function createResourceBridge(options: {
     buildPopupStateData,
     captureNetworkResource,
     capturePageResource,
-    captureRequestResource,
     downloadPageMedia,
     flushState,
     enrichResource: (...args: Parameters<typeof cache.enrichResource>) => cache.enrichResource(...args),
     enrichTabPoster: (tabId: number, posterUrl: string) =>
       cache.enrichTabPoster(tabId, posterUrl),
-    headersForPage: (pageUrl: string) => cache.headersForPage(pageUrl),
+    headersForUrl: (url: string, fallbackReferer?: string) => cache.headersForUrl(url, fallbackReferer),
     routeBrowserDownload,
     onNavigationCommitted,
     onRequestHeaders,

@@ -1,7 +1,8 @@
 export type ExtensionBrowserTarget = "chromium" | "firefox";
 
 const REQUEST_HEADERS = "requestHeaders" as chrome.webRequest.OnSendHeadersOptions;
-const EXTRA_HEADERS = "extraHeaders" as chrome.webRequest.OnSendHeadersOptions;
+const RESPONSE_HEADERS = "responseHeaders" as chrome.webRequest.OnResponseStartedOptions;
+const EXTRA_HEADERS = "extraHeaders" as chrome.webRequest.OnSendHeadersOptions & chrome.webRequest.OnResponseStartedOptions;
 
 let cachedBrowserTarget: ExtensionBrowserTarget | null = null;
 
@@ -28,6 +29,12 @@ export function onSendHeadersExtraInfoSpec(): chrome.webRequest.OnSendHeadersOpt
   return extensionBrowserTarget() === "firefox"
     ? [REQUEST_HEADERS]
     : [REQUEST_HEADERS, EXTRA_HEADERS];
+}
+
+export function onResponseStartedExtraInfoSpec(): chrome.webRequest.OnResponseStartedOptions[] {
+  return extensionBrowserTarget() === "firefox"
+    ? [RESPONSE_HEADERS]
+    : [RESPONSE_HEADERS, EXTRA_HEADERS];
 }
 
 export function supportsDownloadDeterminingFilename(): boolean {

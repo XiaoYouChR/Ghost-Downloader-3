@@ -25,7 +25,7 @@ import {
     openActionPopup,
     queryTabs,
 } from "./background/chrome-helpers";
-import {onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
+import {onResponseStartedExtraInfoSpec, onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
 import {domainFromUrl} from "./shared/utils";
 import {loadBaseIcons, updateIconForTasks} from "./background/icon-progress";
 import {enqueue, flush, pendingCount} from "./background/task-queue";
@@ -254,10 +254,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
     const url = info.linkUrl || info.srcUrl;
     if (!url) { return; }
     const draft = info.menuItemId === "gd-save-as";
-    const headers = resourceBridge.headersForPage(info.pageUrl ?? "");
-    if (!headers.referer && info.pageUrl) {
-      headers.referer = info.pageUrl;
-    }
+    const headers = resourceBridge.headersForUrl(url, info.pageUrl ?? "");
     const result = await sendTaskOrEnqueue({
       type: "create_task",
       source: "download",
@@ -348,7 +345,6 @@ chrome.webRequest.onSendHeaders.addListener(
     // CORS preflight shares the media URL; its access-control-request-* headers would merge into the snapshot.
     if (details.method === "OPTIONS") { return; }
     resourceBridge.onRequestHeaders(details);
-    void resourceBridge.captureRequestResource(details);
   },
   { urls: ["<all_urls>"] },
   onSendHeadersExtraInfoSpec(),
@@ -360,7 +356,7 @@ chrome.webRequest.onResponseStarted.addListener(
     void resourceBridge.captureNetworkResource(details);
   },
   { urls: ["<all_urls>"] },
-  ["responseHeaders"],
+  onResponseStartedExtraInfoSpec(),
 );
 
 let isBypassKeyHeld = false;

@@ -61,6 +61,39 @@ export function selectAllowedHeaders(headers: Record<string, string> | undefined
   return result;
 }
 
+function buildCookieHeader(base: string | undefined, override: string | undefined): string {
+  if (!base) {
+    return override ?? "";
+  }
+  if (!override) {
+    return base;
+  }
+  const cookies = new Map<string, string>();
+  for (const source of [base, override]) {
+    for (const part of source.split(";")) {
+      const pair = part.trim();
+      const eqIndex = pair.indexOf("=");
+      if (eqIndex <= 0) {
+        continue;
+      }
+      cookies.set(pair.slice(0, eqIndex).trim(), pair.slice(eqIndex + 1).trim());
+    }
+  }
+  return Array.from(cookies, ([name, value]) => `${name}=${value}`).join("; ");
+}
+
+function buildHeaders(
+  base: Record<string, string> | undefined,
+  override: Record<string, string> | undefined,
+): Record<string, string> {
+  const headers: Record<string, string> = { ...(base ?? {}), ...(override ?? {}) };
+  const cookie = buildCookieHeader(base?.cookie, override?.cookie);
+  if (cookie) {
+    headers.cookie = cookie;
+  }
+  return headers;
+}
+
 export function urlWithoutHash(value: string, allowBlob = false): string {
   if (!value) {
     return "";
@@ -99,8 +132,9 @@ function headerSnapshotFromStorage(snapshot: HeaderSnapshot): HeaderSnapshot {
 
 // Pure in-memory cache for captured resources + request-header snapshots. No chrome deps,
 // so it unit-tests cleanly. The bridge owns persistence (toSnapshot/load) and wires
-// `onChange` to a debounced save. clearTab clears both resources and headers because tab
-// close and navigation always need both gone together.
+// `onChange` to a debounced save. Header snapshots outlive tab close and navigation (bounded
+// by TTL and capacity) because download popups and WAF redirects close or navigate the tab
+// before the download handoff reads the captured headers.
 export class ResourceCache {
   private resourcesByTab = new Map<number, Map<string, Resource>>();
   private resourcesById = new Map<string, Resource>();
@@ -132,10 +166,7 @@ export class ResourceCache {
           supportsRange: resource.supportsRange || existing.supportsRange,
           referer: resource.referer || existing.referer,
           // Fresh cookies/auth/sec-* override stale ones (per-key, like every field above).
-          requestHeaders: {
-            ...existing.requestHeaders,
-            ...resource.requestHeaders,
-          },
+          requestHeaders: buildHeaders(existing.requestHeaders, resource.requestHeaders),
           capturedAt: Math.max(existing.capturedAt, resource.capturedAt),
           sentToDesktopAt: existing.sentToDesktopAt ?? resource.sentToDesktopAt,
         }
@@ -260,24 +291,14 @@ export class ResourceCache {
 
   clearTab(tabId: number): void {
     const resourceMap = this.resourcesByTab.get(tabId);
-    if (resourceMap) {
-      for (const resourceId of resourceMap.keys()) {
-        this.resourcesById.delete(resourceId);
-      }
-      this.resourcesByTab.delete(tabId);
+    if (!resourceMap) {
+      return;
     }
-
-    let headersChanged = false;
-    for (const [url, snapshot] of this.headerSnapshotsByUrl.entries()) {
-      if (snapshot.tabId === tabId) {
-        this.headerSnapshotsByUrl.delete(url);
-        headersChanged = true;
-      }
+    for (const resourceId of resourceMap.keys()) {
+      this.resourcesById.delete(resourceId);
     }
-
-    if (resourceMap || headersChanged) {
-      this.onChange();
-    }
+    this.resourcesByTab.delete(tabId);
+    this.onChange();
   }
 
   headerSnapshotByUrl(url: string): HeaderSnapshot | null {
@@ -294,10 +315,7 @@ export class ResourceCache {
     size = 0,
   ): void {
     const existing = this.headerSnapshotsByUrl.get(url);
-    const mergedHeaders = {
-      ...(existing?.headers ?? {}),
-      ...headers,
-    };
+    const mergedHeaders = buildHeaders(existing?.headers, headers);
     const mergedSupportsRange = supportsRange || Boolean(existing?.supportsRange);
     const mergedSize = (size > 0 ? size : 0) || existing?.size || 0;
     if (Object.keys(mergedHeaders).length === 0 && !mergedSupportsRange && !mergedSize) {
@@ -315,29 +333,29 @@ export class ResourceCache {
     this.onChange();
   }
 
-  // SPA watch URLs often have no snapshot of their own; fall back to the freshest same-host
-  // request that carried a cookie.
-  headersForPage(pageUrl: string): Record<string, string> {
-    const host = hostOf(pageUrl);
-    if (host === null) {
-      return {};
-    }
-
-    let snapshot = this.headerSnapshotByUrl(pageUrl);
-    if (!snapshot?.headers.cookie) {
-      let freshest: HeaderSnapshot | null = null;
+  // Direct URL snapshot wins for non-cookie headers; cookies merge with the freshest
+  // same-host snapshot in chronological order so auth/WAF cookies set on a sibling URL
+  // or challenge response propagate even when the direct URL had stale pre-auth cookies.
+  headersForUrl(url: string, fallbackReferer = ""): Record<string, string> {
+    const direct = this.headerSnapshotByUrl(url);
+    let freshest: HeaderSnapshot | null = null;
+    const host = hostOf(url);
+    if (host !== null) {
       for (const candidate of this.headerSnapshotsByUrl.values()) {
-        if (!candidate.headers.cookie || hostOf(candidate.url) !== host) {
-          continue;
-        }
-        if (!freshest || candidate.capturedAt > freshest.capturedAt) {
+        if (candidate.headers.cookie && hostOf(candidate.url) === host && (!freshest || candidate.capturedAt > freshest.capturedAt)) {
           freshest = candidate;
         }
       }
-      snapshot = freshest;
     }
-
-    return { ...(snapshot?.headers ?? {}) };
+    const headers: Record<string, string> = { ...(direct?.headers ?? freshest?.headers ?? {}) };
+    const cookie = buildCookieHeader(direct?.headers.cookie, freshest?.headers.cookie);
+    if (cookie) {
+      headers.cookie = cookie;
+    }
+    if (fallbackReferer && !direct?.headers.referer) {
+      headers.referer = fallbackReferer;
+    }
+    return headers;
   }
 
   // Lets resourceForMediaUrl wait when a click races ahead of webRequest (SW restart).
