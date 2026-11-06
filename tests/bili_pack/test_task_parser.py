@@ -314,3 +314,42 @@ async def test_probe_size_unknown_without_content_range(startServer):
     assert await probeSize(url, {}) == 0
 
 
+def test_match_short_link():
+    from app.models.task import TaskOptions
+    from bili_pack.pack import BilibiliParser
+
+    parser = BilibiliParser()
+    assert parser.match(TaskOptions(url="https://b23.tv/eRp4567"))
+    assert parser.matchPassive(TaskOptions(url="https://b23.tv/eRp4567"))
+    assert parser.match(TaskOptions(url="https://b23.tv/"))
+    assert not parser.matchPassive(TaskOptions(url="https://b23.tv/"))
+
+
+async def test_fetch_redirect_strips_query_and_fragment(startServer):
+    from aiohttp import web
+    from app.client import buildClient
+    from bili_pack.pack import fetchRedirectUrl
+
+    async def handler(request):
+        if request.query.get("code") == "valid":
+            return web.Response(
+                status=302,
+                headers={
+                    "Location": "https://www.bilibili.com/video/BV1eugW6DEYT/?buvid=1&p=1&share_source=COPY#reply",
+                },
+            )
+        return web.Response(status=200, body=b"not found")
+
+    baseUrl = await startServer(handler)
+    client = buildClient()
+    try:
+        resolved = await fetchRedirectUrl(client, f"{baseUrl}?code=valid")
+        assert resolved == "https://www.bilibili.com/video/BV1eugW6DEYT/"
+
+        with pytest.raises(ValueError, match="不是有效的 Bilibili 视频链接"):
+            await fetchRedirectUrl(client, f"{baseUrl}?code=invalid")
+    finally:
+        client.close()
+
+
+

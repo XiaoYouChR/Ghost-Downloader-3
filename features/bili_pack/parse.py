@@ -16,6 +16,11 @@ class BiliUrl:
     selectedPages: list[int] | None = None
 
 
+def matchShortUrl(url: str) -> bool:
+    hostname = (urlparse(url).hostname or "").lower()
+    return hostname == "b23.tv" or hostname.endswith(".b23.tv")
+
+
 def parseBiliUrl(url: str) -> BiliUrl:
     parsed = urlparse(url)
     videoIdMatch = re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", parsed.path)

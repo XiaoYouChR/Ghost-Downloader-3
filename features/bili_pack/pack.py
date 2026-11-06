@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
+from wreq.redirect import Policy
+
 from app.client import buildClient
 from app.i18n import N
 from app.models.pack import FeaturePack, PackServices, TaskParser
@@ -10,7 +12,7 @@ from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
 from .config import bilibiliConfig
-from .parse import BiliUrl, buildFavoritePages, buildPages, matchFavoriteVideo, parseBiliUrl, toHttps
+from .parse import BiliUrl, buildFavoritePages, buildPages, matchFavoriteVideo, matchShortUrl, parseBiliUrl, toHttps
 from .stream import buildSize, fetchPlayurl, toStreamUrl
 from .task import BiliPage, BilibiliTask
 
@@ -28,11 +30,13 @@ class BilibiliParser(TaskParser):
 
     def match(self, options: TaskOptions) -> bool:
         hostname = (urlparse(options.url).hostname or "").lower()
-        return hostname == "bilibili.com" or hostname.endswith(".bilibili.com")
+        return hostname == "bilibili.com" or hostname.endswith(".bilibili.com") or matchShortUrl(options.url)
 
     def matchPassive(self, options: TaskOptions) -> bool:
         if not self.match(options):
             return False
+        if matchShortUrl(options.url):
+            return bool(urlparse(options.url).path.strip("/"))
         try:
             biliUrl = parseBiliUrl(options.url)
         except ValueError:
@@ -46,26 +50,16 @@ class BilibiliParser(TaskParser):
 
         await self.pack.account.fetchWbiKeys()
 
-        parsed = urlparse(url)
-        referer = parsed._replace(netloc="www.bilibili.com").geturl() if (
-            (parsed.hostname or "").lower() != "bilibili.com"
-        ) else url
-
         apiHeaders = {}
         cookie = self.pack.account.cookie
         if cookie:
             apiHeaders["cookie"] = cookie
 
-        downloadHeaders = {
-            **dict(options.headers),
-            "referer": referer,
-        }
-        if cookie:
-            downloadHeaders["cookie"] = cookie
-
         client = buildClient(emulation=None, headers=apiHeaders)
 
         try:
+            if matchShortUrl(url):
+                url = await fetchRedirectUrl(client, url)
             biliUrl = parseBiliUrl(url)
             if biliUrl.favoriteId:
                 parsedPages, title, coverUrl = await fetchFavorite(client, biliUrl.favoriteId)
@@ -76,6 +70,17 @@ class BilibiliParser(TaskParser):
                 raise ValueError("不是有效的 Bilibili 视频链接")
             if not parsedPages:
                 raise ValueError("未获取到视频分P信息")
+
+            parsed = urlparse(url)
+            referer = parsed._replace(netloc="www.bilibili.com").geturl() if (
+                (parsed.hostname or "").lower() != "bilibili.com"
+            ) else url
+            downloadHeaders = {
+                **dict(options.headers),
+                "referer": referer,
+            }
+            if cookie:
+                downloadHeaders["cookie"] = cookie
 
             requestedQuality = bilibiliConfig.defaultQuality.value
             requestedAudioQuality = bilibiliConfig.defaultAudioQuality.value
@@ -137,6 +142,17 @@ class BilibiliParser(TaskParser):
             client.close()
 
 
+async def fetchRedirectUrl(client: wreq.Client, url: str) -> str:
+    response = await client.get(url, redirect=Policy.none())
+    try:
+        location = bytes(response.headers.get("location") or b"").decode()
+    finally:
+        response.close()
+    if not location:
+        raise ValueError("不是有效的 Bilibili 视频链接")
+    return urlparse(location)._replace(query="", fragment="").geturl()
+
+
 async def fetchFavorite(client: wreq.Client, favoriteId: int) -> tuple[list[BiliPage], str, str]:
     medias: list[dict[str, Any]] = []
     info: dict[str, Any] = {}
@@ -196,7 +212,7 @@ async def fetchView(client: wreq.Client, biliUrl: BiliUrl) -> dict[str, Any]:
             raise ValueError("未获取到合集信息")
 
     viewApiUrl = (
-        f"https://api.bilibili.com/x/web-interface/view?avid={videoId[2:]}"
+        f"https://api.bilibili.com/x/web-interface/view?aid={videoId[2:]}"
         if videoId.startswith("av")
         else f"https://api.bilibili.com/x/web-interface/view?bvid={videoId}"
     )
