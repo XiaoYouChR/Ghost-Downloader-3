@@ -6,9 +6,11 @@ from threading import Event
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+from loguru import logger
+
 from app.config.cfg import cfg
 from app.config.paths import FEATURES_DIR
-from app.models.task import TaskError, TaskOptions
+from app.models.task import TaskOptions
 from app.platform import file_association
 from app.loader import loadPacks
 
@@ -55,8 +57,7 @@ class FeatureService:
         self._packs.append(pack)
         self._packByPackId[pack.packId] = pack
 
-        pack.parse = self._parse
-        pack.probe = self.probe
+        pack.parse = self.parse
         pack.addTask = self._taskService.add
         pack.submit = self._coroutineRunner.submit
 
@@ -66,6 +67,7 @@ class FeatureService:
         for ParserClass in pack.parsers:
             parser = ParserClass()
             parser.pack = pack
+            parser.delegate = self._parse
             self._parsers.append(parser)
         self._parsers.sort(key=lambda p: p.priority)
 
@@ -89,26 +91,17 @@ class FeatureService:
 
     async def _parse(self, options: TaskOptions) -> Task:
         options = toPresetOptions(options)
-        parser = next((parser for parser in self._parsers if parser.match(options)), None)
-        if parser is None:
+        matched = [parser for parser in self._parsers if parser.match(options)]
+        if not matched:
             raise ValueError(f"No parser matched: {options.url}")
-        return await parser.parse(options)
-
-    async def probe(self, options: TaskOptions) -> TaskOptions:
-        options = toPresetOptions(options)
-        parser = next((parser for parser in self._parsers if parser.match(options)), None)
-        if parser is None:
-            raise ValueError(f"No parser matched: {options.url}")
-        return await parser.probe(options)
-
-    async def probeRelink(self, task: Task, options: TaskOptions) -> TaskOptions:
-        try:
-            probed = await self.probe(options)
-        except NotImplementedError:
-            raise TaskError("该链接不能用于更换") from None
-        if not task.canReuseProgress(probed) and not task.canRelinkToOtherContent:
-            raise TaskError("新链接的内容与原任务不同，请重新添加任务")
-        return probed
+        if not options.isProbed:
+            return await matched[0].parse(options)
+        for parser in matched[:-1]:
+            try:
+                return await parser.parse(options)
+            except Exception as e:
+                logger.opt(exception=e).warning("无法按内容解析，按普通文件下载 {}", options.url)
+        return await matched[-1].parse(options)
 
     def match(self, url: str) -> bool:
         options = TaskOptions(url=url)

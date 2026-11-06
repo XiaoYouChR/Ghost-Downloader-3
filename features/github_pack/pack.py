@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from asyncio import CancelledError
 from dataclasses import dataclass, field, fields as dc_fields, replace
+from pathlib import Path
 from urllib.parse import urlparse
 
 from loguru import logger
@@ -7,7 +10,6 @@ from loguru import logger
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
-from http_pack.pack import buildStep, parseProbed
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
 from .probe import probeUrls, toProxyHeaders
@@ -58,6 +60,11 @@ class GitHubHttpTaskStep(HttpTaskStep):
         kwargs = {f.name: getattr(step, f.name) for f in dc_fields(HttpTaskStep) if f.init}
         return cls(**kwargs, fallbackUrls=fallbackUrls)
 
+    def rangeStep(self, start: int, end: int, path: Path) -> GitHubHttpTaskStep:
+        step = self.build(super().rangeStep(start, end, path), list(self.fallbackUrls))
+        step._bindTask(self.task)
+        return step
+
     async def run(self, reportSpeed, waitForSpeedLimit):
         while True:
             try:
@@ -69,7 +76,7 @@ class GitHubHttpTaskStep(HttpTaskStep):
                 if not self.fallbackUrls:
                     raise
                 nextUrl, *self.fallbackUrls = self.fallbackUrls
-                logger.warning("GitHub 下载 fallback: {} → {}", self.url, nextUrl)
+                logger.warning("GitHub 下载 fallback: {} -> {}", self.url, nextUrl)
                 self.url = nextUrl
                 self.headers = toProxyHeaders(self.headers)
                 self.subworkers = []
@@ -89,12 +96,6 @@ class GitHubParser(TaskParser):
         return githubConfig.enabled.value and isGitHubFileUrl(options.url) and not options.isProbed
 
     async def parse(self, options: TaskOptions) -> Task:
-        task = await parseProbed(self.pack.parse, await self.probe(options))
-        if type(task) is HttpTask:
-            task.packId = "github"
-        return task
-
-    async def probe(self, options: TaskOptions) -> TaskOptions:
         originalUrl = options.url
         selected = selectedProxySite()
         urls = [f"{site}/{originalUrl}" for site in GITHUB_PROXY_SITES if site != selected] + [originalUrl]
@@ -111,10 +112,16 @@ class GitHubParser(TaskParser):
 
         logger.info("GitHub 选用 {}", winner)
         headers = options.headers if winner == originalUrl else toProxyHeaders(options.headers)
-        template = buildStep(HttpTaskStep, 1, winner, replace(options, headers=headers), file)
-        if fallbackUrls:
-            template = GitHubHttpTaskStep.build(template, fallbackUrls)
-        return replace(options, file=file, template=template)
+        task = await self.delegate(replace(options, url=winner, headers=headers, file=file))
+        if task.packId != "m3u8":
+            task.url = originalUrl
+        if task.steps and type(task.steps[0]) is HttpTaskStep and fallbackUrls:
+            step = GitHubHttpTaskStep.build(task.steps[0], fallbackUrls)
+            step._bindTask(task)
+            task.steps[0] = step
+        if type(task) is HttpTask:
+            task.packId = "github"
+        return task
 
 
 class GitHubPack(FeaturePack):

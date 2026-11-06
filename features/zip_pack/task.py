@@ -5,12 +5,11 @@ import os
 import shutil
 import zipfile
 from contextlib import suppress
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from app.config.cfg import cfg
-from app.models.task import Task, TaskFile, TaskOptions, TaskStatus, TaskStep, deletePlaceholder
+from app.models.task import Task, TaskError, TaskFile, TaskStatus, TaskStep, deletePlaceholder
 from app.platform.filesystem import deletePath, splitStemExt
 from http_pack.task import HttpTaskStep
 from .sparse import SparseView
@@ -27,13 +26,12 @@ class ZipEntry(TaskFile):
 class ZipTask(Task):
     packId: str = "zip"
     canEdit = True
-    canRelinkToOtherContent = False
     fileType = ZipEntry
     tailOffset: int = 0
     metadataEncoding: str = ""
 
     @property
-    def wholeStep(self) -> HttpTaskStep:
+    def archiveStep(self) -> HttpTaskStep:
         return self.steps[0]
 
     @property
@@ -54,7 +52,7 @@ class ZipTask(Task):
 
     @property
     def hasArchive(self) -> bool:
-        return self.wholeStep.status == TaskStatus.COMPLETED or self.wholeStep.receivedBytes > 0
+        return self.archiveStep.status == TaskStatus.COMPLETED or self.archiveStep.receivedBytes > 0
 
     @property
     def isOutputFolder(self) -> bool:
@@ -71,7 +69,7 @@ class ZipTask(Task):
     def setSelection(self, selectedIndexes):
         super().setSelection(selectedIndexes)
         if self.isWhole:
-            self.fileSize = self.wholeStep.fileSize
+            self.fileSize = self.archiveStep.fileSize
         elif self.extractStep.status == TaskStatus.COMPLETED and any(
                 file.selected and not file.completed for file in self.files):
             self.extractStep.reset()
@@ -81,14 +79,21 @@ class ZipTask(Task):
             file.downloadedBytes, file.completed = 0, False
         return super().reset()
 
-    def canReuseProgress(self, probed: TaskOptions) -> bool:
-        return probed.file.fileSize == self.wholeStep.fileSize
-
-    def replaceWith(self, probed: TaskOptions) -> None:
-        old, new = self.wholeStep, probed.template
-        new.status, new.progress, new.receivedBytes = old.status, old.progress, old.receivedBytes
+    def relink(self, newTask: Task) -> None:
+        if not isinstance(newTask, ZipTask):
+            raise TaskError("该链接不能用于更换")
+        old, new = self.archiveStep, newTask.archiveStep
+        if (new.fileSize != old.fileSize
+                or [(f.relativePath, f.size) for f in newTask.files]
+                != [(f.relativePath, f.size) for f in self.files]):
+            raise TaskError("新链接的内容与原任务不同，请重新添加任务")
+        new.status = TaskStatus.PAUSED if old.status in {TaskStatus.RUNNING, TaskStatus.FAILED} else old.status
+        new.progress, new.receivedBytes = old.progress, old.receivedBytes
         new._bindTask(self)
-        self.url = probed.url
+        if self.extractStep.status in {TaskStatus.RUNNING, TaskStatus.FAILED}:
+            self.extractStep.status = TaskStatus.PAUSED
+            self.extractStep.error = None
+        self.url = newTask.url
         self.steps[0] = new
         self.updateStatus()
 
@@ -100,7 +105,7 @@ class ZipTask(Task):
             deletePath(self.folderPath)
 
     def deletePlaceholders(self) -> None:
-        if self.wholeStep.status != TaskStatus.COMPLETED and (self.isWhole or self.hasArchive):
+        if self.archiveStep.status != TaskStatus.COMPLETED and (self.isWhole or self.hasArchive):
             deletePath(self.archivePath)
         deletePath(Path(f"{self.archivePath}.ghd"))
         deletePath(Path(f"{self.folderPath}.ghd"))
@@ -135,12 +140,12 @@ class ZipExtractStep(TaskStep):
         self._spans: list[tuple[HttpTaskStep, list[ZipEntry]]] = []
         task.partPath.mkdir(parents=True, exist_ok=True)
         tailPath = task.partPath / "tail"
-        await self._buildRangeStep(task.tailOffset, task.wholeStep.fileSize, tailPath).run(
+        await task.archiveStep.rangeStep(task.tailOffset, task.archiveStep.fileSize, tailPath).run(
             reportSpeed, waitForSpeedLimit)
-        view = SparseView(task.wholeStep.fileSize)
+        view = SparseView(task.archiveStep.fileSize)
         view.addSegment(task.tailOffset, tailPath)
         archive = await asyncio.to_thread(zipfile.ZipFile, view, metadata_encoding=task.metadataEncoding or None)
-        slots = asyncio.Semaphore(max(1, task.wholeStep.subworkerCount))
+        slots = asyncio.Semaphore(max(1, task.archiveStep.subworkerCount))
         extracting = asyncio.Lock()
         supervisor = asyncio.create_task(self._supervise())
         try:
@@ -156,6 +161,7 @@ class ZipExtractStep(TaskStep):
                 await supervisor
             archive.close()
             view.close()
+        deletePath(task.partPath)
         self.receivedBytes = sum(file.windowEnd - file.localHeaderOffset for file in task.files if file.selected)
 
     async def _runSpan(self, span: list[ZipEntry], archive: zipfile.ZipFile, view: SparseView,
@@ -163,7 +169,7 @@ class ZipExtractStep(TaskStep):
         task: ZipTask = self.task
         start, end = span[0].localHeaderOffset, span[-1].windowEnd
         path = task.partPath / f"{start}-{end}"
-        step = self._buildRangeStep(start, end, path)
+        step = task.archiveStep.rangeStep(start, end, path)
         self._spans.append((step, span))
         try:
             async with slots:
@@ -185,15 +191,6 @@ class ZipExtractStep(TaskStep):
         finally:
             self._spans.remove((step, span))
         deletePath(path)
-
-    def _buildRangeStep(self, start: int, end: int, path: Path) -> HttpTaskStep:
-        whole = self.task.wholeStep
-        isSmall = end - start < cfg.maxReassignSize.value * 1024
-        step = replace(whole, httpByteOffset=start, fileSize=end - start, filePath=str(path),
-                       subworkerCount=1 if isSmall else whole.subworkerCount)
-        step.reset()
-        step._bindTask(self.task)
-        return step
 
     async def _supervise(self) -> None:
         while True:

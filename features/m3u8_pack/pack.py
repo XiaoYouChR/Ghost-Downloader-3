@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import replace
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from pathlib import Path
@@ -43,8 +42,6 @@ class M3U8Parser(TaskParser):
         return options.isProbed and options.file.matchType(MANIFEST_SUFFIXES, MANIFEST_CONTENT_TYPES)
 
     async def parse(self, options: TaskOptions) -> Task:
-        if options.isProbed:
-            options = replace(options, url=options.template.url, headers=options.template.headers)
         url = options.url.strip()
         headers = dict(options.headers)
         outputFolder = options.outputFolder

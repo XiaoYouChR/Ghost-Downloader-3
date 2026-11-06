@@ -54,7 +54,7 @@ _Avoid_: Part Folder、work folder、temp、cache、Staging（Staging 指更新�
 _Avoid_: merge、overwrite（覆盖指磁盘文件）
 
 **Relink**:
-为同一个文件换一个新地址，通常因为原链接失效。Task 的种类不变：新链接对应另一种 Task 时拒绝；种类相同但内容不同时，经用户确认后丢弃已下载的数据；内容决定了 Selectable File 的 Task（如压缩包）拒绝。只有地址会失效的 Task 提供 Relink。
+为同一个文件换一个新地址，通常因为原链接失效。保留原有进度继续下载；新链接对应另一种 Task 或文件内容不同时拒绝。只有地址会失效的 Task 提供 Relink。
 _Avoid_: 编辑链接、替换任务（与 Replace 混淆）
 
 **Missing**:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from app.models.pack import PackServices
-from app.models.task import TaskOptions, TaskStatus
+from app.models.task import TaskError, TaskOptions, TaskStatus
 from http_pack.pack import HttpPack
 from tests.helpers import buildFileContent, buildRangeHandler, waitUntil
 
@@ -28,9 +28,8 @@ async def test_relink_same_file_downloads_from_new_link(engine, http, startServe
     task = await http.parse(TaskOptions(url=oldUrl))
     engine.taskService.add(task, autoStart=False)
 
-    probed = await http.probe(TaskOptions(url=newUrl))
-    assert task.canReuseProgress(probed)
-    engine.taskService.edit(task, {}, probed)
+    newTask = await http.parse(TaskOptions(url=newUrl))
+    engine.taskService.edit(task, {}, newTask)
     engine.taskService.start(task)
     await waitUntil(lambda: task.status == TaskStatus.COMPLETED)
 
@@ -38,9 +37,9 @@ async def test_relink_same_file_downloads_from_new_link(engine, http, startServe
     assert (downloadFolder / task.name).read_bytes() == CONTENT
 
 
-async def test_relink_other_file_cannot_reuse_progress(engine, http, startServer):
+async def test_relink_other_file_rejects(engine, http, startServer):
     task = await http.parse(TaskOptions(url=await startServer(buildRangeHandler(CONTENT))))
+    newTask = await http.parse(TaskOptions(url=await startServer(buildRangeHandler(CONTENT[:500]))))
 
-    probed = await http.probe(TaskOptions(url=await startServer(buildRangeHandler(CONTENT[:500]))))
-
-    assert not task.canReuseProgress(probed)
+    with pytest.raises(TaskError):
+        engine.taskService.edit(task, {}, newTask)

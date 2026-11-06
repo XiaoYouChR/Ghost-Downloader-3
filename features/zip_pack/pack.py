@@ -4,10 +4,13 @@ import asyncio
 import zipfile
 from bisect import bisect_right
 
+from app.client import buildClient, toEmulation
+from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser
-from app.models.task import ResourceTaskOptions, Task, TaskOptions
+from app.models.task import ResourceTaskOptions, Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
-from http_pack.pack import fetchRange
+from http_pack.pack import buildStep
+from http_pack.task import HttpTaskStep, matchRange
 from .sparse import SparseView
 from .task import ZipEntry, ZipExtractStep, ZipTask
 
@@ -71,15 +74,38 @@ def buildEntries(infos: list[zipfile.ZipInfo], centralOffset: int) -> list[ZipEn
     return entries
 
 
+async def fetchRange(options: TaskOptions, offset: int, length: int) -> bytes:
+    emulation = toEmulation(options.clientProfile or cfg.clientProfile.value, options.sourceUserAgent)
+    client = buildClient(emulation=emulation, userAgent=options.userAgent or None, timeout=30)
+    try:
+        end = offset + length - 1
+        headers = {**options.headers, "range": f"bytes={offset}-{end}", "accept-encoding": "identity"}
+        response = await client.get(options.url, headers=headers)
+        try:
+            status = response.status.as_int()
+            contentRange = bytes(response.headers.get("content-range") or b"")
+            if status != 206 or not matchRange(contentRange, offset, end, None):
+                raise TaskError("服务器拒绝了范围请求，状态码：{status}", status=status)
+            data = bytes(await response.bytes())
+        finally:
+            response.close()
+    finally:
+        client.close()
+    if len(data) != length:
+        raise TaskError("服务器返回的数据不完整")
+    return data
+
+
 def buildZipTask(options: TaskOptions, entries: list[ZipEntry], tailOffset: int, metadataEncoding: str) -> ZipTask:
     name = options.name if isinstance(options, ResourceTaskOptions) and options.name else options.file.name
+    archiveStep = buildStep(HttpTaskStep, 1, options.url, options, options.file)
     return ZipTask(
         name=name,
         url=options.url,
         fileSize=options.file.fileSize,
         outputFolder=options.outputFolder,
         files=entries,
-        steps=[options.template, ZipExtractStep(stepIndex=2)],
+        steps=[archiveStep, ZipExtractStep(stepIndex=2)],
         tailOffset=tailOffset,
         metadataEncoding=metadataEncoding,
     )
@@ -95,12 +121,12 @@ class ZipParser(TaskParser):
     async def parse(self, options: TaskOptions) -> Task:
         size = options.file.fileSize
         tailOffset = max(0, size - TAIL_SIZE)
-        tail = await fetchRange(options.template, tailOffset, size - tailOffset)
+        tail = await fetchRange(options, tailOffset, size - tailOffset)
         centralOffset = parseCentralOffset(tail, tailOffset)
         if size - centralOffset > MAX_CENTRAL_SIZE:
             raise zipfile.BadZipFile("中央目录过大")
         if centralOffset < tailOffset:
-            tail = await fetchRange(options.template, centralOffset, tailOffset - centralOffset) + tail
+            tail = await fetchRange(options, centralOffset, tailOffset - centralOffset) + tail
             tailOffset = centralOffset
         view = SparseView(size)
         view.addSegment(tailOffset, tail)

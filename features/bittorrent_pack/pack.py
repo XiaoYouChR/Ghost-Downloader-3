@@ -8,12 +8,13 @@ from urllib.parse import urlparse
 
 import libtorrent as lt
 
+from app.client import buildClient, toEmulation
+from app.config.cfg import cfg
 from app.i18n import N
 
 from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
-from http_pack.pack import fetchContent
 
 from .config import bittorrentConfig
 from .session import PROXY_SCHEMES, btSession
@@ -52,7 +53,17 @@ class TorrentParser(TaskParser):
 
         localPath = localFilePath(url, {".torrent"})
         if options.isProbed:
-            torrentBytes = await fetchContent(options.template)
+            emulation = toEmulation(options.clientProfile or cfg.clientProfile.value, options.sourceUserAgent)
+            client = buildClient(emulation=emulation, userAgent=options.userAgent or None, timeout=30)
+            try:
+                response = await client.get(url, headers={**options.headers, "accept-encoding": "identity"})
+                try:
+                    response.raise_for_status()
+                    torrentBytes = bytes(await response.bytes())
+                finally:
+                    response.close()
+            finally:
+                client.close()
             sourceType, sourceUrl = "torrent", url
 
         elif localPath is not None:

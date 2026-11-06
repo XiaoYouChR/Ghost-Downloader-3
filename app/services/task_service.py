@@ -432,14 +432,11 @@ class TaskService:
             self._schedule(task)
         self._cancelWork(task, finished=onStopped)
 
-    def edit(self, task: Task, options: dict, probed: TaskOptions | None = None) -> None:
+    def edit(self, task: Task, options: dict, newTask: Task | None = None) -> None:
+        if newTask is not None:
+            task.relink(newTask)
         self.cancelChecksum(task)
-        needsDelete = probed is not None and not task.canReuseProgress(probed)
         def onStopped():
-            if needsDelete:
-                task.deleteFiles()
-            if probed is not None:
-                task.replaceWith(probed)
             task.setOptions(options)
             try:
                 self._store.updatePlaceholders(task)

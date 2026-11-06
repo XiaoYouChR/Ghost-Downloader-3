@@ -41,6 +41,7 @@ class UriScheme:
 class TaskParser:
     priority: int = 100
     pack: FeaturePack | None = None
+    delegate: Callable[[TaskOptions], Awaitable[Task]] | None = None
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError
@@ -49,9 +50,6 @@ class TaskParser:
         return self.match(options)
 
     async def parse(self, options: TaskOptions) -> Task:
-        raise NotImplementedError
-
-    async def probe(self, options: TaskOptions) -> TaskOptions:
         raise NotImplementedError
 
 
@@ -273,7 +271,6 @@ class FeaturePack:
 
     parsers: list[type[TaskParser]] = []
     parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
-    probe: Callable[[TaskOptions], Awaitable[TaskOptions]] | None = None
     addTask: Callable[[Task], None] | None = None
     submit: Callable[..., str] | None = None
 

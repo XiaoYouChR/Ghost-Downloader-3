@@ -248,8 +248,8 @@ async def test_relink_same_archive_keeps_selection(engine, features, startServer
     engine.taskService.add(task, autoStart=False)
     newUrl = await startArchive(startServer, archive)
 
-    probed = await features.probeRelink(task, TaskOptions(url=newUrl))
-    engine.taskService.edit(task, {}, probed)
+    newTask = await features.parse(TaskOptions(url=newUrl))
+    engine.taskService.edit(task, {}, newTask)
     engine.taskService.start(task)
     await runToCompletion(engine, task)
 
@@ -257,9 +257,9 @@ async def test_relink_same_archive_keeps_selection(engine, features, startServer
     assert listFolder(downloadFolder) == ["a", "a/readme.txt"]
 
 
-async def test_probe_relink_other_archive_rejects(features, startServer):
+async def test_relink_other_archive_rejects(engine, features, startServer):
     task = await features.parse(TaskOptions(url=await startArchive(startServer, buildArchive())))
-    otherUrl = await startArchive(startServer, buildArchive({"b.txt": b"b"}))
+    otherTask = await features.parse(TaskOptions(url=await startArchive(startServer, buildArchive({"b.txt": b"b"}))))
 
     with pytest.raises(TaskError):
-        await features.probeRelink(task, TaskOptions(url=otherUrl))
+        engine.taskService.edit(task, {}, otherTask)

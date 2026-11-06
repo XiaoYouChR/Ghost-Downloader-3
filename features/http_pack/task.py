@@ -15,7 +15,7 @@ from wreq import HeaderMap
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
-from app.models.task import Task, TaskError, TaskOptions, TaskStep, TaskStatus, SpecialFileSize
+from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
 
 STREAM_READ_TIMEOUT = 30
@@ -60,15 +60,20 @@ class HttpTask(Task):
     packId: str = "http"
     canEdit = True
 
-    def canReuseProgress(self, probed: TaskOptions) -> bool:
-        return self.fileSize > 0 and self.fileSize == probed.file.fileSize
-
-    def replaceWith(self, probed: TaskOptions) -> None:
-        self.url = probed.url
-        self.name = probed.file.name
-        self.fileSize = probed.file.fileSize
-        self.steps = []
-        self.addStep(probed.template)
+    def relink(self, newTask: Task) -> None:
+        if newTask.packId not in {"http", "github", "zip"}:
+            raise TaskError("该链接不能用于更换")
+        old, new = self.steps[0], newTask.steps[0]
+        if not new.canUseRangeRequests:
+            raise TaskError("该链接不能用于更换")
+        if self.fileSize <= 0 or new.fileSize != self.fileSize:
+            raise TaskError("新链接的内容与原任务不同，请重新添加任务")
+        new.status = TaskStatus.PAUSED if old.status in {TaskStatus.RUNNING, TaskStatus.FAILED} else old.status
+        new.progress, new.receivedBytes = old.progress, old.receivedBytes
+        new._bindTask(self)
+        self.url = newTask.url
+        self.packId = "github" if newTask.packId == "github" or type(new) is not HttpTaskStep else "http"
+        self.steps[0] = new
         self.updateStatus()
 
 
@@ -86,6 +91,23 @@ class HttpTaskStep(TaskStep):
     filePath: str = ""
     isAccelerated: bool = False
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
+
+    def rangeStep(self, start: int, end: int, path: Path) -> HttpTaskStep:
+        isSmall = end - start < cfg.maxReassignSize.value * 1024
+        step = HttpTaskStep(
+            stepIndex=self.stepIndex,
+            url=self.url,
+            headers=dict(self.headers),
+            clientProfile=self.clientProfile,
+            userAgent=self.userAgent,
+            subworkerCount=1 if isSmall else self.subworkerCount,
+            canUseRangeRequests=True,
+            httpByteOffset=start,
+            fileSize=end - start,
+            filePath=str(path),
+        )
+        step._bindTask(self.task)
+        return step
 
     @property
     def canPause(self) -> bool:

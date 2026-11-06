@@ -84,7 +84,6 @@ class TaskOptions:
     sourceUserAgent: str = ""
     subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
     file: RemoteFile | None = None
-    template: TaskStep | None = None
 
     @classmethod
     def fromOptions(cls, options: dict) -> TaskOptions:
@@ -212,7 +211,6 @@ class Task:
     fileType: ClassVar[type] = TaskFile
     hasOutputFile: ClassVar[bool] = True
     canSeed: ClassVar[bool] = False
-    canRelinkToOtherContent: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -456,11 +454,8 @@ class Task:
                 os.truncate(path, 0)
             deletePath(Path(f"{path}.ghd"))
 
-    def canReuseProgress(self, probed: TaskOptions) -> bool:
-        return False
-
-    def replaceWith(self, probed: TaskOptions) -> None:
-        raise NotImplementedError
+    def relink(self, newTask: Task) -> None:
+        raise TaskError("该链接不能用于更换")
 
     async def run(self, reportSpeed, waitForSpeedLimit):
         currentStep = None

@@ -66,11 +66,13 @@ async def test_parse_invalid_online_torrent_adds_plain_file(features, startServe
     assert task.name == "movie.torrent"
 
 
-async def test_probe_relink_magnet_link_rejects(features, startServer):
+@pytest.mark.filterwarnings("ignore::DeprecationWarning:bittorrent_pack.pack")
+async def test_relink_torrent_to_http_task_rejects(engine, features, startServer, tmp_path):
     task = await features.parse(TaskOptions(url=await startServer(buildRangeHandler(b"x" * 100))))
+    btTask = await features.parse(TaskOptions(url=await startServer(buildNamedHandler(buildTorrent(tmp_path), "movie.torrent"))))
 
     with pytest.raises(TaskError):
-        await features.probeRelink(task, TaskOptions(url=f"magnet:?xt=urn:btih:{'0' * 40}"))
+        engine.taskService.edit(task, {}, btTask)
 
 
 @pytest.mark.parametrize("infoHash", ["ab" * 20, "AB" * 20, "abcdefgh234567ab" * 2, "ABCDEFGH234567AB" * 2])

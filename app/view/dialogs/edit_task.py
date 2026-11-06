@@ -5,17 +5,16 @@ from typing import TYPE_CHECKING
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import (
     IndeterminateProgressBar, InfoBar, InfoBarPosition,
-    MessageBox, MessageBoxBase, SubtitleLabel,
+    MessageBoxBase, SubtitleLabel,
 )
 
-from app.format import toReadableSize
 from app.view.components.card_groups import OptionCardGroup
 from app.view.components.editors import addRecentFolder
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 
 if TYPE_CHECKING:
-    from app.models.task import Task, TaskOptions
+    from app.models.task import Task
 
 
 class EditTaskDialog(MessageBoxBase):
@@ -73,7 +72,7 @@ class LiveEditDialog(EditTaskDialog):
         self._setInteractive(False)
         taskOptions = TaskOptions.fromOptions({**options, "url": newUrl})
         self._pendingParseId = self._coroutineRunner.submit(
-            self._featureService.probeRelink(self._task, taskOptions),
+            self._featureService.parse(taskOptions),
             done=self._onReparsed,
             failed=self._onReparseFailed,
             options=options,
@@ -94,28 +93,13 @@ class LiveEditDialog(EditTaskDialog):
         self.progressBar.setVisible(not enabled)
         self.yesButton.setEnabled(enabled)
 
-    def _onReparsed(self, probed: TaskOptions, options: dict) -> None:
+    def _onReparsed(self, newTask: Task, options: dict) -> None:
         self._pendingParseId = ""
-
-        if self._task.canReuseProgress(probed):
-            self._taskService.edit(self._task, options, probed)
-            super().accept()
+        try:
+            self._taskService.edit(self._task, options, newTask)
+        except Exception as error:
+            self._onReparseFailed(error)
             return
-
-        receivedBytes = self._task.currentSnapshot()[2]
-        if receivedBytes > 0:
-            confirm = MessageBox(
-                self.tr("确认更换链接"),
-                self.tr("新链接与原链接的内容不一致，将清除已下载的 {0} 数据，是否继续？").format(
-                    toReadableSize(receivedBytes)
-                ),
-                self,
-            )
-            if not confirm.exec():
-                self._setInteractive(True)
-                return
-
-        self._taskService.edit(self._task, options, probed)
         super().accept()
 
     def _onReparseFailed(self, error, **_) -> None:

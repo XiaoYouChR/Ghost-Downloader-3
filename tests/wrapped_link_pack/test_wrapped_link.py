@@ -65,10 +65,14 @@ async def test_parse_wrapped_link_adds_task_of_inner_link(features, startServer)
     assert task.url == url
 
 
-async def test_probe_wrapped_link_relinks_to_inner_link(features, startServer):
-    url = await startServer(buildRangeHandler(buildFileContent(100)))
+async def test_relink_wrapped_link_updates_to_inner_link(engine, features, startServer):
+    content = buildFileContent(100)
+    oldUrl = await startServer(buildRangeHandler(content))
+    newUrl = await startServer(buildRangeHandler(content))
+    task = await features.parse(TaskOptions(url=oldUrl))
+    engine.taskService.add(task, autoStart=False)
 
-    probed = await features.probe(TaskOptions(url=wrap("qqdl", url.encode())))
+    newTask = await features.parse(TaskOptions(url=wrap("qqdl", newUrl.encode())))
+    engine.taskService.edit(task, {}, newTask)
 
-    assert probed.url == url
-    assert probed.file.fileSize == 100
+    assert task.url == newUrl
