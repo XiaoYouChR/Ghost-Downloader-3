@@ -183,14 +183,21 @@ class SettingPage(FastScrollArea):
         )
         self.chromiumInstallCard.hBoxLayout.insertSpacing(6, 16)
 
+        self.browserAutoPortCard = SwitchSettingCard(
+            FluentIcon.SYNC, self.tr("自动选择端口"),
+            self.tr("端口冲突时自动切换至可用候选端口"),
+            cfg.shouldAutoSelectBrowserPort,
+        )
+
         self.browserPortCard = SpinBoxSettingCard(
             FluentIcon.COMMAND_PROMPT, self.tr("服务端口"),
             self.tr("浏览器扩展连接使用的端口"),
             configItem=cfg.browserExtensionPort, singleStep=1, division=1,
         )
+        self.browserPortCard.setEnabled(not cfg.shouldAutoSelectBrowserPort.value)
 
         self.browserEnableCard = SwitchSettingCard(
-            FluentIcon.CONNECT, self.tr("启用浏览器扩展"), "", cfg.isBrowserExtensionEnabled,
+            FluentIcon.CONNECT, self.tr("启用浏览器扩展"), self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用"), cfg.isBrowserExtensionEnabled,
         )
 
         browserCards = [
@@ -201,6 +208,7 @@ class SettingPage(FastScrollArea):
             self.browserPairTokenCard,
             self.storeInstallCard,
             self.chromiumInstallCard,
+            self.browserAutoPortCard,
             self.browserPortCard,
         ]
         self.browserGroup.addSettingCards(browserCards)
@@ -395,6 +403,9 @@ class SettingPage(FastScrollArea):
     def _bind(self) -> None:
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
+        cfg.shouldAutoSelectBrowserPort.valueChanged.connect(
+            lambda isAuto: self.browserPortCard.setEnabled(not isAuto)
+        )
         self._browserService.connectionChanged.connect(self._refreshBrowserStatus, owner=self)
         self._browserListener.stateChanged.connect(self._refreshBrowserStatus, owner=self)
         self._aria2RpcListener.stateChanged.connect(self._refreshAria2Status, owner=self)

@@ -21,6 +21,7 @@ import {DEFAULT_SERVER_URL, EXTENSION_VERSION} from "../../shared/constants";
 import {
     BYPASS_SHORTCUT_KEY,
     MIN_TAKE_SIZE_KB_KEY,
+    SHOULD_AUTO_SELECT_PORT_KEY,
     SKIP_EXTENSIONS_KEY,
     SKIP_DOMAINS_KEY,
     SHOULD_OPEN_POPUP_ON_SENT_KEY,
@@ -113,6 +114,7 @@ export function SettingsPage({
   const [serverUrlDraft, setServerUrlDraft] = useState(serverUrl || DEFAULT_SERVER_URL);
   const [tokenDirty, setTokenDirty] = useState(false);
   const [serverDirty, setServerDirty] = useState(false);
+  const [shouldAutoSelectPort, setShouldAutoSelectPort] = useState(true);
   const [minSizeKB, setMinSizeKB] = useState(0);
   const [takeUnknownSize, setInterceptUnknown] = useState(true);
   const [skipExtensionsRaw, setSkipExtensionsRaw] = useState("");
@@ -147,6 +149,7 @@ export function SettingsPage({
 
   useEffect(() => {
     chrome.storage.local.get({
+      [SHOULD_AUTO_SELECT_PORT_KEY]: true,
       [MIN_TAKE_SIZE_KB_KEY]: 0,
       [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
       [SKIP_EXTENSIONS_KEY]: "",
@@ -155,6 +158,7 @@ export function SettingsPage({
       [BYPASS_SHORTCUT_KEY]: null,
       [MEDIA_BUTTON_STYLE_KEY]: "standard",
     }, (result) => {
+      setShouldAutoSelectPort(Boolean(result[SHOULD_AUTO_SELECT_PORT_KEY] ?? true));
       setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
       setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
       setSkipExtensionsRaw(String(result[SKIP_EXTENSIONS_KEY] ?? ""));
@@ -233,11 +237,21 @@ export function SettingsPage({
           </Button>
         </div>
 
+        <Field label={chrome.i18n.getMessage("autoSelectPort")}>
+          <Switch
+            checked={shouldAutoSelectPort}
+            onChange={(_event, data: SwitchOnChangeData) => {
+              setShouldAutoSelectPort(data.checked);
+              void chrome.storage.local.set({ [SHOULD_AUTO_SELECT_PORT_KEY]: data.checked });
+            }}
+          />
+        </Field>
+
         <Field label={chrome.i18n.getMessage("localServerAddress")}>
           <div className={styles.inputRow}>
             <Input
               className={styles.input}
-              disabled={savingServerUrl}
+              disabled={shouldAutoSelectPort || savingServerUrl}
               value={serverUrlDraft}
               onBlur={() => void commitServerUrl()}
               onChange={(_event, data) => {

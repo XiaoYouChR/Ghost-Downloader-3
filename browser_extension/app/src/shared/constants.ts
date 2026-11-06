@@ -1,6 +1,7 @@
 import type {AdvancedFeatureKey} from "./types";
 import {CAT_CATCH_SCRIPT_FEATURES} from "./cat-catch";
 
+export const CANDIDATE_PORTS = [14370, 24370, 34370, 44370, 38370];
 export const DEFAULT_SERVER_URL = "ws://127.0.0.1:14370";
 export const EXTENSION_VERSION = chrome.runtime.getManifest().version;
 

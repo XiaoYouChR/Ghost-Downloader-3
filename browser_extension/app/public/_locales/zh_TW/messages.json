@@ -21,6 +21,9 @@
   "autoPair": {
     "message": "自動配對"
   },
+  "autoSelectPort": {
+    "message": "自動選擇連接埠"
+  },
   "awaitingPairing": {
     "message": "等待配對"
   },

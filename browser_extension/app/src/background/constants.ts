@@ -10,6 +10,7 @@ export const MAIN_FRAME_ID = 0;
 
 export const PAIR_TOKEN_KEY = "pairToken";
 export const SERVER_URL_KEY = "desktopServerUrl";
+export const SHOULD_AUTO_SELECT_PORT_KEY = "shouldAutoSelectPort";
 export const SHOULD_TAKE_DOWNLOADS_KEY = "shouldTakeDownloads";
 export const IS_MEDIA_BUTTON_ENABLED_KEY = "isMediaButtonEnabled";
 export const MIN_TAKE_SIZE_KB_KEY = "minTakeSizeKB";

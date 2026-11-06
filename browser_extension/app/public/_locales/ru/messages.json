@@ -21,6 +21,9 @@
   "autoPair": {
     "message": "Автосопряжение"
   },
+  "autoSelectPort": {
+    "message": "Автовыбор порта"
+  },
   "awaitingPairing": {
     "message": "Ожидание"
   },

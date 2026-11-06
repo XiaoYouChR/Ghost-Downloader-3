@@ -25,6 +25,13 @@ const useStyles = makeStyles({
     gap: "4px",
     minWidth: 0,
   },
+  statusAction: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    minWidth: 0,
+    cursor: "pointer",
+  },
   icon: {
     display: "flex",
     flexShrink: 0,
@@ -52,17 +59,28 @@ export function ConnectionStatus({
   message,
   pendingCount,
   onLaunchDesktop,
+  onRequestPairing,
+  onRefreshConnection,
 }: {
   state: DesktopConnectionState;
   message: string;
   pendingCount: number;
   onLaunchDesktop: () => void;
+  onRequestPairing: () => void;
+  onRefreshConnection: () => void;
 }) {
   const styles = useStyles();
   const tone = connectionTone(state);
 
   const label = state === "connected" ? chrome.i18n.getMessage("connected") : connectionLabel(state, message);
   const text = pendingCount > 0 ? chrome.i18n.getMessage("pendingQueueBadge", [label, String(pendingCount)]) : label;
+  const action =
+    state === "missing_token" || state === "unauthorized"
+      ? { onClick: onRequestPairing, hint: chrome.i18n.getMessage("autoPair") }
+      : state === "disconnected"
+        ? { onClick: onRefreshConnection, hint: chrome.i18n.getMessage("reconnect") }
+        : null;
+  const tooltipText = action ? `${text} (${action.hint})` : text;
   const icon =
     tone === "info" ? (
       <Spinner size="extra-tiny" />
@@ -76,11 +94,28 @@ export function ConnectionStatus({
 
   return (
     <div className={styles.root}>
-      <span className={styles.icon} style={{ color: TONE_COLORS[tone] }}>
-        {icon}
-      </span>
-      <Tooltip content={text} relationship="description">
-        <span className={styles.label}>{text}</span>
+      <Tooltip content={tooltipText} relationship="description">
+        <div
+          className={action ? styles.statusAction : styles.root}
+          role={action ? "button" : undefined}
+          tabIndex={action ? 0 : undefined}
+          onClick={action?.onClick}
+          onKeyDown={
+            action
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    action.onClick();
+                  }
+                }
+              : undefined
+          }
+        >
+          <span className={styles.icon} style={{ color: TONE_COLORS[tone] }}>
+            {icon}
+          </span>
+          <span className={styles.label}>{text}</span>
+        </div>
       </Tooltip>
       <Tooltip content={chrome.i18n.getMessage("launchDesktop")} relationship="label">
         <Button

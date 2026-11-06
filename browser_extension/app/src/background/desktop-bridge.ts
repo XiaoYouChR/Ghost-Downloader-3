@@ -1,6 +1,12 @@
-import {DEFAULT_SERVER_URL} from "../shared/constants";
+import {CANDIDATE_PORTS, DEFAULT_SERVER_URL} from "../shared/constants";
 import type {DesktopConnectionState, CommandResult, TaskSummary,} from "../shared/types";
-import {PAIR_TOKEN_KEY, PROTOCOL_VERSION, RECONNECT_ALARM, SERVER_URL_KEY,} from "./constants";
+import {
+  PAIR_TOKEN_KEY,
+  PROTOCOL_VERSION,
+  RECONNECT_ALARM,
+  SERVER_URL_KEY,
+  SHOULD_AUTO_SELECT_PORT_KEY,
+} from "./constants";
 import {loadLocalState, saveLocalState} from "./chrome-helpers";
 
 type PendingRequest = {
@@ -18,7 +24,27 @@ type PairingResponse = {
 
 const PAIRING_TIMEOUT_MS = 60000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 12000;
+const HAPPY_EYEBALLS_DELAY_MS = 150;
 const MISSING_PAIRING_MESSAGE = chrome.i18n.getMessage("pendingPairing");
+
+function toFallbackUrls(primaryUrl: string, shouldAutoSelect: boolean): string[] {
+  if (!shouldAutoSelect) {
+    return [];
+  }
+  try {
+    const parsed = new URL(primaryUrl);
+    if (parsed.hostname !== "127.0.0.1" && parsed.hostname !== "localhost") {
+      return [];
+    }
+    const primaryPort = Number(parsed.port);
+    const suffix = `${parsed.pathname === "/" && !primaryUrl.endsWith("/") ? "" : parsed.pathname}${parsed.search}`;
+    return CANDIDATE_PORTS
+      .filter((port) => port !== primaryPort)
+      .map((port) => `${parsed.protocol}//${parsed.hostname}:${port}${suffix}`);
+  } catch {
+    return [];
+  }
+}
 
 export type DesktopBridgeSnapshot = {
   connectionState: DesktopConnectionState;
@@ -44,10 +70,12 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
   let desktopVersion = "";
   let pairToken = "";
   let serverUrl = DEFAULT_SERVER_URL;
+  let shouldAutoSelectPort = true;
   let taskSnapshot: TaskSummary[] = [];
 
   const pendingRequests = new Map<string, PendingRequest>();
   let shouldRetryPairing = false;
+  let cancelProbe: (() => void) | null = null;
 
   // Runtime fact about the extension (read once from chrome.management.getSelf in setupBackground).
   // Owned by the bridge instance, not the module, since only connect() consumes it.
@@ -164,146 +192,332 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
 
   async function connect(force = false): Promise<void> {
     if (!pairToken) {
+      cancelProbe?.();
+      cancelProbe = null;
       desktopVersion = "";
       taskSnapshot = [];
       setConnectionState("missing_token", MISSING_PAIRING_MESSAGE);
       return;
     }
 
-    if (desktopSocket && desktopSocket.readyState === WebSocket.OPEN && !force) {
+    if (((desktopSocket && desktopSocket.readyState === WebSocket.OPEN) || cancelProbe !== null) && !force) {
       return;
     }
 
     clearReconnectTimer();
-    if (force && desktopSocket) {
+    cancelProbe?.();
+    cancelProbe = null;
+    if (desktopSocket) {
       desktopSocket.close();
       desktopSocket = null;
     }
 
     setConnectionState("connecting", chrome.i18n.getMessage("connecting"));
-    const socket = new WebSocket(serverUrl);
-    desktopSocket = socket;
+    const primaryUrl = serverUrl;
+    const fallbackUrls = toFallbackUrls(primaryUrl, shouldAutoSelectPort);
+    const activeSockets = new Set<WebSocket>();
+    let fallbacksStarted = false;
+    let headStartTimer: number | null = null;
+    let hasFailedError = false;
+    let aborted = false;
 
-    socket.addEventListener("open", () => {
-      if (desktopSocket !== socket) {
+    const clearHeadStart = () => {
+      if (headStartTimer !== null) {
+        self.clearTimeout(headStartTimer);
+        headStartTimer = null;
+      }
+    };
+
+    const closeProbes = (except?: WebSocket) => {
+      clearHeadStart();
+      for (const s of activeSockets) {
+        if (s !== except) {
+          s.close();
+        }
+      }
+      activeSockets.clear();
+    };
+
+    cancelProbe = () => {
+      aborted = true;
+      closeProbes();
+    };
+
+    const rememberUrl = (url: string) => {
+      if (url !== serverUrl) {
+        serverUrl = url;
+        void saveLocalState({ [SERVER_URL_KEY]: serverUrl });
+      }
+    };
+
+    const startFallbacks = () => {
+      if (fallbacksStarted || aborted || desktopSocket !== null) {
         return;
       }
-      setConnectionState("authenticating", chrome.i18n.getMessage("authenticating"));
-      socket.send(
-        JSON.stringify({
-          type: "hello",
-          protocolVersion: PROTOCOL_VERSION,
-          token: pairToken,
-          extensionVersion: chrome.runtime.getManifest().version,
-          clientKind: "browser_extension",
-          installType,
-        }),
-      );
-    });
+      fallbacksStarted = true;
+      clearHeadStart();
+      for (const url of fallbackUrls) {
+        probe(url, false);
+      }
+    };
 
-    socket.addEventListener("message", (event) => {
-      if (desktopSocket !== socket) {
-        return;
-      }
-      onDesktopMessage(String(event.data ?? ""));
-    });
+    const probe = (url: string, isPrimary: boolean) => {
+      const socket = new WebSocket(url);
+      activeSockets.add(socket);
 
-    socket.addEventListener("close", () => {
-      if (desktopSocket !== socket) {
-        return;
-      }
-      desktopSocket = null;
-      rejectPendingRequests(chrome.i18n.getMessage("connectionClosed"));
-      taskSnapshot = [];
-      options.onTaskSnapshotChanged?.([]);
-      if (connectionState !== "unauthorized" && connectionState !== "missing_token") {
-        desktopVersion = "";
-        setConnectionState("disconnected", chrome.i18n.getMessage("disconnected"));
-        scheduleReconnect();
-      }
-    });
+      socket.addEventListener("open", () => {
+        if (aborted || !activeSockets.has(socket)) {
+          return;
+        }
+        if (connectionState === "connecting") {
+          setConnectionState("authenticating", chrome.i18n.getMessage("authenticating"));
+        }
+        socket.send(
+          JSON.stringify({
+            type: "hello",
+            protocolVersion: PROTOCOL_VERSION,
+            token: pairToken,
+            extensionVersion: chrome.runtime.getManifest().version,
+            clientKind: "browser_extension",
+            installType,
+          }),
+        );
+      });
 
-    socket.addEventListener("error", () => {
-      if (desktopSocket !== socket) {
-        return;
-      }
-      if (connectionState !== "unauthorized") {
-        desktopVersion = "";
-        setConnectionState("disconnected", chrome.i18n.getMessage("errorConnectionFailed"));
-      }
-    });
+      socket.addEventListener("message", (event) => {
+        const raw = String(event.data ?? "");
+        if (desktopSocket === socket) {
+          onDesktopMessage(raw);
+          return;
+        }
+        if (aborted || !activeSockets.has(socket)) {
+          return;
+        }
+        let message: Record<string, any>;
+        try {
+          message = JSON.parse(raw) as Record<string, any>;
+        } catch {
+          return;
+        }
+        if (message.type === "hello_ack" || message.type === "error") {
+          cancelProbe = null;
+          closeProbes(socket);
+          desktopSocket = socket;
+          rememberUrl(url);
+          onDesktopMessage(raw);
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        if (desktopSocket === socket) {
+          desktopSocket = null;
+          rejectPendingRequests(chrome.i18n.getMessage("connectionClosed"));
+          taskSnapshot = [];
+          options.onTaskSnapshotChanged?.([]);
+          if (connectionState !== "unauthorized" && connectionState !== "missing_token") {
+            desktopVersion = "";
+            setConnectionState("disconnected", chrome.i18n.getMessage("disconnected"));
+            scheduleReconnect();
+          }
+          return;
+        }
+        if (aborted || !activeSockets.delete(socket)) {
+          return;
+        }
+        if (isPrimary) {
+          startFallbacks();
+        }
+        if (
+          activeSockets.size === 0
+          && desktopSocket === null
+          && connectionState !== "unauthorized"
+          && connectionState !== "missing_token"
+        ) {
+          cancelProbe = null;
+          desktopVersion = "";
+          setConnectionState(
+            "disconnected",
+            chrome.i18n.getMessage(hasFailedError ? "errorConnectionFailed" : "disconnected"),
+          );
+          scheduleReconnect();
+        }
+      });
+
+      socket.addEventListener("error", () => {
+        if (desktopSocket === socket) {
+          if (connectionState !== "unauthorized") {
+            desktopVersion = "";
+            setConnectionState("disconnected", chrome.i18n.getMessage("errorConnectionFailed"));
+          }
+          return;
+        }
+        if (aborted || !activeSockets.has(socket)) {
+          return;
+        }
+        hasFailedError = true;
+        if (isPrimary) {
+          startFallbacks();
+        }
+      });
+    };
+
+    if (fallbackUrls.length > 0) {
+      headStartTimer = self.setTimeout(startFallbacks, HAPPY_EYEBALLS_DELAY_MS);
+    }
+    probe(primaryUrl, true);
   }
 
   async function requestPairing(): Promise<void> {
     clearReconnectTimer();
+    cancelProbe?.();
+    cancelProbe = null;
     setConnectionState("connecting", chrome.i18n.getMessage("pairing"));
 
     let desktopReached = false;
     try {
       const token = await new Promise<string>((resolve, reject) => {
-        const socket = new WebSocket(serverUrl);
+        const primaryUrl = serverUrl;
+        const fallbackUrls = toFallbackUrls(primaryUrl, shouldAutoSelectPort);
+        const activeSockets = new Set<WebSocket>();
+        let fallbacksStarted = false;
+        let headStartTimer: number | null = null;
         let settled = false;
+        let hasFailedError = false;
         let timeoutId = 0;
+
+        const clearHeadStart = () => {
+          if (headStartTimer !== null) {
+            self.clearTimeout(headStartTimer);
+            headStartTimer = null;
+          }
+        };
 
         const finish = (done: () => void) => {
           if (settled) {
             return;
           }
           settled = true;
+          cancelProbe = null;
+          clearHeadStart();
           self.clearTimeout(timeoutId);
-          socket.close();
+          for (const s of activeSockets) {
+            s.close();
+          }
+          activeSockets.clear();
           done();
+        };
+
+        cancelProbe = () => {
+          finish(() => reject(new Error(chrome.i18n.getMessage("errorPairingDisconnected"))));
         };
 
         timeoutId = self.setTimeout(() => {
           finish(() => reject(new Error(chrome.i18n.getMessage("errorPairingTimeout"))));
         }, PAIRING_TIMEOUT_MS);
 
-        socket.addEventListener("open", () => {
-          desktopReached = true;
-          socket.send(
-            JSON.stringify({
-              type: "pair_request",
-              requestId: buildRequestId(),
-              protocolVersion: PROTOCOL_VERSION,
-              extensionVersion: chrome.runtime.getManifest().version,
-              clientKind: "browser_extension",
-            }),
-          );
-        });
-
-        socket.addEventListener("message", (event) => {
-          let response: PairingResponse;
-          try {
-            response = JSON.parse(String(event.data ?? "")) as PairingResponse;
-          } catch {
+        const startFallbacks = () => {
+          if (fallbacksStarted || settled) {
             return;
           }
-          if (response.type !== "pair_result") {
-            return;
+          fallbacksStarted = true;
+          clearHeadStart();
+          for (const url of fallbackUrls) {
+            openCandidate(url, false);
           }
+        };
 
-          if (!response.ok) {
-            finish(() => reject(new Error(response.message || chrome.i18n.getMessage("errorPairingRejected"))));
-            return;
-          }
+        const openCandidate = (url: string, isPrimary: boolean) => {
+          const socket = new WebSocket(url);
+          activeSockets.add(socket);
 
-          const token = String(response.token ?? "").trim();
-          if (!token) {
-            finish(() => reject(new Error(chrome.i18n.getMessage("errorNoTokenReturned"))));
-            return;
-          }
+          socket.addEventListener("open", () => {
+            if (settled || !activeSockets.has(socket)) {
+              return;
+            }
+            desktopReached = true;
+            if (isPrimary) {
+              clearHeadStart();
+            }
+            socket.send(
+              JSON.stringify({
+                type: "pair_request",
+                requestId: buildRequestId(),
+                protocolVersion: PROTOCOL_VERSION,
+                extensionVersion: chrome.runtime.getManifest().version,
+                clientKind: "browser_extension",
+              }),
+            );
+          });
 
-          finish(() => resolve(token));
-        });
+          socket.addEventListener("message", (event) => {
+            let response: PairingResponse;
+            try {
+              response = JSON.parse(String(event.data ?? "")) as PairingResponse;
+            } catch {
+              return;
+            }
+            if (response.type !== "pair_result") {
+              return;
+            }
 
-        socket.addEventListener("close", () => {
-          finish(() => reject(new Error(chrome.i18n.getMessage("errorPairingDisconnected"))));
-        });
+            if (url !== serverUrl) {
+              serverUrl = url;
+              void saveLocalState({ [SERVER_URL_KEY]: serverUrl });
+            }
 
-        socket.addEventListener("error", () => {
-          finish(() => reject(new Error(chrome.i18n.getMessage("errorConnectionFailed"))));
-        });
+            if (!response.ok) {
+              finish(() => reject(new Error(response.message || chrome.i18n.getMessage("errorPairingRejected"))));
+              return;
+            }
+
+            const nextToken = String(response.token ?? "").trim();
+            if (!nextToken) {
+              finish(() => reject(new Error(chrome.i18n.getMessage("errorNoTokenReturned"))));
+              return;
+            }
+
+            finish(() => resolve(nextToken));
+          });
+
+          socket.addEventListener("close", () => {
+            if (settled || !activeSockets.delete(socket)) {
+              return;
+            }
+            if (isPrimary && !desktopReached) {
+              startFallbacks();
+            }
+            if (activeSockets.size === 0) {
+              finish(() =>
+                reject(
+                  new Error(
+                    chrome.i18n.getMessage(
+                      desktopReached
+                        ? "errorPairingDisconnected"
+                        : hasFailedError
+                          ? "errorConnectionFailed"
+                          : "errorPairingDisconnected",
+                    ),
+                  ),
+                ),
+              );
+            }
+          });
+
+          socket.addEventListener("error", () => {
+            if (settled || !activeSockets.has(socket)) {
+              return;
+            }
+            hasFailedError = true;
+            if (isPrimary && !desktopReached) {
+              startFallbacks();
+            }
+          });
+        };
+
+        if (fallbackUrls.length > 0) {
+          headStartTimer = self.setTimeout(startFallbacks, HAPPY_EYEBALLS_DELAY_MS);
+        }
+        openCandidate(primaryUrl, true);
       });
       shouldRetryPairing = false;
       await setToken(token);
@@ -347,13 +561,16 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
     const localState = await loadLocalState<{
       [PAIR_TOKEN_KEY]: string;
       [SERVER_URL_KEY]: string;
+      [SHOULD_AUTO_SELECT_PORT_KEY]: boolean;
     }>({
       [PAIR_TOKEN_KEY]: "",
       [SERVER_URL_KEY]: DEFAULT_SERVER_URL,
+      [SHOULD_AUTO_SELECT_PORT_KEY]: true,
     });
 
     pairToken = String(localState[PAIR_TOKEN_KEY] ?? "").trim();
     serverUrl = String(localState[SERVER_URL_KEY] ?? DEFAULT_SERVER_URL).trim() || DEFAULT_SERVER_URL;
+    shouldAutoSelectPort = Boolean(localState[SHOULD_AUTO_SELECT_PORT_KEY] ?? true);
   }
 
   async function setToken(token: string) {
@@ -385,6 +602,12 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
     }
     if (changes[SERVER_URL_KEY]) {
       serverUrl = String(changes[SERVER_URL_KEY].newValue ?? DEFAULT_SERVER_URL).trim() || DEFAULT_SERVER_URL;
+    }
+    if (changes[SHOULD_AUTO_SELECT_PORT_KEY]) {
+      shouldAutoSelectPort = Boolean(changes[SHOULD_AUTO_SELECT_PORT_KEY].newValue ?? true);
+      if (shouldAutoSelectPort && connectionState !== "connected") {
+        void connect(true);
+      }
     }
   }
 

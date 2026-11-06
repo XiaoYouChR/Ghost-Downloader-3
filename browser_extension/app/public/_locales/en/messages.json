@@ -21,6 +21,9 @@
   "autoPair": {
     "message": "Auto Pair"
   },
+  "autoSelectPort": {
+    "message": "Auto Select Port"
+  },
   "awaitingPairing": {
     "message": "Pairing"
   },

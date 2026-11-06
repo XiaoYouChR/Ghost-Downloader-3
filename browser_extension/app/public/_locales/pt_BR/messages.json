@@ -21,6 +21,9 @@
   "autoPair": {
     "message": "Emparelhamento automático"
   },
+  "autoSelectPort": {
+    "message": "Selecionar porta automaticamente"
+  },
   "awaitingPairing": {
     "message": "Aguardando"
   },

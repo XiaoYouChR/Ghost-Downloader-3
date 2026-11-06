@@ -331,6 +331,7 @@ class Config(QConfig):
     # 浏览器扩展
     isBrowserExtensionEnabled = ConfigItem("Browser", "EnableBrowserExtension", True, BoolValidator())
     browserExtensionPairToken = ConfigItem("Browser", "BrowserExtensionPairToken", "")
+    shouldAutoSelectBrowserPort = ConfigItem("Browser", "AutoSelectPort", True, BoolValidator())
     browserExtensionPort = RangeConfigItem("Browser", "Port", 14370, RangeValidator(1024, 65535))
     shouldDraftTakenDownload = ConfigItem(
         "Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator()

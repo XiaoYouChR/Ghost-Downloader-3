@@ -90,6 +90,7 @@ class CreateTaskStatus(StrEnum):
 
 
 PROTOCOL_VERSION = 2
+CANDIDATE_PORTS = (14370, 24370, 34370, 44370, 38370)
 
 
 def toStr(data: dict, key: str, default: str = "") -> str:

@@ -64,6 +64,8 @@ export function App({
         onMediaButtonToggle={(enabled) => void bridge.setMediaButtonEnabled(enabled)}
         onTakeDownloadsToggle={(enabled) => void bridge.setShouldTakeDownloads(enabled)}
         onLaunchDesktop={launchDesktop}
+        onRequestPairing={() => void bridge.requestPairing()}
+        onRefreshConnection={() => void bridge.refreshConnection()}
       />
 
       <main className={styles.content}>

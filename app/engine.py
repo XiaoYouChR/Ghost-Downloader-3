@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from app.config.cfg import cfg
 from app.services.aria2_rpc import Aria2RpcService
-from app.services.browser_service import BrowserService
+from app.services.browser_service import BrowserService, CANDIDATE_PORTS
 from app.services.category_service import CategoryService
 from app.services.feature_service import FeatureService
 from app.services.port_listener import PortListener
@@ -44,7 +44,9 @@ class Engine:
         self.browserService = BrowserService(coroutineRunner, self.taskService, self.speedMeter.speedChanged,
                                              self.featureService.parse, loadCrx, extensionFolder)
         self.browserListener = PortListener(coroutineRunner, self.browserService.handle,
-                                            isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort)
+                                            isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort,
+                                            shouldAutoSelect=cfg.shouldAutoSelectBrowserPort,
+                                            fallbackPorts=CANDIDATE_PORTS)
         self.aria2RpcService = Aria2RpcService(coroutineRunner, self.featureService.parse, self.taskService.add)
         self.aria2RpcListener = PortListener(coroutineRunner, self.aria2RpcService.handle,
                                              isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)

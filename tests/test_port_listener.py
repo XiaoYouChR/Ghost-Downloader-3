@@ -9,6 +9,7 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 
 from app.config.cfg import cfg
+from app.services.browser_service import CANDIDATE_PORTS
 from app.services.port_listener import ListenState, ListenStatus
 from tests.helpers import probeFreePort, waitUntil
 
@@ -125,3 +126,57 @@ async def test_start_announces_each_state_once(listener):
     await asyncio.sleep(0.05)
 
     assert statuses == [ListenStatus.STARTING, ListenStatus.LISTENING]
+
+
+def probeCandidatePorts() -> list[int]:
+    ports: list[int] = []
+    for port in CANDIDATE_PORTS:
+        try:
+            sock = createListener("127.0.0.1", port)
+        except OSError:
+            continue
+        sock.close()
+        ports.append(port)
+    return ports
+
+
+async def test_start_on_taken_candidate_port_falls_back(engine):
+    available = probeCandidatePorts()
+    if len(available) < 2:
+        pytest.skip("fewer than 2 candidate ports available on host")
+    takenPort, expectedPort = available[0], available[1]
+    occupier = createListener("127.0.0.1", takenPort)
+    try:
+        cfg.set(cfg.browserExtensionPort, takenPort)
+        await asyncio.sleep(0.05)
+        statuses: list[ListenStatus] = []
+        engine.browserListener.stateChanged.connect(lambda state: statuses.append(state.status))
+
+        cfg.set(cfg.isBrowserExtensionEnabled, True)
+        await waitUntil(lambda: isListening(engine.browserListener))
+        await asyncio.sleep(0.05)
+
+        assert engine.browserListener.state.port == expectedPort
+        assert cfg.browserExtensionPort.value == expectedPort
+        assert statuses == [ListenStatus.STARTING, ListenStatus.LISTENING]
+    finally:
+        occupier.close()
+
+
+async def test_start_with_auto_select_disabled_fails_without_fallback(engine):
+    available = probeCandidatePorts()
+    port = available[0] if available else probeFreePort()
+    occupier = createListener("127.0.0.1", port)
+    try:
+        cfg.set(cfg.shouldAutoSelectBrowserPort, False)
+        cfg.set(cfg.browserExtensionPort, port)
+        await asyncio.sleep(0.05)
+        cfg.set(cfg.isBrowserExtensionEnabled, True)
+        await waitUntil(lambda: engine.browserListener.state.status == ListenStatus.FAILED)
+
+        assert (str(engine.browserListener.state.error), engine.browserListener.state.port) == (
+            f"端口 {port} 被占用，请更换端口", port,
+        )
+        assert cfg.browserExtensionPort.value == port
+    finally:
+        occupier.close()

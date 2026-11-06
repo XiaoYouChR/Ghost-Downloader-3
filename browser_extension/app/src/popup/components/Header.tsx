@@ -95,6 +95,8 @@ export function Header({
   onMediaButtonToggle,
   onTakeDownloadsToggle,
   onLaunchDesktop,
+  onRequestPairing,
+  onRefreshConnection,
 }: {
   currentView: PopupView;
   connectionState: DesktopConnectionState;
@@ -108,6 +110,8 @@ export function Header({
   onMediaButtonToggle: (enabled: boolean) => void;
   onTakeDownloadsToggle: (enabled: boolean) => void;
   onLaunchDesktop: () => void;
+  onRequestPairing: () => void;
+  onRefreshConnection: () => void;
 }) {
   const styles = useStyles();
 
@@ -136,6 +140,8 @@ export function Header({
           message={connectionMessage}
           pendingCount={pendingTaskCount}
           onLaunchDesktop={onLaunchDesktop}
+          onRequestPairing={onRequestPairing}
+          onRefreshConnection={onRefreshConnection}
         />
 
         <div className={styles.switches}>
