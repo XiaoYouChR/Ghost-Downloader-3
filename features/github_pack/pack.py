@@ -124,7 +124,7 @@ class GitHubParser(TaskParser):
 
         logger.info("GitHub 选用 {}", winner)
         headers = options.headers if winner == originalUrl else toProxyHeaders(options.headers)
-        task = await self.delegate(replace(options, url=winner, headers=headers, file=file))
+        task = await self.pack.parse(replace(options, url=winner, headers=headers, file=file))
         if task.packId != "m3u8":
             task.url = originalUrl
         if task.steps and type(task.steps[0]) is HttpTaskStep and fallbackUrls:

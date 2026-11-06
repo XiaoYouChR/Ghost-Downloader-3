@@ -26,8 +26,8 @@ class MergeParser(TaskParser):
         if not ffmpegRuntime.path() or not ffmpegRuntime.ffprobePath():
             raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
 
-        videoTask = await self.delegate(options.video)
-        audioTask = await self.delegate(options.audio)
+        videoTask = await self.pack.parse(options.video)
+        audioTask = await self.pack.parse(options.audio)
 
         videoStep: HttpTaskStep = videoTask.steps[0]  # type: ignore[assignment]
         audioStep: HttpTaskStep = audioTask.steps[0]  # type: ignore[assignment]

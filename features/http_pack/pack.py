@@ -231,7 +231,7 @@ class HttpParser(TaskParser):
         if isinstance(options, ResourceTaskOptions) and options.name and options.size > 0:
             file = RemoteFile(name=options.name, fileSize=options.size, canUseRangeRequests=options.canUseRangeRequests)
             return buildTask(replace(options, file=file))
-        return await self.delegate(replace(options, file=await probe(options)))
+        return await self.pack.parse(replace(options, file=await probe(options)))
 
 
 def buildOptionCards(task: Task, parent: QWidget | None = None) -> list[OptionCard]:

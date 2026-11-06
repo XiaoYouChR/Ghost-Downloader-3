@@ -47,7 +47,10 @@ class UriScheme:
 class TaskParser:
     priority: int = 100
     pack: FeaturePack
-    delegate: Callable[[TaskOptions], Awaitable[Task]]
+
+    def __init__(self, pack: FeaturePack | None = None) -> None:
+        if pack is not None:
+            self.pack = pack
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError
@@ -276,9 +279,11 @@ class FeaturePack:
     capturedLinks: str | None = None
 
     parsers: list[type[TaskParser]] = []
-    parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
-    addTask: Callable[[Task], None] | None = None
-    submit: Callable[..., str] | None = None
+
+    # 由 Feature Service 注入
+    parse: Callable[[TaskOptions], Awaitable[Task]]
+    addTask: Callable[[Task], None]
+    submit: Callable[..., str]
 
     def __init__(self, services: PackServices):
         self._services = services

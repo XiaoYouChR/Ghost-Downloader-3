@@ -48,7 +48,7 @@ class WrappedLinkParser(TaskParser):
         return urlparse(options.url.strip()).scheme.lower() in SCHEMES
 
     async def parse(self, options: TaskOptions) -> Task:
-        return await self.delegate(replace(options, url=toInnerUrl(options.url)))
+        return await self.pack.parse(replace(options, url=toInnerUrl(options.url)))
 
 
 class WrappedLinkPack(FeaturePack):

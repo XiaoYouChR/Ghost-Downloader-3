@@ -75,7 +75,7 @@ class FeatureService:
         self._packs.append(pack)
         self._packByPackId[pack.packId] = pack
 
-        pack.parse = self.parse
+        pack.parse = self._parse
         pack.addTask = self._taskService.add
         pack.submit = self._coroutineRunner.submit
 
@@ -83,10 +83,7 @@ class FeatureService:
             self._pagePackMap[PageClass] = pack
 
         for ParserClass in pack.parsers:
-            parser = ParserClass()
-            parser.pack = pack
-            parser.delegate = self._parse
-            self._parsers.append(parser)
+            self._parsers.append(ParserClass(pack))
         self._parsers.sort(key=lambda p: p.priority)
 
         if pack.config:
