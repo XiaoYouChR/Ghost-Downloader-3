@@ -393,7 +393,7 @@ jobs:
       matrix:
         include:
           - architecture: arm64
-            runner: macos-14
+            runner: macos-15
             openssl_workaround: 'false'
           - architecture: x86_64
             runner: macos-15-intel
