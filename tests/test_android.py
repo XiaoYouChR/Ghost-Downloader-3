@@ -19,12 +19,16 @@ SCRIPT = Path(__file__).parent / "import_android_packs.py"
 ANDROID_CFG_PATH = ROOT / "android/app/src/main/python/app/config/cfg.py"
 desktopCfg = importlib.import_module("app.config.cfg")
 
-# 桌面窗口/Dock/菜单栏/开机自启/URL scheme/剪贴板监听/下载目录历史/设置页折叠状态；
+# 桌面窗口/Dock/菜单栏/开机自启/URL scheme/剪贴板监听/下载目录历史/设置页折叠状态/桌面通知/完成后打开文件夹；
 # 主题与语言在 Android 走 SharedPreferences（见 android/CLAUDE.md「Config 按消费者分路」）
 DESKTOP_ONLY = {
     ("Browser", "UrlSchemeRegistered"),
     ("GeneralDownload", "HistoryDownloadFolder"),
+    ("GeneralDownload", "OpenFolderMinSize"),
+    ("GeneralDownload", "OpenFolderWhenCompleted"),
     ("GeneralDownload", "RecentFolders"),
+    ("Notifications", "TaskCompletedNotification"),
+    ("Notifications", "TaskStartedNotification"),
     ("Personalization", "BackgroundEffect"),
     ("Personalization", "DpiScale"),
     ("Personalization", "Language"),
