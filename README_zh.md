@@ -24,7 +24,7 @@
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 [![Discord](https://img.shields.io/discord/1527965717973176391?style=for-the-badge&logo=discord&logoColor=white&label=Discord&color=%235865F2)](https://discord.gg/fKfhkPumEM)
 
-##### [使用文档](https://gd.xychr.com/zh/docs/) · [Bug 报告](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [功能需求](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
+##### [使用文档](https://gd.xychr.com/zh/docs/) · [观看视频](https://www.bilibili.com/video/BV14WHT6xEXg) · [Bug 报告](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [功能需求](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -57,6 +57,8 @@
 
 <!-- SCREEN SHOTS -->
 ## 截图
+
+https://github.com/user-attachments/assets/c1e21cdd-4454-4df3-b55a-6bc010709c74
 
 ![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
 

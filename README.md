@@ -23,7 +23,7 @@
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 [![Discord](https://img.shields.io/discord/1527965717973176391?style=for-the-badge&logo=discord&logoColor=white&label=Discord&color=%235865F2)](https://discord.gg/fKfhkPumEM)
 
-##### [Documentation](https://gd.xychr.com/en/docs/) · [Report Bug](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
+##### [Documentation](https://gd.xychr.com/en/docs/) · [Watch Video](https://www.youtube.com/watch?v=QQRa8nDmNbc) · [Report Bug](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -56,6 +56,8 @@ Started as a passion project to help a Bilibili creator manage resources. Now it
 
 <!-- SCREEN SHOTS -->
 ## Screenshots
+
+https://github.com/user-attachments/assets/d97dc8c9-f320-4645-8dcd-0d9dc4cf2eab
 
 ![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
 
