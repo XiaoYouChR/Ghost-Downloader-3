@@ -7,15 +7,17 @@ from pathlib import Path
 
 from PySide6.QtCore import QStandardPaths
 
+IS_COMPILED = "__compiled__" in globals()
+
 EXECUTABLE_PATH = (
     Path(os.environ["APPIMAGE"]) if "APPIMAGE" in os.environ
-    else Path(sys.argv[0]).resolve() if "__compiled__" in globals()
+    else Path(sys.argv[0]).resolve() if IS_COMPILED
     else Path(sys.executable).resolve()
 )
 
 EXECUTABLE_DIR = (
     Path(sys.executable).resolve().parent
-    if "__compiled__" in globals()
+    if IS_COMPILED
     else Path(".")
 )
 
@@ -32,7 +34,7 @@ PORTABLE_DIR = EXECUTABLE_DIR / "GhostDownloader"
 SEED_FEATURES_DIR = EXECUTABLE_DIR / "features"
 FEATURES_DIR = (
     SEED_FEATURES_DIR
-    if "__compiled__" not in globals()
+    if not IS_COMPILED
     else APP_DATA_DIR / "features"
 )
 USER_DATA_DIR = Path(QStandardPaths.writableLocation(
@@ -42,6 +44,10 @@ USER_DATA_DIR = Path(QStandardPaths.writableLocation(
 DOWNLOAD_DIR = Path(QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.DownloadLocation
 ))
+
+
+def hasNoAutoUpdateMarker() -> bool:
+    return (EXECUTABLE_DIR / "gd_no_auto_update").is_file()
 
 
 def isPortable() -> bool:
