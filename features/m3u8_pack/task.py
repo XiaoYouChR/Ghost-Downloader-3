@@ -434,7 +434,7 @@ class M3U8TaskStep(TaskStep):
         found = max(
             (c for c in self.task.partPath.glob("*")
              if c.is_file() and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
-             and c.name.lower().startswith(prefix)),
+             and c.name.lower().startswith(prefix) and c.stat().st_size > 0),
             key=lambda c: (c.suffix.lower() == target.suffix.lower(), c.stat().st_mtime),
             default=None,
         )

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
 
 from app.config.cfg import cfg
 from app.format import toBytes
+from app.models.task import TaskStatus
 from features.m3u8_pack.task import M3U8Task, M3U8TaskStep
 
 
@@ -152,3 +154,31 @@ def test_build_command_converts_global_speed_limit(monkeypatch):
     monkeypatch.setattr(cfg.speedLimitation, "value", 1150976)
     args = buildStep()._buildCommand("http://test")
     assert "--max-speed=1124K" in args
+
+
+@pytest.mark.parametrize("subtitleSuffix", ["srt", "vtt"])
+def test_load_live_recording_prefers_requested_container(tmp_path, subtitleSuffix):
+    partFolder = tmp_path / "recording.mp4.ghd"
+    partFolder.mkdir()
+    video = partFolder / "recording.video.MP4"
+    video.write_bytes(b"video")
+    subtitle = partFolder / f"recording.en.{subtitleSuffix}"
+    subtitle.write_bytes(b"subtitle")
+    os.utime(video, (100, 100))
+    os.utime(subtitle, (200, 200))
+    emptyVideo = partFolder / "recording.empty.mp4"
+    emptyVideo.touch()
+    os.utime(emptyVideo, (300, 300))
+
+    task = M3U8Task(
+        name="recording.mp4",
+        url="http://test",
+        outputFolder=tmp_path,
+        status=TaskStatus.RUNNING,
+        isLive=True,
+        steps=[M3U8TaskStep(stepIndex=1, status=TaskStatus.RUNNING)],
+    )
+
+    assert task.status == TaskStatus.COMPLETED
+    assert Path(task.outputPath).read_bytes() == b"video"
+    assert subtitle.read_bytes() == b"subtitle"
