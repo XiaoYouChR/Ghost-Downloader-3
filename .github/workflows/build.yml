@@ -31,7 +31,7 @@ on:
           - 'true'
           - 'false'
       sign_artifact:
-        description: 'Sign Artifact (Windows)'
+        description: 'Sign Artifact'
         required: true
         default: 'true'
         type: choice
@@ -400,7 +400,7 @@ jobs:
             openssl_workaround: 'true'
     runs-on: ${{ matrix.runner }}
     env:
-      HAS_APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE != '' && 'true' || 'false' }}
+      SHOULD_SIGN: ${{ github.event.inputs.sign_artifact == 'true' && secrets.APPLE_CERTIFICATE != '' && 'true' || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -452,7 +452,7 @@ jobs:
         run: uv run scripts/restructure_macos_bundle.py "dist/Ghost Downloader.app"
 
       - name: Import signing certificate
-        if: ${{ env.HAS_APPLE_CERT == 'true' }}
+        if: ${{ env.SHOULD_SIGN == 'true' }}
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -476,7 +476,7 @@ jobs:
           rm -f "$CERT_PATH"
 
       - name: Sign app bundle
-        if: ${{ env.HAS_APPLE_CERT == 'true' }}
+        if: ${{ env.SHOULD_SIGN == 'true' }}
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -534,7 +534,7 @@ jobs:
             "$DMG_SOURCE_DIR"
 
       - name: Notarize DMG
-        if: ${{ env.HAS_APPLE_CERT == 'true' }}
+        if: ${{ env.SHOULD_SIGN == 'true' }}
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
@@ -566,7 +566,7 @@ jobs:
           echo "Notarization complete."
 
       - name: Cleanup keychain
-        if: ${{ always() && env.HAS_APPLE_CERT == 'true' }}
+        if: ${{ always() && env.SHOULD_SIGN == 'true' }}
         run: security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
 
       - name: Generate patch

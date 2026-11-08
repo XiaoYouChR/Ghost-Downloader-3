@@ -24,6 +24,12 @@ EXTRA_INCLUDE_PACKAGES = []
 PLATFORM_INCLUDE_PACKAGES = {
     "win32": ["winrt"],
 }
+# 应用不读 PDF 图像。只排除 PDF 插件时，Nuitka 仍会打包它依赖的 QtPdf，所以两个都排除。
+PLATFORM_EXCLUDED_DLLS = {
+    "win32": ["PySide6/qt-plugins/imageformats/qpdf.dll", "qt6pdf.dll"],
+    "darwin": ["PySide6/qt-plugins/imageformats/libqpdf.dylib", "QtPdf"],
+    "linux": ["PySide6/qt-plugins/imageformats/libqpdf.so", "libQt6Pdf.so.6"],
+}
 EXTRA_INCLUDE_MODULES = [
     "app.view.dialogs.edit_task",
     "concurrent.futures",
@@ -128,6 +134,7 @@ def buildArgs() -> list[str]:
     dataArgs = [
         '--include-data-files=app/assets/resources.rcc=app/assets/resources.rcc',
     ]
+    excludeArgs = [f"--noinclude-dlls={path}" for path in PLATFORM_EXCLUDED_DLLS[sys.platform]]
 
     if sys.platform == "win32":
         return [
@@ -137,6 +144,7 @@ def buildArgs() -> list[str]:
             '--plugin-enable=pyside6',
             *includeArgs,
             *dataArgs,
+            *excludeArgs,
             '--assume-yes-for-downloads',
             '--msvc=latest',
             '--windows-icon-from-ico=app/assets/logo.ico',
@@ -159,6 +167,7 @@ def buildArgs() -> list[str]:
             '--plugin-enable=pyside6',
             *includeArgs,
             *dataArgs,
+            *excludeArgs,
             '--static-libpython=no',
             "--macos-create-app-bundle",
             "--assume-yes-for-downloads",
@@ -177,6 +186,7 @@ def buildArgs() -> list[str]:
         '--plugin-enable=pyside6',
         *includeArgs,
         *dataArgs,
+        *excludeArgs,
         '--include-qt-plugins=platforms',
         '--include-module=PySide6.QtDBus',
         '--assume-yes-for-downloads',
