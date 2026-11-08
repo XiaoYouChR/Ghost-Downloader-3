@@ -115,6 +115,9 @@ class UpdateService:
         self._infos: dict[str, UpdateInfo] = {}
         self._versionsData: dict = {}
 
+    def infoById(self, targetId: str) -> UpdateInfo | None:
+        return self._infos.get(targetId)
+
     def check(self) -> None:
         self._coroutineRunner.submit(self._check())
 
