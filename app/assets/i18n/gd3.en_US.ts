@@ -4248,12 +4248,27 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="85"/>
+        <location filename="../../view/dialogs/pack_info.py" line="100"/>
         <source>功能包</source>
         <translation>Feature Packs</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="89"/>
+        <location filename="../../view/dialogs/pack_info.py" line="101"/>
+        <source>功能包已更新</source>
+        <translation>Feature Pack updated</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="101"/>
+        <source>重启软件后生效</source>
+        <translation>Restart required to take effect</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="120"/>
+        <source>辅助组件</source>
+        <translation>Helper Components</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="97"/>
         <source>关闭</source>
         <translation>Close</translation>
     </message>
@@ -4264,6 +4279,24 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <location filename="../../../features/jack_yao/pack.py" line="54"/>
         <source>资源下载</source>
         <translation>Resources</translation>
+    </message>
+</context>
+<context>
+    <name>PackRow</name>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="64"/>
+        <source>更新中…</source>
+        <translation>Updating…</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="65"/>
+        <source>重启后生效</source>
+        <translation>Applies after app restart</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="66"/>
+        <source>更新失败</source>
+        <translation>Update failed</translation>
     </message>
 </context>
 <context>
@@ -6247,7 +6280,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="382"/>
+        <location filename="../../view/dialogs/task_draft.py" line="377"/>
         <source>导入文件</source>
         <translation>Import File(s)</translation>
     </message>
@@ -6291,7 +6324,7 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>Choose Default Download Folder</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="377"/>
+        <location filename="../../view/dialogs/task_draft.py" line="372"/>
         <source>所有可导入文件 ({0})</source>
         <translation>All Supported Formats ({0})</translation>
     </message>
@@ -6307,7 +6340,7 @@ Data will be copied to new location and the app will then exit. Please manually 
 <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../i18n.py" line="27"/>
+        <location filename="../../i18n.py" line="28"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} is not installed, please install it in Settings</translation>
     </message>
@@ -6369,106 +6402,111 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
     <message>
         <location filename="../../i18n.py" line="13"/>
+        <source>不支持该链接</source>
+        <translation>Unsupported link</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="14"/>
         <source>压缩包包含不安全路径：{path}</source>
         <translation>Archive contains unsafe path: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="14"/>
+        <location filename="../../i18n.py" line="15"/>
         <source>压缩包未找到：{path}</source>
         <translation>Archive file not found: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="15"/>
+        <location filename="../../i18n.py" line="16"/>
         <source>不支持的压缩格式：{name}</source>
         <translation>Unsupported archive format: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="16"/>
+        <location filename="../../i18n.py" line="17"/>
         <source>解压后未找到可执行文件：{name}</source>
         <translation>No executables found in archive: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="17"/>
+        <location filename="../../i18n.py" line="18"/>
         <source>无法读取校验文件：{path}</source>
         <translation>Unable to read checksum file: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="18"/>
+        <location filename="../../i18n.py" line="19"/>
         <source>无法读取文件：{detail}</source>
         <translation>Unable to read file: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="19"/>
+        <location filename="../../i18n.py" line="20"/>
         <source>无法写入文件夹 {folder}：{reason}</source>
         <translation>Unable to write to folder {folder}: {reason}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="20"/>
+        <location filename="../../i18n.py" line="21"/>
         <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
         <translation>SHA256 checksum failure: Expected {expected}, Actual {actual}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="21"/>
+        <location filename="../../i18n.py" line="22"/>
         <source>下载的文件未找到：{path}</source>
         <translation>Downloaded file not found: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="22"/>
+        <location filename="../../i18n.py" line="23"/>
         <source>无法获取 {name} 的最新 release</source>
         <translation>Unable to fetch the latest release for {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="23"/>
+        <location filename="../../i18n.py" line="24"/>
         <source>无法获取 {name}/{branch}/{path}</source>
         <translation>Unable to fetch {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="24"/>
+        <location filename="../../i18n.py" line="25"/>
         <source>无法下载 {name}/{branch}/{path}</source>
         <translation>Unable to download {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="25"/>
+        <location filename="../../i18n.py" line="26"/>
         <source>无法下载 {name}/{tag}/{asset}</source>
         <translation>Unable to download {name}/{tag}/{asset}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="26"/>
+        <location filename="../../i18n.py" line="27"/>
         <source>无法获取 PyPI 包信息: {package}</source>
         <translation>Unable to fetch PyPI package info: {package}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="32"/>
+        <location filename="../../i18n.py" line="33"/>
         <source>{path} 已被其他文件占用</source>
         <translation>{path} is already taken by another file</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="33"/>
+        <location filename="../../i18n.py" line="34"/>
         <source>未获得管理员授权</source>
         <translation>Administrator authorization was not granted</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="36"/>
+        <location filename="../../i18n.py" line="37"/>
         <source>端口 {port} 被占用，请更换端口</source>
         <translation>Port {port} is occupied, please change port</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="37"/>
+        <location filename="../../i18n.py" line="38"/>
         <source>没有权限监听端口 {port}，请更换端口</source>
         <translation>No permission to listen on port {port}, please change port</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="38"/>
+        <location filename="../../i18n.py" line="39"/>
         <source>无法监听端口 {port}，详情见日志</source>
         <translation>Cannot listen on port {port}, see log for details</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="39"/>
+        <location filename="../../i18n.py" line="40"/>
         <source>该链接不能用于更换</source>
         <translation>This link cannot be used for replacement</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="40"/>
+        <location filename="../../i18n.py" line="41"/>
         <source>新链接的内容与原任务不同，请重新添加任务</source>
         <translation>The new link&apos;s content differs from the original task; please add a new task</translation>
     </message>
@@ -6666,22 +6704,22 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>Output file not found: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="29"/>
+        <location filename="../../i18n.py" line="30"/>
         <source>无法获取版本信息</source>
         <translation>Unable to retrieve version information</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="30"/>
+        <location filename="../../i18n.py" line="31"/>
         <source>校验失败</source>
         <translation>Checksum verification failed</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="31"/>
+        <location filename="../../i18n.py" line="32"/>
         <source>当前平台无可用更新</source>
         <translation>No update is available for the current platform</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="34"/>
+        <location filename="../../i18n.py" line="35"/>
         <source>DMG 中未找到 .app</source>
         <translation>No .app bundle was found in the DMG</translation>
     </message>
@@ -7480,7 +7518,7 @@ The next steps will guide you through the basic setup.</translation>
 <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="56"/>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
         <source>迅雷、快车、QQ 旋风链接</source>
         <translation>Thunder, FlashGet, and QQ Xuanfeng proprietary links</translation>
     </message>

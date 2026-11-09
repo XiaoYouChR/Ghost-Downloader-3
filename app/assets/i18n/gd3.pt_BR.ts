@@ -3622,12 +3622,27 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="85"/>
+        <location filename="../../view/dialogs/pack_info.py" line="100"/>
         <source>功能包</source>
         <translation>Pacote de funcionalidades</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="89"/>
+        <location filename="../../view/dialogs/pack_info.py" line="101"/>
+        <source>功能包已更新</source>
+        <translation>Pacote de funcionalidades atualizado</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="101"/>
+        <source>重启软件后生效</source>
+        <translation>Reinicie o aplicativo para aplicar</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="120"/>
+        <source>辅助组件</source>
+        <translation>Componentes auxiliares</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="97"/>
         <source>关闭</source>
         <translation>Fechar</translation>
     </message>
@@ -3638,6 +3653,24 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
         <location filename="../../../features/jack_yao/pack.py" line="54"/>
         <source>资源下载</source>
         <translation>Download de recursos</translation>
+    </message>
+</context>
+<context>
+    <name>PackRow</name>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="64"/>
+        <source>更新中…</source>
+        <translation>Atualizando…</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="65"/>
+        <source>重启后生效</source>
+        <translation>Aplica-se após reiniciar</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="66"/>
+        <source>更新失败</source>
+        <translation>Falha ao atualizar</translation>
     </message>
 </context>
 <context>
@@ -5492,7 +5525,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="382"/>
+        <location filename="../../view/dialogs/task_draft.py" line="377"/>
         <source>导入文件</source>
         <translation>Importar arquivo</translation>
     </message>
@@ -5536,7 +5569,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation>Escolher pasta de download padrão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="377"/>
+        <location filename="../../view/dialogs/task_draft.py" line="372"/>
         <source>所有可导入文件 ({0})</source>
         <translation>Todos os arquivos importáveis ({0})</translation>
     </message>
@@ -5552,7 +5585,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../i18n.py" line="27"/>
+        <location filename="../../i18n.py" line="28"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} não está instalado, instale nas configurações</translation>
     </message>
@@ -5614,106 +5647,111 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
     </message>
     <message>
         <location filename="../../i18n.py" line="13"/>
+        <source>不支持该链接</source>
+        <translation>Link não suportado</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="14"/>
         <source>压缩包包含不安全路径：{path}</source>
         <translation>O arquivo compactado contém um caminho inseguro: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="14"/>
+        <location filename="../../i18n.py" line="15"/>
         <source>压缩包未找到：{path}</source>
         <translation>Arquivo compactado não encontrado: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="15"/>
+        <location filename="../../i18n.py" line="16"/>
         <source>不支持的压缩格式：{name}</source>
         <translation>Formato de compactação não suportado: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="16"/>
+        <location filename="../../i18n.py" line="17"/>
         <source>解压后未找到可执行文件：{name}</source>
         <translation>Arquivo executável não encontrado após extração: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="17"/>
+        <location filename="../../i18n.py" line="18"/>
         <source>无法读取校验文件：{path}</source>
         <translation>Não foi possível ler o arquivo de verificação: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="18"/>
+        <location filename="../../i18n.py" line="19"/>
         <source>无法读取文件：{detail}</source>
         <translation>Não foi possível ler o arquivo: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="19"/>
+        <location filename="../../i18n.py" line="20"/>
         <source>无法写入文件夹 {folder}：{reason}</source>
         <translation>Não foi possível gravar na pasta {folder}: {reason}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="20"/>
+        <location filename="../../i18n.py" line="21"/>
         <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
         <translation>Falha na verificação SHA256: esperado {expected}, obtido {actual}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="21"/>
+        <location filename="../../i18n.py" line="22"/>
         <source>下载的文件未找到：{path}</source>
         <translation>Arquivo baixado não encontrado: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="22"/>
+        <location filename="../../i18n.py" line="23"/>
         <source>无法获取 {name} 的最新 release</source>
         <translation>Não foi possível obter a versão mais recente de {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="23"/>
+        <location filename="../../i18n.py" line="24"/>
         <source>无法获取 {name}/{branch}/{path}</source>
         <translation>Não foi possível obter {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="24"/>
+        <location filename="../../i18n.py" line="25"/>
         <source>无法下载 {name}/{branch}/{path}</source>
         <translation>Não foi possível baixar {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="25"/>
+        <location filename="../../i18n.py" line="26"/>
         <source>无法下载 {name}/{tag}/{asset}</source>
         <translation>Não foi possível baixar {name}/{tag}/{asset}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="26"/>
+        <location filename="../../i18n.py" line="27"/>
         <source>无法获取 PyPI 包信息: {package}</source>
         <translation>Não foi possível obter informações do pacote PyPI: {package}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="32"/>
+        <location filename="../../i18n.py" line="33"/>
         <source>{path} 已被其他文件占用</source>
         <translation>{path} já está ocupado por outro arquivo</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="33"/>
+        <location filename="../../i18n.py" line="34"/>
         <source>未获得管理员授权</source>
         <translation>A autorização de administrador não foi concedida</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="36"/>
+        <location filename="../../i18n.py" line="37"/>
         <source>端口 {port} 被占用，请更换端口</source>
         <translation>Porta {port} em uso, escolha outra</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="37"/>
+        <location filename="../../i18n.py" line="38"/>
         <source>没有权限监听端口 {port}，请更换端口</source>
         <translation>Sem permissão para escutar na porta {port}, escolha outra porta</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="38"/>
+        <location filename="../../i18n.py" line="39"/>
         <source>无法监听端口 {port}，详情见日志</source>
         <translation>Não foi possível escutar na porta {port}, veja os detalhes no log</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="39"/>
+        <location filename="../../i18n.py" line="40"/>
         <source>该链接不能用于更换</source>
         <translation>Este link não pode ser usado para substituição</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="40"/>
+        <location filename="../../i18n.py" line="41"/>
         <source>新链接的内容与原任务不同，请重新添加任务</source>
         <translation>O conteúdo do novo link é diferente do original da tarefa; adicione a tarefa novamente</translation>
     </message>
@@ -5915,22 +5953,22 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation>Arquivo de saída não encontrado: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="29"/>
+        <location filename="../../i18n.py" line="30"/>
         <source>无法获取版本信息</source>
         <translation>Não foi possível obter informações da versão</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="30"/>
+        <location filename="../../i18n.py" line="31"/>
         <source>校验失败</source>
         <translation>Falha na verificação</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="31"/>
+        <location filename="../../i18n.py" line="32"/>
         <source>当前平台无可用更新</source>
         <translation>Nenhuma atualização disponível para a plataforma atual</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="34"/>
+        <location filename="../../i18n.py" line="35"/>
         <source>DMG 中未找到 .app</source>
         <translation>Não foi encontrado .app no DMG</translation>
     </message>
@@ -6678,7 +6716,7 @@ As próximas etapas ajudarão você a concluir a configuração básica.</transl
 <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="56"/>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
         <source>迅雷、快车、QQ 旋风链接</source>
         <translation>Links do Thunder, FlashGet e QQ Xuanfeng</translation>
     </message>

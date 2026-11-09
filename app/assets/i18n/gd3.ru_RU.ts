@@ -4286,12 +4286,27 @@ FFmpeg: {2}</translation>
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="85"/>
+        <location filename="../../view/dialogs/pack_info.py" line="100"/>
         <source>功能包</source>
         <translation>Пакет функций</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="89"/>
+        <location filename="../../view/dialogs/pack_info.py" line="101"/>
+        <source>功能包已更新</source>
+        <translation>Пакет функций обновлён</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="101"/>
+        <source>重启软件后生效</source>
+        <translation>Вступит в силу после перезапуска</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="120"/>
+        <source>辅助组件</source>
+        <translation>Вспомогательные компоненты</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="97"/>
         <source>关闭</source>
         <translation>Закрыть</translation>
     </message>
@@ -4302,6 +4317,24 @@ FFmpeg: {2}</translation>
         <location filename="../../../features/jack_yao/pack.py" line="54"/>
         <source>资源下载</source>
         <translation>Загрузка ресурсов</translation>
+    </message>
+</context>
+<context>
+    <name>PackRow</name>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="64"/>
+        <source>更新中…</source>
+        <translation>Обновление…</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="65"/>
+        <source>重启后生效</source>
+        <translation>Применится после перезапуска</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="66"/>
+        <source>更新失败</source>
+        <translation>Ошибка обновления</translation>
     </message>
 </context>
 <context>
@@ -6292,7 +6325,7 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="382"/>
+        <location filename="../../view/dialogs/task_draft.py" line="377"/>
         <source>导入文件</source>
         <translation>Импортировать файлы</translation>
     </message>
@@ -6336,7 +6369,7 @@ FFmpeg: {2}</translation>
         <translation>Выбрать папку загрузки по умолчанию</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="377"/>
+        <location filename="../../view/dialogs/task_draft.py" line="372"/>
         <source>所有可导入文件 ({0})</source>
         <translation>Все импортируемые файлы ({0})</translation>
     </message>
@@ -6352,7 +6385,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../i18n.py" line="27"/>
+        <location filename="../../i18n.py" line="28"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} не установлен, установите в настройках</translation>
     </message>
@@ -6414,106 +6447,111 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../i18n.py" line="13"/>
+        <source>不支持该链接</source>
+        <translation>Ссылка не поддерживается</translation>
+    </message>
+    <message>
+        <location filename="../../i18n.py" line="14"/>
         <source>压缩包包含不安全路径：{path}</source>
         <translation>Архив содержит небезопасный путь: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="14"/>
+        <location filename="../../i18n.py" line="15"/>
         <source>压缩包未找到：{path}</source>
         <translation>Архив не найден: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="15"/>
+        <location filename="../../i18n.py" line="16"/>
         <source>不支持的压缩格式：{name}</source>
         <translation>Неподдерживаемый формат архива: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="16"/>
+        <location filename="../../i18n.py" line="17"/>
         <source>解压后未找到可执行文件：{name}</source>
         <translation>После распаковки не найден исполняемый файл: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="17"/>
+        <location filename="../../i18n.py" line="18"/>
         <source>无法读取校验文件：{path}</source>
         <translation>Не удалось прочитать файл проверки: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="18"/>
+        <location filename="../../i18n.py" line="19"/>
         <source>无法读取文件：{detail}</source>
         <translation>Не удалось прочитать файл: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="19"/>
+        <location filename="../../i18n.py" line="20"/>
         <source>无法写入文件夹 {folder}：{reason}</source>
         <translation>Не удалось выполнить запись в папку {folder}: {reason}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="20"/>
+        <location filename="../../i18n.py" line="21"/>
         <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
         <translation>Ошибка проверки SHA256: ожидалось {expected}, получено {actual}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="21"/>
+        <location filename="../../i18n.py" line="22"/>
         <source>下载的文件未找到：{path}</source>
         <translation>Загруженный файл не найден: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="22"/>
+        <location filename="../../i18n.py" line="23"/>
         <source>无法获取 {name} 的最新 release</source>
         <translation>Не удалось получить последний релиз {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="23"/>
+        <location filename="../../i18n.py" line="24"/>
         <source>无法获取 {name}/{branch}/{path}</source>
         <translation>Не удалось получить {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="24"/>
+        <location filename="../../i18n.py" line="25"/>
         <source>无法下载 {name}/{branch}/{path}</source>
         <translation>Не удалось загрузить {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="25"/>
+        <location filename="../../i18n.py" line="26"/>
         <source>无法下载 {name}/{tag}/{asset}</source>
         <translation>Не удалось загрузить {name}/{tag}/{asset}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="26"/>
+        <location filename="../../i18n.py" line="27"/>
         <source>无法获取 PyPI 包信息: {package}</source>
         <translation>Не удалось получить информацию о пакете PyPI: {package}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="32"/>
+        <location filename="../../i18n.py" line="33"/>
         <source>{path} 已被其他文件占用</source>
         <translation>{path} уже занят другим файлом</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="33"/>
+        <location filename="../../i18n.py" line="34"/>
         <source>未获得管理员授权</source>
         <translation>Права администратора не предоставлены</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="36"/>
+        <location filename="../../i18n.py" line="37"/>
         <source>端口 {port} 被占用，请更换端口</source>
         <translation>Порт {port} занят, выберите другой</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="37"/>
+        <location filename="../../i18n.py" line="38"/>
         <source>没有权限监听端口 {port}，请更换端口</source>
         <translation>Нет прав для прослушивания порта {port}, смените порт</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="38"/>
+        <location filename="../../i18n.py" line="39"/>
         <source>无法监听端口 {port}，详情见日志</source>
         <translation>Не удалось прослушать порт {port}, подробности в журнале</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="39"/>
+        <location filename="../../i18n.py" line="40"/>
         <source>该链接不能用于更换</source>
         <translation>Эту ссылку нельзя использовать для замены</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="40"/>
+        <location filename="../../i18n.py" line="41"/>
         <source>新链接的内容与原任务不同，请重新添加任务</source>
         <translation>Содержимое новой ссылки отличается от исходной задачи, добавьте задачу заново</translation>
     </message>
@@ -6715,22 +6753,22 @@ FFmpeg: {2}</translation>
         <translation>Выходной файл не найден: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="29"/>
+        <location filename="../../i18n.py" line="30"/>
         <source>无法获取版本信息</source>
         <translation>Не удалось получить информацию о версии</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="30"/>
+        <location filename="../../i18n.py" line="31"/>
         <source>校验失败</source>
         <translation>Ошибка проверки</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="31"/>
+        <location filename="../../i18n.py" line="32"/>
         <source>当前平台无可用更新</source>
         <translation>Для текущей платформы нет доступных обновлений</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="34"/>
+        <location filename="../../i18n.py" line="35"/>
         <source>DMG 中未找到 .app</source>
         <translation>В DMG не найден .app</translation>
     </message>
@@ -7536,7 +7574,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="56"/>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
         <source>迅雷、快车、QQ 旋风链接</source>
         <translation>Ссылки Thunder, FlashGet и QQ Xuanfeng</translation>
     </message>
