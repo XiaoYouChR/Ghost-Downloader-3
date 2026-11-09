@@ -143,6 +143,17 @@ class FakePack(FeaturePack):
         self.parsedOptions: list[TaskOptions] = []
 
 
+class FakeED2kSession:
+    def open(self, coroutineRunner, createKelpie) -> None:
+        pass
+
+    async def close(self) -> None:
+        pass
+
+    def isActive(self, task) -> bool:
+        return False
+
+
 class FakeFileWatcher:
     fileChanged = Signal(str)
 

@@ -12,6 +12,7 @@ from tests.helpers import buildFileContent, buildRangeHandler
 from wrapped_link_pack.pack import WrappedLinkPack, toInnerUrl
 
 INNER = "https://example.com/files/a.zip?sign=1&expires=2"
+ED2K = "ed2k://|file|[SubGroup] Show 01.mkv|1024|0123456789ABCDEF0123456789ABCDEF|/"
 
 
 def wrap(scheme: str, text: bytes) -> str:
@@ -39,6 +40,10 @@ def features(engine):
 ])
 def test_to_inner_url_unwraps_link(link):
     assert toInnerUrl(link) == INNER
+
+
+def test_to_inner_url_unwraps_ed2k_link_with_bracketed_name():
+    assert toInnerUrl(wrap("thunder", f"AA{ED2K}ZZ".encode())) == ED2K
 
 
 def test_to_inner_url_reads_gbk_link():

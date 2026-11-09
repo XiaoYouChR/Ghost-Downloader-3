@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import base64
 import binascii
+import re
 from dataclasses import replace
-from urllib.parse import urlparse
 
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser, UriScheme
@@ -11,6 +11,13 @@ from app.models.task import Task, TaskError, TaskOptions
 from .config import wrappedLinkConfig
 
 SCHEMES = {"thunder", "flashget", "qqdl"}
+SCHEME_PATTERN = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*):")
+
+
+def toScheme(text: str) -> str:
+    # 不用 urllib：内层是带方括号文件名的 ed2k 链接时它会抛 ValueError
+    match = SCHEME_PATTERN.match(text.strip())
+    return match[1].lower() if match else ""
 
 
 def toInnerUrl(url: str) -> str:
@@ -33,7 +40,7 @@ def toInnerUrl(url: str) -> str:
         case "flashget":
             text = text.removeprefix("[FLASHGET]").removesuffix("[FLASHGET]").removesuffix("[/FLASHGET]")
 
-    innerScheme = urlparse(text.strip()).scheme.lower()
+    innerScheme = toScheme(text)
     if innerScheme in SCHEMES:
         raise TaskError("不支持多层包裹的链接")
     if not innerScheme:
@@ -45,7 +52,7 @@ class WrappedLinkParser(TaskParser):
     priority = 10
 
     def match(self, options: TaskOptions) -> bool:
-        return urlparse(options.url.strip()).scheme.lower() in SCHEMES
+        return toScheme(options.url) in SCHEMES
 
     async def parse(self, options: TaskOptions) -> Task:
         return await self.pack.parse(replace(options, url=toInnerUrl(options.url)))

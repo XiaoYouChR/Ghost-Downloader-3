@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from urllib.parse import urlparse
-
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
-from loguru import logger
 
 class ClipboardListener(QObject):
     urlsDetected = Signal(list)
@@ -50,18 +47,5 @@ class ClipboardListener(QObject):
         self.urlsDetected.emit(urls)
 
     def _downloadableUrls(self) -> list[str]:
-        urls: list[str] = []
-        for line in self._clipboard.text().splitlines():
-            url = line.strip()
-            if not url:
-                continue
-            try:
-                parsed = urlparse(url)
-            except ValueError as error:
-                logger.warning("跳过无效剪贴板链接 {}: {}", url, error)
-                continue
-            if not parsed.scheme or parsed.geturl() != url:
-                continue
-            if self._matchPassive(url):
-                urls.append(url)
-        return urls
+        return [url for line in self._clipboard.text().splitlines()
+                if (url := line.strip()) and self._matchPassive(url)]

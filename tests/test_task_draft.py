@@ -4,7 +4,9 @@ import asyncio
 
 import pytest
 
+from app.models.pack import PackServices
 from app.models.task import TaskOptions, TaskStatus
+from http_pack.pack import HttpPack
 from tests.helpers import waitUntil
 
 A, B, C = "http://test/a.zip", "http://test/b.zip", "http://test/c.zip"
@@ -13,6 +15,12 @@ A, B, C = "http://test/a.zip", "http://test/b.zip", "http://test/c.zip"
 @pytest.fixture
 def pack(engine):
     return engine.featureService.packById("test")
+
+
+@pytest.fixture
+def httpPack(engine):
+    services = PackServices(coroutineRunner=engine.coroutineRunner, speedMeter=engine.speedMeter)
+    engine.featureService.register(HttpPack(services))
 
 
 
@@ -250,3 +258,12 @@ async def test_parse_success_clears_earlier_error(engine, draft, pack):
 
     assert draft.failCount() == 0
     assert draft.taskByUrl(A) is task
+
+
+async def test_parse_broken_link_shows_unsupported(draft, httpPack):
+    failures = []
+    draft.parseFailed.connect(lambda url, error: failures.append(str(error)))
+
+    draft.setUrls(["http://[abc"])
+
+    await waitUntil(lambda: failures == ["不支持该链接"])

@@ -24,3 +24,10 @@ def test_match_skips_ignored_pack(engine):
     cfg.load(configFile)
 
     assert not engine.featureService.matchPassive(MODEL_URL)
+
+
+def test_match_passive_skips_broken_link(engine):
+    services = PackServices(coroutineRunner=engine.coroutineRunner, speedMeter=engine.speedMeter)
+    engine.featureService.register(HttpPack(services))
+
+    assert not engine.featureService.matchPassive("http://[abc")

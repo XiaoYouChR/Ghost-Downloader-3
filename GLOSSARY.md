@@ -132,7 +132,7 @@ _Avoid_: URL 注册、协议注册
 _Avoid_: 文件注册
 
 **Passive Capture**:
-用户没有主动添加任务时（目前只有剪贴板），把一条链接识别为可下载链接。由最终负责解析它的 FeaturePack 判断；用户可以按 FeaturePack 关掉。
+用户没有主动添加任务时（目前只有剪贴板），把一条带协议头的链接识别为可下载链接，本地路径不算。由最终负责解析它的 FeaturePack 判断；用户可以按 FeaturePack 关掉。
 _Avoid_: 自动识别、协议过滤
 
 **Wake Link**:

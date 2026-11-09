@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from dataclasses import replace
 from threading import Event
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 
 from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import FEATURES_DIR
-from app.models.task import TaskOptions
+from app.models.task import TaskError, TaskOptions
 from app.platform import file_association
 from app.loader import loadPacks
 
@@ -33,6 +33,8 @@ if TYPE_CHECKING:
     from app.view.dialogs.task_drawer import DetailCard
 
 PARSE_LIMIT_PER_HOST = 5
+# 单字母协议头是 Windows 盘符，不算链接
+LINK_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9+.-]+:")
 
 
 class FeatureService:
@@ -97,18 +99,17 @@ class FeatureService:
                 schemeToggle.connect(self._registerAssociations)
 
     async def parse(self, options: TaskOptions) -> Task:
-        host = urlparse(options.url).hostname
-        if not host:
+        if not options.host:
             return await self._parse(options)
 
-        async with self._parseSlotsByHost.setdefault(host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
+        async with self._parseSlotsByHost.setdefault(options.host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
             return await self._parse(options)
 
     async def _parse(self, options: TaskOptions) -> Task:
         options = toPresetOptions(options)
-        matched = [parser for parser in self._parsers if parser.match(options)]
+        matched = [parser for parser in self._parsers if matchParser(parser, options)]
         if not matched:
-            raise ValueError(f"No parser matched: {options.url}")
+            raise TaskError("不支持该链接")
         if not options.isProbed:
             return await matched[0].parse(options)
         for parser in matched[:-1]:
@@ -120,11 +121,13 @@ class FeatureService:
 
     def match(self, url: str) -> bool:
         options = TaskOptions(url=url)
-        return any(parser.match(options) for parser in self._parsers)
+        return any(matchParser(parser, options) for parser in self._parsers)
 
     def matchPassive(self, url: str) -> bool:
+        if not LINK_PATTERN.match(url):
+            return False
         options = TaskOptions(url=url)
-        parser = next((parser for parser in self._parsers if parser.match(options)), None)
+        parser = next((parser for parser in self._parsers if matchParser(parser, options)), None)
         return (parser is not None
                 and parser.pack.packId not in cfg.clipboardIgnoredPacks.value
                 and parser.matchPassive(options))
@@ -259,11 +262,19 @@ class FeatureService:
         event.wait()
 
 
+def matchParser(parser: TaskParser, options: TaskOptions) -> bool:
+    # urllib 拆不开的文本（如方括号不成对）会抛 ValueError，这类文本不归任何 parser
+    try:
+        return parser.match(options)
+    except ValueError:
+        return False
+
+
 def toPresetOptions(options: TaskOptions) -> TaskOptions:
     if options.clientProfile:
         return options
     from app.client import matchIdentityPreset
-    preset = matchIdentityPreset(urlparse(options.url).hostname or "")
+    preset = matchIdentityPreset(options.host)
     if preset is None:
         return options
     kwargs = {}

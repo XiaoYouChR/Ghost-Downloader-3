@@ -10,6 +10,7 @@ def toLocalizedError(error) -> str:
 
 N("TaskErrors", "进程异常退出（{code}）：{detail}")
 N("TaskErrors", "发生了意外错误：{detail}")
+N("TaskErrors", "不支持该链接")
 N("TaskErrors", "压缩包包含不安全路径：{path}")
 N("TaskErrors", "压缩包未找到：{path}")
 N("TaskErrors", "不支持的压缩格式：{name}")

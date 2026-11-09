@@ -8,6 +8,7 @@ from pathlib import Path
 from time import time
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Any, ClassVar, Self
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from loguru import logger
@@ -93,6 +94,14 @@ class TaskOptions:
     @property
     def isProbed(self) -> bool:
         return self.file is not None
+
+    @property
+    def host(self) -> str:
+        # 带方括号文件名的 ed2k 链接等文本会让 urllib 抛 ValueError，按没有 host 处理
+        try:
+            return urlparse(self.url).hostname or ""
+        except ValueError:
+            return ""
 
 
 @dataclass(frozen=True)
