@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from dataclasses import dataclass, field
 from enum import auto, IntEnum
 from pathlib import Path
@@ -16,6 +17,20 @@ from loguru import logger
 from app.config.cfg import cfg, currentHeaders
 from app.platform.filesystem import deletePath, splitStemExt, toSafeFilename
 
+# urllib 遇到方括号会抛 ValueError（如 ed2k 文件名），链接文本一律经 toScheme / toHost 取协议头和 host
+SCHEME_PATTERN = re.compile(r"([A-Za-z][A-Za-z0-9+.-]+):")  # 单字母是 Windows 盘符
+
+
+def toScheme(url: str) -> str:
+    match = SCHEME_PATTERN.match(url.strip())
+    return match[1].lower() if match else ""
+
+
+def toHost(url: str) -> str:
+    try:
+        return urlparse(url).hostname or ""
+    except ValueError:
+        return ""
 
 
 def deletePlaceholder(path: Path) -> None:
@@ -94,14 +109,6 @@ class TaskOptions:
     @property
     def isProbed(self) -> bool:
         return self.file is not None
-
-    @property
-    def host(self) -> str:
-        # 带方括号文件名的 ed2k 链接等文本会让 urllib 抛 ValueError，按没有 host 处理
-        try:
-            return urlparse(self.url).hostname or ""
-        except ValueError:
-            return ""
 
 
 @dataclass(frozen=True)

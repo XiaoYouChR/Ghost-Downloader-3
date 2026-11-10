@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import re
 from dataclasses import replace
 from threading import Event
 from typing import TYPE_CHECKING
@@ -10,7 +9,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import FEATURES_DIR
-from app.models.task import TaskError, TaskOptions
+from app.models.task import TaskError, TaskOptions, toHost, toScheme
 from app.platform import file_association
 from app.loader import loadPacks
 
@@ -33,8 +32,6 @@ if TYPE_CHECKING:
     from app.view.dialogs.task_drawer import DetailCard
 
 PARSE_LIMIT_PER_HOST = 5
-# 单字母协议头是 Windows 盘符，不算链接
-LINK_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9+.-]+:")
 
 
 class FeatureService:
@@ -99,10 +96,11 @@ class FeatureService:
                 schemeToggle.connect(self._registerAssociations)
 
     async def parse(self, options: TaskOptions) -> Task:
-        if not options.host:
+        host = toHost(options.url)
+        if not host:
             return await self._parse(options)
 
-        async with self._parseSlotsByHost.setdefault(options.host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
+        async with self._parseSlotsByHost.setdefault(host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
             return await self._parse(options)
 
     async def _parse(self, options: TaskOptions) -> Task:
@@ -124,7 +122,7 @@ class FeatureService:
         return any(matchParser(parser, options) for parser in self._parsers)
 
     def matchPassive(self, url: str) -> bool:
-        if not LINK_PATTERN.match(url):
+        if not toScheme(url):
             return False
         options = TaskOptions(url=url)
         parser = next((parser for parser in self._parsers if matchParser(parser, options)), None)
@@ -263,7 +261,6 @@ class FeatureService:
 
 
 def matchParser(parser: TaskParser, options: TaskOptions) -> bool:
-    # urllib 拆不开的文本（如方括号不成对）会抛 ValueError，这类文本不归任何 parser
     try:
         return parser.match(options)
     except ValueError:
@@ -274,7 +271,7 @@ def toPresetOptions(options: TaskOptions) -> TaskOptions:
     if options.clientProfile:
         return options
     from app.client import matchIdentityPreset
-    preset = matchIdentityPreset(options.host)
+    preset = matchIdentityPreset(toHost(options.url))
     if preset is None:
         return options
     kwargs = {}

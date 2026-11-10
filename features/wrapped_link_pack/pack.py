@@ -2,22 +2,14 @@ from __future__ import annotations
 
 import base64
 import binascii
-import re
 from dataclasses import replace
 
 from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser, UriScheme
-from app.models.task import Task, TaskError, TaskOptions
+from app.models.task import Task, TaskError, TaskOptions, toScheme
 from .config import wrappedLinkConfig
 
 SCHEMES = {"thunder", "flashget", "qqdl"}
-SCHEME_PATTERN = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*):")
-
-
-def toScheme(text: str) -> str:
-    # 不用 urllib：内层是带方括号文件名的 ed2k 链接时它会抛 ValueError
-    match = SCHEME_PATTERN.match(text.strip())
-    return match[1].lower() if match else ""
 
 
 def toInnerUrl(url: str) -> str:

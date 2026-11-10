@@ -26,6 +26,7 @@ from app.platform.filesystem import deletePath
 from app.services.coroutine_runner import CoroutineRunner
 from app.services.task_draft import TaskDraft
 from app.signal import Signal
+from http_pack.pack import HttpPack
 from qfluentwidgets import ConfigItem
 
 ANDROID_FOLDER = Path(__file__).parents[1] / "android"
@@ -143,17 +144,6 @@ class FakePack(FeaturePack):
         self.parsedOptions: list[TaskOptions] = []
 
 
-class FakeED2kSession:
-    def open(self, coroutineRunner, createKelpie) -> None:
-        pass
-
-    async def close(self) -> None:
-        pass
-
-    def isActive(self, task) -> bool:
-        return False
-
-
 class FakeFileWatcher:
     fileChanged = Signal(str)
 
@@ -254,6 +244,13 @@ async def startEngine(config, fileWatcher, recycleBin):
 @pytest.fixture
 def engine(startEngine):
     return startEngine()
+
+
+@pytest.fixture
+def httpPack(engine):
+    pack = HttpPack(PackServices(coroutineRunner=engine.coroutineRunner, speedMeter=engine.speedMeter))
+    engine.featureService.register(pack)
+    return pack
 
 
 @pytest.fixture

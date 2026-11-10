@@ -7,9 +7,19 @@ from app.models.task import TaskOptions
 from ed2k_pack import pack as packModule
 from ed2k_pack.pack import ED2kPack
 from http_pack.pack import HttpPack
-from tests.conftest import FakeED2kSession
 
 ED2K = "ed2k://|file|[SubGroup] Show 01.mkv|1024|0123456789ABCDEF0123456789ABCDEF|/"
+
+
+class FakeED2kSession:
+    def open(self, coroutineRunner, createKelpie) -> None:
+        pass
+
+    async def close(self) -> None:
+        pass
+
+    def isActive(self, task) -> bool:
+        return False
 
 
 @pytest.fixture

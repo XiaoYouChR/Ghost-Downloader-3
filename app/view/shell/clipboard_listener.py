@@ -34,7 +34,8 @@ class ClipboardListener(QObject):
             self._selfCopied = False
             return
 
-        urls = self._downloadableUrls()
+        urls = [url for line in self._clipboard.text().splitlines()
+                if (url := line.strip()) and self._matchPassive(url)]
         if not urls:
             return
 
@@ -45,7 +46,3 @@ class ClipboardListener(QObject):
             self._lastUrls = snapshot
 
         self.urlsDetected.emit(urls)
-
-    def _downloadableUrls(self) -> list[str]:
-        return [url for line in self._clipboard.text().splitlines()
-                if (url := line.strip()) and self._matchPassive(url)]
