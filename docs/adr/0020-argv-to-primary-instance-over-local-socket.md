@@ -24,4 +24,6 @@
 - 锁和 socket 按用户区分（Unix 用 uid），与锁 key 为 `DESKTOP_ID` 的旧版本不再互斥。
 - 以 `ghd` 调用的 argv 一律是子命令：打错的子命令报用法错误，不回落为打开链接，
   否则没有 Primary Instance 时，打错命令的进程会在 Agent 的 shell 里启动成 GUI。
+- 打包版的 `sys.argv[0]` 被 Nuitka 换成真实路径，入口改用 `__compiled__.original_argv0` 判断是否以 `ghd` 调用。
+  `EXECUTABLE_PATH` 要的就是真实路径，仍用 `sys.argv[0]`。
 - stdout 是终端时只把 JSON 缩进显示，不像 gh 那样换成表格：有的 Agent 在伪终端里执行命令，按 TTY 切换输出格式会让它们拿不到 JSON。

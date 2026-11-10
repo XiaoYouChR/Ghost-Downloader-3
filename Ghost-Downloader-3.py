@@ -293,7 +293,9 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
 if __name__ == "__main__":
     from app.platform import instance
 
-    if (exitCode := instance.request(sys.argv, os.getcwd())) is not None:
+    # 打包版的 argv[0] 被 Nuitka 换成真实路径，只有 original_argv0 还保留 ghd
+    argv = [__compiled__.original_argv0, *sys.argv[1:]] if "__compiled__" in globals() else sys.argv
+    if (exitCode := instance.request(argv, os.getcwd())) is not None:
         sys.exit(exitCode)
 
     from app.cli import isSilent
@@ -301,10 +303,10 @@ if __name__ == "__main__":
 
     setupEnvironment()
     app = Application(sys.argv)
-    primaryInstance = instance.open(app, sys.argv, os.getcwd())
+    primaryInstance = instance.open(app, argv, os.getcwd())
     if primaryInstance is None:
         sys.exit(0)
-    startApp(app, primaryInstance, isSilent=isSilent(sys.argv[1:]))
+    startApp(app, primaryInstance, isSilent=isSilent(argv[1:]))
     exitCode = app.exec()
     primaryInstance.close()
     sys.exit(exitCode)
