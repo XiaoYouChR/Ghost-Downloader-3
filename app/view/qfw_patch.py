@@ -78,6 +78,68 @@ def patchMaskDialogAnimation() -> None:
     MaskDialogBase.done = dialog_animation.done
 
 
+def patchLinuxFramelessResize() -> None:
+    # Wayland 不提供窗口的全局位置，原实现用 globalPos - pos() 识别边框会整体偏移；
+    # 改为在本窗口的 QWindow 上过滤事件，用窗口内坐标识别
+    from PySide6.QtCore import QEvent, Qt
+    from qframelesswindow import linux
+    from qframelesswindow.titlebar import TitleBar
+
+    Edge = Qt.Edge
+    CURSORS = {
+        Edge.LeftEdge | Edge.TopEdge: Qt.CursorShape.SizeFDiagCursor,
+        Edge.RightEdge | Edge.BottomEdge: Qt.CursorShape.SizeFDiagCursor,
+        Edge.RightEdge | Edge.TopEdge: Qt.CursorShape.SizeBDiagCursor,
+        Edge.LeftEdge | Edge.BottomEdge: Qt.CursorShape.SizeBDiagCursor,
+        Edge.TopEdge: Qt.CursorShape.SizeVerCursor,
+        Edge.BottomEdge: Qt.CursorShape.SizeVerCursor,
+        Edge.LeftEdge: Qt.CursorShape.SizeHorCursor,
+        Edge.RightEdge: Qt.CursorShape.SizeHorCursor,
+    }
+
+    def _initFrameless(self) -> None:
+        self.windowEffect = linux.LinuxWindowEffect(self)
+        self.titleBar = TitleBar(self)
+        self._isResizeEnabled = True
+
+        self.updateFrameless()
+        self.winId()
+        self.windowHandle().installEventFilter(self)
+
+        self.titleBar.raise_()
+        self.resize(500, 500)
+
+    def eventFilter(self, obj, event: QEvent) -> bool:
+        eventType = event.type()
+        if eventType != QEvent.Type.MouseMove and eventType != QEvent.Type.MouseButtonPress:
+            return False
+        if not self._isResizeEnabled or self.isMaximized() or self.isFullScreen():
+            return False
+
+        pos = event.position()
+        border = self.BORDER_WIDTH
+        edges = Edge(0)
+        if pos.x() < border:
+            edges |= Edge.LeftEdge
+        elif pos.x() >= self.width() - border:
+            edges |= Edge.RightEdge
+        if pos.y() < border:
+            edges |= Edge.TopEdge
+        elif pos.y() >= self.height() - border:
+            edges |= Edge.BottomEdge
+
+        if eventType == QEvent.Type.MouseMove:
+            self.setCursor(CURSORS.get(edges, Qt.CursorShape.ArrowCursor))
+            return False
+
+        if edges and event.button() == Qt.MouseButton.LeftButton:
+            return obj.startSystemResize(edges)
+        return False
+
+    linux.LinuxFramelessWindowBase._initFrameless = _initFrameless
+    linux.LinuxFramelessWindowBase.eventFilter = eventFilter
+
+
 def unregisterRouter(stacked: QStackedWidget) -> None:
     from qfluentwidgets.common.router import qrouter
 
