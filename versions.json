@@ -1,52 +1,52 @@
 {
   "app": {
-    "version": "4.5.1",
+    "version": "4.5.2",
     "patches": {
       "Windows-x86_64": {
-        "from": "4.5.0",
-        "file": "patch-Windows-x86_64-4.5.0-to-4.5.1.hdiff",
-        "sha256": "a27da2433accd7097ea18a0c33d4e91f82f11c71dab4d807d033cb0a7c6c7d32",
-        "size": 4798228
+        "from": "4.5.1",
+        "file": "patch-Windows-x86_64-4.5.1-to-4.5.2.hdiff",
+        "sha256": "def01aad6815d333a3cf4478ef75e2047cd4c4427dc610abe64973325271892f",
+        "size": 8064752
       },
       "Windows-arm64": {
-        "from": "4.5.0",
-        "file": "patch-Windows-arm64-4.5.0-to-4.5.1.hdiff",
-        "sha256": "55002966377393c841b8d00535b441cc428e5aa7fafd16b2e05d03438362f89b",
-        "size": 3736017
+        "from": "4.5.1",
+        "file": "patch-Windows-arm64-4.5.1-to-4.5.2.hdiff",
+        "sha256": "b0010c49577c35950c4b8a441f76a3dbaeb11463f8991f300bd862a8782ba93f",
+        "size": 7736972
       },
       "macOS-arm64": {
-        "from": "4.5.0",
-        "file": "patch-macOS-arm64-4.5.0-to-4.5.1.hdiff",
-        "sha256": "7d6f678ca23a489ff4fb6bac11ccbdcf8a868cbf54e89cc6e7b8ecc938720afd",
-        "size": 6534612
+        "from": "4.5.1",
+        "file": "patch-macOS-arm64-4.5.1-to-4.5.2.hdiff",
+        "sha256": "b62fbb76d6136deef0e2b647a4e220e51c106cbe77f700a6674fdd24c2e55a99",
+        "size": 11233630
       },
       "macOS-x86_64": {
-        "from": "4.5.0",
-        "file": "patch-macOS-x86_64-4.5.0-to-4.5.1.hdiff",
-        "sha256": "2ad2b4c7086c11f677d77891f9f65979bc94f3db52047338c9c3bb8340acef3e",
-        "size": 7418683
+        "from": "4.5.1",
+        "file": "patch-macOS-x86_64-4.5.1-to-4.5.2.hdiff",
+        "sha256": "0172b75ca44f6800d373a8ba10e833db05fc8d0f018dd0cef874239f82ea043d",
+        "size": 10761792
       }
     },
     "full": {
       "Windows-x86_64": {
-        "file": "Ghost-Downloader-v4.5.1-Windows-x86_64.zip",
-        "sha256": "aa11ac5a12f92e1825fd0dd78e50380eca2ae51d019fb93e39c2ca9e79468f37",
-        "size": 45810566
+        "file": "Ghost-Downloader-v4.5.2-Windows-x86_64.zip",
+        "sha256": "330b860374a77a0d4e5390d269b750d411c8a73b3e9ccdc612576caa039cac5e",
+        "size": 46099185
       },
       "Windows-arm64": {
-        "file": "Ghost-Downloader-v4.5.1-Windows-arm64.zip",
-        "sha256": "c4de57214e377051bce7e2b20eb5979ecac3453597dae2d6bb8e82b83d2c6a81",
-        "size": 39702048
+        "file": "Ghost-Downloader-v4.5.2-Windows-arm64.zip",
+        "sha256": "2d7e9d97c60d041c3628fd6567d49460c9f8e6edc91becda4950dd4440074ee1",
+        "size": 39960868
       },
       "macOS-arm64": {
-        "file": "Ghost-Downloader-v4.5.1-macOS-arm64.dmg",
-        "sha256": "9e8f6b7911f027a48374360290a30fd5662249f09fc148b54d5c2605d10b1760",
-        "size": 66018015
+        "file": "Ghost-Downloader-v4.5.2-macOS-arm64.dmg",
+        "sha256": "670aab380e4f8ce67013d5817d05bbdb2a8094a0098fb755fe83d9ba7893ff71",
+        "size": 66445115
       },
       "macOS-x86_64": {
-        "file": "Ghost-Downloader-v4.5.1-macOS-x86_64.dmg",
-        "sha256": "3eef07e1c9cc5e1e5f9a28caf8fb273b70c82f727599d88e5352f7ac29eefd99",
-        "size": 70186788
+        "file": "Ghost-Downloader-v4.5.2-macOS-x86_64.dmg",
+        "sha256": "b62967737a785f6d200acf39158e7df9dee0346a3f99f5877c6ec940bc6cadf4",
+        "size": 70641280
       }
     }
   },
@@ -118,10 +118,10 @@
       "gdMinVersion": "4.5.0"
     },
     "wrapped_link_pack": {
-      "version": "1.1.1",
+      "version": "1.1.2",
       "file": "wrapped_link_pack.zip",
-      "sha256": "e9bb1c0e8eb190525f239bfe18c8f956d155d31f464ed629e2a014a7760dc2d7",
-      "gdMinVersion": "4.5.0"
+      "sha256": "010f46230ed7a182f7db6195919f5aa3f2011af89fa34b3e97c22a9ad4cb7c48",
+      "gdMinVersion": "4.5.2"
     },
     "zip_pack": {
       "version": "1.1.0",
