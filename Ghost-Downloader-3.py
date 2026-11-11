@@ -38,7 +38,7 @@ def setupEnvironment() -> None:
         setupHiddenSubprocess()
 
     from app.view.qfw_patch import (
-        patchFluentLabelThemeChanged, patchLinuxFramelessResize, patchMaskDialogAnimation, patchStackedWidgetAnimation,
+        patchFluentLabelThemeChanged, patchLinuxFrameless, patchMaskDialogAnimation, patchStackedWidgetAnimation,
     )
     from app.view.components.labels import IconBodyLabel
     patchFluentLabelThemeChanged()
@@ -47,7 +47,7 @@ def setupEnvironment() -> None:
     if sys.platform != "linux":
         patchMaskDialogAnimation()
     else:
-        patchLinuxFramelessResize()
+        patchLinuxFrameless()
     qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 

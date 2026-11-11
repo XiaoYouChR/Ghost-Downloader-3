@@ -78,12 +78,14 @@ def patchMaskDialogAnimation() -> None:
     MaskDialogBase.done = dialog_animation.done
 
 
-def patchLinuxFramelessResize() -> None:
+def patchLinuxFrameless() -> None:
     # Wayland 不提供窗口的全局位置，原实现用 globalPos - pos() 识别边框会整体偏移；
     # 改为在本窗口的 QWindow 上过滤事件，用窗口内坐标识别
     from PySide6.QtCore import QEvent, Qt
     from qframelesswindow import linux
     from qframelesswindow.titlebar import TitleBar
+
+    from app.platform import shadow
 
     Edge = Qt.Edge
     CURSORS = {
@@ -105,6 +107,8 @@ def patchLinuxFramelessResize() -> None:
         self.updateFrameless()
         self.winId()
         self.windowHandle().installEventFilter(self)
+        # 无边框窗口没有系统装饰，阴影要单独向合成器申请
+        shadow.registerWindow(self.windowHandle())
 
         self.titleBar.raise_()
         self.resize(500, 500)
