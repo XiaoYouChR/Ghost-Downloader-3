@@ -11,7 +11,11 @@ from ctypes import (
     addressof,
     c_char_p,
     c_int,
+    c_int16,
     c_int32,
+    c_uint,
+    c_uint8,
+    c_uint16,
     c_uint32,
     c_void_p,
 )
@@ -41,13 +45,29 @@ class Tile:
     pixels: bytes  # 预乘 ARGB8888
 
 
+@dataclass(frozen=True)
+class Tiles:
+    left: Tile
+    topLeft: Tile
+    top: Tile
+    topRight: Tile
+    right: Tile
+    bottomRight: Tile
+    bottom: Tile
+    bottomLeft: Tile
+
+
 def registerWindow(window: QWindow) -> None:
     """让合成器给无边框窗口画阴影，隐藏再显示后自动重挂；合成器不支持时什么也不做。"""
-    if not QGuiApplication.platformName().startswith("wayland"):
-        return
-    kwinShadow = createKwinShadow()
-    if kwinShadow is not None:
-        WindowShadow(window, kwinShadow)
+    platform = QGuiApplication.platformName()
+    if platform.startswith("wayland"):
+        kwinShadow = createKwinShadow()
+        if kwinShadow is not None:
+            WindowShadow(window, kwinShadow)
+    elif platform == "xcb":
+        x11Shadow = createX11Shadow()
+        if x11Shadow is not None:
+            x11Shadow.set(window)
 
 
 class WindowShadow(QObject):
@@ -72,8 +92,7 @@ class WindowShadow(QObject):
         return False
 
 
-def buildTiles() -> list[Tile]:
-    """按 attach 请求的顺序：左、左上、上、右上、右、右下、下、左下。"""
+def buildTiles() -> Tiles:
     left, top, right, bottom = PADDING
 
     def cdf(z: float) -> float:
@@ -114,16 +133,16 @@ def buildTiles() -> list[Tile]:
 
     leftColumns, rightColumns, middle = range(-left, INSET), range(-INSET, right), range(1)
     topRows, bottomRows = range(-top, INSET), range(-INSET, bottom)
-    return [
-        build(range(-left, 0), "left", middle, "middle"),
-        build(leftColumns, "left", topRows, "top"),
-        build(middle, "middle", range(-top, 0), "top"),
-        build(rightColumns, "right", topRows, "top"),
-        build(range(right), "right", middle, "middle"),
-        build(rightColumns, "right", bottomRows, "bottom"),
-        build(middle, "middle", range(bottom), "bottom"),
-        build(leftColumns, "left", bottomRows, "bottom"),
-    ]
+    return Tiles(
+        left=build(range(-left, 0), "left", middle, "middle"),
+        topLeft=build(leftColumns, "left", topRows, "top"),
+        top=build(middle, "middle", range(-top, 0), "top"),
+        topRight=build(rightColumns, "right", topRows, "top"),
+        right=build(range(right), "right", middle, "middle"),
+        bottomRight=build(rightColumns, "right", bottomRows, "bottom"),
+        bottom=build(middle, "middle", range(bottom), "bottom"),
+        bottomLeft=build(leftColumns, "left", bottomRows, "bottom"),
+    )
 
 
 # libwayland-client 的 C 结构，PySide6 没有 Wayland 绑定
@@ -304,7 +323,10 @@ def createKwinShadow() -> KwinShadow | None:
     shm, _ = bind(b"wl_shm", interface("wl_shm_interface"), 1)
     wayland.wl_proxy_destroy(registry)
 
-    tiles = buildTiles()
+    built = buildTiles()
+    # attach 请求的顺序
+    tiles = (built.left, built.topLeft, built.top, built.topRight,
+             built.right, built.bottomRight, built.bottom, built.bottomLeft)
     fd = os.memfd_create("ghost-downloader-shadow")
     try:
         for tile in tiles:
@@ -321,3 +343,114 @@ def createKwinShadow() -> KwinShadow | None:
     marshal(wayland, pool, 1, [], flags=WL_MARSHAL_FLAG_DESTROY)
     wayland.wl_display_flush(display)
     return KwinShadow(wayland, display, surfaceByWindow, protocol, manager, managerVersion, buffers)
+
+
+# libxcb 的 C 结构，只声明用到的字段
+class XcbScreenIterator(Structure):
+    _fields_ = [("data", POINTER(c_uint32)), ("rem", c_int), ("index", c_int)]  # data 首字段是 root
+
+
+class XcbInternAtomReply(Structure):
+    _fields_ = [("response_type", c_uint8), ("pad0", c_uint8), ("sequence", c_uint16),
+                ("length", c_uint32), ("atom", c_uint32)]
+
+
+XCB_ATOM_ATOM, XCB_ATOM_CARDINAL = 4, 6
+XCB_PROP_MODE_REPLACE, XCB_IMAGE_FORMAT_Z_PIXMAP = 0, 2
+
+
+class X11Shadow:
+    """_KDE_NET_WM_SHADOW：把贴图 pixmap 写进窗口属性，由 KWin 画在窗口外。"""
+
+    def __init__(self, xcb: CDLL, connection: int, atom: int, data):
+        self._xcb = xcb
+        self._connection = connection
+        self._atom = atom
+        self._data = data
+
+    def set(self, window: QWindow) -> None:
+        # X 窗口 id 在隐藏和显示之间不变，属性设一次即可
+        self._xcb.xcb_change_property(self._connection, XCB_PROP_MODE_REPLACE, window.winId(), self._atom,
+                                      XCB_ATOM_CARDINAL, 32, len(self._data), self._data)
+        self._xcb.xcb_flush(self._connection)
+
+
+@cache
+def createX11Shadow() -> X11Shadow | None:
+    try:
+        xcb = CDLL("libxcb.so.1")
+    except OSError as e:
+        logger.warning("无法加载窗口阴影所需的 libxcb: {}", e)
+        return None
+    free = CDLL(None).free
+    free.argtypes = [c_void_p]
+
+    # cookie 是只含一个 unsigned int 的结构体，按值传递时与 c_uint 一致
+    xcb.xcb_get_setup.restype = c_void_p
+    xcb.xcb_get_setup.argtypes = [c_void_p]
+    xcb.xcb_setup_roots_iterator.restype = XcbScreenIterator
+    xcb.xcb_setup_roots_iterator.argtypes = [c_void_p]
+    xcb.xcb_intern_atom.restype = c_uint
+    xcb.xcb_intern_atom.argtypes = [c_void_p, c_uint8, c_uint16, c_char_p]
+    xcb.xcb_intern_atom_reply.restype = POINTER(XcbInternAtomReply)
+    xcb.xcb_intern_atom_reply.argtypes = [c_void_p, c_uint, c_void_p]
+    xcb.xcb_get_property.restype = c_uint
+    xcb.xcb_get_property.argtypes = [c_void_p, c_uint8, c_uint32, c_uint32, c_uint32, c_uint32, c_uint32]
+    xcb.xcb_get_property_reply.restype = c_void_p
+    xcb.xcb_get_property_reply.argtypes = [c_void_p, c_uint, c_void_p]
+    xcb.xcb_get_property_value.restype = POINTER(c_uint32)
+    xcb.xcb_get_property_value.argtypes = [c_void_p]
+    xcb.xcb_get_property_value_length.restype = c_int
+    xcb.xcb_get_property_value_length.argtypes = [c_void_p]
+    xcb.xcb_generate_id.restype = c_uint32
+    xcb.xcb_generate_id.argtypes = [c_void_p]
+    xcb.xcb_create_pixmap.argtypes = [c_void_p, c_uint8, c_uint32, c_uint32, c_uint16, c_uint16]
+    xcb.xcb_create_gc.argtypes = [c_void_p, c_uint32, c_uint32, c_uint32, c_void_p]
+    xcb.xcb_put_image.argtypes = [c_void_p, c_uint8, c_uint32, c_uint32, c_uint16, c_uint16,
+                                  c_int16, c_int16, c_uint8, c_uint8, c_uint32, c_char_p]
+    xcb.xcb_free_gc.argtypes = [c_void_p, c_uint32]
+    xcb.xcb_change_property.argtypes = [c_void_p, c_uint8, c_uint32, c_uint32, c_uint32, c_uint8, c_uint32, c_void_p]
+    xcb.xcb_flush.argtypes = [c_void_p]
+
+    connection = QGuiApplication.instance().nativeInterface().connection()
+    root = xcb.xcb_setup_roots_iterator(xcb.xcb_get_setup(connection)).data[0]
+
+    def internAtom(name: bytes) -> int:
+        reply = xcb.xcb_intern_atom_reply(connection, xcb.xcb_intern_atom(connection, 0, len(name), name), None)
+        if not reply:
+            return 0
+        atom = reply.contents.atom
+        free(reply)
+        return atom
+
+    def supportedAtoms() -> set[int]:
+        netSupported = internAtom(b"_NET_SUPPORTED")
+        reply = xcb.xcb_get_property_reply(
+            connection, xcb.xcb_get_property(connection, 0, root, netSupported, XCB_ATOM_ATOM, 0, 4096), None)
+        if not reply:
+            return set()
+        values = xcb.xcb_get_property_value(reply)
+        atoms = {values[i] for i in range(xcb.xcb_get_property_value_length(reply) // 4)}
+        free(reply)
+        return atoms
+
+    atom = internAtom(b"_KDE_NET_WM_SHADOW")
+    if atom not in supportedAtoms():
+        return None
+
+    # pixmap 由所有窗口共用、存活到进程退出；KWin 读属性时才复制内容
+    built = buildTiles()
+    pixmaps = []
+    for tile in (built.top, built.topRight, built.right, built.bottomRight,
+                 built.bottom, built.bottomLeft, built.left, built.topLeft):
+        pixmap, gc = xcb.xcb_generate_id(connection), xcb.xcb_generate_id(connection)
+        xcb.xcb_create_pixmap(connection, 32, pixmap, root, tile.width, tile.height)
+        xcb.xcb_create_gc(connection, gc, pixmap, 0, None)
+        xcb.xcb_put_image(connection, XCB_IMAGE_FORMAT_Z_PIXMAP, pixmap, gc, tile.width, tile.height,
+                          0, 0, 0, 32, len(tile.pixels), tile.pixels)
+        xcb.xcb_free_gc(connection, gc)
+        pixmaps.append(pixmap)
+    left, top, right, bottom = PADDING
+    data = (c_uint32 * 12)(*pixmaps, top, right, bottom, left)
+    xcb.xcb_flush(connection)
+    return X11Shadow(xcb, connection, atom, data)
