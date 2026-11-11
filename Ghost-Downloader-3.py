@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 import sys
 import traceback
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from app.config.paths import APP_DATA_DIR
 
 if TYPE_CHECKING:
     from types import TracebackType
+    from desktop_notifier.common import Notification
     from app.models.task import TaskError, TaskOptions
     from app.platform.application import Application
     from app.platform.instance import PrimaryInstance
@@ -67,7 +69,7 @@ def setupEnvironment() -> None:
 
 def startApp(application: Application, primaryInstance: PrimaryInstance, isSilent: bool = False) -> None:
     from PySide6.QtGui import QIcon
-    from app.config.cfg import cfg
+    from app.config.cfg import NoticeStyle, cfg
     from app.view.dialogs.name_conflict import NameConflictPrompt
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
@@ -244,11 +246,31 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     taskService.taskStarted.connect(lambda _: hold())
     taskService.tasksAllCompleted.connect(release)
 
-    from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient, notifyParseFailed
-    coroutineRunner.submit(init(coroutineRunner.submit, signalBus.activationRequested.emit))
-    taskService.taskCompleted.connect(notifyTaskCompleted)
-    taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
-    engine.aria2RpcService.parseFailed.connect(notifyParseFailed)
+    from app.platform.desktop_notification import (
+        PopupNotifier, SystemNotifier, buildDiskSpaceInsufficient, buildParseFailed, buildTaskCompleted,
+        createPresence, toFileIcon,
+    )
+    systemNotifier = SystemNotifier(coroutineRunner.submit)
+    sendTo = {NoticeStyle.SYSTEM: systemNotifier.send, NoticeStyle.OFF: lambda _: None}
+    if NoticeStyle.POPUP in cfg.noticeStyle.options:
+        presence = createPresence()
+        popupNotifier = PopupNotifier(presence)
+        sendTo[NoticeStyle.POPUP] = popupNotifier.send
+        # 先于 onAboutToQuit 连接，engine.stop() 期间再来的 Notice 会被忽略
+        application.aboutToQuit.connect(presence.close)
+        application.aboutToQuit.connect(popupNotifier.clear)
+    activate = signalBus.activationRequested.emit
+
+    def sendNotice(notification: Notification) -> None:
+        if not cfg.isNoticeSoundEnabled.value:
+            notification = replace(notification, sound=None)
+        sendTo[cfg.noticeStyle.value](notification)
+
+    taskService.taskCompleted.connect(
+        lambda task: sendNotice(buildTaskCompleted(task, toFileIcon(task.outputPath))))
+    taskService.diskSpaceInsufficient.connect(
+        lambda free, needed: sendNotice(buildDiskSpaceInsufficient(free, needed, activate)))
+    engine.aria2RpcService.parseFailed.connect(lambda url, error: sendNotice(buildParseFailed(url, error, activate)))
 
     taskService.tasksAllCompleted.connect(emptyWorkingSetIfIdle)
 

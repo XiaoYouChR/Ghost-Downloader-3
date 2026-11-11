@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from enum import Enum
 from re import compile
@@ -120,6 +121,18 @@ class CloseMode(Enum):
     ASK = "Ask"
     BACKGROUND = "Background"
     QUIT = "Quit"
+
+
+class NoticeStyle(Enum):
+    POPUP = "Popup"
+    SYSTEM = "System"
+    OFF = "Off"
+
+
+def canShowPopup() -> bool:
+    # Wayland 不许客户端定位窗口；XWayland 在鼠标移到 Wayland 原生窗口时不发离开事件，Popup 会一直不关
+    return (sys.platform != "darwin" and os.environ.get("XDG_SESSION_TYPE") != "wayland"
+            and not os.environ.get("WAYLAND_DISPLAY"))
 
 
 class ProxyValidator(ConfigValidator):
@@ -376,6 +389,12 @@ class Config(QConfig):
         OptionsValidator(CloseMode), EnumSerializer(CloseMode),
     )
     isClipboardListenerEnabled = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
+    noticeStyle = OptionsConfigItem(
+        "Notice", "Style", NoticeStyle.POPUP if canShowPopup() else NoticeStyle.SYSTEM,
+        OptionsValidator([s for s in NoticeStyle if s != NoticeStyle.POPUP or canShowPopup()]),
+        EnumSerializer(NoticeStyle),
+    )
+    isNoticeSoundEnabled = ConfigItem("Notice", "SoundEnabled", True, BoolValidator())
     clipboardIgnoredPacks: ConfigItem[list[str]] = ConfigItem("Software", "ClipboardIgnoredPacks", [], StringListValidator())
     geometry = ConfigItem(
         "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),

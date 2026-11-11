@@ -13,7 +13,7 @@ from qfluentwidgets import (
 
 from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
 
-from app.config.cfg import cfg, LANGUAGE_TEXTS
+from app.config.cfg import NoticeStyle, cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.services.port_listener import ListenStatus
@@ -354,6 +354,14 @@ class SettingPage(FastScrollArea):
                 self.tr("设置关闭主窗口后程序继续在后台运行还是退出"),
                 texts=[self.tr("关闭时询问"), self.tr("继续在后台运行"), self.tr("退出程序")],
             ),
+            ComboBoxSettingCard(
+                cfg.noticeStyle, FluentIcon.RINGER, self.tr("通知方式"),
+                self.tr("下载完成、磁盘空间不足等提示的显示方式"),
+                texts=[{NoticeStyle.POPUP: self.tr("弹窗"), NoticeStyle.SYSTEM: self.tr("系统通知"),
+                        NoticeStyle.OFF: self.tr("关闭")}[style] for style in cfg.noticeStyle.options],
+            ),
+            SwitchSettingCard(FluentIcon.VOLUME, self.tr("通知提示音"),
+                              self.tr("下载完成时播放提示音"), cfg.isNoticeSoundEnabled),
             ClipboardSettingCard(self._featureService.packs),
             self.migrateCard,
         ]

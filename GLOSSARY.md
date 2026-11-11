@@ -171,8 +171,12 @@ _Avoid_: worker、thread、chunk
 ### 用户告知
 
 **Notice**:
-一次性的、需要告知用户的事件。发出即完成，不可撤回也不需要消解。
+一次性的、需要告知用户的事件。发出即完成，不可撤回也不需要消解。经由 Popup 或系统通知送达，用户在设置里二选一，也可以关闭。
 _Avoid_: message、alert、event
+
+**Popup**:
+在屏幕右下角堆叠显示 Notice 的置顶窗口，不抢焦点，到时自动关闭。
+_Avoid_: dialog、toast、alert
 
 **Pair Request**:
 待决的浏览器配对请求，有始有终——用户批准或拒绝后消解。同时只有零或一个。
