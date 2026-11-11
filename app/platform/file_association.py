@@ -51,10 +51,12 @@ def unregisterUrlScheme(scheme: str = URL_SCHEME) -> None:
 
 def _registerWindows(fileTypes: list[FileType]) -> None:
     command = f'"{EXECUTABLE_PATH}" "%1"'
+    progIds = set()
     for fileType in fileTypes:
         iconPath = str(EXECUTABLE_DIR / "app" / "assets" / "file_icons" / f"{fileType.icon}.ico").replace("/", "\\")
         for ext in fileType.extensions:
             progId = f"GhostDownloader{ext}"
+            progIds.add(progId)
             for regPath, regValue in (
                 (rf"Software\Classes\{progId}", fileType.displayName),
                 (rf"Software\Classes\{progId}\DefaultIcon", iconPath),
@@ -65,7 +67,38 @@ def _registerWindows(fileTypes: list[FileType]) -> None:
                     winreg.SetValueEx(key, "", 0, winreg.REG_SZ, regValue)
             with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"Software\Classes\{ext}\OpenWithProgids") as key:
                 winreg.SetValueEx(key, progId, 0, winreg.REG_NONE, b"")
+
+    # 已关闭的文件类型不会传进来，只能按 ProgId 前缀找出旧的注册项
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Classes") as classes:
+        names = [winreg.EnumKey(classes, i) for i in range(winreg.QueryInfoKey(classes)[0])]
+    for name in names:
+        if name.startswith("GhostDownloader.") and name not in progIds:
+            _unregisterProgIdWindows(name)
     ctypes.windll.shell32.SHChangeNotify(0x08000000, 0, None, None)
+
+
+def _unregisterProgIdWindows(progId: str) -> None:
+    ext = progId.removeprefix("GhostDownloader")
+    regRoot = rf"Software\Classes\{progId}"
+    for regPath in (rf"{regRoot}\shell\open\command", rf"{regRoot}\shell\open", rf"{regRoot}\shell",
+                    rf"{regRoot}\DefaultIcon", regRoot):
+        try:
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, regPath)
+        except FileNotFoundError:
+            pass
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Classes\{ext}\OpenWithProgids",
+                            0, winreg.KEY_SET_VALUE) as key:
+            winreg.DeleteValue(key, progId)
+    except FileNotFoundError:
+        pass
+    try:
+        # 用户已把默认程序改成别的时，扩展名的默认值不归我们管
+        if winreg.QueryValue(winreg.HKEY_CURRENT_USER, rf"Software\Classes\{ext}") == progId:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Classes\{ext}", 0, winreg.KEY_SET_VALUE) as key:
+                winreg.DeleteValue(key, "")
+    except FileNotFoundError:
+        pass
 
 
 def _registerUrlSchemeWindows(scheme: str) -> None:
