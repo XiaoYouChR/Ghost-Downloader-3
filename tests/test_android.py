@@ -25,6 +25,8 @@ DESKTOP_ONLY = {
     ("Browser", "UrlSchemeRegistered"),
     ("GeneralDownload", "HistoryDownloadFolder"),
     ("GeneralDownload", "RecentFolders"),
+    ("Notice", "SoundEnabled"),
+    ("Notice", "Style"),
     ("Personalization", "BackgroundEffect"),
     ("Personalization", "DpiScale"),
     ("Personalization", "Language"),
