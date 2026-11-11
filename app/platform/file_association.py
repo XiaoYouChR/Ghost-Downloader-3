@@ -110,21 +110,26 @@ def saveMimeTypes(mimes: set[str]) -> None:
     desktopFile = desktopDir / f"{DESKTOP_ID}.desktop"
     serviceFile = serviceDir / f"{DESKTOP_ID}.service"
 
+    desktopText = (
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=Ghost Downloader\n"
+        f'Exec="{EXECUTABLE_PATH}" %U\n'
+        "Icon=ghost-downloader\n"
+        "Terminal=false\n"
+        "Categories=Network;Utility;\n"
+        "DBusActivatable=true\n"
+        f"MimeType={';'.join(sorted(mimes))};\n"
+    )
+    oldText = desktopFile.read_text(encoding="utf-8") if desktopFile.exists() else None
+    # 每次改写都会让桌面重建缓存，反复改写会卡住 KWin #1045
+    if oldText == (desktopText if mimes else None):
+        return
+
     if mimes:
         desktopDir.mkdir(parents=True, exist_ok=True)
         serviceDir.mkdir(parents=True, exist_ok=True)
-        desktopFile.write_text(
-            "[Desktop Entry]\n"
-            "Type=Application\n"
-            "Name=Ghost Downloader\n"
-            f'Exec="{EXECUTABLE_PATH}" %U\n'
-            "Icon=ghost-downloader\n"
-            "Terminal=false\n"
-            "Categories=Network;Utility;\n"
-            "DBusActivatable=true\n"
-            f"MimeType={';'.join(sorted(mimes))};\n",
-            encoding="utf-8",
-        )
+        desktopFile.write_text(desktopText, encoding="utf-8")
         serviceFile.write_text(
             "[D-BUS Service]\n"
             f"Name={DESKTOP_ID}\n"

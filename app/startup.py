@@ -93,7 +93,7 @@ def deleteLegacyAppIdFiles() -> bool:
 
 
 def loadPacks(featureService: FeatureService, coroutineRunner: CoroutineRunner, speedMeter: SpeedMeter) -> None:
-    from app.models.pack import PackConfig, PackServices
+    from app.models.pack import PackServices
     from app.services.update_service import installPendingPacks
     from app.config.paths import FEATURES_DIR, SEED_FEATURES_DIR
     from app.loader import seedPacks
@@ -106,7 +106,6 @@ def loadPacks(featureService: FeatureService, coroutineRunner: CoroutineRunner, 
         speedMeter=speedMeter,
     )
     featureService.load(services)
-    PackConfig.load()
 
 
 def checkUpdateAtStartup(updateService: UpdateService) -> None:

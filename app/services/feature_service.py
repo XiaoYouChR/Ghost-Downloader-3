@@ -12,6 +12,7 @@ from app.config.paths import FEATURES_DIR
 from app.models.task import TaskError, TaskOptions, toHost, toScheme
 from app.platform import file_association
 from app.loader import loadPacks
+from app.models.pack import PackConfig
 
 if TYPE_CHECKING:
     from app.models.pack import (
@@ -57,7 +58,10 @@ class FeatureService:
         return self._packs
 
     def load(self, services: PackServices | None = None) -> None:
-        for pack in loadPacks(FEATURES_DIR, services):
+        packs = loadPacks(FEATURES_DIR, services)
+        # 先读配置再连接关联开关，读取时开关的变化不会触发注册
+        PackConfig.load()
+        for pack in packs:
             self.register(pack)
 
     def activate(self) -> None:
