@@ -108,6 +108,26 @@
         <source>{0} 条</source>
         <translation type="obsolete">{0} 件</translation>
     </message>
+    <message>
+        <source>下载完成</source>
+        <translation type="obsolete">ダウンロード完了</translation>
+    </message>
+    <message>
+        <source>打开文件</source>
+        <translation type="obsolete">ファイルを開く</translation>
+    </message>
+    <message>
+        <source>打开文件夹</source>
+        <translation type="obsolete">フォルダを開く</translation>
+    </message>
+    <message>
+        <source>磁盘空间不足</source>
+        <translation type="obsolete">ディスク空き容量不足</translation>
+    </message>
+    <message>
+        <source>链接解析失败</source>
+        <translation type="obsolete">リンクの解析に失敗</translation>
+    </message>
 </context>
 <context>
     <name>AddTaskDialog</name>
@@ -4194,22 +4214,28 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ダウンロード</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="86"/>
+        <location filename="../../platform/desktop_notification.py" line="88"/>
         <source>下载完成</source>
         <translation>ダウンロード完了</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="45"/>
+        <location filename="../../platform/desktop_notification.py" line="106"/>
         <source>磁盘空间不足</source>
         <translation>ディスク空き容量不足</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="46"/>
-        <source>剩余 {0}，需要 {1}，任务未自动开始</source>
-        <translation>残り {0}、必要 {1}、タスクは自動開始されませんでした</translation>
+        <location filename="../../platform/desktop_notification.py" line="107"/>
+        <source>任务未自动开始
+剩余 {0}，需要 {1}</source>
+        <translation>タスクは自動開始されませんでした
+残り {0}、必要 {1}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="57"/>
+        <source>剩余 {0}，需要 {1}，任务未自动开始</source>
+        <translation type="vanished">残り {0}、必要 {1}、タスクは自動開始されませんでした</translation>
+    </message>
+    <message>
+        <location filename="../../platform/desktop_notification.py" line="118"/>
         <source>链接解析失败</source>
         <translation>リンクの解析に失敗</translation>
     </message>
@@ -4230,12 +4256,12 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ブラウザ拡張 接続済み</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="89"/>
+        <location filename="../../platform/desktop_notification.py" line="92"/>
         <source>打开文件</source>
         <translation>ファイルを開く</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="90"/>
+        <location filename="../../platform/desktop_notification.py" line="94"/>
         <source>打开文件夹</source>
         <translation>フォルダを開く</translation>
     </message>
@@ -5184,7 +5210,7 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="57"/>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="386"/>
         <source>关于</source>
         <translation>について</translation>
     </message>
@@ -5268,7 +5294,7 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="200"/>
-        <location filename="../../view/pages/setting_page.py" line="473"/>
+        <location filename="../../view/pages/setting_page.py" line="481"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>ブラウザからのダウンロード情報を受信するには、ブラウザ拡張をインストールしてください</translation>
     </message>
@@ -5524,7 +5550,7 @@ FFmpeg: {2}</translation>
         <translation>Aria2 RPC 互換を有効化</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="487"/>
+        <location filename="../../view/pages/setting_page.py" line="495"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
         <translation>Aria2 JSON-RPC プロトコルと互換し、外部ツールからのダウンロードリンクを受信可能</translation>
     </message>
@@ -5735,87 +5761,122 @@ FFmpeg: {2}</translation>
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="365"/>
+        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <source>通知提示音</source>
+        <translation>通知音</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="364"/>
+        <source>下载完成时播放提示音</source>
+        <translation>ダウンロード完了時に通知音を再生</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>フィードバックを提供して Ghost Downloader の改善にご協力ください。ログを確認して問題を調査することもできます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="374"/>
+        <location filename="../../view/pages/setting_page.py" line="382"/>
         <source>查看详情</source>
         <translation>詳細を表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="374"/>
+        <location filename="../../view/pages/setting_page.py" line="382"/>
         <source>功能包</source>
         <translation>機能パック</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="375"/>
+        <location filename="../../view/pages/setting_page.py" line="383"/>
         <source>管理已安装的功能包</source>
         <translation>インストール済み機能パックの管理</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="491"/>
+        <location filename="../../view/pages/setting_page.py" line="499"/>
         <source>正在端口 {} 上监听</source>
         <translation>ポート {} でリッスン中</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="521"/>
+        <location filename="../../view/pages/setting_page.py" line="360"/>
+        <source>系统通知</source>
+        <translation>システム通知</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="358"/>
+        <source>通知方式</source>
+        <translation>通知方法</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="359"/>
+        <source>下载完成、磁盘空间不足等提示的显示方式</source>
+        <translation>ダウンロード完了、ディスク空き容量不足などの通知の表示方法</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="360"/>
+        <source>弹窗</source>
+        <translation>ポップアップ</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="361"/>
+        <source>关闭</source>
+        <translation>オフ</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="529"/>
         <source>卸载</source>
         <translation>アンインストール</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="521"/>
+        <location filename="../../view/pages/setting_page.py" line="529"/>
         <source>安装</source>
         <translation>インストール</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="533"/>
+        <location filename="../../view/pages/setting_page.py" line="541"/>
         <source>已卸载命令行工具</source>
         <translation>コマンドラインツールをアンインストールしました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="536"/>
+        <location filename="../../view/pages/setting_page.py" line="544"/>
         <source>新打开的终端即可使用 ghd</source>
         <translation>新しく開いたターミナルで ghd を使用できます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="538"/>
+        <location filename="../../view/pages/setting_page.py" line="546"/>
         <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
         <translation>新しく開いたターミナルで ghd を使用できます。コマンドが見つからない場合は ~/.local/bin を PATH に追加してください</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="539"/>
+        <location filename="../../view/pages/setting_page.py" line="547"/>
         <source>已安装命令行工具</source>
         <translation>コマンドラインツールをインストールしました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="553"/>
         <source>卸载命令行工具失败</source>
         <translation>コマンドラインツールのアンインストールに失敗しました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="553"/>
         <source>安装命令行工具失败</source>
         <translation>コマンドラインツールのインストールに失敗しました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="553"/>
+        <location filename="../../view/pages/setting_page.py" line="561"/>
         <source>用户模式</source>
         <translation>ユーザーモード</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="553"/>
+        <location filename="../../view/pages/setting_page.py" line="561"/>
         <source>Portable 模式</source>
         <translation>Portable モード</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="555"/>
+        <location filename="../../view/pages/setting_page.py" line="563"/>
         <source>切换数据存储模式</source>
         <translation>データストレージモードを切り替え</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="556"/>
+        <location filename="../../view/pages/setting_page.py" line="564"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -5824,12 +5885,12 @@ FFmpeg: {2}</translation>
 データは新しい場所にコピーされ、プログラムは終了します。手動で再起動してください。</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="576"/>
+        <location filename="../../view/pages/setting_page.py" line="584"/>
         <source>正在检查更新...</source>
         <translation>更新を確認中...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="588"/>
+        <location filename="../../view/pages/setting_page.py" line="596"/>
         <source>当前已是最新版本</source>
         <translation>現在のバージョンが最新です</translation>
     </message>
@@ -5838,17 +5899,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">現在のバージョン {0}、最新バージョン {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="585"/>
+        <location filename="../../view/pages/setting_page.py" line="593"/>
         <source>检查更新失败</source>
         <translation>更新チェックに失敗</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="585"/>
+        <location filename="../../view/pages/setting_page.py" line="593"/>
         <source>无法获取最新版本信息</source>
         <translation>最新バージョン情報を取得できません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="601"/>
+        <location filename="../../view/pages/setting_page.py" line="609"/>
         <source>搜索设置</source>
         <translation>設定を検索</translation>
     </message>
@@ -5881,23 +5942,23 @@ FFmpeg: {2}</translation>
         <translation type="vanished">クリップボード内のリンクを自動検出し、ダウンロードタスクを追加</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="383"/>
+        <location filename="../../view/pages/setting_page.py" line="391"/>
         <source>打开作者的个人空间</source>
         <translation>作者のプロフィールを開く</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="384"/>
+        <location filename="../../view/pages/setting_page.py" line="392"/>
         <source>了解作者</source>
         <translation>作者について</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="384"/>
+        <location filename="../../view/pages/setting_page.py" line="392"/>
         <source>发现更多 {} 的作品</source>
         <translation>{} の他の作品を見つける</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
-        <location filename="../../view/pages/setting_page.py" line="364"/>
+        <location filename="../../view/pages/setting_page.py" line="371"/>
+        <location filename="../../view/pages/setting_page.py" line="372"/>
         <source>提供反馈</source>
         <translation>フィードバックを提供</translation>
     </message>
@@ -5919,63 +5980,63 @@ FFmpeg: {2}</translation>
         <translation type="vanished">フィードバックを提供してGhost Downloaderの改善に協力</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="375"/>
         <source>查看日志</source>
         <translation>ログを表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
-        <location filename="../../view/pages/setting_page.py" line="576"/>
+        <location filename="../../view/pages/setting_page.py" line="386"/>
+        <location filename="../../view/pages/setting_page.py" line="584"/>
         <source>检查更新</source>
         <translation>更新を確認</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="437"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>已配置</source>
         <translation>設定済み</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="437"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>重启软件后生效</source>
         <translation>再起動後に有効になります</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="453"/>
         <source>已复制配对令牌</source>
         <translation>ペアリングトークンをコピーしました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="451"/>
+        <location filename="../../view/pages/setting_page.py" line="459"/>
         <source>已重新生成配对令牌</source>
         <translation>ペアリングトークンを再生成しました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="451"/>
+        <location filename="../../view/pages/setting_page.py" line="459"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>新しいトークンがクリップボードにコピーされました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="466"/>
+        <location filename="../../view/pages/setting_page.py" line="474"/>
         <source>解包失败</source>
         <translation>解凍に失敗</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="477"/>
+        <location filename="../../view/pages/setting_page.py" line="485"/>
         <source>未连接</source>
         <translation>未接続</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="479"/>
+        <location filename="../../view/pages/setting_page.py" line="487"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>接続済み v{} (デスクトップアプリ自己管理)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="481"/>
+        <location filename="../../view/pages/setting_page.py" line="489"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>接続済み v{} (ストアインストール)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="498"/>
+        <location filename="../../view/pages/setting_page.py" line="506"/>
         <source>选择导出路径</source>
         <translation>エクスポート先を選択</translation>
     </message>
@@ -6325,7 +6386,7 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="377"/>
+        <location filename="../../view/dialogs/task_draft.py" line="382"/>
         <source>导入文件</source>
         <translation>ファイルをインポート</translation>
     </message>
@@ -6369,7 +6430,7 @@ FFmpeg: {2}</translation>
         <translation>デフォルトダウンロードフォルダを選択</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="372"/>
+        <location filename="../../view/dialogs/task_draft.py" line="377"/>
         <source>所有可导入文件 ({0})</source>
         <translation>インポート可能な全ファイル ({0})</translation>
     </message>
@@ -7574,7 +7635,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
         <source>迅雷、快车、QQ 旋风链接</source>
         <translation>迅雷、快車、QQ旋風リンク</translation>
     </message>

@@ -108,6 +108,26 @@
         <source>取消</source>
         <translation type="obsolete">Cancelar</translation>
     </message>
+    <message>
+        <source>下载完成</source>
+        <translation type="obsolete">Download concluído</translation>
+    </message>
+    <message>
+        <source>打开文件</source>
+        <translation type="obsolete">Abrir arquivo</translation>
+    </message>
+    <message>
+        <source>打开文件夹</source>
+        <translation type="obsolete">Abrir pasta</translation>
+    </message>
+    <message>
+        <source>磁盘空间不足</source>
+        <translation type="obsolete">Espaço em disco insuficiente</translation>
+    </message>
+    <message>
+        <source>链接解析失败</source>
+        <translation type="obsolete">Falha ao analisar o link</translation>
+    </message>
 </context>
 <context>
     <name>AdvancedOptionsPage</name>
@@ -3534,22 +3554,28 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
         <translation type="vanished">Baixar</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="86"/>
+        <location filename="../../platform/desktop_notification.py" line="88"/>
         <source>下载完成</source>
         <translation>Download concluído</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="45"/>
+        <location filename="../../platform/desktop_notification.py" line="106"/>
         <source>磁盘空间不足</source>
         <translation>Espaço em disco insuficiente</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="46"/>
-        <source>剩余 {0}，需要 {1}，任务未自动开始</source>
-        <translation>Restam {0}, necessário {1}, tarefa não iniciada automaticamente</translation>
+        <location filename="../../platform/desktop_notification.py" line="107"/>
+        <source>任务未自动开始
+剩余 {0}，需要 {1}</source>
+        <translation>Tarefa não iniciada automaticamente
+Restam {0}, necessário {1}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="57"/>
+        <source>剩余 {0}，需要 {1}，任务未自动开始</source>
+        <translation type="vanished">Restam {0}, necessário {1}, tarefa não iniciada automaticamente</translation>
+    </message>
+    <message>
+        <location filename="../../platform/desktop_notification.py" line="118"/>
         <source>链接解析失败</source>
         <translation>Falha ao analisar o link</translation>
     </message>
@@ -3570,12 +3596,12 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
         <translation type="vanished">Extensão do navegador conectada</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="89"/>
+        <location filename="../../platform/desktop_notification.py" line="92"/>
         <source>打开文件</source>
         <translation>Abrir arquivo</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="90"/>
+        <location filename="../../platform/desktop_notification.py" line="94"/>
         <source>打开文件夹</source>
         <translation>Abrir pasta</translation>
     </message>
@@ -4436,7 +4462,7 @@ Caminho: {1}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="57"/>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="386"/>
         <source>关于</source>
         <translation>Sobre</translation>
     </message>
@@ -4516,7 +4542,7 @@ Caminho: {1}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="200"/>
-        <location filename="../../view/pages/setting_page.py" line="473"/>
+        <location filename="../../view/pages/setting_page.py" line="481"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>Receber informações de download do navegador; instale a extensão do navegador para usar</translation>
     </message>
@@ -4740,7 +4766,7 @@ Caminho: {1}</translation>
         <translation>Habilitar compatibilidade Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="487"/>
+        <location filename="../../view/pages/setting_page.py" line="495"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
         <translation>Compatível com o protocolo Aria2 JSON-RPC, pode receber links de download enviados por ferramentas externas</translation>
     </message>
@@ -4951,87 +4977,122 @@ Caminho: {1}</translation>
         <translation>Sair do programa</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="365"/>
+        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <source>通知提示音</source>
+        <translation>Som de notificação</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="364"/>
+        <source>下载完成时播放提示音</source>
+        <translation>Tocar um som quando um download for concluído</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Ajude a melhorar o Ghost Downloader com feedback ou consulte os registros para solucionar problemas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="374"/>
+        <location filename="../../view/pages/setting_page.py" line="382"/>
         <source>查看详情</source>
         <translation>Ver detalhes</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="374"/>
+        <location filename="../../view/pages/setting_page.py" line="382"/>
         <source>功能包</source>
         <translation>Pacote de funcionalidades</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="375"/>
+        <location filename="../../view/pages/setting_page.py" line="383"/>
         <source>管理已安装的功能包</source>
         <translation>Gerenciar pacotes de funcionalidades instalados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="491"/>
+        <location filename="../../view/pages/setting_page.py" line="499"/>
         <source>正在端口 {} 上监听</source>
         <translation>Escutando na porta {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="521"/>
+        <location filename="../../view/pages/setting_page.py" line="360"/>
+        <source>系统通知</source>
+        <translation>Notificação do sistema</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="358"/>
+        <source>通知方式</source>
+        <translation>Estilo de notificação</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="359"/>
+        <source>下载完成、磁盘空间不足等提示的显示方式</source>
+        <translation>Como exibir avisos como download concluído ou espaço em disco insuficiente</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="360"/>
+        <source>弹窗</source>
+        <translation>Pop-up</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="361"/>
+        <source>关闭</source>
+        <translation>Desligado</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="529"/>
         <source>卸载</source>
         <translation>Desinstalar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="521"/>
+        <location filename="../../view/pages/setting_page.py" line="529"/>
         <source>安装</source>
         <translation>Instalar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="533"/>
+        <location filename="../../view/pages/setting_page.py" line="541"/>
         <source>已卸载命令行工具</source>
         <translation>Ferramenta de linha de comando desinstalada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="536"/>
+        <location filename="../../view/pages/setting_page.py" line="544"/>
         <source>新打开的终端即可使用 ghd</source>
         <translation>O ghd estará disponível em terminais abertos a partir de agora</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="538"/>
+        <location filename="../../view/pages/setting_page.py" line="546"/>
         <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
         <translation>O ghd estará disponível em terminais abertos a partir de agora; se o comando não for encontrado, adicione ~/.local/bin ao PATH</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="539"/>
+        <location filename="../../view/pages/setting_page.py" line="547"/>
         <source>已安装命令行工具</source>
         <translation>Ferramenta de linha de comando instalada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="553"/>
         <source>卸载命令行工具失败</source>
         <translation>Falha ao desinstalar a ferramenta de linha de comando</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="553"/>
         <source>安装命令行工具失败</source>
         <translation>Falha ao instalar a ferramenta de linha de comando</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="553"/>
+        <location filename="../../view/pages/setting_page.py" line="561"/>
         <source>用户模式</source>
         <translation>Modo de usuário</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="553"/>
+        <location filename="../../view/pages/setting_page.py" line="561"/>
         <source>Portable 模式</source>
         <translation>Modo Portátil</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="555"/>
+        <location filename="../../view/pages/setting_page.py" line="563"/>
         <source>切换数据存储模式</source>
         <translation>Alternar modo de armazenamento de dados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="556"/>
+        <location filename="../../view/pages/setting_page.py" line="564"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -5040,12 +5101,12 @@ Caminho: {1}</translation>
 Os dados serão copiados para o novo local e o programa será encerrado. Reabra manualmente.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="576"/>
+        <location filename="../../view/pages/setting_page.py" line="584"/>
         <source>正在检查更新...</source>
         <translation>Verificando atualizações...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="588"/>
+        <location filename="../../view/pages/setting_page.py" line="596"/>
         <source>当前已是最新版本</source>
         <translation>Você já está na versão mais recente</translation>
     </message>
@@ -5054,17 +5115,17 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation type="vanished">Versão atual {0}, versão mais recente {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="585"/>
+        <location filename="../../view/pages/setting_page.py" line="593"/>
         <source>检查更新失败</source>
         <translation>Falha ao verificar atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="585"/>
+        <location filename="../../view/pages/setting_page.py" line="593"/>
         <source>无法获取最新版本信息</source>
         <translation>Não foi possível obter informações da versão mais recente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="601"/>
+        <location filename="../../view/pages/setting_page.py" line="609"/>
         <source>搜索设置</source>
         <translation>Buscar configurações</translation>
     </message>
@@ -5097,23 +5158,23 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation type="vanished">O monitor da área de transferência detectará automaticamente links na área de transferência e adicionará tarefas de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="383"/>
+        <location filename="../../view/pages/setting_page.py" line="391"/>
         <source>打开作者的个人空间</source>
         <translation>Abrir o espaço pessoal do autor</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="384"/>
+        <location filename="../../view/pages/setting_page.py" line="392"/>
         <source>了解作者</source>
         <translation>Conhecer o autor</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="384"/>
+        <location filename="../../view/pages/setting_page.py" line="392"/>
         <source>发现更多 {} 的作品</source>
         <translation>Descobrir mais trabalhos de {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
-        <location filename="../../view/pages/setting_page.py" line="364"/>
+        <location filename="../../view/pages/setting_page.py" line="371"/>
+        <location filename="../../view/pages/setting_page.py" line="372"/>
         <source>提供反馈</source>
         <translation>Fornecer feedback</translation>
     </message>
@@ -5135,63 +5196,63 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation type="vanished">Ajude-nos a melhorar o Ghost Downloader fornecendo feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="375"/>
         <source>查看日志</source>
         <translation>Ver registro</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
-        <location filename="../../view/pages/setting_page.py" line="576"/>
+        <location filename="../../view/pages/setting_page.py" line="386"/>
+        <location filename="../../view/pages/setting_page.py" line="584"/>
         <source>检查更新</source>
         <translation>Verificar atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="437"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>已配置</source>
         <translation>Configurado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="437"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>重启软件后生效</source>
         <translation>Efetivo após reiniciar o software</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="453"/>
         <source>已复制配对令牌</source>
         <translation>Token de emparelhamento copiado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="451"/>
+        <location filename="../../view/pages/setting_page.py" line="459"/>
         <source>已重新生成配对令牌</source>
         <translation>Token de emparelhamento regenerado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="451"/>
+        <location filename="../../view/pages/setting_page.py" line="459"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Novo token copiado para a área de transferência</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="466"/>
+        <location filename="../../view/pages/setting_page.py" line="474"/>
         <source>解包失败</source>
         <translation>Falha ao desempacotar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="477"/>
+        <location filename="../../view/pages/setting_page.py" line="485"/>
         <source>未连接</source>
         <translation>Desconectado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="479"/>
+        <location filename="../../view/pages/setting_page.py" line="487"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Conectado v{} (autogerenciado pelo desktop)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="481"/>
+        <location filename="../../view/pages/setting_page.py" line="489"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Conectado v{} (instalado pela loja)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="498"/>
+        <location filename="../../view/pages/setting_page.py" line="506"/>
         <source>选择导出路径</source>
         <translation>Selecionar caminho de exportação</translation>
     </message>
@@ -5525,7 +5586,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="377"/>
+        <location filename="../../view/dialogs/task_draft.py" line="382"/>
         <source>导入文件</source>
         <translation>Importar arquivo</translation>
     </message>
@@ -5569,7 +5630,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation>Escolher pasta de download padrão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="372"/>
+        <location filename="../../view/dialogs/task_draft.py" line="377"/>
         <source>所有可导入文件 ({0})</source>
         <translation>Todos os arquivos importáveis ({0})</translation>
     </message>
@@ -6716,7 +6777,7 @@ As próximas etapas ajudarão você a concluir a configuração básica.</transl
 <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
         <source>迅雷、快车、QQ 旋风链接</source>
         <translation>Links do Thunder, FlashGet e QQ Xuanfeng</translation>
     </message>
