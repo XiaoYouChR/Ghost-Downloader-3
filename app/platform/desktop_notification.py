@@ -552,8 +552,11 @@ class PopupNotifier:
         self._lastSoundAt = float("-inf")
         self._isClosed = False
         presence.changed.connect(self._showPending)
-        QGuiApplication.instance().primaryScreenChanged.connect(self._onPrimaryScreenChanged)
-        self._onPrimaryScreenChanged(QGuiApplication.primaryScreen())
+        application = QGuiApplication.instance()
+        application.primaryScreenChanged.connect(self._onPrimaryScreenChanged)
+        application.screenAdded.connect(self._onScreenAdded)
+        for screen in application.screens():
+            self._onScreenAdded(screen)
 
     def send(self, notification: Notification) -> None:
         if self._isClosed:
@@ -623,9 +626,10 @@ class PopupNotifier:
         popup.deleteLater()
         self._arrange()
 
-    def _onPrimaryScreenChanged(self, screen: QScreen | None) -> None:
-        # 不断开旧屏幕：它被销毁时 Qt 自动断开，还在时多排一次也无害
-        if screen is not None:
-            screen.availableGeometryChanged.connect(self._arrange)
+    def _onScreenAdded(self, screen: QScreen) -> None:
+        # 每块屏只在加入时连一次，副屏变化时多排一次无害
+        screen.availableGeometryChanged.connect(self._arrange)
+
+    def _onPrimaryScreenChanged(self, _screen: QScreen | None) -> None:
         self._arrange()
         self._showPending()
