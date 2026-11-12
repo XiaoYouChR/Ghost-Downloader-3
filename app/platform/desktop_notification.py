@@ -104,7 +104,7 @@ def buildDiskSpaceInsufficient(free: int, needed: int, activate: Callable[[], No
 
     return Notification(
         title=QCoreApplication.translate("Notifications", "磁盘空间不足"),
-        message=QCoreApplication.translate("Notifications", "任务未自动开始\n剩余 {0}，需要 {1}").format(
+        message=QCoreApplication.translate("Notifications", "任务已加入等待队列\n剩余 {0}，需要 {1}").format(
             toReadableSize(free), toReadableSize(needed)),
         urgency=Urgency.Critical,
         on_clicked=activate,
