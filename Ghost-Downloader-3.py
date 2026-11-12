@@ -40,10 +40,9 @@ def setupEnvironment() -> None:
         setupHiddenSubprocess()
 
     from app.view.qfw_patch import (
-        patchFluentLabelThemeChanged, patchLinuxFrameless, patchMaskDialogAnimation, patchStackedWidgetAnimation,
+        patchLinuxFrameless, patchMaskDialogAnimation, patchStackedWidgetAnimation,
     )
     from app.view.components.labels import IconBodyLabel
-    patchFluentLabelThemeChanged()
     patchStackedWidgetAnimation()
     # Wayland 上在绘制中截图会递归重绘，卡住合成器 #1017
     if sys.platform != "linux":

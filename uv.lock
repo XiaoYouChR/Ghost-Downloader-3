@@ -437,7 +437,7 @@ requires-dist = [
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'", specifier = ">=10.0" },
     { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'", specifier = ">=10.0" },
     { name = "pyside6", specifier = "~=6.10.3" },
-    { name = "pyside6-fluent-widgets", specifier = ">=1.11.2" },
+    { name = "pyside6-fluent-widgets", specifier = ">=1.11.3" },
     { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=312" },
     { name = "qrcode", extras = ["png"], specifier = ">=8.2" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.22.1" },

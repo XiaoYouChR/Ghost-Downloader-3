@@ -47,26 +47,6 @@ def patchStackedWidgetAnimation() -> None:
     PopUpAniStackedWidget.resizeEvent = resizeEvent
 
 
-def patchFluentLabelThemeChanged() -> None:
-    from qfluentwidgets.components.widgets import label
-
-    FluentLabelBase = label.FluentLabelBase
-
-    def _init(self):
-        label.FluentStyleSheet.LABEL.apply(self)
-        self.setFont(self.getFont())
-        self.setTextColor()
-        label.qconfig.themeChanged.connect(self._applyThemeColor)
-        self.customContextMenuRequested.connect(self._onContextMenuRequested)
-        return self
-
-    def _applyThemeColor(self, *_args) -> None:
-        self.setTextColor(self.lightColor, self.darkColor)
-
-    FluentLabelBase._init = _init
-    FluentLabelBase._applyThemeColor = _applyThemeColor
-
-
 def patchMaskDialogAnimation() -> None:
     from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
