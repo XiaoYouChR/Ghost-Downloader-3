@@ -3327,9 +3327,9 @@ Permita solo si acaba de hacer clic en &quot;Emparejamiento automático&quot; en
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="107"/>
-        <source>任务未自动开始
+        <source>任务已加入等待队列
 剩余 {0}，需要 {1}</source>
-        <translation>La tarea no se inició automáticamente
+        <translation>Tarea añadida a la cola de espera
 {0} libres, {1} necesarios</translation>
     </message>
     <message>
