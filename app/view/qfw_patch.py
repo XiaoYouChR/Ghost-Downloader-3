@@ -59,8 +59,7 @@ def patchMaskDialogAnimation() -> None:
 
 
 def patchLinuxFrameless() -> None:
-    # Wayland 不提供窗口的全局位置，原实现用 globalPos - pos() 识别边框会整体偏移；
-    # 改为在本窗口的 QWindow 上过滤事件，用窗口内坐标识别
+    # Wayland 无法获取窗口位置，改在 QWindow 上按窗口内坐标判断边框 #508
     from PySide6.QtCore import QEvent, Qt
     from qframelesswindow import linux
     from qframelesswindow.titlebar import TitleBar
@@ -68,7 +67,7 @@ def patchLinuxFrameless() -> None:
     from app.platform import shadow
 
     Edge = Qt.Edge
-    CURSORS = {
+    EDGE_CURSORS = {
         Edge.LeftEdge | Edge.TopEdge: Qt.CursorShape.SizeFDiagCursor,
         Edge.RightEdge | Edge.BottomEdge: Qt.CursorShape.SizeFDiagCursor,
         Edge.RightEdge | Edge.TopEdge: Qt.CursorShape.SizeBDiagCursor,
@@ -87,7 +86,6 @@ def patchLinuxFrameless() -> None:
         self.updateFrameless()
         self.winId()
         self.windowHandle().installEventFilter(self)
-        # 无边框窗口没有系统装饰，阴影要单独向合成器申请
         shadow.registerWindow(self.windowHandle())
 
         self.titleBar.raise_()
@@ -95,9 +93,8 @@ def patchLinuxFrameless() -> None:
 
     def eventFilter(self, obj, event: QEvent) -> bool:
         eventType = event.type()
-        if eventType != QEvent.Type.MouseMove and eventType != QEvent.Type.MouseButtonPress:
-            return False
-        if not self._isResizeEnabled or self.isMaximized() or self.isFullScreen():
+        if (eventType not in (QEvent.Type.MouseMove, QEvent.Type.MouseButtonPress)
+                or not self._isResizeEnabled or self.isMaximized() or self.isFullScreen()):
             return False
 
         pos = event.position()
@@ -113,10 +110,11 @@ def patchLinuxFrameless() -> None:
             edges |= Edge.BottomEdge
 
         if eventType == QEvent.Type.MouseMove:
-            self.setCursor(CURSORS.get(edges, Qt.CursorShape.ArrowCursor))
+            self.setCursor(EDGE_CURSORS.get(edges, Qt.CursorShape.ArrowCursor))
             return False
 
         if edges and event.button() == Qt.MouseButton.LeftButton:
+            # 拦截按下事件，否则标题栏发起的移动会覆盖缩放
             return obj.startSystemResize(edges)
         return False
 

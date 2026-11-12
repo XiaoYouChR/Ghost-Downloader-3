@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+from collections.abc import Callable
 from ctypes import (
     CDLL,
     CFUNCTYPE,
@@ -26,23 +27,19 @@ from loguru import logger
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtGui import QGuiApplication, QPlatformSurfaceEvent, QWindow
 
-# Breeze 默认 Large 档：两层高斯阴影叠加，(sigma, 下移, 不透明度)
-LAYERS = ((10.0, 5, 0.22), (5.0, 2, 0.12))
-# 阴影伸出窗口的距离：左、上、右、下
 PADDING = (30, 25, 30, 35)
-# 角上贴图向窗口内延伸到衰减走完，边上贴图才能按常数拉伸
-INSET = 35
 
 WL_MARSHAL_FLAG_DESTROY = 1
 WL_SHM_FORMAT_ARGB8888 = 0
 SHADOW_COMMIT, SHADOW_ATTACH_LEFT, SHADOW_SET_LEFT_OFFSET, SHADOW_DESTROY = 0, 1, 9, 13
+MANAGER_CREATE = 0
 
 
 @dataclass(frozen=True)
 class Tile:
     width: int
     height: int
-    pixels: bytes  # 预乘 ARGB8888
+    pixels: bytes
 
 
 @dataclass(frozen=True)
@@ -58,16 +55,15 @@ class Tiles:
 
 
 def registerWindow(window: QWindow) -> None:
-    """让合成器给无边框窗口画阴影，隐藏再显示后自动重挂；合成器不支持时什么也不做。"""
     platform = QGuiApplication.platformName()
     if platform.startswith("wayland"):
         kwinShadow = createKwinShadow()
         if kwinShadow is not None:
             WindowShadow(window, kwinShadow)
     elif platform == "xcb":
-        x11Shadow = createX11Shadow()
-        if x11Shadow is not None:
-            x11Shadow.set(window)
+        setX11Shadow = createX11Shadow()
+        if setX11Shadow is not None:
+            setX11Shadow(window)
 
 
 class WindowShadow(QObject):
@@ -79,7 +75,7 @@ class WindowShadow(QObject):
 
     def eventFilter(self, window: QWindow, event: QEvent) -> bool:
         eventType = event.type()
-        # 隐藏时 Qt 回收 wl_surface 但保留平台窗口，只等 PlatformSurface 会漏掉
+        # 隐藏时 Qt 回收 wl_surface 却不发 PlatformSurface 事件
         isSurfaceGone = eventType == QEvent.Type.Hide or (
             eventType == QEvent.Type.PlatformSurface
             and event.surfaceEventType() == QPlatformSurfaceEvent.SurfaceEventType.SurfaceAboutToBeDestroyed
@@ -94,11 +90,13 @@ class WindowShadow(QObject):
 
 def buildTiles() -> Tiles:
     left, top, right, bottom = PADDING
+    # Breeze Large 档
+    layers = ((10.0, 5, 0.22), (5.0, 2, 0.12))
+    inset = 35
 
     def cdf(z: float) -> float:
         return 0.5 * (1 + math.erf(z / math.sqrt(2)))
 
-    # 坐标相对窗口对应的边，向外为负
     def horizontal(x: int, side: str, sigma: float) -> float:
         if side == "middle":
             return 1.0
@@ -114,25 +112,24 @@ def buildTiles() -> Tiles:
         return cdf((offset - y - 0.5) / sigma)
 
     def build(columns: range, columnSide: str, rows: range, rowSide: str) -> Tile:
-        # 高斯模糊的矩形可分离为横纵两个一维衰减之积
-        layers = [
+        falloffs = [
             (opacity, [horizontal(x, columnSide, sigma) for x in columns],
              [vertical(y, rowSide, sigma, offset) for y in rows])
-            for sigma, offset, opacity in LAYERS
+            for sigma, offset, opacity in layers
         ]
         pixels = bytearray(len(columns) * len(rows) * 4)
         index = 3
         for row in range(len(rows)):
             for column in range(len(columns)):
                 transparency = 1.0
-                for opacity, xs, ys in layers:
+                for opacity, xs, ys in falloffs:
                     transparency *= 1 - opacity * xs[column] * ys[row]
                 pixels[index] = round(255 * (1 - transparency))
                 index += 4
         return Tile(len(columns), len(rows), bytes(pixels))
 
-    leftColumns, rightColumns, middle = range(-left, INSET), range(-INSET, right), range(1)
-    topRows, bottomRows = range(-top, INSET), range(-INSET, bottom)
+    leftColumns, rightColumns, middle = range(-left, inset), range(-inset, right), range(1)
+    topRows, bottomRows = range(-top, inset), range(-inset, bottom)
     return Tiles(
         left=build(range(-left, 0), "left", middle, "middle"),
         topLeft=build(leftColumns, "left", topRows, "top"),
@@ -145,7 +142,6 @@ def buildTiles() -> Tiles:
     )
 
 
-# libwayland-client 的 C 结构，PySide6 没有 Wayland 绑定
 class WlMessage(Structure):
     _fields_ = [("name", c_char_p), ("signature", c_char_p), ("types", POINTER(c_void_p))]
 
@@ -170,13 +166,12 @@ class RegistryListener(Structure):
     _fields_ = [("global_", GlobalListener), ("global_remove", GlobalRemoveListener)]
 
 
+# 协议定义见 https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/shadow.xml
 class Protocol:
-    """手写的 org_kde_kwin_shadow 协议描述，结构须与代理同寿。"""
-
     def __init__(self, wayland: CDLL):
         surfaceInterface = addressof(WlInterface.in_dll(wayland, "wl_surface_interface"))
         bufferInterface = addressof(WlInterface.in_dll(wayland, "wl_buffer_interface"))
-        self._arrays = []
+        self._arrays = []  # 代理存活期间不能释放这些结构
         self.shadow = self._buildInterface(b"org_kde_kwin_shadow", 2, [
             (b"commit", b"", []),
             *[(b"attach_" + side, b"o", [bufferInterface]) for side in (
@@ -202,7 +197,6 @@ class Protocol:
 
 def marshal(wayland: CDLL, proxy: int, opcode: int, args: list, interface: WlInterface | None = None,
             version: int = 0, flags: int = 0) -> int:
-    """args 里 int 按 int32/uint32 传，c_void_p 按对象传，None 占位 new_id，float 转 wl_fixed。"""
     array = (WlArgument * max(len(args), 1))()
     for argument, value in zip(array, args):
         if isinstance(value, bytes):
@@ -221,8 +215,6 @@ def marshal(wayland: CDLL, proxy: int, opcode: int, args: list, interface: WlInt
 
 
 class KwinShadow:
-    """org_kde_kwin_shadow 的客户端：阴影由 KWin 画在 surface 外，不改窗口几何。"""
-
     def __init__(self, wayland: CDLL, display: int, surfaceByWindow, protocol: Protocol,
                  manager: int, managerVersion: int, buffers: list[int]):
         self._wayland = wayland
@@ -231,21 +223,21 @@ class KwinShadow:
         self._protocol = protocol
         self._manager = manager
         self._managerVersion = managerVersion
-        self._buffers = buffers  # 所有窗口共用
+        self._buffers = buffers
 
     def create(self, window: QWindow) -> int | None:
         surface = self._surfaceByWindow(window)
         if not surface:
             return None
         wayland = self._wayland
-        shadow = marshal(wayland, self._manager, 0, [None, c_void_p(surface)], self._protocol.shadow)
+        shadow = marshal(wayland, self._manager, MANAGER_CREATE, [None, c_void_p(surface)], self._protocol.shadow)
         for opcode, buffer in enumerate(self._buffers, start=SHADOW_ATTACH_LEFT):
             marshal(wayland, shadow, opcode, [c_void_p(buffer)])
         for opcode, offset in enumerate(PADDING, start=SHADOW_SET_LEFT_OFFSET):
             marshal(wayland, shadow, opcode, [float(offset)])
         marshal(wayland, shadow, SHADOW_COMMIT, [])
         wayland.wl_display_flush(self._display)
-        # 阴影随下一次 wl_surface.commit 生效
+        # 阴影随下一次 commit 生效
         window.requestUpdate()
         return shadow
 
@@ -261,12 +253,12 @@ class KwinShadow:
 def createKwinShadow() -> KwinShadow | None:
     import shiboken6
 
-    # Qt 没有公开取 wl_surface 的接口，只能按私有符号调用，见 ADR 0030
+    # Qt 没有获取 wl_surface 的公开接口，见 ADR 0030
     try:
         wayland = CDLL("libwayland-client.so.0")
         resolveInterface = CDLL("libQt6Gui.so.6")["_ZNK7QWindow16resolveInterfaceEPKci"]
         wlSurface = CDLL("libQt6WaylandClient.so.6")["_ZNK15QtWaylandClient14QWaylandWindow9wlSurfaceEv"]
-        wayland.wl_proxy_marshal_array_flags  # noqa: B018 libwayland 1.20 起才有
+        wayland.wl_proxy_marshal_array_flags  # noqa: B018 libwayland 1.20 起提供
     except (OSError, AttributeError) as e:
         logger.warning("无法加载窗口阴影所需的符号: {}", e)
         return None
@@ -285,15 +277,13 @@ def createKwinShadow() -> KwinShadow | None:
     wayland.wl_proxy_add_listener.argtypes = [c_void_p, c_void_p, c_void_p]
 
     def surfaceByWindow(window: QWindow) -> int | None:
-        # 私有接口 QWaylandWindow 是 QtWaylandClient::QWaylandWindow 的首个基类，指针即对象本身；
-        # 接口名是 QT_DECLARE_NATIVE_INTERFACE 的短名，不带命名空间
+        # 私有接口是 QWaylandWindow 的第一个基类，两者地址相同；接口名不含命名空间
         native = resolveInterface(shiboken6.getCppPointer(window)[0], b"QWaylandWindow", 1)
         return wlSurface(native) if native else None
 
     def interface(name: str) -> WlInterface:
         return WlInterface.in_dll(wayland, name)
 
-    # 用独立事件队列枚举全局对象，不干扰 Qt 自己的队列
     display = QGuiApplication.instance().nativeInterface().display()
     advertised: dict[bytes, tuple[int, int]] = {}
 
@@ -324,7 +314,6 @@ def createKwinShadow() -> KwinShadow | None:
     wayland.wl_proxy_destroy(registry)
 
     built = buildTiles()
-    # attach 请求的顺序
     tiles = (built.left, built.topLeft, built.top, built.topRight,
              built.right, built.bottomRight, built.bottom, built.bottomLeft)
     fd = os.memfd_create("ghost-downloader-shadow")
@@ -345,9 +334,8 @@ def createKwinShadow() -> KwinShadow | None:
     return KwinShadow(wayland, display, surfaceByWindow, protocol, manager, managerVersion, buffers)
 
 
-# libxcb 的 C 结构，只声明用到的字段
 class XcbScreenIterator(Structure):
-    _fields_ = [("data", POINTER(c_uint32)), ("rem", c_int), ("index", c_int)]  # data 首字段是 root
+    _fields_ = [("data", POINTER(c_uint32)), ("rem", c_int), ("index", c_int)]
 
 
 class XcbInternAtomReply(Structure):
@@ -359,24 +347,8 @@ XCB_ATOM_ATOM, XCB_ATOM_CARDINAL = 4, 6
 XCB_PROP_MODE_REPLACE, XCB_IMAGE_FORMAT_Z_PIXMAP = 0, 2
 
 
-class X11Shadow:
-    """_KDE_NET_WM_SHADOW：把贴图 pixmap 写进窗口属性，由 KWin 画在窗口外。"""
-
-    def __init__(self, xcb: CDLL, connection: int, atom: int, data):
-        self._xcb = xcb
-        self._connection = connection
-        self._atom = atom
-        self._data = data
-
-    def set(self, window: QWindow) -> None:
-        # X 窗口 id 在隐藏和显示之间不变，属性设一次即可
-        self._xcb.xcb_change_property(self._connection, XCB_PROP_MODE_REPLACE, window.winId(), self._atom,
-                                      XCB_ATOM_CARDINAL, 32, len(self._data), self._data)
-        self._xcb.xcb_flush(self._connection)
-
-
 @cache
-def createX11Shadow() -> X11Shadow | None:
+def createX11Shadow() -> Callable[[QWindow], None] | None:
     try:
         xcb = CDLL("libxcb.so.1")
     except OSError as e:
@@ -438,7 +410,6 @@ def createX11Shadow() -> X11Shadow | None:
     if atom not in supportedAtoms():
         return None
 
-    # pixmap 由所有窗口共用、存活到进程退出；KWin 读属性时才复制内容
     built = buildTiles()
     pixmaps = []
     for tile in (built.top, built.topRight, built.right, built.bottomRight,
@@ -453,4 +424,11 @@ def createX11Shadow() -> X11Shadow | None:
     left, top, right, bottom = PADDING
     data = (c_uint32 * 12)(*pixmaps, top, right, bottom, left)
     xcb.xcb_flush(connection)
-    return X11Shadow(xcb, connection, atom, data)
+
+    def setShadow(window: QWindow) -> None:
+        # 隐藏不会改变 X 窗口 ID，属性只需设置一次
+        xcb.xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window.winId(), atom,
+                                XCB_ATOM_CARDINAL, 32, len(data), data)
+        xcb.xcb_flush(connection)
+
+    return setShadow
