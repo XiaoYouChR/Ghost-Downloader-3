@@ -90,6 +90,7 @@ jobs:
           files: |
             README.md
             README_zh.md
+            README_ja.md
           contributors_per_line: 8
           max_contributors: 32
           image_size: 64
@@ -121,3 +122,4 @@ jobs:
             app/assets/resources.py
             README.md
             README_zh.md
+            README_ja.md
