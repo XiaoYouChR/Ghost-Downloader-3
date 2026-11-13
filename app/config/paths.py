@@ -8,7 +8,10 @@ from pathlib import Path
 from PySide6.QtCore import QStandardPaths
 
 EXECUTABLE_PATH = (
-    Path(os.environ["APPIMAGE"]) if "APPIMAGE" in os.environ
+    # APPIMAGE 会被子进程继承, 从别的 AppImage 程序里启动时它指向那个程序, 只认 APPDIR 挂载目录里运行的自己
+    Path(os.environ["APPIMAGE"])
+    if "APPIMAGE" in os.environ and "APPDIR" in os.environ
+    and Path(sys.executable).resolve().is_relative_to(Path(os.environ["APPDIR"]).resolve())
     else Path(sys.argv[0]).resolve() if "__compiled__" in globals()
     else Path(sys.executable).resolve()
 )
