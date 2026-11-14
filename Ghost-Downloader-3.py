@@ -243,7 +243,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
 
     from app.platform.desktop_keepalive import hold, release
     taskService.taskStarted.connect(lambda _: hold())
-    taskService.tasksAllCompleted.connect(release)
+    taskService.runningCountChanged.connect(lambda count: hold() if count else release())
 
     from app.platform.desktop_notification import (
         PopupNotifier, SystemNotifier, buildDiskSpaceInsufficient, buildParseFailed, buildTaskCompleted,
