@@ -149,7 +149,6 @@ def buildArgs() -> list[str]:
             '--msvc=latest',
             '--windows-icon-from-ico=app/assets/logo.ico',
             '--include-data-dir=app/assets/file_icons=app/assets/file_icons',
-            '--include-package-data=winrt:*.pywinrt',  # winrt 4.x 的投影表
             '--company-name=XiaoYouChR',
             '--product-name="Ghost Downloader"',
             f'--file-version={BUILD_VERSION}',
