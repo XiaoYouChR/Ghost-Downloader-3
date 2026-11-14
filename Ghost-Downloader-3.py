@@ -56,13 +56,6 @@ def setupEnvironment() -> None:
         os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
         os.environ["QT_SCALE_FACTOR"] = str(cfg.dpiScale.value)
 
-    if sys.platform == "win32":
-        from PySide6.QtGui import QFont
-        from PySide6.QtWidgets import QApplication
-        font = QFont()
-        font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
-        QApplication.setFont(font)
-
     logger.info("Ghost Downloader v{} launched", VERSION)
 
 
@@ -92,8 +85,14 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     application.setQuitOnLastWindowClosed(False)
 
     if sys.platform == "win32":
+        from PySide6.QtGui import QFont
         from app.platform.windows import setAnimationFrameRate
         setAnimationFrameRate(application.primaryScreen().refreshRate())
+        # 关闭 hinting 只在高像素密度屏幕上更清晰，100% 缩放的 1080P 屏幕反而发糊 #1012
+        if application.primaryScreen().devicePixelRatio() > 1:
+            font = QFont()
+            font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
+            application.setFont(font)
 
     if sys.platform == "darwin":
         from app.view.shell.dock import setDockIconVisible
