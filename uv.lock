@@ -410,7 +410,7 @@ dependencies = [
     { name = "uvloop", marker = "sys_platform != 'win32'" },
     { name = "websockets" },
     { name = "winloop", marker = "sys_platform == 'win32'" },
-    { name = "winrt-runtime" },
+    { name = "winrt-runtime", marker = "sys_platform == 'win32'" },
     { name = "wreq" },
 ]
 
@@ -444,7 +444,7 @@ requires-dist = [
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.22.1" },
     { name = "websockets", specifier = ">=14" },
     { name = "winloop", marker = "sys_platform == 'win32'", specifier = ">=0.6.0" },
-    { name = "winrt-runtime", specifier = "<4" },
+    { name = "winrt-runtime", marker = "sys_platform == 'win32'", specifier = "<4" },
     { name = "wreq", specifier = ">=0.12.0" },
 ]
 

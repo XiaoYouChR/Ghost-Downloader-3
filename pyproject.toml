@@ -23,7 +23,7 @@ dependencies = [
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
     "certifi>=2026.10.19",
-    "winrt-runtime < 4",
+    "winrt-runtime < 4; sys_platform == 'win32'"
 ]
 
 [dependency-groups]
