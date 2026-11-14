@@ -365,16 +365,17 @@ class M3U8TaskStep(TaskStep):
             return True
 
         prefix = f"{self._saveName.lower()}."
+        expectedSuffix = target.suffix.lower()
         found = max(
             (c for c in self.task.partPath.glob("*")
-             if c.is_file() and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
-             and c.name.lower().startswith(prefix)),
-            key=lambda c: c.stat().st_mtime,
+             if c.name.lower().startswith(prefix) and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
+             and c.is_file() and c.stat().st_size > 0),
+            key=lambda c: (c.suffix.lower() == expectedSuffix, c.stat().st_mtime),
             default=None,
         )
         if found is None:
             return False
-        if found.suffix.lower() != target.suffix.lower():
+        if found.suffix.lower() != expectedSuffix:
             raise TaskError("N_m3u8DL-RE 输出了 {actual} 文件，与任务的 {expected} 不符",
                             actual=found.suffix, expected=target.suffix)
         self.task.fileSize = max(self.task.fileSize, found.stat().st_size)
