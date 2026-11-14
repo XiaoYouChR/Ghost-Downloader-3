@@ -411,9 +411,7 @@ class SettingPage(FastScrollArea):
     def _bind(self) -> None:
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
-        cfg.shouldAutoSelectBrowserPort.valueChanged.connect(
-            lambda isAuto: self.browserPortCard.setEnabled(not isAuto)
-        )
+        cfg.shouldAutoSelectBrowserPort.valueChanged.connect(self._onAutoSelectPortChanged)
         self._browserService.connectionChanged.connect(self._refreshBrowserStatus, owner=self)
         self._browserListener.stateChanged.connect(self._refreshBrowserStatus, owner=self)
         self._aria2RpcListener.stateChanged.connect(self._refreshAria2Status, owner=self)
@@ -436,6 +434,9 @@ class SettingPage(FastScrollArea):
         self.feedbackCard.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
         self.openLogButton.clicked.connect(self._onOpenLogClicked)
         self.migrateCard.clicked.connect(self._onMigrateClicked)
+
+    def _onAutoSelectPortChanged(self, isAuto: bool) -> None:
+        self.browserPortCard.setEnabled(not isAuto)
 
     def _onDownloadFolderChanged(self, path: str) -> None:
         cfg.set(cfg.downloadFolder, path)
