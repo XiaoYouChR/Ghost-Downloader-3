@@ -588,9 +588,12 @@ class MainWindow(MSFluentWindow):
         palette = QApplication.palette()
         for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
             color = palette.color(role)
-            if color.isValid() and cfg.themeColor.value != color:
+            if not color.isValid():
+                continue
+            # 主题色已是 Accent 时不能继续比较 Highlight，否则每次启动在两者间交替 #1054
+            if cfg.themeColor.value != color:
                 setThemeColor(color, save=False)
-                return
+            return
 
     def _setTheme(self, value, deferBackgroundRefresh: bool = False) -> None:
         prevTheme = qconfig.theme
