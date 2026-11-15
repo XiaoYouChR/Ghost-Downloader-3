@@ -134,6 +134,22 @@ async def test_run_untrimmed_video_downloads_directly_without_ffmpeg(
     assert task.currentSnapshot()[0] == 100
 
 
+async def test_delete_untrimmed_video_without_files_keeps_file(
+    engine, features, startServer, downloadFolder, monkeypatch,
+):
+    monkeypatch.setattr(ffmpegRuntime, "path", lambda: "")
+    mp4 = buildProgressiveMp4(faststart=True)
+    url = await startServer(buildVideoHandler(mp4))
+    task = await features.parse(TaskOptions(url=url))
+    engine.taskService.add(task)
+    await runToCompletion(task)
+
+    engine.taskService.delete(task, shouldDeleteFiles=False)
+    await waitUntil(lambda: engine.taskService.taskById(task.taskId) is None)
+
+    assert (downloadFolder / "v.mp4").read_bytes() == mp4
+
+
 async def test_run_trimmed_video_without_ffmpeg_fails_with_install_error(
     engine, features, startServer, monkeypatch,
 ):

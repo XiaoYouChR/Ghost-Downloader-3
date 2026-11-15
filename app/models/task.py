@@ -503,9 +503,11 @@ class Task:
             raise
 
     def deletePlaceholders(self) -> None:
+        # 未选中的步骤不会运行，其输出路径可能与已完成步骤写出的成品相同 #1046
+        completedPaths = {step.outputPath for step in self.steps if step.status == TaskStatus.COMPLETED}
         for step in self.steps:
             outputPath = step.outputPath
-            if outputPath and step.status != TaskStatus.COMPLETED:
+            if outputPath and step.status != TaskStatus.COMPLETED and outputPath not in completedPaths:
                 deletePath(Path(outputPath))
                 deletePath(Path(f"{outputPath}.ghd"))
         for path in self.placeholderPaths:
