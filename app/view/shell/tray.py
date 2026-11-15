@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from enum import Enum
 
-from PySide6.QtCore import QRectF, QTimer, Qt
+from PySide6.QtCore import QPoint, QRect, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QSystemTrayIcon
 from qfluentwidgets import (
@@ -35,6 +35,12 @@ class GhostIcon(FluentIconBase, Enum):
 
     def render(self, painter, rect, theme=Theme.AUTO, indexes=None, **attributes) -> None:
         painter.drawPixmap(QRectF(rect).toRect(), self._toTintedPixmap(theme))
+
+
+def toAvailablePosition(position: QPoint, size: QSize, availableGeometry: QRect) -> QPoint:
+    x = min(max(position.x(), availableGeometry.left()), availableGeometry.right() - size.width() + 1)
+    y = min(max(position.y(), availableGeometry.top()), availableGeometry.bottom() - size.height() + 1)
+    return QPoint(x, y)
 
 
 if sys.platform == "win32":
@@ -119,12 +125,7 @@ if sys.platform == "win32":
             self.view.itemEntered.connect(self._onItemEntered)
 
         def adjustPosition(self) -> None:
-            m = self.hBoxLayout.contentsMargins()
-            rect = getCurrentScreenGeometry()
-            w = self.hBoxLayout.sizeHint().width() + 5
-            x = min(self.x() - m.left(), rect.right() - w)
-            y = self.y() - 45
-            self.move(x, y)
+            self.move(toAvailablePosition(self.pos(), self.size(), getCurrentScreenGeometry()))
 
         def showEvent(self, event):
             self.windowEffect.addMenuShadowEffect(self.winId())
@@ -157,11 +158,11 @@ if sys.platform == "win32":
 
     class TrayRoundMenu(RoundMenu):
 
+        def adjustPosition(self) -> None:
+            self.move(toAvailablePosition(self.pos(), self.size(), getCurrentScreenGeometry()))
+
         def showEvent(self, event):
-            rect = getCurrentScreenGeometry()
-            x = min(self.x(), rect.right() - self.width())
-            y = min(self.y(), rect.bottom() - self.height())
-            self.move(x, y)
+            self.adjustPosition()
             super().showEvent(event)
 
     TrayMenu = AcrylicMenu if isGreaterEqualWin11() else TrayRoundMenu
