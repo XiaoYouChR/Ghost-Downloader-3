@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from PySide6.QtCore import (
-    QByteArray, QEasingCurve, QEvent, QObject,
+    QByteArray, QEasingCurve, QEvent, QItemSelectionModel, QObject,
     QPropertyAnimation, QSize, Qt, Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLayout, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QApplication, QHBoxLayout, QLabel, QLayout,
+    QListWidgetItem, QSizePolicy, QVBoxLayout, QWidget,
+)
 from qfluentwidgets import (
-    CardWidget, FluentIcon, FluentStyleSheet, SettingCard,
+    CardWidget, FluentIcon, FluentStyleSheet, ListWidget, SettingCard,
     StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
@@ -15,6 +18,7 @@ from qfluentwidgets.components.settings.expand_setting_card import (
 )
 
 from app.config.cfg import cfg
+from app.view.components.scroll_area import PAGE_MARGIN, ScrollArea
 
 QWIDGETSIZE_MAX = (1 << 24) - 1
 
@@ -236,22 +240,34 @@ class CollapsibleSettingCardGroup(CardWidget):
     def _normalBackgroundColor(self):
         return QColor(255, 255, 255, 13 if isDarkTheme() else 170)
 
-    def _onExpandClicked(self) -> None:
-        self._setCollapsed(not self._collapsed)
+    @property
+    def isCollapsed(self) -> bool:
+        return self._collapsed
+
+    def setCollapsed(self, isCollapsed: bool, *, animate: bool = True) -> None:
+        if isCollapsed == self._collapsed:
+            return
+        self._setCollapsed(isCollapsed, animate=animate)
         key = self.objectName()
         items = list(cfg.expandedSettingGroups.value)
-        if not self._collapsed and key not in items:
+        if not isCollapsed and key not in items:
             items.append(key)
-        elif self._collapsed and key in items:
+        elif isCollapsed and key in items:
             items.remove(key)
         cfg.set(cfg.expandedSettingGroups, items)
 
-    def _setCollapsed(self, collapsed: bool) -> None:
+    def _onExpandClicked(self) -> None:
+        self.setCollapsed(not self._collapsed)
+
+    def _setCollapsed(self, collapsed: bool, *, animate: bool = True) -> None:
         if collapsed == self._collapsed:
             return
         self._collapsed = collapsed
         self.expandButton.setExpand(not collapsed)
         self._collapseAnim.stop()
+        if not animate:
+            self.cardContainer.setMaximumHeight(0 if collapsed else QWIDGETSIZE_MAX)
+            return
         self._collapseAnim.setStartValue(self.cardContainer.height())
         self._collapseAnim.setEndValue(0 if collapsed else self.cardContainer.sizeHint().height())
         self._collapseAnim.start()
@@ -271,11 +287,7 @@ class CollapsibleSettingCardGroup(CardWidget):
         self.orderChanged.emit()
 
     def _siblings(self) -> list[CollapsibleSettingCardGroup]:
-        layout = self.parentWidget().layout()
-        return [
-            layout.itemAt(i).widget() for i in range(layout.count())
-            if isinstance(layout.itemAt(i).widget(), CollapsibleSettingCardGroup)
-        ]
+        return groupsIn(self.parentWidget().layout())
 
     def updateArrows(self) -> None:
         siblings = self._siblings()
@@ -290,12 +302,15 @@ class CollapsibleSettingCardGroup(CardWidget):
         cfg.set(cfg.settingGroupOrder, currentKeys + stale)
 
 
-def restoreGroupOrder(layout: QVBoxLayout, tailKey: str = "about") -> None:
-    groups = [
-        layout.itemAt(i).widget()
-        for i in range(layout.count())
-        if isinstance(layout.itemAt(i).widget(), CollapsibleSettingCardGroup)
+def groupsIn(layout: QLayout) -> list[CollapsibleSettingCardGroup]:
+    return [
+        w for i in range(layout.count())
+        if isinstance(w := layout.itemAt(i).widget(), CollapsibleSettingCardGroup)
     ]
+
+
+def restoreGroupOrder(layout: QVBoxLayout, tailKey: str = "about") -> None:
+    groups = groupsIn(layout)
     keyToWidget = {g.objectName(): g for g in groups}
     order = [k for k in cfg.settingGroupOrder.value if k in keyToWidget]
     rest = [k for k in keyToWidget if k not in order]
@@ -307,3 +322,104 @@ def restoreGroupOrder(layout: QVBoxLayout, tailKey: str = "about") -> None:
         layout.insertWidget(idx, keyToWidget[key])
     for g in groups:
         g.updateArrows()
+
+
+NAV_WIDTH = 164
+
+
+class SettingGroupNav(ListWidget):
+
+    def __init__(self, targetArea: ScrollArea, parent: QWidget | None = None):
+        super().__init__(parent)
+        self._targetArea = targetArea
+        self._partnerBar = targetArea.verticalScrollBar()
+        self._connected: set[CollapsibleSettingCardGroup] = set()
+        self._lockedGroup: CollapsibleSettingCardGroup | None = None
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self.setFixedWidth(NAV_WIDTH)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+    def _initLayout(self) -> None:
+        # ListWidget 样式自带左右 4px 内边距，delegate 上下各留 2px 边距
+        self.setViewportMargins(PAGE_MARGIN - 4, PAGE_MARGIN - 2, 0, PAGE_MARGIN - 2)
+
+    def _bind(self) -> None:
+        self.itemClicked.connect(self._onItemClicked)
+        self._partnerBar.valueChanged.connect(self._refreshActive)
+        self._partnerBar.rangeChanged.connect(self._refreshActive)
+
+    def refresh(self) -> None:
+        groups = groupsIn(self._targetArea.widget().layout())
+        if [self.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self.count())] != groups:
+            self._rebuild(groups)
+        for i in range(self.count()):
+            item = self.item(i)
+            item.setHidden(item.data(Qt.ItemDataRole.UserRole).isHidden())
+        if self._lockedGroup is not None and self._lockedGroup.isHidden():
+            self._lockedGroup = None
+        self._refreshActive()
+
+    def _rebuild(self, groups: list[CollapsibleSettingCardGroup]) -> None:
+        itemWidth = NAV_WIDTH - PAGE_MARGIN - 4
+        avail = itemWidth - 22
+        self.clear()
+        for group in groups:
+            if group not in self._connected:
+                self._connected.add(group)
+                group.orderChanged.connect(self.refresh)
+            text = group.titleLabel.text()
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, group)
+            item.setSizeHint(QSize(itemWidth, 32))
+            if self.fontMetrics().horizontalAdvance(text) > avail:
+                item.setToolTip(text)
+            self.addItem(item)
+
+    def _selectRow(self, row: int) -> None:
+        if row != self.currentRow() or not self.selectionModel().isSelected(self.model().index(row, 0)):
+            self.setCurrentRow(row, QItemSelectionModel.SelectionFlag.ClearAndSelect)
+
+    def _onItemClicked(self, item: QListWidgetItem) -> None:
+        group: CollapsibleSettingCardGroup = item.data(Qt.ItemDataRole.UserRole)
+        group.setCollapsed(False, animate=False)
+        self._targetArea.widget().adjustSize()
+        want = max(0, group.y() - PAGE_MARGIN)
+        maxVal = self._partnerBar.maximum()
+        self._lockedGroup = group if want > maxVal else None
+        self._selectRow(self.row(item))
+        self._targetArea.scrollTo(min(maxVal, want))
+
+    def _refreshActive(self, *_) -> None:
+        if self._targetArea.isScrolling:
+            return
+        if self._lockedGroup is not None and self._partnerBar.value() < self._partnerBar.maximum() - 2:
+            self._lockedGroup = None
+        visible = [
+            (i, g) for i in range(self.count())
+            if not (g := self.item(i).data(Qt.ItemDataRole.UserRole)).isHidden()
+        ]
+        if not visible:
+            if self.selectionModel().hasSelection():
+                self.clearSelection()
+            return
+        if self._lockedGroup is not None:
+            for row, g in visible:
+                if g is self._lockedGroup:
+                    self._selectRow(row)
+                    return
+        anchorY = self._partnerBar.value() + PAGE_MARGIN + 24
+        chosenRow = visible[0][0]
+        if self._partnerBar.value() > 0:
+            for row, g in visible:
+                if g.y() <= anchorY:
+                    chosenRow = row
+                else:
+                    break
+        self._selectRow(chosenRow)

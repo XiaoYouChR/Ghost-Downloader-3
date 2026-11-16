@@ -2,15 +2,48 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QAbstractAnimation, QByteArray, QEasingCurve, QEvent, QPropertyAnimation, Qt
+import qfluentwidgets
 
-if sys.platform == "darwin":
-    from qfluentwidgets import ScrollArea
-else:
-    from qfluentwidgets import SmoothScrollArea
 
-    class ScrollArea(SmoothScrollArea):
-        def enableTransparentBackground(self):
+class ScrollArea(qfluentwidgets.ScrollArea if sys.platform == "darwin" else qfluentwidgets.SmoothScrollArea):
+
+    def __init__(self, parent=None):
+        self._viewport = None
+        super().__init__(parent)
+        self._viewport = self.viewport()
+        bar = self.scrollDelagate.vScrollBar if sys.platform == "darwin" else self.delegate.vScrollBar
+        self._vBar = bar
+        self._scrollAnim = QPropertyAnimation(bar, QByteArray(b"val"), self)
+        self._scrollAnim.setDuration(250)
+        self._scrollAnim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        bar.sliderPressed.connect(self._scrollAnim.stop)
+        self._viewport.installEventFilter(self)
+
+    @property
+    def isScrolling(self) -> bool:
+        return self._scrollAnim.state() == QAbstractAnimation.State.Running
+
+    def scrollTo(self, y: int, *, animate: bool = True) -> None:
+        bar = self.verticalScrollBar()
+        target = max(bar.minimum(), min(bar.maximum(), y))
+        self._scrollAnim.stop()
+        self._vBar.ani.stop()
+        self._vBar.resetValue(target)
+        if not animate or target == bar.value():
+            bar.setValue(target)
+            return
+        self._scrollAnim.setStartValue(bar.value())
+        self._scrollAnim.setEndValue(target)
+        self._scrollAnim.start()
+
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() == QEvent.Type.Wheel and obj is self._viewport:
+            self._scrollAnim.stop()
+        return super().eventFilter(obj, event)
+
+    if sys.platform != "darwin":
+        def enableTransparentBackground(self) -> None:
             self.setStyleSheet("QScrollArea{border: none; background: transparent}")
             self.viewport().setStyleSheet("background: transparent")
 

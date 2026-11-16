@@ -4,7 +4,7 @@ import sys
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QVBoxLayout, QWidget, QApplication
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     ComboBoxSettingCard, FluentIcon, HyperlinkCard, HyperlinkButton, InfoBar,
     InfoBarPosition, MessageBox, PrimaryPushSettingCard, PushButton, PushSettingCard,
@@ -22,7 +22,9 @@ from app.config.constants import (
     FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
 )
 from app.view.components.category_settings import CategoryRulesCard
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup, restoreGroupOrder
+from app.view.components.setting_card_group import (
+    CollapsibleSettingCardGroup, SettingGroupNav, groupsIn, restoreGroupOrder,
+)
 from app.view.components.setting_cards import (
     AssociationCard, ClipboardSettingCard, HeadersPresetSettingCard, IdentitySettingCard,
     LineEditSettingCard, PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
@@ -31,7 +33,7 @@ from app.view.components.setting_cards import (
 from app.view.components.editors import FolderPicker, addRecentFolder
 
 
-class SettingPage(FastScrollArea):
+class SettingPage(QWidget):
 
     def __init__(self, featureService, browserService, browserListener, aria2RpcListener, coroutineRunner, categoryService, taskService, updateService, parent=None):
         super().__init__(parent)
@@ -43,9 +45,13 @@ class SettingPage(FastScrollArea):
         self._categoryService = categoryService
         self._taskService = taskService
         self._updateService = updateService
-        self.container = QWidget()
+
+        self.scrollArea = FastScrollArea(self)
+        self.container = QWidget(self.scrollArea)
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
+        self.groupNav = SettingGroupNav(self.scrollArea, self)
+        self.hBoxLayout = QHBoxLayout(self)
 
         self.generalGroup = CollapsibleSettingCardGroup(self.tr("下载设置"), "general", self.container)
         self.networkGroup = CollapsibleSettingCardGroup(self.tr("网络设置"), "network", self.container)
@@ -70,13 +76,13 @@ class SettingPage(FastScrollArea):
         self.vBoxLayout.insertWidget(self.vBoxLayout.count() - 1, group)
 
     def _initWidget(self) -> None:
-        self.setWidget(self.container)
-        self.setWidgetResizable(True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setObjectName("SettingPage")
-        self.enableTransparentBackground()
+        self.scrollArea.setWidget(self.container)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scrollArea.enableTransparentBackground()
         # 扣掉视口给滚动条让出的宽度，左右留白对称
-        rightMargin = max(0, PAGE_MARGIN - self.viewportMargins().right())
+        rightMargin = max(0, PAGE_MARGIN - self.scrollArea.viewportMargins().right())
         self.vBoxLayout.setContentsMargins(PAGE_MARGIN, PAGE_MARGIN, rightMargin, PAGE_MARGIN)
 
     def _initCards(self) -> None:
@@ -378,6 +384,12 @@ class SettingPage(FastScrollArea):
             self.addSettingGroup(group)
         self.addSettingGroup(self.aboutGroup)
 
+        self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.hBoxLayout.setSpacing(0)
+        self.hBoxLayout.addWidget(self.groupNav)
+        self.hBoxLayout.addWidget(self.scrollArea, 1)
+        self.groupNav.refresh()
+
     def _bind(self) -> None:
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
@@ -581,10 +593,7 @@ class SettingPage(FastScrollArea):
 
     def setSearchText(self, text: str) -> None:
         hasMatch = False
-        for i in range(self.vBoxLayout.count()):
-            group = self.vBoxLayout.itemAt(i).widget()
-            if not isinstance(group, CollapsibleSettingCardGroup):
-                continue
+        for group in groupsIn(self.vBoxLayout):
             group.setSearchText(text)
             hasMatch = hasMatch or not group.isHidden()
 
@@ -592,10 +601,12 @@ class SettingPage(FastScrollArea):
         if not hasMatch:
             self.emptyStatusWidget.adjustSize()
             self._refreshEmptyWidgetGeometry()
+        self.groupNav.refresh()
 
     def _refreshEmptyWidgetGeometry(self) -> None:
+        navWidth = self.groupNav.width()
         self.emptyStatusWidget.move(
-            (self.width() - self.emptyStatusWidget.width()) // 2,
+            navWidth + (self.width() - navWidth - self.emptyStatusWidget.width()) // 2,
             (self.height() - self.emptyStatusWidget.height()) // 2,
         )
 
@@ -606,4 +617,5 @@ class SettingPage(FastScrollArea):
 
     def showEvent(self, event) -> None:
         restoreGroupOrder(self.vBoxLayout, self.aboutGroup.objectName())
+        self.groupNav.refresh()
         super().showEvent(event)
