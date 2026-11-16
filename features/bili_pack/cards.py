@@ -17,11 +17,11 @@ from app.models.task import TaskStatus
 from app.view.cards.draft_cards import MultiFileDraftCard
 from app.view.cards.task_cards import MultiFileTaskCard
 from app.view.components.range_slider import RangeSlider
-from app.view.components.track_bar import TrackBar, TrackButton
+from app.view.components.track_bar import MenuTrackButton, TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .task import (
-    BiliPage, BilibiliTask, audioTiers, currentAudioTier, currentVideoTier,
+    BiliPage, BilibiliTask, DANMAKU_OPTIONS, audioTiers, currentAudioTier, currentVideoTier,
     setEpisodeTitle, setPagePart, setTimeRanges, subtitleChoices, videoTiers,
 )
 
@@ -466,6 +466,13 @@ class BilibiliDraftCard(MultiFileDraftCard):
         self._trackBar.subtitleButton.setTrackEnabled(bool(self._subtitleChoices))
         self._trackBar.coverButton.setTrackEnabled(bool(self._task.coverUrl))
 
+        self._danmakuButton = MenuTrackButton(FluentIcon.CHAT, self._trackBar)
+        self._danmakuButton.setToolTip(self.tr("弹幕"))
+        self._danmakuButton.setChecked(bool(task.danmakuFormat))
+        self._danmakuButton.setOptions(DANMAKU_OPTIONS, selected=task.danmakuFormat or None)
+        barLayout = self._trackBar.layout()
+        barLayout.insertWidget(barLayout.indexOf(self._trackBar.coverButton), self._danmakuButton)
+
         self._trimButton = TrackButton(FluentIcon.CUT, self)
         self._trimButton.setToolTip(self.tr("截取片段"))
         self._trimButton.setChecked(False)
@@ -498,10 +505,19 @@ class BilibiliDraftCard(MultiFileDraftCard):
 
     def _bind(self) -> None:
         super()._bind()
+        for button in (
+            self._trackBar.videoButton,
+            self._trackBar.audioButton,
+            self._trackBar.subtitleButton,
+            self._trackBar.coverButton,
+        ):
+            button.toggled.disconnect(self._trackBar._preventAllOff)
         self._trackBar.videoButton.optionPicked.connect(self._onVideoQualityPicked)
         self._trackBar.videoButton.toggled.connect(self._onTrackToggled)
         self._trackBar.audioButton.optionPicked.connect(self._onAudioQualityPicked)
         self._trackBar.audioButton.toggled.connect(self._onTrackToggled)
+        self._danmakuButton.optionPicked.connect(self._onTrackToggled)
+        self._danmakuButton.toggled.connect(self._onTrackToggled)
         self._trackBar.subtitleButton.clicked.connect(self._onSubtitleClicked)
         self._trackBar.coverButton.clicked.connect(
             lambda: self._trackBar.coverButton.setChecked(not self._trackBar.coverButton.isChecked())
@@ -523,22 +539,38 @@ class BilibiliDraftCard(MultiFileDraftCard):
             self._isSizeEstimated = True
             self._refreshSummary()
 
-    def _onTrackToggled(self) -> None:
+    def _onTrackToggled(self, checked: object = True) -> None:
+        primary = (
+            self._trackBar.videoButton,
+            self._trackBar.audioButton,
+            self._danmakuButton,
+            self._trackBar.coverButton,
+        )
+        if checked is False and not any(b.isChecked() for b in primary):
+            sender = self.sender()
+            if isinstance(sender, TrackButton) and sender.isEnabled():
+                sender.setChecked(True)
+                return
+
         task: BilibiliTask = self._task
         isVideo = self._trackBar.videoButton.isChecked()
         isAudio = self._trackBar.audioButton.isChecked()
         isCover = self._trackBar.coverButton.isChecked()
+        danmaku = (self._danmakuButton.selectedValue() or "ass") if self._danmakuButton.isChecked() else ""
 
         changed = (task.isVideoEnabled != isVideo
                     or task.isAudioEnabled != isAudio
-                    or task.isCoverEnabled != isCover)
+                    or task.isCoverEnabled != isCover
+                    or task.danmakuFormat != danmaku)
         if changed:
             task.isVideoEnabled = isVideo
             task.isAudioEnabled = isAudio
             task.isCoverEnabled = isCover
+            task.danmakuFormat = danmaku
             task.update()
-        self._refreshSummary()
         self._refreshButtonVisibility()
+        self._refreshSummary()
+        self._refreshConflictIcon()
 
     def _onTrimToggled(self) -> None:
         checked = not self._trimButton.isChecked()
@@ -704,10 +736,14 @@ class BilibiliDraftCard(MultiFileDraftCard):
         self._refreshFileIcon()
 
     def _refreshButtonVisibility(self) -> None:
-        hasMedia = self._task.isVideoEnabled or self._task.isAudioEnabled
+        files = self._task.files or []
         if self._selectFilesButton is not None:
-            self._selectFilesButton.setVisible(hasMedia and len(self._task.files or []) > 1)
-        subtitleEnabled = hasMedia and bool(self._subtitleChoices)
+            self._selectFilesButton.setVisible(self._task.canSelectFiles and len(files) > 1)
+        canTrim = self._task.canSelectFiles and len(files) == 1 and files[0]._duration > 0
+        self._trimButton.setVisible(canTrim)
+        if not canTrim and self._trimButton.isChecked():
+            self._onTrimToggled()
+        subtitleEnabled = self._task.hasMedia and bool(self._subtitleChoices)
         self._trackBar.subtitleButton.setTrackEnabled(subtitleEnabled)
         if subtitleEnabled:
             self._trackBar.subtitleButton.setChecked(bool(self._task.subtitleLanguages))

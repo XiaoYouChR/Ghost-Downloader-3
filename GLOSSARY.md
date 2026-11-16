@@ -41,7 +41,7 @@ Task 加入时、Default Folder 被改为某文件夹时记入。
 _Avoid_: 历史路径、memory folders
 
 **Side File**:
-随成品一起产出、以成品 Name 为前缀的附属文件——字幕、封面、种子文件。
+随成品一起产出、以成品 Name 为前缀的附属文件——字幕、弹幕、封面、种子文件。
 _Avoid_: side product、sidecar；与 Selectable File 混淆
 
 **Part Path**:

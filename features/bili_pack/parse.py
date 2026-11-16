@@ -64,7 +64,8 @@ def buildPages(viewData: dict, biliUrl: BiliUrl) -> tuple[list[BiliPage], str, s
         title = str(viewData.get("title", "")).strip() or "bilibili_video"
         coverUrl = toHttps(viewData.get("pic") or "")
         bvid = str(viewData.get("bvid") or biliUrl.videoId)
-        pages = [buildPage(index, raw, bvid=bvid) for index, raw in enumerate(viewData.get("pages") or [])]
+        aid = int(viewData.get("aid") or 0)
+        pages = [buildPage(index, raw, bvid=bvid, aid=aid) for index, raw in enumerate(viewData.get("pages") or [])]
         setVideoSelection(pages, biliUrl.selectedPages)
 
     return pages, title, coverUrl
@@ -80,6 +81,7 @@ def buildFavoritePages(medias: list[dict], pageLists: dict[str, list[dict]]) -> 
         if not matchFavoriteVideo(media):
             continue
         bvid = str(media["bvid"])
+        aid = int(media.get("id") or 0)
         title = str(media.get("title") or "").strip()
         rawPages = pageLists.get(bvid) or [{
             "cid": (media.get("ugc") or {})["first_cid"],
@@ -89,7 +91,7 @@ def buildFavoritePages(medias: list[dict], pageLists: dict[str, list[dict]]) -> 
         }]
         coverUrl = toHttps(media.get("cover") or "")
         for raw in rawPages:
-            pages.append(buildPage(len(pages), raw, bvid=bvid, episodeTitle=title, coverUrl=coverUrl))
+            pages.append(buildPage(len(pages), raw, bvid=bvid, aid=aid, episodeTitle=title, coverUrl=coverUrl))
     return pages
 
 
@@ -108,6 +110,7 @@ def buildSeasonPages(season: dict) -> list[BiliPage]:
         sectionTitle = str(section.get("title") or "").strip() if hasManySections else ""
         for episode in section.get("episodes") or []:
             bvid = str(episode.get("bvid") or "")
+            aid = int(episode.get("aid") or 0)
             episodeTitle = str(episode.get("title") or "").strip()
             rawPages = list(episode.get("pages") or [])
             if not rawPages and episode.get("page"):
@@ -115,7 +118,7 @@ def buildSeasonPages(season: dict) -> list[BiliPage]:
             coverUrl = episodeCover(episode)
             for raw in rawPages:
                 pages.append(buildPage(
-                    len(pages), raw, bvid=bvid,
+                    len(pages), raw, bvid=bvid, aid=aid,
                     episodeTitle=episodeTitle, sectionTitle=sectionTitle,
                     coverUrl=coverUrl,
                 ))
@@ -151,20 +154,25 @@ def episodeCover(episode: dict) -> str:
 
 
 def buildPage(
-    index: int, raw: dict, *, bvid: str, episodeTitle: str = "",
+    index: int, raw: dict, *, bvid: str, aid: int = 0, episodeTitle: str = "",
     sectionTitle: str = "", coverUrl: str = "",
 ) -> BiliPage:
     pageNumber = int(raw.get("page") or index + 1)
+    dimension = raw.get("dimension") or {}
     return BiliPage(
         index=index,
         relativePath="",
         cid=int(raw["cid"]),
+        aid=aid,
         pagePart=str(raw.get("part", "")).strip(),
         pageNumber=pageNumber,
         bvid=bvid,
         episodeTitle=episodeTitle,
         sectionTitle=sectionTitle,
         coverUrl=coverUrl,
+        width=int(dimension.get("width") or 0),
+        height=int(dimension.get("height") or 0),
+        rotate=int(dimension.get("rotate") or 0),
         _duration=int(raw.get("duration") or 0),
     )
 

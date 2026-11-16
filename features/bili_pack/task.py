@@ -16,6 +16,7 @@ from .config import AUDIO_QUALITY_LABELS, AUDIO_QUALITY_VALUES
 from .stream import buildSize, fetchPlayurl, probeSize, toStreamUrl
 
 CODEC_NAMES = {7: "H.264", 12: "H.265", 13: "AV1"}
+DANMAKU_OPTIONS: list[tuple[str, str]] = [("ass", "ASS"), ("xml", "XML")]
 
 
 def streamPage(task: BilibiliTask) -> BiliPage | None:
@@ -140,12 +141,16 @@ def setFileName(task: BilibiliTask, index: int, name: str) -> None:
 @dataclass(kw_only=True)
 class BiliPage(TaskFile):
     cid: int = 0
+    aid: int = 0
     pagePart: str = ""
     pageNumber: int = 1
     bvid: str = ""
     episodeTitle: str = ""
     sectionTitle: str = ""
     coverUrl: str = ""
+    width: int = 0
+    height: int = 0
+    rotate: int = 0
     videoUrl: str = ""
     audioUrl: str = ""
     videoSize: int = 0
@@ -172,6 +177,7 @@ class BilibiliTask(Task):
     isAudioEnabled: bool = True
     isCoverEnabled: bool = False
     subtitleLanguages: list[str] = field(default_factory=list)
+    danmakuFormat: str = ""
     requestedQn: int = 0
     requestedCodecid: int = 0
     requestedAudioQn: int = 0
@@ -181,7 +187,7 @@ class BilibiliTask(Task):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if any(not f.relativePath.endswith((".mp4", ".m4a")) for f in self.files or []):
+        if any(not f.relativePath.endswith((".mp4", ".m4a", ".ass", ".xml")) for f in self.files or []):
             self._baseName = self._baseName or Path(self.name).stem
             if self.status == TaskStatus.COMPLETED:
                 self.updateNames()
@@ -214,6 +220,14 @@ class BilibiliTask(Task):
     def hasAudio(self) -> bool:
         return any(f.audioUrl or f._audioStreams for f in self.files or [])
 
+    @property
+    def hasMedia(self) -> bool:
+        return self.isVideoEnabled or self.isAudioEnabled
+
+    @property
+    def canSelectFiles(self) -> bool:
+        return self.hasMedia or bool(self.danmakuFormat)
+
     def videoCounts(self) -> tuple[int, int]:
         groups = self.videoGroups()
         selected = sum(1 for g in groups if any(p.selected for p in g))
@@ -237,7 +251,14 @@ class BilibiliTask(Task):
         return toSafeFilename(file.episodeTitle if isEpisode else file.pagePart, fallback=f"P{file.pageNumber}")
 
     def updateNames(self) -> None:
-        extension = "mp4" if self.isVideoEnabled else "m4a"
+        if self.isVideoEnabled:
+            extension = "mp4"
+        elif self.isAudioEnabled:
+            extension = "m4a"
+        elif self.danmakuFormat:
+            extension = self.danmakuFormat
+        else:
+            extension = "m4a"
         for page in self.files or []:
             stem = f"{Path(self.name).stem}{self._pageSuffix(page)}"
             page.relativePath = toSafeFilename(f"{stem}.{extension}", fallback=f"P{page.pageNumber}.{extension}")
@@ -245,6 +266,7 @@ class BilibiliTask(Task):
     def setName(self, name: str) -> None:
         super().setName(name)
         self._baseName = Path(self.name).stem
+        self.updateNames()
 
     def setVideoQuality(self, qn: int, codecid: int) -> None:
         self.requestedQn = qn
@@ -283,6 +305,10 @@ class BilibiliTask(Task):
         self.subtitleLanguages = languages
         self.update()
 
+    def setDanmakuFormat(self, fmt: str) -> None:
+        self.danmakuFormat = fmt if fmt in {"ass", "xml"} else ""
+        self.update()
+
     def update(self) -> None:
         self.steps.clear()
         files: list[BiliPage] = self.files or []
@@ -295,6 +321,11 @@ class BilibiliTask(Task):
             self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.mp4", fallback="video.mp4")
         elif self.isAudioEnabled:
             self.name = toSafeFilename(f"{self._baseName}{timeSuffix}.m4a", fallback="audio.m4a")
+        elif self.danmakuFormat:
+            self.name = toSafeFilename(
+                f"{self._baseName}{timeSuffix}.{self.danmakuFormat}",
+                fallback=f"danmaku.{self.danmakuFormat}",
+            )
         elif self.isCoverEnabled:
             self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
         else:
@@ -389,7 +420,7 @@ class BilibiliTask(Task):
                 fileIndex=file.index,
             ))
             self.steps[-1]._bindTask(self)
-        if self.isVideoEnabled or self.isAudioEnabled:
+        if self.hasMedia:
             for language in self.subtitleLanguages:
                 stepIndex += 1
                 self.steps.append(BilibiliSubtitleStep(
@@ -398,6 +429,14 @@ class BilibiliTask(Task):
                     language=language,
                 ))
                 self.steps[-1]._bindTask(self)
+        if self.danmakuFormat:
+            stepIndex += 1
+            self.steps.append(BilibiliDanmakuStep(
+                stepIndex=stepIndex,
+                fileIndex=file.index,
+                format=self.danmakuFormat,
+            ))
+            self.steps[-1]._bindTask(self)
         return stepIndex
 
     def _pageSuffix(self, page: BiliPage) -> str:
@@ -653,3 +692,76 @@ class BilibiliSubtitleStep(TaskStep):
             lines.append("")
         if seq:
             Path(self.outputPath).write_text("\n".join(lines), encoding="utf-8")
+
+
+@dataclass(kw_only=True)
+class BilibiliDanmakuStep(TaskStep):
+    _task: BilibiliTask = field(repr=False, init=False)
+    canPause = False
+    fileIndex: int = 0
+    format: str = "ass"
+
+    @property
+    def task(self) -> BilibiliTask:
+        return self._task
+
+    @property
+    def outputPath(self) -> str:
+        return str(self.task.toSidePath(self.fileIndex, self.format))
+
+    async def run(
+        self,
+        reportSpeed: Callable[[int], None],
+        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+    ) -> None:
+        from .danmaku import fetchDanmaku, toAss, toXml
+
+        page = pageByIndex(self.task, self.fileIndex)
+        if page is None or not page.cid:
+            if self.task.hasMedia:
+                deletePlaceholder(Path(self.outputPath))
+                return
+            raise TaskError("弹幕下载失败")
+
+        self.receivedBytes = 0
+
+        def onProgress(done: int, total: int, byteCount: int) -> None:
+            if byteCount > 0:
+                self.receivedBytes += byteCount
+                reportSpeed(byteCount)
+            if total > 0:
+                self.progress = done / total * 100
+
+        try:
+            items = await fetchDanmaku(
+                page.cid,
+                aid=page.aid,
+                duration=page._duration,
+                startTime=page.startTime,
+                endTime=page.endTime,
+                headers=page.headers,
+                onProgress=onProgress,
+            )
+        except TaskError:
+            raise
+        except Exception as e:
+            raise TaskError("弹幕下载失败") from e
+
+        # 仅在作为 Side File 伴随下载时清理空占位符，避免独立下载完成后立刻变成 Missing
+        if not items and self.task.hasMedia:
+            deletePlaceholder(Path(self.outputPath))
+            return
+
+        outputPath = Path(self.outputPath)
+        outputPath.parent.mkdir(parents=True, exist_ok=True)
+        if self.format == "xml":
+            text = toXml(items, cid=page.cid)
+        else:
+            text = toAss(
+                items,
+                width=page.width,
+                height=page.height,
+                rotate=page.rotate,
+                title=outputPath.stem,
+            )
+        outputPath.write_text(text, encoding="utf-8")

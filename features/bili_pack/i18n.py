@@ -11,3 +11,5 @@ N("TaskErrors", "登录失败")
 
 N("TaskErrors", "未获取到视频流地址")
 N("TaskErrors", "字幕下载失败")
+N("TaskErrors", "弹幕下载失败")
+N("TaskErrors", "Bilibili 拦截了弹幕请求（412 风控），请稍后再试")

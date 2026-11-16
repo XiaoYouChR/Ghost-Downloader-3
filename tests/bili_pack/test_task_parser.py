@@ -41,6 +41,7 @@ def test_build_favorite_pages_skips_invalid_and_expands_pages():
     pages = buildFavoritePages(sample["medias"], sample["pageLists"])
     assert [p.bvid for p in pages] == ["BV1p3ivB8EZA", "BV1PW4y1G7WG"] + ["BV1sx411N7ms"] * 14
     assert pages[0].cid == 35163146510
+    assert pages[0].aid == sample["medias"][0]["id"]
     assert pages[0].episodeTitle == "【中配】为什么Rust教程总喜欢自我吹嘘？ Tsoding - Tsoding Highlights"
     assert [p.pagePart for p in pages[2:5]] == ["至少还有你", "好久不见", "隐形的翅膀"]
     assert all(p.selected for p in pages)
@@ -117,12 +118,13 @@ def buildSeasonView(currentBvid: str, extraSection: bool = False) -> dict:
 
 def test_parse_video_selects_every_page():
     viewData = {
+        "aid": 80433022,
         "title": "三P稿件",
         "pic": "http://i0.hdslb.com/bfs/cover.jpg",
         "bvid": "BV1xxx",
         "pages": [
-            buildPage(11, 1, "开场"),
-            buildPage(12, 2, "正片"),
+            {**buildPage(11, 1, "开场"), "dimension": {"width": 1920, "height": 1080, "rotate": 0}},
+            {**buildPage(12, 2, "正片"), "dimension": {"width": 1920, "height": 1080, "rotate": 1}},
             buildPage(13, 3, "彩蛋"),
         ],
     }
@@ -131,6 +133,10 @@ def test_parse_video_selects_every_page():
     assert coverUrl == "https://i0.hdslb.com/bfs/cover.jpg"
     assert [p.pageNumber for p in pages] == [1, 2, 3]
     assert [p.cid for p in pages] == [11, 12, 13]
+    assert [p.aid for p in pages] == [80433022, 80433022, 80433022]
+    assert (pages[0].width, pages[0].height, pages[0].rotate) == (1920, 1080, 0)
+    assert (pages[1].width, pages[1].height, pages[1].rotate) == (1920, 1080, 1)
+    assert (pages[2].width, pages[2].height, pages[2].rotate) == (0, 0, 0)
     assert [p.pagePart for p in pages] == ["开场", "正片", "彩蛋"]
     assert [p.index for p in pages] == [0, 1, 2]
     assert all(p.selected for p in pages)

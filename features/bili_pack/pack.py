@@ -84,6 +84,8 @@ class BilibiliParser(TaskParser):
 
             requestedQuality = bilibiliConfig.defaultQuality.value
             requestedAudioQuality = bilibiliConfig.defaultAudioQuality.value
+            defaultDanmaku = bilibiliConfig.defaultDanmaku.value
+            danmakuFormat = "" if defaultDanmaku == "none" else defaultDanmaku
             baseName = toSafeFilename(title, fallback="bilibili_video")
             for page in parsedPages:
                 page.headers = dict(downloadHeaders)
@@ -129,6 +131,7 @@ class BilibiliParser(TaskParser):
                 coverUrl=coverUrl,
                 coverSize=coverSize,
                 files=parsedPages,
+                danmakuFormat=danmakuFormat,
                 requestedQn=requestedQuality,
                 requestedAudioQn=requestedAudioQuality,
                 _baseName=baseName,

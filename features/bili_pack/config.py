@@ -28,6 +28,9 @@ class BilibiliConfig(PackConfig):
     defaultAudioQuality = OptionsConfigItem(
         "Bilibili", "DefaultAudioQuality", 30280, OptionsValidator(AUDIO_QUALITY_VALUES),
     )
+    defaultDanmaku = OptionsConfigItem(
+        "Bilibili", "DefaultDanmaku", "none", OptionsValidator(["none", "ass", "xml"]),
+    )
     alternativeQuality = OptionsConfigItem(
         "Bilibili", "AlternativeQuality", "max", OptionsValidator(["max", "min"]),
     )
@@ -46,6 +49,9 @@ class BilibiliConfig(PackConfig):
             ComboBoxSettingCard(self.defaultAudioQuality, FluentIcon.MUSIC, self.tr("默认音质"),
                                 self.tr("选择偏好的音质"),
                                 texts=AUDIO_QUALITY_LABELS, parent=group),
+            ComboBoxSettingCard(self.defaultDanmaku, FluentIcon.CHAT, self.tr("默认弹幕"),
+                                self.tr("选择默认下载的弹幕格式"),
+                                texts=[self.tr("不下载"), "ASS", "XML"], parent=group),
             ComboBoxSettingCard(self.alternativeQuality, FluentIcon.SPEED_HIGH, self.tr("画质或音质不可用时"),
                                 self.tr("当选择的画质或音质不可用时的替代策略"),
                                 texts=[self.tr("选择最高"), self.tr("选择最低")],

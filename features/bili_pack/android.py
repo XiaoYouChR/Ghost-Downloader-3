@@ -64,7 +64,7 @@ def init(pack: BilibiliPack) -> dict[str, Signal]:
 def taskFields(task: BilibiliTask) -> dict[str, str | bool]:
     return {
         "fileSelectKind": "videos" if task.hasManyVideos else "pages",
-        "canSelectFiles": task.isVideoEnabled or task.isAudioEnabled,
+        "canSelectFiles": task.canSelectFiles,
     }
 
 
@@ -101,12 +101,24 @@ def toDraftOptions(pairs: list[tuple[str, str]]) -> list[dict[str, str]]:
     return [{"key": key, "label": label} for key, label in pairs]
 
 
+def activeTracks(task: BilibiliTask) -> set[str]:
+    return {
+        name for name, on in (
+            ("video", task.isVideoEnabled),
+            ("audio", task.isAudioEnabled),
+            ("danmaku", bool(task.danmakuFormat)),
+            ("cover", task.isCoverEnabled),
+        ) if on
+    }
+
+
 def draftFields(task: BilibiliTask) -> dict[str, Any]:
     from .task import (
-        audioTiers, currentAudioTier, currentVideoTier, subtitleChoices, videoTiers,
+        DANMAKU_OPTIONS, audioTiers, currentAudioTier, currentVideoTier, subtitleChoices, videoTiers,
     )
 
-    page = task.files[0] if task.files and len(task.files) == 1 else None
+    tracks = activeTracks(task)
+    page = task.files[0] if task.canSelectFiles and task.files and len(task.files) == 1 else None
     return {
         "controls": [
             {
@@ -114,19 +126,26 @@ def draftFields(task: BilibiliTask) -> dict[str, Any]:
                 "title": "视频",
                 "value": currentVideoTier(task) if task.isVideoEnabled else "",
                 "options": toDraftOptions(videoTiers(task)),
-                "isOptional": task.isAudioEnabled,
+                "isOptional": bool(tracks - {"video"}),
             },
             {
                 "id": "audio",
                 "title": "音频",
                 "value": currentAudioTier(task) if task.isAudioEnabled else "",
                 "options": toDraftOptions(audioTiers(task)),
-                "isOptional": task.isVideoEnabled,
+                "isOptional": bool(tracks - {"audio"}),
+            },
+            {
+                "id": "danmaku",
+                "title": "弹幕",
+                "value": task.danmakuFormat,
+                "options": toDraftOptions(DANMAKU_OPTIONS),
+                "isOptional": bool(tracks - {"danmaku"}),
             },
         ],
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
-        "subtitles": toDraftOptions(subtitleChoices(task)),
+        "subtitles": toDraftOptions(subtitleChoices(task)) if task.hasMedia else [],
         "subtitleLanguages": list(task.subtitleLanguages),
         "duration": page._duration if page else 0,
         "startTime": page.startTime if page else 0,
@@ -136,18 +155,25 @@ def draftFields(task: BilibiliTask) -> dict[str, Any]:
 
 
 def setControl(task: BilibiliTask, controlId: str, value: str) -> None:
+    if controlId not in {"video", "audio", "danmaku", "cover"}:
+        raise ValueError(f"Unknown control: {controlId}")
+    if not value and not (activeTracks(task) - {controlId}):
+        return
     if controlId == "video":
         task.isVideoEnabled = bool(value)
         if value:
             task.setVideoQuality(*map(int, value.split("-")))
+            return
     elif controlId == "audio":
         task.isAudioEnabled = bool(value)
         if value:
             task.setAudioQuality(int(value))
+            return
+    elif controlId == "danmaku":
+        task.setDanmakuFormat(value)
+        return
     elif controlId == "cover":
         task.isCoverEnabled = bool(value)
-    else:
-        raise ValueError(f"Unknown control: {controlId}")
     task.update()
 
 
