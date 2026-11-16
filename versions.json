@@ -100,9 +100,9 @@
       "gdMinVersion": "4.5.0"
     },
     "m3u8_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "m3u8_pack.zip",
-      "sha256": "a6c1b4708b47ca3b3c78395106f791943739124864aa9c788380e528bd96c23c",
+      "sha256": "2a758b8bd280e69a6c719bd796a98ade95f9e7058225b722610d3207a280c306",
       "gdMinVersion": "4.5.0"
     },
     "yt_dlp_pack": {
