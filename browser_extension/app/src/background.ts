@@ -56,6 +56,7 @@ async function sendTaskOrEnqueue<T extends CommandResult>(payload: Record<string
   }
   await enqueue(payload);
   autoLaunchPending = true;
+  void desktopBridge.connect();
   return { ok: true, message: chrome.i18n.getMessage("taskQueued") } as T;
 }
 
@@ -226,12 +227,7 @@ async function setupBackground() {
     void injectMediaButton(activeTabId);
   }
 
-  if (desktopBridge.buildSnapshot().token) {
-    void desktopBridge.connect();
-  } else {
-    void desktopBridge.requestPairing().catch(() => {});
-  }
-
+  void desktopBridge.connect();
   desktopBridge.setupReconnectAlarm();
 }
 
@@ -450,6 +446,7 @@ if (supportsDownloadDeterminingFilename()) {
 async function runPopupCommand(command: PopupCommand): Promise<PopupState | CommandResult> {
   switch (command.type) {
     case "popup_get_state":
+      void desktopBridge.connect();
       return buildPopupState({
         preferredTabId: typeof command.tabId === "number" ? command.tabId : null,
         currentView: command.view,
