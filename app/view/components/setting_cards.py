@@ -377,6 +377,75 @@ class ClipboardSettingCard(CollapsibleSettingCard):
                 [packId for packId, checkBox in self.checkBoxes.items() if not checkBox.isChecked()])
 
 
+class AssociationCard(CollapsibleSettingCard):
+
+    def __init__(self, packs: list, parent=None):
+        super().__init__(
+            FluentIcon.LINK,
+            self.tr("文件与协议关联"),
+            self.tr("选择交给 Ghost Downloader 打开的本地文件类型与链接协议"),
+            parent=parent,
+        )
+        self._packs = packs
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self.itemWidget = QWidget(self.view)
+        self.itemLayout = QVBoxLayout(self.itemWidget)
+        self._items: list[tuple[CheckBox, ConfigItem]] = []
+        for pack in self._packs:
+            if pack.config is None:
+                continue
+            context = type(pack).__name__
+            fileTypes = pack.fileTypes()
+            if fileTypes and pack.config.associateFileTypes is not None:
+                names = "、".join(QCoreApplication.translate(context, ft.displayName) for ft in fileTypes)
+                extensions = ", ".join(ext for ft in fileTypes for ext in ft.extensions)
+                checkBox = CheckBox(self.tr("关联 {0}（{1}）").format(names, extensions), self.itemWidget)
+                checkBox.setChecked(pack.config.associateFileTypes.value)
+                self._items.append((checkBox, pack.config.associateFileTypes))
+            schemes = pack.uriSchemes()
+            if schemes and pack.config.associateUriSchemes is not None:
+                names = " / ".join(QCoreApplication.translate(context, s.displayName) for s in schemes)
+                uris = ", ".join(f"{s.scheme}://" for s in schemes)
+                checkBox = CheckBox(self.tr("关联 {0} 链接（{1}）").format(names, uris), self.itemWidget)
+                checkBox.setChecked(pack.config.associateUriSchemes.value)
+                self._items.append((checkBox, pack.config.associateUriSchemes))
+
+    def _initLayout(self) -> None:
+        self.itemLayout.setSpacing(19)
+        self.itemLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.itemLayout.setContentsMargins(48, 18, 0, 18)
+        for checkBox, _ in self._items:
+            self.itemLayout.addWidget(checkBox)
+        self.addGroupWidget(self.itemWidget)
+
+    def _bind(self) -> None:
+        for checkBox, configItem in self._items:
+            checkBox.toggled.connect(lambda checked, item=configItem: cfg.set(item, checked))
+            configItem.valueChanged.connect(checkBox.setChecked)
+
+
+def addCardWidget(card: SettingCard, widget: QWidget, *, before: QWidget | None = None, spacing: int = 8) -> None:
+    layout = card.hBoxLayout
+    if before is not None:
+        idx = layout.indexOf(before)
+        layout.insertWidget(idx, widget, 0, Qt.AlignmentFlag.AlignRight)
+        layout.insertSpacing(idx + 1, spacing)
+        return
+    if layout.count() <= 5:
+        layout.addWidget(widget, 0, Qt.AlignmentFlag.AlignRight)
+        layout.addSpacing(16)
+        return
+    idx = layout.count() - 1
+    if spacing > 0:
+        layout.insertSpacing(idx, spacing)
+        idx += 1
+    layout.insertWidget(idx, widget, 0, Qt.AlignmentFlag.AlignRight)
+
+
 class SelectFolderSettingCard(SettingCard):
     pathChanged = Signal(str)
 

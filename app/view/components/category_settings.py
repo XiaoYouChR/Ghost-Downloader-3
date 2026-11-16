@@ -3,10 +3,11 @@ from __future__ import annotations
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N, QCoreApplication, Signal
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
-    BodyLabel, FluentIcon, IconWidget,
-    PushButton, StrongBodyLabel, ToolButton, ToolTipFilter,
+    BodyLabel, FluentIcon, IconWidget, IndicatorPosition,
+    PushButton, StrongBodyLabel, SwitchButton, ToolButton, ToolTipFilter,
 )
 
+from app.config.cfg import cfg
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.services.category_service import Category
@@ -81,22 +82,32 @@ class CategoryRulesCard(CollapsibleSettingCard):
     def __init__(self, categoryService, parent=None):
         super().__init__(
             FluentIcon.TAG,
-            self.tr("下载分类规则"),
+            self.tr("下载分类"),
             self.tr("根据扩展名自动归类，可为分类指定下载文件夹"),
             parent,
         )
         self._categoryService = categoryService
         self._rowWidgets: list[CategoryRowWidget] = []
-        self.buttonContainer = QWidget(self.view)
-        self.buttonLayout = QHBoxLayout(self.buttonContainer)
-        self.resetButton = PushButton(FluentIcon.SYNC, self.tr("恢复默认"), self.buttonContainer)
-        self.addButton = PushButton(FluentIcon.ADD, self.tr("添加分类"), self.buttonContainer)
 
+        self._initWidget()
         self._initLayout()
         self._reload()
         self._bind()
 
+    def _initWidget(self) -> None:
+        self.switchButton = SwitchButton(self, IndicatorPosition.RIGHT)
+        self.switchButton.setOnText(QCoreApplication.translate("SwitchSettingCard", "On"))
+        self.switchButton.setOffText(QCoreApplication.translate("SwitchSettingCard", "Off"))
+        self.switchButton.setChecked(cfg.isCategoryEnabled.value)
+
+        self.buttonContainer = QWidget(self.view)
+        self.buttonLayout = QHBoxLayout(self.buttonContainer)
+        self.resetButton = PushButton(FluentIcon.SYNC, self.tr("恢复默认"), self.buttonContainer)
+        self.addButton = PushButton(FluentIcon.ADD, self.tr("添加分类"), self.buttonContainer)
+        self.view.setEnabled(cfg.isCategoryEnabled.value)
+
     def _initLayout(self) -> None:
+        self.addWidget(self.switchButton)
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.setSpacing(0)
         self.buttonLayout.setContentsMargins(48, 8, 24, 8)
@@ -105,9 +116,18 @@ class CategoryRulesCard(CollapsibleSettingCard):
         self.buttonLayout.addWidget(self.addButton)
 
     def _bind(self) -> None:
+        self.switchButton.checkedChanged.connect(self._onSwitchCheckedChanged)
+        cfg.isCategoryEnabled.valueChanged.connect(self._onEnabledChanged)
         self.addButton.clicked.connect(self._onAddClicked)
         self.resetButton.clicked.connect(self._onResetClicked)
         self._categoryService.categoriesChanged.connect(self._reload, owner=self)
+
+    def _onSwitchCheckedChanged(self, isChecked: bool) -> None:
+        cfg.set(cfg.isCategoryEnabled, isChecked)
+
+    def _onEnabledChanged(self, isEnabled: bool) -> None:
+        self.switchButton.setChecked(isEnabled)
+        self.view.setEnabled(isEnabled)
 
     def _reload(self) -> None:
         for row in self._rowWidgets:

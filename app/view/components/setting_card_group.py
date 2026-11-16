@@ -288,3 +288,22 @@ class CollapsibleSettingCardGroup(CardWidget):
         stored = list(cfg.settingGroupOrder.value)
         stale = [k for k in stored if k not in currentKeys]
         cfg.set(cfg.settingGroupOrder, currentKeys + stale)
+
+
+def restoreGroupOrder(layout: QVBoxLayout, tailKey: str = "about") -> None:
+    groups = [
+        layout.itemAt(i).widget()
+        for i in range(layout.count())
+        if isinstance(layout.itemAt(i).widget(), CollapsibleSettingCardGroup)
+    ]
+    keyToWidget = {g.objectName(): g for g in groups}
+    order = [k for k in cfg.settingGroupOrder.value if k in keyToWidget]
+    rest = [k for k in keyToWidget if k not in order]
+    if tailKey in rest:
+        rest.remove(tailKey)
+        rest.append(tailKey)
+    order += rest
+    for idx, key in enumerate(order):
+        layout.insertWidget(idx, keyToWidget[key])
+    for g in groups:
+        g.updateArrows()

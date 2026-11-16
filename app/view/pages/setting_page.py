@@ -22,10 +22,11 @@ from app.config.constants import (
     FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
 )
 from app.view.components.category_settings import CategoryRulesCard
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup, restoreGroupOrder
 from app.view.components.setting_cards import (
-    ClipboardSettingCard, HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
-    PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
+    AssociationCard, ClipboardSettingCard, HeadersPresetSettingCard, IdentitySettingCard,
+    LineEditSettingCard, PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
+    addCardWidget,
 )
 from app.view.components.editors import FolderPicker, addRecentFolder
 
@@ -46,10 +47,8 @@ class SettingPage(FastScrollArea):
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
 
-        self.generalGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
-        self.categoryGroup = CollapsibleSettingCardGroup(self.tr("下载分类"), "category", self.container)
-        if sys.platform != "darwin":
-            self.associationGroup = CollapsibleSettingCardGroup(self.tr("关联设置"), "association", self.container)
+        self.generalGroup = CollapsibleSettingCardGroup(self.tr("下载设置"), "general", self.container)
+        self.networkGroup = CollapsibleSettingCardGroup(self.tr("网络设置"), "network", self.container)
         self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
         self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
         self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
@@ -81,21 +80,22 @@ class SettingPage(FastScrollArea):
         self.vBoxLayout.setContentsMargins(PAGE_MARGIN, PAGE_MARGIN, rightMargin, PAGE_MARGIN)
 
     def _initCards(self) -> None:
-        self.speedLimitationCard = SpinBoxSettingCard(
-            FluentIcon.SPEED_OFF, self.tr("下载限速"),
-            self.tr("当下载任务界面限速开关开启时，所有任务将根据此值进行限速"),
-            suffix=" KB/s", configItem=cfg.speedLimitation,
-            singleStep=512, division=1 / 1024,
-        )
         from qfluentwidgets import SettingCard
         self.downloadFolderCard = SettingCard(FluentIcon.FOLDER, self.tr("下载路径"), self.tr("文件默认保存位置"))
         self.downloadFolderPicker = FolderPicker(
             lambda: cfg.downloadFolder.defaultValue, self.tr("系统默认"), self.downloadFolderCard
         )
         self.downloadFolderPicker.setPath(cfg.downloadFolder.value)
-        self.downloadFolderCard.hBoxLayout.addWidget(self.downloadFolderPicker, 0, Qt.AlignmentFlag.AlignRight)
-        self.downloadFolderCard.hBoxLayout.addSpacing(16)
-        self.clientProfileCard = IdentitySettingCard()
+        addCardWidget(self.downloadFolderCard, self.downloadFolderPicker)
+
+        self.categoryRulesCard = CategoryRulesCard(self._categoryService)
+
+        self.speedLimitationCard = SpinBoxSettingCard(
+            FluentIcon.SPEED_OFF, self.tr("下载限速"),
+            self.tr("当下载任务界面限速开关开启时，所有任务将根据此值进行限速"),
+            suffix=" KB/s", configItem=cfg.speedLimitation,
+            singleStep=512, division=1 / 1024,
+        )
 
         self.generalGroup.addSettingCards([
             RangeSettingCard(cfg.maxTaskNum, FluentIcon.TRAIN, self.tr("最大任务数"),
@@ -106,48 +106,51 @@ class SettingPage(FastScrollArea):
                               self.tr("AI 实时检测各线程效率并自动增加线程数以提高下载速度"),
                               cfg.autoSpeedUp),
             SpinBoxSettingCard(FluentIcon.LIBRARY, self.tr("最小再分配大小"),
-                              self.tr("每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配"),
-                              " KB", cfg.maxReassignSize, singleStep=64),
+                               self.tr("每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配"),
+                               " KB", cfg.maxReassignSize, singleStep=64),
             self.speedLimitationCard,
             SwitchSettingCard(FluentIcon.HISTORY, self.tr("保留文件修改时间"),
                               self.tr("下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值"),
                               cfg.shouldPreserveLastModified),
-            SwitchSettingCard(FluentIcon.DEVELOPER_TOOLS, self.tr("下载时验证 SSL 证书"),
-                              self.tr("文件无法下载时，可尝试关闭该选项"),
-                              cfg.shouldVerifySsl),
             self.downloadFolderCard,
+            self.categoryRulesCard,
             ComboBoxSettingCard(cfg.nameConflict, FluentIcon.COPY, self.tr("同名文件"),
                                 self.tr("下载目录中已有同名文件时的处理方式"),
                                 texts=[self.tr("保留两者"), self.tr("覆盖"), self.tr("询问")]),
             SwitchSettingCard(FluentIcon.BROOM, self.tr("自动移除缺失的任务"),
                               self.tr("文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务"),
                               cfg.shouldRemoveMissingTasks),
+        ])
+
+        self.clientProfileCard = IdentitySettingCard()
+        self.networkGroup.addSettingCards([
+            ProxySettingCard(cfg.proxyServer, featureService=self._featureService),
             SwitchSettingCard(FluentIcon.CONNECT, self.tr("使用系统 DNS"),
                               self.tr("使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境"),
                               cfg.shouldUseSystemDns),
-            ProxySettingCard(cfg.proxyServer, featureService=self._featureService),
+            SwitchSettingCard(FluentIcon.DEVELOPER_TOOLS, self.tr("下载时验证 SSL 证书"),
+                              self.tr("文件无法下载时，可尝试关闭该选项"),
+                              cfg.shouldVerifySsl),
             self.clientProfileCard,
             HeadersPresetSettingCard(),
         ])
 
-        self.categoryRulesCard = CategoryRulesCard(self._categoryService)
-        self.categoryGroup.addSettingCards([
-            SwitchSettingCard(FluentIcon.TAG, self.tr("启用下载分类"),
-                              self.tr("根据扩展名将下载任务归类，便于筛选与分发到指定文件夹"),
-                              cfg.isCategoryEnabled),
-            self.categoryRulesCard,
-        ])
-
-        self.browserPairTokenCard = PrimaryPushSettingCard(
-            self.tr("复制令牌"), FluentIcon.COPY, self.tr("配对令牌"),
-            cfg.browserExtensionPairToken.value,
+        self.browserEnableCard = SwitchSettingCard(
+            FluentIcon.CONNECT, self.tr("启用浏览器扩展"),
+            self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用"),
+            cfg.isBrowserExtensionEnabled,
         )
-        self.regenerateTokenButton = ToolButton(FluentIcon.SYNC, self.browserPairTokenCard)
-        self.regenerateTokenButton.setToolTip(self.tr("重新生成令牌"))
-        self.regenerateTokenButton.installEventFilter(ToolTipFilter(self.regenerateTokenButton))
-        self.browserPairTokenCard.hBoxLayout.insertSpacing(6, 8)
-        self.browserPairTokenCard.hBoxLayout.insertWidget(
-            7, self.regenerateTokenButton, 0, Qt.AlignmentFlag.AlignRight,
+
+        self.chromiumInstallCard = PrimaryPushSettingCard(
+            self.tr("一键安装"), FluentIcon.DOWNLOAD,
+            self.tr("安装到 Chromium 浏览器"),
+            self.tr("自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级"),
+        )
+        self.exportExtensionButton = HyperlinkButton(self.chromiumInstallCard)
+        self.exportExtensionButton.setText(self.tr("导出 CRX"))
+        addCardWidget(
+            self.chromiumInstallCard, self.exportExtensionButton,
+            before=self.chromiumInstallCard.button, spacing=16,
         )
 
         self.storeInstallCard = HyperlinkCard(
@@ -158,30 +161,21 @@ class SettingPage(FastScrollArea):
         edgeBtn = HyperlinkButton(self.storeInstallCard)
         edgeBtn.setText(self.tr("Edge 商店"))
         edgeBtn.setUrl(EDGE_ADDONS_URL)
-        self.storeInstallCard.hBoxLayout.insertWidget(
-            5, edgeBtn, 0, Qt.AlignmentFlag.AlignRight,
-        )
-        self.storeInstallCard.hBoxLayout.insertSpacing(6, 16)
+        addCardWidget(self.storeInstallCard, edgeBtn, before=self.storeInstallCard.linkButton, spacing=16)
 
         chromeBtn = HyperlinkButton(self.storeInstallCard)
         chromeBtn.setText(self.tr("Chrome 商店"))
         chromeBtn.setUrl(CHROME_WEBSTORE_URL)
-        self.storeInstallCard.hBoxLayout.insertWidget(
-            5, chromeBtn, 0, Qt.AlignmentFlag.AlignRight,
-        )
-        self.storeInstallCard.hBoxLayout.insertSpacing(6, 16)
+        addCardWidget(self.storeInstallCard, chromeBtn, before=edgeBtn, spacing=16)
 
-        self.chromiumInstallCard = PrimaryPushSettingCard(
-            self.tr("一键安装"), FluentIcon.DOWNLOAD,
-            self.tr("安装到 Chromium 浏览器"),
-            self.tr("自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级"),
+        self.browserPairTokenCard = PrimaryPushSettingCard(
+            self.tr("复制令牌"), FluentIcon.COPY, self.tr("配对令牌"),
+            cfg.browserExtensionPairToken.value,
         )
-        self.exportExtensionButton = HyperlinkButton(self.chromiumInstallCard)
-        self.exportExtensionButton.setText(self.tr("导出 CRX"))
-        self.chromiumInstallCard.hBoxLayout.insertWidget(
-            5, self.exportExtensionButton, 0, Qt.AlignmentFlag.AlignRight,
-        )
-        self.chromiumInstallCard.hBoxLayout.insertSpacing(6, 16)
+        self.regenerateTokenButton = ToolButton(FluentIcon.SYNC, self.browserPairTokenCard)
+        self.regenerateTokenButton.setToolTip(self.tr("重新生成令牌"))
+        self.regenerateTokenButton.installEventFilter(ToolTipFilter(self.regenerateTokenButton))
+        addCardWidget(self.browserPairTokenCard, self.regenerateTokenButton, spacing=8)
 
         self.browserAutoPortCard = SwitchSettingCard(
             FluentIcon.SYNC, self.tr("自动选择端口"),
@@ -196,53 +190,28 @@ class SettingPage(FastScrollArea):
         )
         self.browserPortCard.setEnabled(not cfg.shouldAutoSelectBrowserPort.value)
 
-        self.browserEnableCard = SwitchSettingCard(
-            FluentIcon.CONNECT, self.tr("启用浏览器扩展"), self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用"), cfg.isBrowserExtensionEnabled,
-        )
-
-        browserCards = [
-            self.browserEnableCard,
-            SwitchSettingCard(FluentIcon.CHAT, self.tr("接管下载时进入草稿模式"),
-                              self.tr("自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名"),
-                              cfg.shouldDraftTakenDownload),
-            self.browserPairTokenCard,
-            self.storeInstallCard,
-            self.chromiumInstallCard,
-            self.browserAutoPortCard,
-            self.browserPortCard,
-        ]
-        self.browserGroup.addSettingCards(browserCards)
-
+        browserCards = [self.browserEnableCard]
         if sys.platform != "darwin":
             self.urlSchemeCard = SwitchSettingCard(
                 FluentIcon.LINK, self.tr("允许浏览器扩展唤醒"),
                 self.tr("浏览器扩展可通过 ghostdownloader:// 协议启动桌面端"),
                 cfg.isUrlSchemeRegistered,
             )
-            associationCards = [self.urlSchemeCard]
-            for pack in self._featureService.packs:
-                if pack.config is None:
-                    continue
-                fileTypes = pack.fileTypes()
-                if fileTypes and pack.config.associateFileTypes is not None:
-                    extensions = "/".join(ext for ft in fileTypes for ext in ft.extensions)
-                    associationCards.append(SwitchSettingCard(
-                        FluentIcon.DOCUMENT, self.tr("关联 {0} 文件").format(extensions),
-                        self.tr("双击 {0} 文件时用 Ghost Downloader 打开").format(extensions),
-                        pack.config.associateFileTypes,
-                    ))
-                schemes = pack.uriSchemes()
-                if schemes and pack.config.associateUriSchemes is not None:
-                    schemeText = "/".join(s.displayName for s in schemes)
-                    associationCards.append(SwitchSettingCard(
-                        FluentIcon.LINK, self.tr("处理 {0} 链接").format(schemeText),
-                        self.tr("点击 {0} 链接时唤起 Ghost Downloader").format(schemeText),
-                        pack.config.associateUriSchemes,
-                    ))
-            self.associationGroup.addSettingCards(associationCards)
+            browserCards.append(self.urlSchemeCard)
+        browserCards.extend([
+            SwitchSettingCard(FluentIcon.CHAT, self.tr("接管下载时进入草稿模式"),
+                              self.tr("自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名"),
+                              cfg.shouldDraftTakenDownload),
+            self.chromiumInstallCard,
+            self.storeInstallCard,
+            self.browserPairTokenCard,
+            self.browserAutoPortCard,
+            self.browserPortCard,
+        ])
+        self.browserGroup.addSettingCards(browserCards)
 
         self.aria2EnableCard = SwitchSettingCard(
-            FluentIcon.LINK, self.tr("启用 Aria2 RPC 兼容"), "", cfg.isAria2RpcEnabled,
+            FluentIcon.LINK, self.tr("启用 Aria2 RPC 兼容"), self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接"), cfg.isAria2RpcEnabled,
         )
         self.aria2RpcGroup.addSettingCards([
             self.aria2EnableCard,
@@ -342,12 +311,9 @@ class SettingPage(FastScrollArea):
             self.tr("安装后可在终端中使用 ghd 命令添加和管理任务"),
         )
         self._refreshCommandLineToolCard()
+
         softwareCards = [
-            SwitchSettingCard(FluentIcon.UPDATE, self.tr("在应用程序启动时检查更新"),
-                              self.tr("新版本将更稳定，并具有更多功能"),
-                              cfg.shouldCheckUpdateAtStartup),
             self.autoRunCard,
-            self.commandLineToolCard,
             ComboBoxSettingCard(
                 cfg.closeMode, FluentIcon.POWER_BUTTON,
                 self.tr("关闭主窗口时"),
@@ -363,8 +329,14 @@ class SettingPage(FastScrollArea):
             SwitchSettingCard(FluentIcon.VOLUME, self.tr("通知提示音"),
                               self.tr("下载完成时播放提示音"), cfg.isNoticeSoundEnabled),
             ClipboardSettingCard(self._featureService.packs),
-            self.migrateCard,
         ]
+        if sys.platform != "darwin":
+            self.associationCard = AssociationCard(self._featureService.packs)
+            softwareCards.append(self.associationCard)
+        softwareCards.extend([
+            self.commandLineToolCard,
+            self.migrateCard,
+        ])
         self.softwareGroup.addSettingCards(softwareCards)
 
         self.feedbackCard = PrimaryPushSettingCard(
@@ -373,10 +345,7 @@ class SettingPage(FastScrollArea):
             self.tr("通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题"),
         )
         self.openLogButton = PushButton(self.tr("查看日志"), self.feedbackCard)
-        self.feedbackCard.hBoxLayout.insertSpacing(6, 8)
-        self.feedbackCard.hBoxLayout.insertWidget(
-            7, self.openLogButton, 0, Qt.AlignmentFlag.AlignRight,
-        )
+        addCardWidget(self.feedbackCard, self.openLogButton, spacing=8)
 
         self.packInfoCard = PrimaryPushSettingCard(
             self.tr("查看详情"), FluentIcon.IOT, self.tr("功能包"),
@@ -388,18 +357,19 @@ class SettingPage(FastScrollArea):
         )
 
         self.aboutGroup.addSettingCards([
+            SwitchSettingCard(FluentIcon.UPDATE, self.tr("在应用程序启动时检查更新"),
+                              self.tr("新版本将更稳定，并具有更多功能"),
+                              cfg.shouldCheckUpdateAtStartup),
+            self.aboutCard,
+            self.packInfoCard,
+            self.feedbackCard,
             HyperlinkCard(AUTHOR_URL, self.tr("打开作者的个人空间"), FluentIcon.PROJECTOR,
                           self.tr("了解作者"), self.tr("发现更多 {} 的作品").format(AUTHOR)),
-            self.feedbackCard,
-            self.packInfoCard,
-            self.aboutCard,
         ])
 
     def _initLayout(self) -> None:
         self.addSettingGroup(self.generalGroup)
-        self.addSettingGroup(self.categoryGroup)
-        if sys.platform != "darwin":
-            self.addSettingGroup(self.associationGroup)
+        self.addSettingGroup(self.networkGroup)
         self.addSettingGroup(self.browserGroup)
         self.addSettingGroup(self.aria2RpcGroup)
         self.addSettingGroup(self.personalGroup)
@@ -635,25 +605,5 @@ class SettingPage(FastScrollArea):
             self._refreshEmptyWidgetGeometry()
 
     def showEvent(self, event) -> None:
-        self._restoreOrder()
+        restoreGroupOrder(self.vBoxLayout, self.aboutGroup.objectName())
         super().showEvent(event)
-
-    def _restoreOrder(self) -> None:
-        groups = [
-            self.vBoxLayout.itemAt(i).widget()
-            for i in range(self.vBoxLayout.count())
-            if self.vBoxLayout.itemAt(i).widget()
-        ]
-        keyToWidget = {g.objectName(): g for g in groups}
-        order = [k for k in cfg.settingGroupOrder.value if k in keyToWidget]
-        rest = [k for k in keyToWidget if k not in order]
-        aboutKey = self.aboutGroup.objectName()
-        if aboutKey in rest:
-            rest.remove(aboutKey)
-            rest.append(aboutKey)
-        order += rest
-        for idx, key in enumerate(order):
-            self.vBoxLayout.insertWidget(idx, keyToWidget[key])
-        for g in groups:
-            if isinstance(g, CollapsibleSettingCardGroup):
-                g.updateArrows()
