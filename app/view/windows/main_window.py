@@ -22,7 +22,7 @@ from app.config.paths import APP_DATA_DIR
 from app.platform.desktop import raiseWindow, revealInFolder
 from app.services.task_draft import TaskDraft
 from app.i18n import toLocalizedError
-from app.models.task import TaskError, TaskOptions
+from app.models.task import TaskError, TaskOptions, TaskStatus
 from app.services.port_listener import PortListener
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
@@ -461,8 +461,8 @@ class MainWindow(MSFluentWindow):
 
     def _onSpeedChanged(self, _speed: int) -> None:
         from app.platform.taskbar import setWindowsProgress
-        setWindowsProgress(int(self.winId()), self._taskService.runningCount() > 0,
-                           self._taskService.overallProgress())
+        status = TaskStatus.RUNNING if self._taskService.runningCount() > 0 else None
+        setWindowsProgress(int(self.winId()), status, self._taskService.overallProgress())
 
     def _onCloseClicked(self) -> None:
         for dialog in self.findChildren(MaskDialogBase):

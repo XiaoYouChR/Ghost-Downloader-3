@@ -27,6 +27,7 @@ DESKTOP_ONLY = {
     ("GeneralDownload", "RecentFolders"),
     ("Notice", "SoundEnabled"),
     ("Notice", "Style"),
+    ("Notice", "TaskPopupEnabled"),
     ("Personalization", "BackgroundEffect"),
     ("Personalization", "DpiScale"),
     ("Personalization", "Language"),

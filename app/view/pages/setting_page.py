@@ -312,6 +312,13 @@ class SettingPage(QWidget):
                 self.tr("当前为用户模式，数据保存在: {0}").format(APP_DATA_DIR),
             )
 
+        self.taskPopupCard = SwitchSettingCard(
+            FluentIcon.SPEED_HIGH, self.tr("新建任务时显示下载进度"),
+            self.tr("在屏幕右下角显示进度，可最小化到任务栏；需要通知方式为弹窗"),
+            cfg.isTaskPopupEnabled,
+        )
+        self.taskPopupCard.setEnabled(cfg.noticeStyle.value == NoticeStyle.POPUP)
+
         self.commandLineToolCard = PushSettingCard(
             "", FluentIcon.COMMAND_PROMPT, self.tr("命令行工具"),
             self.tr("安装后可在终端中使用 ghd 命令添加和管理任务"),
@@ -334,6 +341,7 @@ class SettingPage(QWidget):
             ),
             SwitchSettingCard(FluentIcon.VOLUME, self.tr("通知提示音"),
                               self.tr("下载完成时播放提示音"), cfg.isNoticeSoundEnabled),
+            *([self.taskPopupCard] if NoticeStyle.POPUP in cfg.noticeStyle.options else []),
             ClipboardSettingCard(self._featureService.packs),
         ]
         if sys.platform != "darwin":
@@ -399,6 +407,7 @@ class SettingPage(QWidget):
         self._aria2RpcListener.stateChanged.connect(self._refreshAria2Status, owner=self)
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
+        cfg.noticeStyle.valueChanged.connect(lambda style: self.taskPopupCard.setEnabled(style == NoticeStyle.POPUP))
 
         self.downloadFolderPicker.pathChanged.connect(self._onDownloadFolderChanged)
         cfg.downloadFolder.valueChanged.connect(self.downloadFolderPicker.setPath)

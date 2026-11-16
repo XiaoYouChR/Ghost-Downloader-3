@@ -175,12 +175,24 @@ _Avoid_: worker、thread、chunk
 _Avoid_: message、alert、event
 
 **Popup**:
-在屏幕右下角堆叠显示 Notice 的置顶窗口，不抢焦点，到时自动关闭。
+在屏幕右下角堆叠显示的置顶卡片，不抢焦点。承载 Notice、Request 或 Task Popup；同一件事在屏幕上只有一张。
 _Avoid_: dialog、toast、alert
 
+**Request**:
+等待用户决定的询问，用户决定后消解。同类 Request 同时只有零或一个。
+_Avoid_: 与 Notice 混淆（Notice 发出即完成，Request 会被消解）
+
 **Pair Request**:
-待决的浏览器配对请求，有始有终——用户批准或拒绝后消解。同时只有零或一个。
-_Avoid_: 与 Notice 混淆（Notice 发出即完成，Pair Request 会被消解）
+待决的浏览器配对请求，用户批准或拒绝后消解。
+_Avoid_: 配对弹窗
+
+**Clipboard Request**:
+剪贴板监听识别到链接后，询问用户是否接管的 Request。新识别的链接替换未决的旧请求。
+_Avoid_: 剪贴板弹窗
+
+**Task Popup**:
+新建任务第一次开始下载时弹出、显示其进度的 Popup，拥有自己的任务栏按钮，可最小化。任务完成或失败时，由不自动关闭的结果提示原地取代。从弹出到用户关闭 Task Popup 或结果提示之前，该任务是被跟踪的任务，它完成时不另发 Notice。
+_Avoid_: 进度窗口、progress dialog、下载弹窗
 
 **Pair Token**:
 Browser Service 与浏览器扩展共享的连接凭证，Pairing 的产物。

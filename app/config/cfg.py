@@ -395,6 +395,7 @@ class Config(QConfig):
         EnumSerializer(NoticeStyle),
     )
     isNoticeSoundEnabled = ConfigItem("Notice", "SoundEnabled", True, BoolValidator())
+    isTaskPopupEnabled = ConfigItem("Notice", "TaskPopupEnabled", False, BoolValidator())
     clipboardIgnoredPacks: ConfigItem[list[str]] = ConfigItem("Software", "ClipboardIgnoredPacks", [], StringListValidator())
     geometry = ConfigItem(
         "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),

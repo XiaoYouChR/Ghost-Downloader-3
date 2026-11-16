@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.view.dialogs.name_conflict import NameConflictPrompt
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.view.shell.mac_status_item import MacStatusItem
+    from app.view.shell.task_popup import TaskTracker
 
 
 class Application(QApplication):
@@ -33,6 +34,7 @@ class Application(QApplication):
         self.clipboardListener: ClipboardListener | None = None
         self.nameConflictPrompt: NameConflictPrompt | None = None
         self.statusItem: MacStatusItem | None = None
+        self.taskTracker: TaskTracker | None = None
         signal(SIGINT, self._onInterrupt)
 
     def event(self, e: QEvent) -> bool:

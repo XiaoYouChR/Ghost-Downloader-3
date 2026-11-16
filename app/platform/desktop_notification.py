@@ -13,10 +13,10 @@ from typing import TYPE_CHECKING
 from desktop_notifier.common import DEFAULT_SOUND, Button, Icon, Notification, Sound, Urgency
 from loguru import logger
 from PySide6.QtCore import (
-    QCoreApplication, QEasingCurve, QFileInfo, QPoint, QPointF, QPropertyAnimation, QRectF,
+    QCoreApplication, QEasingCurve, QEvent, QFileInfo, QPoint, QPointF, QPropertyAnimation, QRectF,
     QResource, QStandardPaths, Qt, QTimer, Signal as QtSignal,
 )
-from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPixmap, QScreen
+from PySide6.QtGui import QColor, QCursor, QGuiApplication, QPainter, QPixmap, QScreen
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIcon, IconWidget, InfoBarIcon, PushButton, StrongBodyLabel,
@@ -24,6 +24,7 @@ from qfluentwidgets import (
 )
 
 from app.platform.desktop import openFile, revealInFolder
+from app.platform.taskbar import addTaskbarButton
 from app.platform.windows import isGreaterEqualWin11
 from app.signal import Signal
 
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from collections.abc import Coroutine
 
     from app.models.task import Task, TaskError
+    from app.services.browser_service import PairRequest
 
 APP_NAME = "Ghost Downloader"
 LOGO_RESOURCE = ":/image/logo.png"
@@ -43,6 +45,7 @@ SCREEN_MARGIN = 12
 SPACING = 8
 ICON_SPACING = 12
 FILE_ICON_SIZE = 48
+TEXT_WIDTH = WIDTH - 2 * PADDING - FILE_ICON_SIZE - ICON_SPACING
 STATUS_ICON_SIZE = 32
 CORNER_RADIUS = 8
 DEFAULT_DURATION = 5
@@ -119,6 +122,50 @@ def buildParseFailed(url: str, error: TaskError, activate: Callable[[], None]) -
         message=f"{url}\n{toLocalizedError(error)}",
         urgency=Urgency.Critical,
         on_clicked=activate,
+    )
+
+
+def buildTaskFailed(task: Task, activate: Callable[[], None]) -> Notification:
+    from app.i18n import toLocalizedError
+
+    error = toLocalizedError(task.lastError) if task.lastError else ""
+    return Notification(
+        title=QCoreApplication.translate("Notifications", "下载失败"),
+        message=f"{task.name}\n{error}",
+        urgency=Urgency.Critical,
+        on_clicked=activate,
+        timeout=0,
+    )
+
+
+def buildClipboardRequest(urls: list[str], accept: Callable[[], None]) -> Notification:
+    message = urls[0]
+    if len(urls) > 1:
+        message += "\n" + QCoreApplication.translate("Notifications", "等 {0} 个链接").format(len(urls))
+    return Notification(
+        title=QCoreApplication.translate("Notifications", "检测到下载链接"),
+        message=message,
+        buttons=(Button(title=QCoreApplication.translate("Notifications", "下载"), on_pressed=accept),),
+        on_clicked=accept,
+    )
+
+
+def buildPairRequest(request: PairRequest, approve: Callable[[], None], reject: Callable[[], None]) -> Notification:
+    client = request.clientKind or QCoreApplication.translate("Notifications", "浏览器扩展")
+    version = request.extensionVersion or QCoreApplication.translate("Notifications", "未知")
+    return Notification(
+        title=QCoreApplication.translate("Notifications", "浏览器扩展配对请求"),
+        message="\n".join((
+            QCoreApplication.translate("Notifications", "{0} {1} 请求连接").format(client, version),
+            QCoreApplication.translate("Notifications", "来源: {0}").format(request.peerAddress),
+            QCoreApplication.translate("Notifications", "仅在你刚刚点击扩展里的\"自动配对\"时允许"),
+        )),
+        buttons=(
+            Button(title=QCoreApplication.translate("Notifications", "允许配对"), on_pressed=approve),
+            Button(title=QCoreApplication.translate("Notifications", "拒绝"), on_pressed=reject),
+        ),
+        on_dismissed=reject,
+        timeout=0,
     )
 
 
@@ -282,26 +329,28 @@ def createPresence() -> Presence:
 
 class Popup(QWidget):
     exited = QtSignal()
+    dismissed = QtSignal()
+    clicked = QtSignal()
+    layoutChanged = QtSignal()
+    hasTaskbarButton = False
 
-    def __init__(self, notification: Notification):
+    def __init__(self):
         super().__init__()
-        self._notification = notification
-        self._duration = DEFAULT_DURATION if notification.timeout == -1 else notification.timeout
-        if notification.timeout == -1 and sys.platform == "win32":
-            seconds = wintypes.ULONG(DEFAULT_DURATION)
-            user32.SystemParametersInfoW(SPI_GETMESSAGEDURATION, 0, ctypes.byref(seconds), 0)
-            self._duration = seconds.value
+        self.duration = 0
+        self.hasSound = False
         self.isExiting = False
         self._isHovered = False
         self._targetPos = QPoint()
         self._pressX: float | None = None
-        self._initWidget()
-        self._initLayout()
-        self._bind()
+
+    @property
+    def isLongLived(self) -> bool:
+        return self.duration == 0
 
     def _initWidget(self) -> None:
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
-                            | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowDoesNotAcceptFocus)
+        flags = (Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
+                 | Qt.WindowType.WindowDoesNotAcceptFocus)
+        self.setWindowFlags(flags if self.hasTaskbarButton else flags | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WidgetAttribute.WA_X11DoNotAcceptFocus)
         self._isAcrylic = isGreaterEqualWin11()
@@ -311,6 +360,8 @@ class Popup(QWidget):
         self.windowEffect = None
         if sys.platform == "win32":
             from qframelesswindow import WindowEffect
+            if self.hasTaskbarButton:
+                addTaskbarButton(int(self.winId()))
             self.windowEffect = WindowEffect(self)
             if self._isAcrylic:
                 self._applyAcrylic()
@@ -323,93 +374,43 @@ class Popup(QWidget):
         self.logoLabel = QLabel(self)
         self.logoLabel.setPixmap(self._toPixmap(QPixmap(LOGO_RESOURCE), 16))
         self.appNameLabel = CaptionLabel(APP_NAME, self)
-        self.closeButton = TransparentToolButton(FluentIcon.CLOSE, self)
-        self.closeButton.setFixedSize(32, 32)
-        self.closeButton.setIconSize(self.closeButton.iconSize() * 0.75)
-        policy = self.closeButton.sizePolicy()
-        policy.setRetainSizeWhenHidden(True)
-        self.closeButton.setSizePolicy(policy)
-        self.closeButton.hide()
-
-        icon = self._notification.icon
-        if icon is not None and not (pixmap := QPixmap(str(icon.as_path()))).isNull():
-            self.iconWidget = QLabel(self)
-            self.iconWidget.setPixmap(self._toPixmap(pixmap, FILE_ICON_SIZE))
-        elif self._notification.urgency == Urgency.Critical:
-            self.iconWidget = IconWidget(InfoBarIcon.ERROR, self)
-            self.iconWidget.setFixedSize(STATUS_ICON_SIZE, STATUS_ICON_SIZE)
-        else:
-            self.iconWidget = QLabel(self)
-            self.iconWidget.setPixmap(self._toPixmap(QPixmap(LOGO_RESOURCE), FILE_ICON_SIZE))
-
-        textWidth = WIDTH - 2 * PADDING - FILE_ICON_SIZE - ICON_SPACING
-        lines = self._notification.message.splitlines() or [""]
-        self.titleLabel = StrongBodyLabel(self._notification.title, self)
-        self.bodyLabel = BodyLabel(self)
-        self.bodyLabel.setText(self.bodyLabel.fontMetrics().elidedText(lines[0], Qt.TextElideMode.ElideMiddle, textWidth))
-        self.bodyLabel.setToolTip(lines[0])
-        self.detailLabels = []
-        for line in lines[1:3]:
-            label = CaptionLabel(self)
-            label.setText(label.fontMetrics().elidedText(line, Qt.TextElideMode.ElideRight, textWidth))
-            label.setTextColor(QColor(0, 0, 0, 155), QColor(255, 255, 255, 155))
-            self.detailLabels.append(label)
-
-        self.buttons = []
-        for button in self._notification.buttons:
-            pushButton = PushButton(button.title, self)
-            pushButton.setFixedHeight(32)
-            pushButton.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            self.buttons.append((pushButton, button))
+        self.closeButton = self._createHeaderButton(FluentIcon.CLOSE)
+        self.headerButtons = [self.closeButton]
 
         self.closeTimer = QTimer(self)
         self.closeTimer.setSingleShot(True)
         self.moveAnimation = QPropertyAnimation(self, b"pos", self)
 
     def _initLayout(self) -> None:
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        header.setSpacing(SPACING)
-        header.addWidget(self.logoLabel)
-        header.addWidget(self.appNameLabel)
-        header.addStretch(1)
-        header.addWidget(self.closeButton)
+        self.headerLayout = QHBoxLayout()
+        self.headerLayout.setContentsMargins(0, 0, 0, 0)
+        self.headerLayout.setSpacing(SPACING)
+        self.headerLayout.addWidget(self.logoLabel)
+        self.headerLayout.addWidget(self.appNameLabel)
+        self.headerLayout.addStretch(1)
+        for button in self.headerButtons:
+            self.headerLayout.addWidget(button)
 
-        texts = QVBoxLayout()
-        texts.setContentsMargins(0, 0, 0, 0)
-        texts.setSpacing(2)
-        texts.addWidget(self.titleLabel)
-        texts.addWidget(self.bodyLabel)
-        for label in self.detailLabels:
-            texts.addWidget(label)
-
-        content = QHBoxLayout()
-        content.setContentsMargins(0, 0, PADDING // 2, 0)
-        content.setSpacing(ICON_SPACING)
-        content.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignTop)
-        content.addLayout(texts, 1)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(PADDING, PADDING // 2, PADDING // 2, PADDING)
-        layout.setSpacing(SPACING)
-        layout.addLayout(header)
-        layout.addLayout(content)
-        if self.buttons:
-            buttons = QHBoxLayout()
-            buttons.setContentsMargins(0, SPACING, PADDING // 2, 0)
-            buttons.setSpacing(SPACING)
-            for pushButton, _ in self.buttons:
-                buttons.addWidget(pushButton)
-            layout.addLayout(buttons)
-        self.adjustSize()
+        self.vBoxLayout = QVBoxLayout(self)
+        self.vBoxLayout.setContentsMargins(PADDING, PADDING // 2, PADDING // 2, PADDING)
+        self.vBoxLayout.setSpacing(SPACING)
+        self.vBoxLayout.addLayout(self.headerLayout)
 
     def _bind(self) -> None:
         self.moveAnimation.finished.connect(self._onMoveAnimationFinished)
         self.closeButton.clicked.connect(lambda: self.exit(isDismissed=True))
         self.closeTimer.timeout.connect(lambda: self.exit(isDismissed=True))
-        for pushButton, button in self.buttons:
-            pushButton.clicked.connect(lambda _=False, b=button: self._onButtonClicked(b))
         qconfig.themeChanged.connect(self._onThemeChanged)
+
+    def _createHeaderButton(self, icon: FluentIcon) -> TransparentToolButton:
+        button = TransparentToolButton(icon, self)
+        button.setFixedSize(32, 32)
+        button.setIconSize(button.iconSize() * 0.75)
+        policy = button.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        button.setSizePolicy(policy)
+        button.hide()
+        return button
 
     def _toPixmap(self, pixmap: QPixmap, size: int) -> QPixmap:
         ratio = self.devicePixelRatioF()
@@ -430,27 +431,34 @@ class Popup(QWidget):
         elif isMoved and self._pressX is None:
             self._animate(pos, MOVE_DURATION, MOVE_CURVE)
 
+    def showAt(self, pos: QPoint) -> None:
+        self._targetPos = pos
+        self.move(pos)
+        self.show()
+        self._setHovered(self.geometry().contains(QCursor.pos()))
+        self._restartTimer()
+
     def exit(self, isDismissed: bool) -> None:
         if self.isExiting:
             return
         self.isExiting = True
         self.closeTimer.stop()
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        if isDismissed and self._notification.on_dismissed:
-            self._notification.on_dismissed()
+        if isDismissed:
+            self.dismissed.emit()
         self._animate(QPoint(self._targetPos.x() + self.width() + SCREEN_MARGIN, self.y()),
                       EXIT_DURATION, EXIT_CURVE)
 
     def _animate(self, pos: QPoint, duration: int, curve: QEasingCurve) -> None:
         self.moveAnimation.stop()
-        isAnimated = True
-        if sys.platform == "win32":
+        isAnimated = not self.isMinimized()
+        if isAnimated and sys.platform == "win32":
             value = wintypes.BOOL(True)
             user32.SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, ctypes.byref(value), 0)
             isAnimated = bool(value.value)
         if not isAnimated:
             self.move(pos)
-            QTimer.singleShot(0, self._onMoveAnimationFinished)
+            QTimer.singleShot(0, self, self._onMoveAnimationFinished)
             return
         self.moveAnimation.setDuration(duration)
         self.moveAnimation.setEasingCurve(curve)
@@ -459,13 +467,8 @@ class Popup(QWidget):
         self.moveAnimation.start()
 
     def _restartTimer(self) -> None:
-        if self._duration > 0 and not self._isHovered and not self.isExiting:
-            self.closeTimer.start(self._duration * 1000)
-
-    def _onButtonClicked(self, button: Button) -> None:
-        if button.on_pressed:
-            button.on_pressed()
-        self.exit(isDismissed=False)
+        if self.duration > 0 and not self._isHovered and not self.isExiting:
+            self.closeTimer.start(self.duration * 1000)
 
     def _onMoveAnimationFinished(self) -> None:
         if self.isExiting:
@@ -479,7 +482,16 @@ class Popup(QWidget):
         if self._isAcrylic:
             self.windowEffect.setAcrylicEffect(self.winId(), "20202030" if isDarkTheme() else "FFFFFF30")
 
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.WindowStateChange:
+            self.layoutChanged.emit()
+        super().changeEvent(event)
+
     def closeEvent(self, event) -> None:
+        if event.spontaneous():
+            event.ignore()
+            self.exit(isDismissed=True)
+            return
         self.closeTimer.stop()
         self.moveAnimation.stop()
         super().closeEvent(event)
@@ -501,18 +513,22 @@ class Popup(QWidget):
             painter.setBrush(QColor(255, 255, 255, 15) if isDark else QColor(0, 0, 0, 10))
             painter.drawRoundedRect(QRectF(self.rect()), radius, radius)
 
-    def enterEvent(self, event) -> None:
-        self._isHovered = True
-        self.closeTimer.stop()
-        self.closeButton.show()
+    def _setHovered(self, isHovered: bool) -> None:
+        self._isHovered = isHovered
+        for button in self.headerButtons:
+            button.setVisible(isHovered)
         self.update()
+        if isHovered:
+            self.closeTimer.stop()
+        else:
+            self._restartTimer()
+
+    def enterEvent(self, event) -> None:
+        self._setHovered(True)
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
-        self._isHovered = False
-        self.closeButton.hide()
-        self.update()
-        self._restartTimer()
+        self._setHovered(False)
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
@@ -528,27 +544,113 @@ class Popup(QWidget):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
+        super().mouseReleaseEvent(event)
         if event.button() != Qt.MouseButton.LeftButton or self._pressX is None:
-            return super().mouseReleaseEvent(event)
+            return
         offset = event.globalPosition().x() - self._pressX
         self._pressX = None
         if offset > self.width() / 3:
             self.exit(isDismissed=True)
         elif offset > 4:
             self._animate(self._targetPos, MOVE_DURATION, MOVE_CURVE)
-        elif self._notification.on_clicked:
-            self._notification.on_clicked()
-            self.exit(isDismissed=False)
-        super().mouseReleaseEvent(event)
+        else:
+            self.clicked.emit()
 
 
-class PopupNotifier:
+class NotificationPopup(Popup):
+    def __init__(self, notification: Notification):
+        super().__init__()
+        self._notification = notification
+        self.duration = DEFAULT_DURATION if notification.timeout == -1 else notification.timeout
+        if notification.timeout == -1 and sys.platform == "win32":
+            seconds = wintypes.ULONG(DEFAULT_DURATION)
+            user32.SystemParametersInfoW(SPI_GETMESSAGEDURATION, 0, ctypes.byref(seconds), 0)
+            self.duration = seconds.value
+        self.hasSound = notification.sound is not None
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        super()._initWidget()
+        icon = self._notification.icon
+        if icon is not None and not (pixmap := QPixmap(str(icon.as_path()))).isNull():
+            self.iconWidget = QLabel(self)
+            self.iconWidget.setPixmap(self._toPixmap(pixmap, FILE_ICON_SIZE))
+        elif self._notification.urgency == Urgency.Critical:
+            self.iconWidget = IconWidget(InfoBarIcon.ERROR, self)
+            self.iconWidget.setFixedSize(STATUS_ICON_SIZE, STATUS_ICON_SIZE)
+        else:
+            self.iconWidget = QLabel(self)
+            self.iconWidget.setPixmap(self._toPixmap(QPixmap(LOGO_RESOURCE), FILE_ICON_SIZE))
+
+        lines = self._notification.message.splitlines() or [""]
+        self.titleLabel = StrongBodyLabel(self._notification.title, self)
+        self.bodyLabel = BodyLabel(self)
+        self.bodyLabel.setText(self.bodyLabel.fontMetrics().elidedText(lines[0], Qt.TextElideMode.ElideMiddle, TEXT_WIDTH))
+        self.bodyLabel.setToolTip(lines[0])
+        self.detailLabels = []
+        for line in lines[1:3]:
+            label = CaptionLabel(self)
+            label.setText(label.fontMetrics().elidedText(line, Qt.TextElideMode.ElideRight, TEXT_WIDTH))
+            label.setTextColor(QColor(0, 0, 0, 155), QColor(255, 255, 255, 155))
+            self.detailLabels.append(label)
+
+        self.buttons = []
+        for button in self._notification.buttons:
+            pushButton = PushButton(button.title, self)
+            pushButton.setFixedHeight(32)
+            pushButton.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.buttons.append((pushButton, button))
+
+    def _initLayout(self) -> None:
+        super()._initLayout()
+        texts = QVBoxLayout()
+        texts.setContentsMargins(0, 0, 0, 0)
+        texts.setSpacing(2)
+        texts.addWidget(self.titleLabel)
+        texts.addWidget(self.bodyLabel)
+        for label in self.detailLabels:
+            texts.addWidget(label)
+
+        content = QHBoxLayout()
+        content.setContentsMargins(0, 0, PADDING // 2, 0)
+        content.setSpacing(ICON_SPACING)
+        content.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignTop)
+        content.addLayout(texts, 1)
+        self.vBoxLayout.addLayout(content)
+
+        if self.buttons:
+            buttons = QHBoxLayout()
+            buttons.setContentsMargins(0, SPACING, PADDING // 2, 0)
+            buttons.setSpacing(SPACING)
+            for pushButton, _ in self.buttons:
+                buttons.addWidget(pushButton)
+            self.vBoxLayout.addLayout(buttons)
+        self.adjustSize()
+
+    def _bind(self) -> None:
+        super()._bind()
+        for pushButton, button in self.buttons:
+            pushButton.clicked.connect(lambda _=False, b=button: self._onActivated(b.on_pressed))
+        if onClicked := self._notification.on_clicked:
+            self.clicked.connect(lambda: self._onActivated(onClicked))
+        if onDismissed := self._notification.on_dismissed:
+            self.dismissed.connect(lambda: QTimer.singleShot(0, onDismissed))
+
+    def _onActivated(self, callback: Callable[[], None] | None) -> None:
+        self.exit(isDismissed=False)
+        if callback:
+            QTimer.singleShot(0, callback)
+
+
+class PopupStack:
     """只能在 Qt 主线程调用。"""
 
     def __init__(self, presence: Presence):
         self._presence = presence
         self._popups: list[Popup] = []  # 最早的在前；没有 parent 的窗口靠这里的引用存活
-        self._pending: deque[Notification] = deque()
+        self._pending: deque[Popup] = deque()
         self._lastSoundAt = float("-inf")
         self._isClosed = False
         presence.changed.connect(self._showPending)
@@ -558,35 +660,48 @@ class PopupNotifier:
         for screen in application.screens():
             self._onScreenAdded(screen)
 
-    def send(self, notification: Notification) -> None:
+    def add(self, popup: Popup, replacing: Popup | None = None) -> None:
         if self._isClosed:
+            popup.deleteLater()
             return
-        self._pending.append(notification)
+        popup.exited.connect(lambda: self._remove(popup))
+        popup.layoutChanged.connect(self._arrange)
+        if replacing in self._pending:
+            self._pending[self._pending.index(replacing)] = popup
+            self._close(replacing)
+            return
+        if replacing in self._popups and not replacing.isExiting:
+            self._popups[self._popups.index(replacing)] = popup
+            if replacing.isVisible() and not replacing.isMinimized():
+                popup.showAt(replacing.pos())
+            self._close(replacing)
+            self._playSound(popup)
+            self._arrange()
+            return
+        self._pending.append(popup)
         self._showPending()
 
     def clear(self) -> None:
-        """立即关闭全部 Popup，不触发 on_dismissed；之后的 send 一律忽略。"""
+        """立即关闭全部 Popup，不触发 on_dismissed；之后的 add 一律忽略。"""
         self._isClosed = True
+        for popup in [*self._pending, *self._popups]:
+            self._close(popup)
         self._pending.clear()
-        for popup in self._popups:
-            popup.close()
-            popup.deleteLater()
         self._popups.clear()
 
     def _showPending(self) -> None:
         if not self._pending or QGuiApplication.primaryScreen() is None or not self._presence.canInterrupt():
             return
         while self._pending:
-            notification = self._pending.popleft()
-            popup = Popup(notification)
-            popup.exited.connect(lambda p=popup: self._remove(p))
+            popup = self._pending.popleft()
             self._popups.append(popup)
-            if notification.sound and time.monotonic() - self._lastSoundAt >= SOUND_INTERVAL:
-                self._lastSoundAt = time.monotonic()
-                self._playSound()
+            self._playSound(popup)
         self._arrange()
 
-    def _playSound(self) -> None:
+    def _playSound(self, popup: Popup) -> None:
+        if not popup.hasSound or time.monotonic() - self._lastSoundAt < SOUND_INTERVAL:
+            return
+        self._lastSoundAt = time.monotonic()
         path = str(extractResource(SOUND_RESOURCE))
         if sys.platform == "win32":
             import winsound
@@ -608,10 +723,12 @@ class PopupNotifier:
         right = area.x() + area.width() - SCREEN_MARGIN
         bottom = area.y() + area.height() - SCREEN_MARGIN
         top = area.y() + SCREEN_MARGIN
+        shown = [p for p in self._popups if not p.isExiting and not p.isMinimized()]
         isFull = False
-        for popup in reversed([p for p in self._popups if not p.isExiting]):
+        for popup in [*reversed([p for p in shown if p.isLongLived]),
+                      *reversed([p for p in shown if not p.isLongLived])]:
             y = bottom - popup.height()
-            if isFull or y < top:
+            if not popup.isLongLived and (isFull or y < top):
                 isFull = True
                 popup.exit(isDismissed=True)
                 continue
@@ -622,9 +739,13 @@ class PopupNotifier:
         if popup not in self._popups:
             return
         self._popups.remove(popup)
+        self._close(popup)
+        self._arrange()
+
+    def _close(self, popup: Popup) -> None:
+        popup.isExiting = True
         popup.close()
         popup.deleteLater()
-        self._arrange()
 
     def _onScreenAdded(self, screen: QScreen) -> None:
         # 每块屏只在加入时连一次，副屏变化时多排一次无害
@@ -633,3 +754,11 @@ class PopupNotifier:
     def _onPrimaryScreenChanged(self, _screen: QScreen | None) -> None:
         self._arrange()
         self._showPending()
+
+
+class PopupNotifier:
+    def __init__(self, stack: PopupStack):
+        self._stack = stack
+
+    def send(self, notification: Notification) -> None:
+        self._stack.add(NotificationPopup(notification))

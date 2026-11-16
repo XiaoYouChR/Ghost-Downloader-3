@@ -1,20 +1,38 @@
 from __future__ import annotations
 
 from functools import cache, partial
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.task import TaskStatus
 
 
-def setWindowsProgress(hwnd: int, isRunning: bool, progress: float | None) -> None:
+def setWindowsProgress(hwnd: int, status: TaskStatus | None, progress: float | None) -> None:
+    from app.models.task import TaskStatus
+
     taskbarList = createTaskbarList()
     if taskbarList is None:
         return
     setState, setValue = taskbarList
-    if not isRunning:
-        setState(hwnd, 0)  # TBPF_NOPROGRESS
-    elif progress is None:
-        setState(hwnd, 1)  # TBPF_INDETERMINATE
+    TBPF_NOPROGRESS, TBPF_INDETERMINATE, TBPF_NORMAL, TBPF_ERROR, TBPF_PAUSED = 0, 1, 2, 4, 8
+    colors = {TaskStatus.PAUSED: TBPF_PAUSED, TaskStatus.FAILED: TBPF_ERROR}
+    if status is None or status == TaskStatus.COMPLETED:
+        setState(hwnd, TBPF_NOPROGRESS)
+    elif progress is None and status not in colors:
+        setState(hwnd, TBPF_INDETERMINATE)
     else:
-        setState(hwnd, 2)  # TBPF_NORMAL
-        setValue(hwnd, round(progress * 10), 1000)
+        setState(hwnd, colors.get(status, TBPF_NORMAL))
+        setValue(hwnd, round((100 if progress is None else progress) * 10), 1000)
+
+
+def addTaskbarButton(hwnd: int) -> None:
+    import ctypes
+
+    GWL_STYLE, GWL_EXSTYLE = -16, -20
+    WS_MINIMIZEBOX, WS_SYSMENU, WS_EX_APPWINDOW = 0x00020000, 0x00080000, 0x00040000
+    user32 = ctypes.windll.user32
+    user32.SetWindowLongPtrW(hwnd, GWL_EXSTYLE, user32.GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_APPWINDOW)
+    user32.SetWindowLongPtrW(hwnd, GWL_STYLE, user32.GetWindowLongPtrW(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_SYSMENU)
 
 
 @cache

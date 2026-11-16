@@ -11,7 +11,7 @@ from app.config.paths import APP_DATA_DIR
 if TYPE_CHECKING:
     from types import TracebackType
     from desktop_notifier.common import Notification
-    from app.models.task import TaskError, TaskOptions
+    from app.models.task import Task, TaskError, TaskOptions
     from app.platform.application import Application
     from app.platform.instance import PrimaryInstance
     from app.services.browser_service import PairRequest
@@ -217,13 +217,10 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     if sys.platform != "darwin":
         signalBus.activationRequested.connect(show)
     signalBus.exceptionCaught.connect(lambda msg: show().onExceptionCaught(msg))
-    browserService.pairRequestChanged.connect(lambda request: request and show().onPairRequested(request))
     engine.browserListener.stateChanged.connect(
         lambda state: state.status == ListenStatus.FAILED and show().onBrowserListenFailed(state.error))
     engine.aria2RpcListener.stateChanged.connect(
         lambda state: state.status == ListenStatus.FAILED and show().onAria2ListenFailed(state.error))
-
-    application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 
     if sys.platform == "darwin":
         from app.view.shell.mac_status_item import MacStatusItem
@@ -246,27 +243,83 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     taskService.tasksAllCompleted.connect(release)
 
     from app.platform.desktop_notification import (
-        PopupNotifier, SystemNotifier, buildDiskSpaceInsufficient, buildParseFailed, buildTaskCompleted,
-        createPresence, toFileIcon,
+        NotificationPopup, PopupNotifier, PopupStack, SystemNotifier, buildClipboardRequest,
+        buildDiskSpaceInsufficient, buildPairRequest, buildParseFailed, buildTaskCompleted, buildTaskFailed, createPresence,
+        toFileIcon,
     )
     systemNotifier = SystemNotifier(coroutineRunner.submit)
     sendTo = {NoticeStyle.SYSTEM: systemNotifier.send, NoticeStyle.OFF: lambda _: None}
+    popupStack: PopupStack | None = None
     if NoticeStyle.POPUP in cfg.noticeStyle.options:
         presence = createPresence()
-        popupNotifier = PopupNotifier(presence)
-        sendTo[NoticeStyle.POPUP] = popupNotifier.send
+        popupStack = PopupStack(presence)
+        sendTo[NoticeStyle.POPUP] = PopupNotifier(popupStack).send
         # 先于 onAboutToQuit 连接，engine.stop() 期间再来的 Notice 会被忽略
         application.aboutToQuit.connect(presence.close)
-        application.aboutToQuit.connect(popupNotifier.clear)
+        application.aboutToQuit.connect(popupStack.clear)
+
+    def canShowRequestPopup() -> bool:
+        return popupStack is not None and (window is None or not window.isVisible() or window.isMinimized())
+
+    clipboardPopup: NotificationPopup | None = None
+    pairPopup: NotificationPopup | None = None
+
+    def onUrlsDetected(urls: list[str]) -> None:
+        nonlocal clipboardPopup
+        if not canShowRequestPopup():
+            show().addUrls(urls)
+            return
+        if not presence.canInterrupt():
+            return
+        popup = NotificationPopup(buildClipboardRequest(urls, lambda: show().addUrls(urls)))
+        popupStack.add(popup, replacing=clipboardPopup)
+        clipboardPopup = popup
+
+    def onPairRequestChanged(request: PairRequest | None) -> None:
+        nonlocal pairPopup
+        if pairPopup is not None:
+            pairPopup.exit(isDismissed=False)
+        pairPopup = None
+        if request is None:
+            return
+        if not canShowRequestPopup():
+            show().onPairRequested(request)
+            return
+        pairPopup = NotificationPopup(buildPairRequest(
+            request, lambda: browserService.approvePair(request.requestId),
+            lambda: browserService.rejectPair(request.requestId)))
+        popupStack.add(pairPopup)
+
+    application.clipboardListener.urlsDetected.connect(onUrlsDetected)
+    browserService.pairRequestChanged.connect(onPairRequestChanged)
     activate = signalBus.activationRequested.emit
 
-    def sendNotice(notification: Notification) -> None:
-        if not cfg.isNoticeSoundEnabled.value:
-            notification = replace(notification, sound=None)
-        sendTo[cfg.noticeStyle.value](notification)
+    def toNotice(notification: Notification) -> Notification:
+        return notification if cfg.isNoticeSoundEnabled.value else replace(notification, sound=None)
 
-    taskService.taskCompleted.connect(
-        lambda task: sendNotice(buildTaskCompleted(task, toFileIcon(task.outputPath))))
+    def sendNotice(notification: Notification) -> None:
+        sendTo[cfg.noticeStyle.value](toNotice(notification))
+
+    from app.models.task import TaskStatus
+
+    def buildTaskResult(task: Task) -> Notification:
+        if task.status == TaskStatus.COMPLETED:
+            return toNotice(replace(buildTaskCompleted(task, toFileIcon(task.outputPath)), timeout=0))
+        return buildTaskFailed(task, activate)
+
+    taskTracker = None
+    if popupStack is not None:
+        from app.view.shell.task_popup import TaskTracker
+        taskTracker = TaskTracker(
+            taskService, popupStack,
+            lambda: cfg.noticeStyle.value == NoticeStyle.POPUP and cfg.isTaskPopupEnabled.value, buildTaskResult)
+        application.taskTracker = taskTracker
+
+    def onTaskCompleted(task: Task) -> None:
+        if taskTracker is None or not taskTracker.isTracking(task.taskId):
+            sendNotice(buildTaskCompleted(task, toFileIcon(task.outputPath)))
+
+    taskService.taskCompleted.connect(onTaskCompleted)
     taskService.diskSpaceInsufficient.connect(
         lambda free, needed: sendNotice(buildDiskSpaceInsufficient(free, needed, activate)))
     engine.aria2RpcService.parseFailed.connect(lambda url, error: sendNotice(buildParseFailed(url, error, activate)))
