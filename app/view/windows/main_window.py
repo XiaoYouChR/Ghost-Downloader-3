@@ -5,11 +5,11 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, QEvent, QRect, QUrl, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QDesktopServices, QKeySequence, QPainter, QPalette, QShortcut
+from PySide6.QtGui import QColor, QIcon, QDesktopServices, QKeySequence, QPainter, QShortcut
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarIcon, InfoBarPosition,
-    SearchLineEdit, setThemeColor, IconWidget, SubtitleLabel, isDarkTheme, CheckBox, PrimaryPushButton,
+    SearchLineEdit, IconWidget, SubtitleLabel, isDarkTheme, CheckBox, PrimaryPushButton,
     PushButton, ToolTipFilter, TransparentToolButton, qconfig,
 )
 from qfluentwidgets.common import qrouter
@@ -577,20 +577,9 @@ class MainWindow(MSFluentWindow):
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
-        if event.type() == QEvent.Type.PaletteChange:
-            self.refreshThemeColor()
         if self._isBackgroundEffectDirty and event.type() == QEvent.Type.ThemeChange:
             self._isBackgroundEffectDirty = False
             self._refreshBackgroundEffect()
-
-    @staticmethod
-    def refreshThemeColor() -> None:
-        palette = QApplication.palette()
-        for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
-            color = palette.color(role)
-            if color.isValid() and cfg.themeColor.value != color:
-                setThemeColor(color, save=False)
-                return
 
     def _setTheme(self, value, deferBackgroundRefresh: bool = False) -> None:
         prevTheme = qconfig.theme

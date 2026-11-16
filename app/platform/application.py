@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 class Application(QApplication):
     openRequested = Signal(str)
     activated = Signal()
+    systemPaletteChanged = Signal()
 
     def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
@@ -40,6 +41,8 @@ class Application(QApplication):
             return True
         if e.type() == QEvent.Type.ApplicationActivate:
             self.activated.emit()
+        if e.type() == QEvent.Type.ApplicationPaletteChange:
+            self.systemPaletteChanged.emit()
         return super().event(e)
 
     def _onInterrupt(self, _signum: int, _frame: FrameType | None) -> None:

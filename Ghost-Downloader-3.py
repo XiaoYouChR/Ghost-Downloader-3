@@ -74,7 +74,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     from app.signal_bus import signalBus
     from app.services.port_listener import ListenStatus
     from app.services.update_service import UpdateService
-    from app.startup import loadResources, createEngine, deleteBackupDir, deleteLegacyAppIdFiles, loadPacks, checkUpdateAtStartup
+    from app.startup import loadResources, setupThemeColor, createEngine, deleteBackupDir, deleteLegacyAppIdFiles, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType: type[BaseException], value: BaseException, tb: TracebackType | None) -> None:
@@ -113,7 +113,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         if cfg.shouldRunAtLogin.value:
             setRunAtLogin(True)
 
-    MainWindow.refreshThemeColor()
+    setupThemeColor(application)
 
     updateService = UpdateService(coroutineRunner)
     loadPacks(featureService, coroutineRunner, speedMeter)

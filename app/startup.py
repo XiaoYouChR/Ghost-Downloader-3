@@ -37,6 +37,24 @@ def loadTranslators(application: Application) -> None:
     cfg.language.valueChanged.connect(setLocale)
 
 
+def setupThemeColor(application: Application) -> None:
+    import sys
+    from PySide6.QtGui import QPalette
+    from qfluentwidgets import setThemeColor
+    from app.config.cfg import cfg
+
+    # Issue #1054
+    role = QPalette.ColorRole.Highlight if sys.platform == "win32" else QPalette.ColorRole.Accent
+
+    def refresh() -> None:
+        color = application.palette().color(QPalette.ColorGroup.Active, role)
+        if color != cfg.themeColor.value:
+            setThemeColor(color, save=False)
+
+    refresh()
+    application.systemPaletteChanged.connect(refresh)
+
+
 def createEngine(application: Application) -> Engine:
     import sys
     from PySide6.QtCore import QFileSystemWatcher, QTimer
