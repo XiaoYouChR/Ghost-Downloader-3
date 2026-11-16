@@ -101,7 +101,6 @@ class MainWindow(MSFluentWindow):
         updateService: UpdateService | None = None,
         parent: QWidget | None = None,
     ) -> None:
-        self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self._macVisualEffectView = None
         self.searchEdit = None
@@ -134,9 +133,12 @@ class MainWindow(MSFluentWindow):
         self.setWindowIcon(QIcon(":/image/logo.png"))
         self.setWindowTitle("Ghost Downloader")
         self.setMinimumSize(960, 540)
-        if sys.platform == "win32":
-            self._refreshBackgroundEffect()
-        elif sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
+        rect = QRect(*cfg.geometry.value)
+        if rect.isValid() and QApplication.screenAt(rect.center()) is not None:
+            self.setGeometry(rect)
+        else:
+            self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
+        if sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
             self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.titleBar.hBoxLayout.insertSpacing(2, 6)
         if sys.platform == "darwin":
@@ -555,24 +557,16 @@ class MainWindow(MSFluentWindow):
         unregisterRouter(self.stackedWidget)
         event.accept()
 
+    def setVisible(self, visible: bool) -> None:
+        if visible and not self.isVisible() and sys.platform == "win32":
+            self._refreshBackgroundEffect()
+        super().setVisible(visible)
+
     def showEvent(self, event) -> None:
         super().showEvent(event)
-        if not self._isGeometryRestored:
-            self._isGeometryRestored = True
-            saved = cfg.geometry.value
-            rect = QRect(*saved)
-            if rect.isValid() and QApplication.screenAt(rect.center()) is not None:
-                self.setGeometry(rect)
-            else:
-                self.resize(960, 540)
-                desktop = QApplication.primaryScreen().availableGeometry()
-                self.move(desktop.center() - self.rect().center())
         if self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
-        if sys.platform == "win32":
-            self.windowEffect.addWindowAnimation(self.winId())
-            self._setBackgroundEffectWin(cfg.backgroundEffect.value, skipRemove=True)
-        elif sys.platform == "darwin":
+        if sys.platform == "darwin":
             self._refreshBackgroundEffect()
 
     def changeEvent(self, event) -> None:
@@ -597,8 +591,7 @@ class MainWindow(MSFluentWindow):
             self._isBackgroundEffectDirty = True
             return
         self._isBackgroundEffectDirty = False
-        if sys.platform in ("win32", "darwin"):
-            self._refreshBackgroundEffect()
+        self._refreshBackgroundEffect()
 
     def _onSystemColorSchemeChanged(self, colorScheme) -> None:
         if cfg.themeMode.value != Theme.AUTO:
@@ -616,9 +609,7 @@ class MainWindow(MSFluentWindow):
         elif sys.platform == "darwin":
             self._setBackgroundEffectMac(cfg.backgroundEffect.value)
 
-    def _setBackgroundEffectWin(self, value: str, skipRemove: bool = False) -> None:
-        if not skipRemove:
-            self.windowEffect.removeBackgroundEffect(self.winId())
+    def _setBackgroundEffectWin(self, value: str) -> None:
         isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
 
         if value == "Acrylic":
@@ -642,11 +633,17 @@ class MainWindow(MSFluentWindow):
                 self.windowEffect.accentPolicy.AccentState = ACCENT_STATE.ACCENT_ENABLE_GRADIENT.value
                 self.windowEffect.winCompAttrData.Attribute = WINDOWCOMPOSITIONATTRIB.WCA_ACCENT_POLICY.value
                 self.windowEffect.SetWindowCompositionAttribute(int(self.winId()), pointer(self.windowEffect.winCompAttrData))
+            else:
+                self.windowEffect.winCompAttrData.Attribute = WINDOWCOMPOSITIONATTRIB.WCA_ACCENT_POLICY.value
+                self.windowEffect.removeBackgroundEffect(self.winId())
             self.setStyleSheet("")
             if isLessThanWin10():
                 self.titleBar.closeBtn.show()
                 self.titleBar.minBtn.show()
                 self.titleBar.maxBtn.show()
+
+        self.backgroundColorAni.stop()
+        self.setBackgroundColor(self._normalBackgroundColor())
 
     def paintEvent(self, e):
         if self._macVisualEffectView is not None:
@@ -729,13 +726,14 @@ if sys.platform == "darwin":
 
 
 if sys.platform == "win32":
+    from qframelesswindow.windows.c_structures import WINDOWCOMPOSITIONATTRIB
     from app.platform.windows import isLessThanWin10, isWin10
 
     if isWin10():
         from ctypes import pointer
         from ctypes.wintypes import MSG
         from qframelesswindow import AcrylicWindow, FramelessWindow, WindowEffect
-        from qframelesswindow.windows.c_structures import ACCENT_STATE, WINDOWCOMPOSITIONATTRIB
+        from qframelesswindow.windows.c_structures import ACCENT_STATE
 
         def _resetAcrylicEffect(self, hWnd):
             hWnd = int(hWnd)
