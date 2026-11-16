@@ -1,25 +1,23 @@
 from __future__ import annotations
 
 import asyncio
-from base64 import b64decode, b64encode
+from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import gettempdir
-from collections.abc import Callable
-from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 import libtorrent as lt
 from loguru import logger
 
 from app.config.cfg import cfg, proxy
+from app.config.constants import VERSION
+from app.config.paths import APP_DATA_DIR
 from app.models.task import TaskError
 
 from .config import bittorrentConfig
 from .swarm import PeerInfo, SwarmInfo, TrackerInfo, toPeers, toSourceTrackers, toSwarmInfo, toTracker
-
-if TYPE_CHECKING:
-    pass
 
 DHT_BOOTSTRAP_NODES = (
     "dht.transmissionbt.com:6881, router.bt.ouinet.work:6881, dht.libtorrent.org:25401, "
@@ -47,6 +45,107 @@ ERROR_ALERTS = (
 )
 
 RESUME_SAVE_INTERVAL = 30
+
+LIVE_SETTINGS = (
+    bittorrentConfig.listenPort,
+    bittorrentConfig.maxConnections,
+    bittorrentConfig.maxUploadSpeed,
+    bittorrentConfig.enableDht,
+    bittorrentConfig.enableLsd,
+    bittorrentConfig.enableUtp,
+    bittorrentConfig.encryptionMode,
+    cfg.isSpeedLimitEnabled,
+    cfg.speedLimitation,
+    cfg.proxyServer,
+)
+
+ENCRYPTION_MODES = {
+    "enabled": (lt.enc_policy.enabled, lt.enc_level.both, True),
+    "forced": (lt.enc_policy.forced, lt.enc_level.rc4, True),
+    "disabled": (lt.enc_policy.disabled, lt.enc_level.both, False),
+}
+
+
+def buildProxySettings() -> dict:
+    url = proxy(PROXY_SCHEMES)
+    parsed = urlsplit(url) if url else None
+    if not parsed or not parsed.hostname or not parsed.port:
+        return {"proxy_type": lt.proxy_type_t.none}
+    hasCredentials = bool(parsed.username or parsed.password)
+    return {
+        "proxy_type": lt.proxy_type_t.socks5_pw if hasCredentials else lt.proxy_type_t.socks5,
+        "proxy_hostname": parsed.hostname,
+        "proxy_port": parsed.port,
+        "proxy_username": parsed.username or "",
+        "proxy_password": parsed.password or "",
+        "proxy_hostnames": True,
+        "proxy_peer_connections": True,
+        "proxy_tracker_connections": True,
+        "force_proxy": False,
+    }
+
+
+def buildSettings() -> dict:
+    port = bittorrentConfig.listenPort.value
+    enableUtp = bittorrentConfig.enableUtp.value
+    encPolicy, encLevel, preferRc4 = ENCRYPTION_MODES[bittorrentConfig.encryptionMode.value]
+    return {
+        "user_agent": f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}",
+        "listen_interfaces": f"0.0.0.0:{port},[::]:{port}",
+        "connections_limit": bittorrentConfig.maxConnections.value,
+        # libtorrent high_performance_seed 预设值，默认 500 会把单个 peer 限制在约 2.7 MB/s
+        "max_out_request_queue": 1500,
+        "download_rate_limit": int(cfg.speedLimitation.value) if cfg.isSpeedLimitEnabled.value else 0,
+        "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
+        "enable_dht": bittorrentConfig.enableDht.value,
+        "enable_lsd": bittorrentConfig.enableLsd.value,
+        "enable_incoming_utp": enableUtp,
+        "enable_outgoing_utp": enableUtp,
+        "in_enc_policy": encPolicy,
+        "out_enc_policy": encPolicy,
+        "allowed_enc_level": encLevel,
+        "prefer_rc4": preferRc4,
+        "dht_bootstrap_nodes": DHT_BOOTSTRAP_NODES,
+        "announce_to_all_trackers": True,
+        "announce_to_all_tiers": True,
+        "active_downloads": -1,
+        "active_seeds": -1,
+        "active_limit": -1,
+        "active_checking": -1,
+        "mixed_mode_algorithm": lt.bandwidth_mixed_algo_t.prefer_tcp,
+        "enable_upnp": True,
+        "enable_natpmp": True,
+        "alert_mask": ALERT_MASK,
+        **buildProxySettings(),
+    }
+
+
+def loadDhtState() -> lt.session_params:
+    path = APP_DATA_DIR / DHT_STATE_FILE
+    if path.exists():
+        try:
+            return lt.read_session_params(path.read_bytes(), lt.save_state_flags_t.save_dht_state)
+        except Exception as e:
+            logger.warning("加载 DHT 状态失败: {}", e)
+    return lt.session_params()
+
+
+def saveDhtState(session: lt.session) -> None:
+    try:
+        state = session.session_state(lt.save_state_flags_t.save_dht_state)
+        (APP_DATA_DIR / DHT_STATE_FILE).write_bytes(
+            lt.write_session_params_buf(state, lt.save_state_flags_t.save_dht_state)
+        )
+    except Exception as e:
+        logger.warning("保存 DHT 状态失败: {}", e)
+
+
+def isSeedingLimitReached(shareRatioPercent: float, seedingTimeSeconds: int) -> bool:
+    ratioLimit = bittorrentConfig.seedingRatioLimit.value
+    timeLimit = bittorrentConfig.seedingTimeLimit.value
+    return (ratioLimit > 0 and shareRatioPercent >= ratioLimit) or (
+        timeLimit > 0 and seedingTimeSeconds >= timeLimit * 60
+    )
 
 
 @dataclass(frozen=True)
@@ -110,19 +209,18 @@ class BTSession:
         self._metadataWaiters: dict[int, tuple[lt.torrent_handle, asyncio.Future]] = {}
         self._resumeCache: dict[str, bytes] = {}
         self._statsWaiter: asyncio.Future | None = None
-        for item in (
-            bittorrentConfig.maxUploadSpeed,
-            bittorrentConfig.maxConnections,
-            cfg.isSpeedLimitEnabled,
-            cfg.speedLimitation,
-        ):
-            item.valueChanged.connect(self._onLimitChanged)
-        cfg.proxyServer.valueChanged.connect(self._onProxyChanged)
 
     # ── public interface ──
 
     def open(self) -> None:
-        self._ensureSession()
+        if self._session is not None:
+            return
+        params = loadDhtState()
+        params.settings = buildSettings()
+        self._session = lt.session(params)
+        self._poller = asyncio.get_running_loop().create_task(self._supervise())
+        for item in LIVE_SETTINGS:
+            item.valueChanged.connect(self._onSettingsChanged)
 
     async def run(self, taskId: str, params: TorrentParams,
                   onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
@@ -131,14 +229,13 @@ class BTSession:
     async def runSeeding(self, taskId: str, params: TorrentParams, isManual: bool,
                          onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
         def isDone(p: TorrentProgress) -> bool:
-            return not isManual and p.isSeeding and self._isSeedingLimitReached(
+            return not isManual and p.isSeeding and isSeedingLimitReached(
                 p.shareRatioPercent, p.seedingTimeSeconds)
         return await self._run(taskId, params, onProgress, isDone)
 
     async def _run(self, taskId: str, params: TorrentParams,
                    onProgress: Callable[[TorrentProgress], None] | None,
                    isDone: Callable[[TorrentProgress], bool]) -> bytes:
-        self._ensureSession()
         handle = self._addTorrent(params)
 
         handle.resume()
@@ -162,20 +259,16 @@ class BTSession:
         finally:
             if cancelled:
                 self._active.pop(taskId, None)
-                try:
-                    if self._session is not None:
+                if self._session is not None:
+                    with suppress(Exception):
                         self._session.remove_torrent(handle)
-                except Exception:
-                    pass
             else:
-                await self._saveResumeAndRemove(entry, taskId)
+                await self._saveResumeAndRemove(entry)
                 self._active.pop(taskId, None)
 
         return self._resumeCache.pop(taskId, b"")
 
     async def fetchMetadata(self, magnetUri: str, trackers: list[str]) -> bytes:
-        self._ensureSession()
-
         params = lt.parse_magnet_uri(magnetUri)
         magnetTrackers = list(params.trackers)
         params.trackers = list(dict.fromkeys(
@@ -211,10 +304,8 @@ class BTSession:
             raise TimeoutError("等待 magnet 元数据超时")
         finally:
             self._metadataWaiters.pop(id(handle), None)
-            try:
+            with suppress(Exception):
                 self._session.remove_torrent(handle)
-            except Exception:
-                pass
 
     async def probeDhtNodes(self) -> int | None:
         if self._session is None or not self._session.is_dht_running():
@@ -229,9 +320,8 @@ class BTSession:
 
     def updatePriorities(self, taskId: str, priorities: list[int]) -> None:
         entry = self._active.get(taskId)
-        if entry is None:
-            return
-        entry.pendingPriorities = priorities
+        if entry is not None:
+            entry.pendingPriorities = priorities
 
     def lastResumeData(self, taskId: str) -> bytes | None:
         return self._resumeCache.pop(taskId, None)
@@ -255,17 +345,19 @@ class BTSession:
         return (*sourceTrackers, *(toTracker(raw) for raw in entry.handle.trackers()))
 
     async def close(self) -> None:
-        self._saveDhtState()
+        if self._session is None:
+            return
+        for item in LIVE_SETTINGS:
+            item.valueChanged.disconnect(self._onSettingsChanged)
+        saveDhtState(self._session)
         waiters = []
         for entry in list(self._active.values()):
-            try:
+            with suppress(Exception):
                 entry.handle.save_resume_data(
                     lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
                 )
                 entry.resumeWaiter = asyncio.get_running_loop().create_future()
                 waiters.append(entry.resumeWaiter)
-            except Exception:
-                pass
 
         if waiters:
             await asyncio.wait(waiters, timeout=5)
@@ -273,91 +365,23 @@ class BTSession:
         for entry in list(self._active.values()):
             if not entry.done.done():
                 entry.done.cancel()
-            try:
+            with suppress(Exception):
                 self._session.remove_torrent(entry.handle)
-            except Exception:
-                pass
         self._active.clear()
 
         for _key, (handle, waiter) in list(self._metadataWaiters.items()):
             if not waiter.done():
                 waiter.cancel()
-            try:
+            with suppress(Exception):
                 self._session.remove_torrent(handle)
-            except Exception:
-                pass
         self._metadataWaiters.clear()
 
         if self._poller is not None:
             self._poller.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._poller
-            except asyncio.CancelledError:
-                pass
             self._poller = None
         self._session = None
-
-    # ── session lifecycle ──
-
-    def _ensureSession(self) -> None:
-        if self._session is None:
-            from app.config.constants import VERSION
-            params = self._loadDhtState()
-            params.settings = {
-                "user_agent": f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}",
-                "listen_interfaces": (
-                    f"0.0.0.0:{bittorrentConfig.listenPort.value},"
-                    f"[::]:{bittorrentConfig.listenPort.value}"
-                ),
-                "connections_limit": bittorrentConfig.maxConnections.value,
-                # libtorrent high_performance_seed 预设值，默认 500 会把单个 peer 限制在约 2.7 MB/s
-                "max_out_request_queue": 1500,
-                "download_rate_limit": self._downloadLimit(),
-                "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
-                "enable_dht": bittorrentConfig.enableDht.value,
-                "enable_lsd": bittorrentConfig.enableLsd.value,
-                "dht_bootstrap_nodes": DHT_BOOTSTRAP_NODES,
-                "announce_to_all_trackers": True,
-                "announce_to_all_tiers": True,
-                "active_downloads": -1,
-                "active_seeds": -1,
-                "active_limit": -1,
-                "active_checking": -1,
-                "mixed_mode_algorithm": int(lt.bandwidth_mixed_algo_t.prefer_tcp),
-                "enable_upnp": True,
-                "enable_natpmp": True,
-                "alert_mask": ALERT_MASK,
-                **self.buildProxySettings(),
-            }
-            self._session = lt.session(params)
-        if self._poller is None or self._poller.done():
-            self._poller = asyncio.get_running_loop().create_task(self._supervise())
-
-    def _loadDhtState(self) -> lt.session_params:
-        from app.config.paths import APP_DATA_DIR
-        path = APP_DATA_DIR / DHT_STATE_FILE
-        if path.exists():
-            try:
-                return lt.read_session_params(
-                    path.read_bytes(), lt.save_state_flags_t.save_dht_state
-                )
-            except Exception as e:
-                logger.warning("加载 DHT 状态失败: {}", e)
-        return lt.session_params()
-
-    def _saveDhtState(self) -> None:
-        if self._session is None:
-            return
-        from app.config.paths import APP_DATA_DIR
-        try:
-            state = self._session.session_state(
-                lt.save_state_flags_t.save_dht_state
-            )
-            (APP_DATA_DIR / DHT_STATE_FILE).write_bytes(
-                lt.write_session_params_buf(state, lt.save_state_flags_t.save_dht_state)
-            )
-        except Exception as e:
-            logger.warning("保存 DHT 状态失败: {}", e)
 
     # ── torrent management ──
 
@@ -404,16 +428,14 @@ class BTSession:
 
         return self._session.add_torrent(ltParams)
 
-    async def _saveResumeAndRemove(self, entry: ActiveTorrent, taskId: str) -> None:
+    async def _saveResumeAndRemove(self, entry: ActiveTorrent) -> None:
         try:
             entry.handle.save_resume_data(
                 lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
             )
         except Exception:
-            try:
+            with suppress(Exception):
                 self._session.remove_torrent(entry.handle)
-            except Exception:
-                pass
             return
 
         entry.resumeWaiter = asyncio.get_running_loop().create_future()
@@ -423,10 +445,8 @@ class BTSession:
             logger.warning("等待 BitTorrent resume 数据超时")
         finally:
             entry.resumeWaiter = None
-            try:
+            with suppress(Exception):
                 self._session.remove_torrent(entry.handle)
-            except Exception:
-                pass
 
     # ── poll loop ──
 
@@ -502,11 +522,7 @@ class BTSession:
     def _updateEntry(self, entry: ActiveTorrent) -> None:
         status = entry.handle.status()
 
-        stateText = status.state.name
         isSeeding = status.is_seeding
-        downloadRate = status.download_rate
-        uploadRate = status.upload_rate
-
         downloaded = status.all_time_download or status.total_wanted_done or status.total_done
         shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0
         seedingTimeSeconds = entry.seedingElapsed(
@@ -518,14 +534,14 @@ class BTSession:
         progress = (receivedBytes / totalWanted * 100) if totalWanted > 0 else 0
 
         torrentProgress = TorrentProgress(
-            stateText=stateText,
+            stateText=status.state.name,
             peerCount=status.num_peers,
             totalPeerCount=max(status.num_peers, status.list_peers),
             seedCount=status.num_seeds,
             isSeeding=isSeeding,
             isFinished=status.is_finished,
-            downloadRate=downloadRate,
-            uploadRate=uploadRate,
+            downloadRate=status.download_rate,
+            uploadRate=status.upload_rate,
             shareRatioPercent=shareRatioPercent,
             seedingTimeSeconds=seedingTimeSeconds,
             progress=progress,
@@ -545,65 +561,16 @@ class BTSession:
 
         entry.pollCount += 1
         if entry.pollCount % RESUME_SAVE_INTERVAL == 0:
-            try:
+            with suppress(Exception):
                 entry.handle.save_resume_data(
                     lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
                 )
-            except Exception:
-                pass
-
-    def _isSeedingLimitReached(self, shareRatioPercent: float, seedingTimeSeconds: int) -> bool:
-        ratioLimit = bittorrentConfig.seedingRatioLimit.value
-        if ratioLimit > 0 and shareRatioPercent >= ratioLimit:
-            return True
-        timeLimitMinutes = bittorrentConfig.seedingTimeLimit.value
-        if timeLimitMinutes > 0 and seedingTimeSeconds >= timeLimitMinutes * 60:
-            return True
-        return False
 
     # ── config handlers ──
 
-    def _onLimitChanged(self, _value=None) -> None:
-        if self._session is None:
-            return
-        self._session.apply_settings({
-            "download_rate_limit": self._downloadLimit(),
-            "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
-            "connections_limit": bittorrentConfig.maxConnections.value,
-        })
-
-    def _onProxyChanged(self, _value=None) -> None:
-        if self._session is None:
-            return
-        settings = self.buildProxySettings()
-        self._session.apply_settings(
-            settings or {"proxy_type": lt.proxy_type_t.none}
-        )
-
-    def _downloadLimit(self) -> int:
-        if not cfg.isSpeedLimitEnabled.value:
-            return 0
-        return int(cfg.speedLimitation.value)
-
-    def buildProxySettings(self) -> dict:
-        url = proxy(PROXY_SCHEMES)
-        if not url:
-            return {}
-        parsed = urlsplit(url)
-        if not parsed.hostname or not parsed.port:
-            return {}
-        hasCredentials = bool(parsed.username or parsed.password)
-        return {
-            "proxy_type": lt.proxy_type_t.socks5_pw if hasCredentials else lt.proxy_type_t.socks5,
-            "proxy_hostname": parsed.hostname,
-            "proxy_port": parsed.port,
-            "proxy_username": parsed.username or "",
-            "proxy_password": parsed.password or "",
-            "proxy_hostnames": True,
-            "proxy_peer_connections": True,
-            "proxy_tracker_connections": True,
-            "force_proxy": False,
-        }
+    def _onSettingsChanged(self, *_) -> None:
+        if self._session is not None:
+            self._session.apply_settings(buildSettings())
 
 
 btSession = BTSession()

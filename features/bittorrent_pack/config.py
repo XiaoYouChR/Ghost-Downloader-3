@@ -29,6 +29,10 @@ DEFAULT_TRACKER_LIST_SOURCES = [
 class BitTorrentConfig(PackConfig):
     enableDht = ConfigItem("BitTorrent", "EnableDHT", True, BoolValidator())
     enableLsd = ConfigItem("BitTorrent", "EnableLSD", True, BoolValidator())
+    enableUtp = ConfigItem("BitTorrent", "EnableUTP", True, BoolValidator())
+    encryptionMode = OptionsConfigItem(
+        "BitTorrent", "EncryptionMode", "enabled", OptionsValidator(["enabled", "forced", "disabled"]),
+    )
     enableWebTrackers = ConfigItem("BitTorrent", "EnableWebTrackers", True, BoolValidator())
     autoRefreshWebTrackers = ConfigItem("BitTorrent", "AutoRefreshWebTrackers", True, BoolValidator())
     saveMagnetFile = ConfigItem("BitTorrent", "SaveMagnetTorrentFile", False, BoolValidator())
@@ -50,7 +54,6 @@ class BitTorrentConfig(PackConfig):
     webTrackerCustomList = ConfigItem("BitTorrent", "WebTrackerCustomList", "")
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
-        import sys
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, RangeSettingCard, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SpinBoxSettingCard
@@ -87,6 +90,11 @@ class BitTorrentConfig(PackConfig):
                 self.tr("允许通过 DHT 网络发现 peers"), self.enableDht, btGroup),
             SwitchSettingCard(FluentIcon.HOME, self.tr("启用 LSD"),
                 self.tr("在局域网中广播并发现同一 torrent 的 peers"), self.enableLsd, btGroup),
+            SwitchSettingCard(FluentIcon.SPEED_HIGH, self.tr("启用 uTP"),
+                self.tr("使用 uTP 传输协议控制拥塞，关闭后仅使用 TCP"), self.enableUtp, btGroup),
+            ComboBoxSettingCard(self.encryptionMode, FluentIcon.VPN, self.tr("协议加密"),
+                self.tr("混淆对等连接流量特征，减少被运营商识别和限速"),
+                texts=[self.tr("允许加密"), self.tr("强制加密"), self.tr("禁用加密")], parent=btGroup),
             SwitchSettingCard(FluentIcon.LINK, self.tr("附加 Tracker 列表"),
                 self.tr("把 Tracker 列表合并到新建的 BT 任务中"),
                 self.enableWebTrackers, btGroup),
