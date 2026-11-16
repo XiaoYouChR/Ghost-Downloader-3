@@ -200,3 +200,19 @@ async def test_parse_merge_task_probes_duration_and_updates_trim_size(features, 
     task.setTimeRange(2, 6)
     assert task.name == "movie [00m02s-00m06s].mp4"
     assert 0 < task.fileSize < len(mp4) * 2
+
+
+async def test_delete_finished_keeps_file(engine, features, startServer, downloadFolder, monkeypatch):
+    monkeypatch.setattr(ffmpegRuntime, "path", lambda: "")
+    mp4 = buildProgressiveMp4(faststart=True)
+    url = await startServer(buildVideoHandler(mp4))
+    task = await features.parse(TaskOptions(url=url))
+
+    engine.taskService.add(task)
+    await runToCompletion(task)
+
+    engine.taskService.delete(task, shouldDeleteFiles=False)
+    await waitUntil(lambda: engine.taskService.taskById(task.taskId) is None)
+
+    assert (downloadFolder / "v.mp4").read_bytes() == mp4
+

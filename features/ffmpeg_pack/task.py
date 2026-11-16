@@ -219,6 +219,8 @@ class FFmpegStep(TaskStep):
 
     @property
     def outputPath(self) -> str:
+        if isinstance(self.task, FFmpegTask) and not (self.task.hasAudio or self.task.isTrimmed):
+            return ""
         return self.task.outputPath
 
     @property
