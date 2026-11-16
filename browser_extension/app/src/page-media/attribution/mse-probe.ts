@@ -8,6 +8,7 @@ import {postMediaSignal} from "./attribution-signal";
 import {hasMdat, isInitSegment, isMp4Head, isMp4Segment, MP4_HEAD_LIMIT, parseMdatTail, parseMp4Duration} from "./mp4";
 import {isCatCatchMedia} from "../../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
+import {isVimeoPlaylistUrl} from "../resolution/url-classify";
 
 declare global {
   interface Window {
@@ -223,6 +224,7 @@ const PER_URL_HEADS_CAP = 2;
         try {
           if (!response || !response.ok) { return; }
           const resolvedUrl = response.url || url;
+          if (isVimeoPlaylistUrl(resolvedUrl)) { postMediaSignal({ kind: "stream_detected", url: resolvedUrl, isMaster: true }); }
           const contentType = response.headers?.get?.("content-type") ?? "";
           if (isMediaRequest(resolvedUrl, contentType)) {
             postMediaSignal({
@@ -256,6 +258,7 @@ const PER_URL_HEADS_CAP = 2;
           xhr.__gdDone = true;
           if (xhr.status < 200 || xhr.status >= 300) { return; }
           const resolvedUrl = xhr.responseURL || xhr.__gdUrl || "";
+          if (isVimeoPlaylistUrl(resolvedUrl)) { postMediaSignal({ kind: "stream_detected", url: resolvedUrl, isMaster: true }); }
           let contentType = "";
           try {
             contentType = xhr.getResponseHeader?.("content-type") ?? "";

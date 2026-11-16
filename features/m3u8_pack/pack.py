@@ -20,6 +20,7 @@ from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
+from .vimeo import buildVimeoFiles, matchVimeoPlaylist
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
@@ -41,7 +42,7 @@ class M3U8Parser(TaskParser):
     priority = 80
 
     def match(self, options: TaskOptions) -> bool:
-        if localFilePath(options.url, MANIFEST_SUFFIXES) is not None:
+        if localFilePath(options.url, MANIFEST_SUFFIXES) is not None or matchVimeoPlaylist(options.url):
             return True
         lowered = options.url.lower()
         if ".m3u" in lowered or ".mpd" in lowered:
@@ -78,6 +79,10 @@ class M3U8Parser(TaskParser):
             finally:
                 client.close()
 
+        isVimeo = matchVimeoPlaylist(url)
+        if isVimeo:
+            body = buildVimeoFiles(body, manifestUrl)["master.m3u8"].decode()
+
         loweredUrl = manifestUrl.lower()
         contentType = responseHeaders.get("content-type", "").lower()
         sample = body.lstrip()[:256].lower()
@@ -91,6 +96,8 @@ class M3U8Parser(TaskParser):
         if manifestType == "mpd":
             lowered = body.lower()
             isLive = 'type="dynamic"' in lowered or "type='dynamic'" in lowered
+        elif isVimeo:
+            isLive = False
         else:
             playlist = m3u8.loads(body, uri=manifestUrl)
             if playlist.segments:

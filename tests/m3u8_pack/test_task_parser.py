@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from aiohttp import web
 
@@ -12,6 +14,7 @@ from m3u8_pack.pack import M3U8Pack
 from m3u8_pack.task import M3U8Task
 from tests.helpers import buildRangeHandler
 
+VIMEO_SAMPLE = Path(__file__).parents[1] / "samples" / "vimeo_playlist.json"
 PLAYLIST = b"#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:10,\nseg0.ts\n#EXT-X-ENDLIST\n"
 
 
@@ -53,3 +56,14 @@ async def test_parse_broken_playlist_without_suffix_adds_plain_file(features, st
     task = await features.parse(TaskOptions(url=url))
 
     assert isinstance(task, HttpTask)
+
+
+async def test_parse_vimeo_playlist_adds_stream(features, startServer):
+    url = await startServer(buildTypedHandler(VIMEO_SAMPLE.read_bytes(), "application/json"))
+    playlistUrl = url.removesuffix("/file") + "/exp=1~acl=x/clip/psid=1/v2/playlist/av/primary/prot/x/playlist.json"
+
+    task = await features.parse(TaskOptions(url=playlistUrl))
+
+    assert isinstance(task, M3U8Task)
+    assert not task.isLive
+    assert sorted(stream["height"] for stream in task.streams) == [240, 360, 540, 720, 1080, 1440, 2160]

@@ -11,11 +11,13 @@ from typing import Any
 
 from loguru import logger
 
+from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.format import toBytes
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import toPosixPath
 from .config import m3u8Runtime
+from .vimeo import buildVimeoFiles, matchVimeoPlaylist
 
 VOD_PROGRESS_PATTERN = re.compile(
     r"(\d+)/(\d+)\s+(\d+\.\d+)%\s+"
@@ -196,12 +198,27 @@ class M3U8TaskStep(TaskStep):
         if self._process is not None and self._process.returncode is None:
             self._process.terminate()
 
-    def _buildCommand(self) -> list[str]:
+    async def _writeVimeoFiles(self) -> str:
+        client = buildClient(emulation=toEmulation(cfg.clientProfile.value), headers=self.headers)
+        try:
+            response = await client.get(self.task.url)
+            response.raise_for_status()
+            body = await response.text()
+            playlistUrl = str(response.url)
+        finally:
+            client.close()
+        folder = self.task.partPath / "vimeo"
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, data in buildVimeoFiles(body, playlistUrl).items():
+            (folder / name).write_bytes(data)
+        return toPosixPath(folder / "master.m3u8")
+
+    def _buildCommand(self, source: str) -> list[str]:
         def toBool(v: bool) -> str:
             return "true" if v else "false"
 
         args = [
-            self.task.url,
+            source,
             f"--save-dir={toPosixPath(self.task.partPath)}",
             f"--save-name={self._saveName}",
             f"--tmp-dir={self._tempFolder}",
@@ -401,7 +418,8 @@ class M3U8TaskStep(TaskStep):
 
         outputTask = None
         try:
-            command = self._buildCommand()
+            source = await self._writeVimeoFiles() if matchVimeoPlaylist(self.task.url) else self.task.url
+            command = self._buildCommand(source)
             self._process = await asyncio.create_subprocess_exec(
                 execPath, *command,
                 cwd=Path(execPath).parent,

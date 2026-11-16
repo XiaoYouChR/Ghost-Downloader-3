@@ -28,6 +28,7 @@ type ResolveStateListener = (state: VideoSessionState, reason: string) => void;
 // mse_buffer_appended usually follows fetch_completed within tens of ms; slow CPUs stretch.
 const FETCH_BUFFER_CORRELATION_MS = 2500;
 const RECENT_FETCHES_CAP = 16;
+const ORPHAN_STREAMS_CAP = 8;
 // One AAC frame: a DASH audio track ends up to a frame short of the element's (video) duration.
 const SAME_DURATION_TOLERANCE_S = 0.025;
 // The element lasts as long as its longest track, so only a file outlasting it by more than any rounding is another video.
@@ -108,6 +109,9 @@ class MediaAttribution {
   // The only way to definitively bind a URL to a specific <video>: lock the most recent
   // unlocked fetch to whichever session consumed it via appendBuffer.
   private readonly recentFetches: Array<{ url: string; capturedAt: number; idHints: ReadonlySet<string> }> = [];
+  // Players like Vimeo's fetch the manifest before any <video> opens a session; it waits here
+  // until a session's own URLs prove by id that the manifest is theirs.
+  private readonly orphanStreams: Array<{ url: string; isMaster: boolean }> = [];
   // Read off the moov of files the player itself fetched, so no extra request.
   private readonly durationByUrl = new Map<string, number>();
 
@@ -257,7 +261,7 @@ class MediaAttribution {
     console.log(`${LOG_PREFIX} ${session.id} opened`, { tag: element.tagName.toLowerCase(), src });
 
     if (element instanceof HTMLVideoElement && element.poster) {
-      for (const d of urlIdHints(element.poster)) { session.idHints.add(d); }
+      this.addIdHints(session, element.poster);
     }
 
     if (src) {
@@ -340,7 +344,7 @@ class MediaAttribution {
     }
 
     newSession.attributedUrls.set(url, meta);
-    for (const d of urlIdHints(url)) { newSession.idHints.add(d); }
+    this.addIdHints(newSession, url);
     this.notifyResolveListener(newSession, newSession.state, "url-handoff");
 
     if (newSession.state === "inert" || newSession.state === "armed" || newSession.state === "waiting") {
@@ -396,7 +400,7 @@ class MediaAttribution {
             meta.lockedByMse = true;
             if (this.upgradeTrackMime(meta, sourceBufferMime)) { this.emitSessionMetadata(session); }
           }
-          for (const d of urlIdHints(entry.url)) { session.idHints.add(d); }
+          this.addIdHints(session, entry.url);
         }
         console.log(`${LOG_PREFIX} ${session.id} attributed buffer-append → ${entry.url} via ${sourceBufferMime}`);
       }
@@ -443,7 +447,7 @@ class MediaAttribution {
             meta.lockedByMse = true;
             if (this.upgradeTrackMime(meta, mimeType)) { this.emitSessionMetadata(session); }
           }
-          for (const d of urlIdHints(url)) { session.idHints.add(d); }
+          this.addIdHints(session, url);
         }
       }
     }
@@ -511,26 +515,43 @@ class MediaAttribution {
 
       case "stream_detected": {
         if (!/^https?:/i.test(signal.url)) { return; }
-        const { session, tier } = this.pickSessionAndTier(signal.url);
-        if (!session) { return; }
-        if (!session.attributedUrls.has(signal.url)) {
-          this.attribute(session, signal.url, "application/vnd.apple.mpegurl", tier, false);
-        }
-        const ledgerEntry = this.ledger.lookup(signal.url);
-        const owner = ledgerEntry
-          ? (this.sessionsById.get(ledgerEntry.sessionId) ?? session)
-          : session;
-        const meta = owner.attributedUrls.get(signal.url);
-        if (meta) {
-          meta.isMaster = signal.isMaster;
-          if (!isStreamUrl(signal.url, meta.contentType)) {
-            meta.contentType = "application/vnd.apple.mpegurl";
-          }
-          this.notifyResolveListener(owner, owner.state, "stream-detected");
-        }
+        this.detectStream(signal.url, signal.isMaster);
         return;
       }
     }
+  }
+
+  private detectStream(url: string, isMaster: boolean): void {
+    const { session, tier } = this.pickSessionAndTier(url);
+    if (!session) {
+      if (this.orphanStreams.some((orphan) => orphan.url === url)) { return; }
+      this.orphanStreams.push({ url, isMaster });
+      if (this.orphanStreams.length > ORPHAN_STREAMS_CAP) { this.orphanStreams.shift(); }
+      return;
+    }
+    if (!session.attributedUrls.has(url)) {
+      this.attribute(session, url, "application/vnd.apple.mpegurl", tier, false);
+    }
+    const ledgerEntry = this.ledger.lookup(url);
+    const owner = ledgerEntry
+      ? (this.sessionsById.get(ledgerEntry.sessionId) ?? session)
+      : session;
+    const meta = owner.attributedUrls.get(url);
+    if (meta) {
+      meta.isMaster = isMaster;
+      if (!isStreamUrl(url, meta.contentType)) {
+        meta.contentType = "application/vnd.apple.mpegurl";
+      }
+      this.notifyResolveListener(owner, owner.state, "stream-detected");
+    }
+  }
+
+  // Every idHint enters here, so an orphan manifest is claimed the moment a session proves it owns it.
+  private addIdHints(session: VideoSession, url: string): void {
+    for (const d of urlIdHints(url)) { session.idHints.add(d); }
+    const claimed = this.orphanStreams.filter((orphan) => [...urlIdHints(orphan.url)].some((d) => session.idHints.has(d)));
+    for (const orphan of claimed) { this.orphanStreams.splice(this.orphanStreams.indexOf(orphan), 1); }
+    for (const orphan of claimed) { this.detectStream(orphan.url, orphan.isMaster); }
   }
 
   private onResourceTimingEntries = (list: PerformanceObserverEntryList): void => {
@@ -609,7 +630,7 @@ class MediaAttribution {
     // attributed to lastBoundSession=v-1 would otherwise add v-2's __vid to v-1's set,
     // and v-2's own later URLs would forever tier-1 match v-1.
     if (locked || tier === 0 || tier === 1 || tier === "mse") {
-      for (const d of urlIdHints(url)) { session.idHints.add(d); }
+      this.addIdHints(session, url);
     }
     if (session.state === "inert" || session.state === "armed" || session.state === "waiting") {
       this.transition(session, "ready", `attributed ${url}`);

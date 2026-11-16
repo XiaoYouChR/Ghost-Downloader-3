@@ -55,6 +55,16 @@ export function isInstagramCdnUrl(url: string): boolean {
   return hostEndsWith(url, "cdninstagram.com") || hostEndsWith(url, "fbcdn.net");
 }
 
+// Vimeo's stream manifest is JSON, so only its path tells it apart; the desktop's m3u8 pack translates it.
+export function isVimeoPlaylistUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname;
+    return path.includes("/v2/playlist/") && path.endsWith("/playlist.json");
+  } catch {
+    return false;
+  }
+}
+
 function parseEfg(url: string): Record<string, unknown> | null {
   try {
     const efg = new URL(url).searchParams.get("efg");
