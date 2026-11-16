@@ -5645,12 +5645,12 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="56"/>
         <source>下载设置</source>
-        <translation>Download Settings</translation>
+        <translation>Download</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="57"/>
         <source>网络设置</source>
-        <translation>Network Settings</translation>
+        <translation>Network</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="123"/>
@@ -5814,7 +5814,8 @@ caused by file operations or possible disk disconnections</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="317"/>
         <source>在屏幕右下角显示进度，可最小化到任务栏；需要通知方式为弹窗</source>
-        <translation>Show progress in the bottom-right corner of the screen; can be minimized to the taskbar. Notification style must be set to Popup</translation>
+        <translation>Show progress in the bottom-right corner of the screen; can be minimized to the taskbar
+Notification style must be set to Popup</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="323"/>
