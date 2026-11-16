@@ -70,9 +70,9 @@
       "gdMinVersion": "4.5.0"
     },
     "ffmpeg_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "ffmpeg_pack.zip",
-      "sha256": "6e2c1a42c9e8495ec180ce8c7a1bc76c9ca4694cd4cb11469539394bc2711175",
+      "sha256": "fd995f16a1ab3bafe9c35d83ac64d9e065f9760c1481c9ffeb9c63a206f322c3",
       "gdMinVersion": "4.5.0"
     },
     "ftp_pack": {
