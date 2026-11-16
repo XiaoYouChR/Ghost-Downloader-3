@@ -97,6 +97,8 @@ class MediaAttribution {
   private readonly sessionsById = new Map<string, VideoSession>();
   private readonly sessionByMediaSourceId = new Map<string, VideoSession>();
   private readonly mediaSourceIdByObjectUrl = new Map<string, string>();
+  private readonly mimeTypesByMediaSourceId = new Map<string, Set<string>>();
+  private readonly sourceUrlsByMediaSourceId = new Map<string, Map<string, string[]>>();
   private readonly selectionListenerByElement = new WeakMap<HTMLMediaElement, ResolveStateListener>();
   private readonly ledger = new AttributionLedger();
   private mutationObserver: MutationObserver | null = null;
@@ -225,6 +227,8 @@ class MediaAttribution {
     this.sessionsById.delete(previous.id);
     for (const mediaSourceId of previous.mediaSourceIds) {
       this.sessionByMediaSourceId.delete(mediaSourceId);
+      this.mimeTypesByMediaSourceId.delete(mediaSourceId);
+      this.sourceUrlsByMediaSourceId.delete(mediaSourceId);
     }
     if (this.lastBoundSession?.id === previous.id) {
       this.lastBoundSession = null;
@@ -292,6 +296,15 @@ class MediaAttribution {
     }
     // Pins re-fetches (rebuffering) to this session even after lastBoundSession changes.
     this.ledger.lockAllFor(session.id);
+
+    const cachedMimes = this.mimeTypesByMediaSourceId.get(mediaSourceId);
+    if (cachedMimes) {
+      for (const mimeType of cachedMimes) { this.addTrackMime(session, mimeType); }
+    }
+    const cachedSources = this.sourceUrlsByMediaSourceId.get(mediaSourceId);
+    if (cachedSources) {
+      for (const [mimeType, urls] of cachedSources) { this.setTrackSourceUrls(session, mimeType, urls); }
+    }
   }
 
   // capturedAt is reset so newSession's post-bind filter sees the URL as fresh.
@@ -359,6 +372,10 @@ class MediaAttribution {
         const owner = this.sessionsById.get(ledgerEntry.sessionId);
         const meta = owner?.attributedUrls.get(entry.url);
         if (owner && meta && this.upgradeTrackMime(meta, sourceBufferMime)) { this.emitSessionMetadata(owner); }
+        if (ledgerEntry.sessionId === session.id && (!meta?.contentType.includes("codecs") || meta.contentType === sourceBufferMime)) {
+          this.recentFetches.splice(i, 1);
+          return;
+        }
         continue;
       }
       if (entry.idHints.size > 0 && session.idHints.size > 0) {
@@ -397,6 +414,43 @@ class MediaAttribution {
     return true;
   }
 
+  private addTrackMime(session: VideoSession, mimeType: string): void {
+    if (session.mimeTypes.has(mimeType)) { return; }
+    session.mimeTypes.add(mimeType);
+    console.log(`${LOG_PREFIX} ${session.id} mime +=`, mimeType);
+    const formKind = toFormKind(session.mimeTypes);
+    if (formKind !== session.formKind) {
+      session.formKind = formKind;
+      console.log(`${LOG_PREFIX} ${session.id} formKind = ${formKind}`);
+      this.notifyResolveListener(session, session.state, "formKind-changed");
+    }
+  }
+
+  private setTrackSourceUrls(session: VideoSession, mimeType: string, urls: string[]): void {
+    session.sourceUrlsByMime.set(mimeType, urls);
+    if (urls.length === 1) {
+      const url = urls[0];
+      const now = performance.now();
+      const claim = this.ledger.claim(url, session.id, "mse", now, true);
+      if (claim.moved || claim.ownerId === session.id) {
+        if (!session.attributedUrls.has(url)) {
+          this.handoffUrl(url, session, mimeType);
+          this.emitSessionMetadata(session);
+        } else {
+          const meta = session.attributedUrls.get(url);
+          if (meta) {
+            meta.capturedAt = now;
+            meta.lockedByMse = true;
+            if (this.upgradeTrackMime(meta, mimeType)) { this.emitSessionMetadata(session); }
+          }
+          for (const d of urlIdHints(url)) { session.idHints.add(d); }
+        }
+      }
+    }
+    console.log(`${LOG_PREFIX} ${session.id} samples come from`, mimeType, urls);
+    this.notifyResolveListener(session, session.state, "source-matched");
+  }
+
   // Track mimes can land after loadedmetadata; resend so Resources learn each URL's track role.
   private emitSessionMetadata(session: VideoSession): void {
     const element = session.elementRef.deref();
@@ -422,17 +476,11 @@ class MediaAttribution {
       }
 
       case "mse_source_buffer_added": {
+        let mimes = this.mimeTypesByMediaSourceId.get(signal.mediaSourceId);
+        if (!mimes) { mimes = new Set(); this.mimeTypesByMediaSourceId.set(signal.mediaSourceId, mimes); }
+        mimes.add(signal.mimeType);
         const session = this.sessionByMediaSourceId.get(signal.mediaSourceId);
-        if (!session) { return; }
-        if (session.mimeTypes.has(signal.mimeType)) { return; }
-        session.mimeTypes.add(signal.mimeType);
-        console.log(`${LOG_PREFIX} ${session.id} mime += ${signal.mimeType}`);
-        const formKind = toFormKind(session.mimeTypes);
-        if (formKind !== session.formKind) {
-          session.formKind = formKind;
-          console.log(`${LOG_PREFIX} ${session.id} formKind = ${formKind}`);
-          this.notifyResolveListener(session, session.state, "formKind-changed");
-        }
+        if (session) { this.addTrackMime(session, signal.mimeType); }
         return;
       }
 
@@ -441,11 +489,11 @@ class MediaAttribution {
         return;
 
       case "mse_buffer_matched": {
+        let sources = this.sourceUrlsByMediaSourceId.get(signal.mediaSourceId);
+        if (!sources) { sources = new Map(); this.sourceUrlsByMediaSourceId.set(signal.mediaSourceId, sources); }
+        sources.set(signal.mimeType, signal.urls);
         const session = this.sessionByMediaSourceId.get(signal.mediaSourceId);
-        if (!session) { return; }
-        session.sourceUrlsByMime.set(signal.mimeType, signal.urls);
-        console.log(`${LOG_PREFIX} ${session.id} samples come from`, signal.mimeType, signal.urls);
-        this.notifyResolveListener(session, session.state, "source-matched");
+        if (session) { this.setTrackSourceUrls(session, signal.mimeType, signal.urls); }
         return;
       }
 
@@ -487,6 +535,10 @@ class MediaAttribution {
 
   private onResourceTimingEntries = (list: PerformanceObserverEntryList): void => {
     for (const entry of list.getEntries() as PerformanceResourceTiming[]) {
+      // Main-thread fetch and XHR are already observed with true HTTP status by mse-probe.ts;
+      // skipping them here keeps cross-origin 403s (whose responseStatus is 0 without CORS) out.
+      if (entry.initiatorType === "fetch" || entry.initiatorType === "xmlhttprequest") { continue; }
+      if (entry.responseStatus >= 400) { continue; }
       this.attributeFetch(entry.name, "");
     }
   };
@@ -570,7 +622,8 @@ class MediaAttribution {
   private isMediaUrl(url: string, contentType: string): boolean {
     if (!/^https?:/i.test(url)) { return false; }
     const extension = fileExtension(filenameFromUrl(url));
-    return isCatCatchMedia(extension, contentType);
+    const mime = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+    return isCatCatchMedia(extension, mime);
   }
 
   private transition(session: VideoSession, next: VideoSessionState, reason: string): void {

@@ -623,14 +623,13 @@ export function createResourceBridge(options: {
     if (resources.length !== 2) {
       return { ok: false, message: chrome.i18n.getMessage("errorMergeRequiresTwoResources") };
     }
-    const ordered = sortResourcesForOnlineMerge(resources);
     try {
       const result = await options.sendDesktopRequest<CommandResult>({
         type: "create_task",
         source: "resource_merge",
-        title: mergeOutputTitle(ordered),
+        title: mergeOutputTitle(resources),
         payload: {
-          resources: ordered.map((resource) => ({
+          resources: resources.map((resource) => ({
             url: resource.url,
             filename: taskNameForResource(resource),
             mime: resource.mime,
@@ -642,7 +641,7 @@ export function createResourceBridge(options: {
         },
       });
       if (result.ok) {
-        ordered.forEach((resource) => cache.setSent(resource.id));
+        resources.forEach((resource) => cache.setSent(resource.id));
         return { ...result, message: result.message || chrome.i18n.getMessage("mergeTaskSentToDesktop") };
       }
       return result;
@@ -661,7 +660,7 @@ export function createResourceBridge(options: {
       return { ok: false, message: chrome.i18n.getMessage("errorResourcesNotMergeable") };
     }
 
-    return sendMergeResources(resources);
+    return sendMergeResources(sortResourcesForOnlineMerge(resources));
   }
 
   function buildPopupStateData(resolvedTabId: number | null, activeTab: chrome.tabs.Tab | null) {
