@@ -332,7 +332,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         if popupNotifier is not None and popupStack is not None and popupStack.has(popupId):
             if not cfg.isNoticeSoundEnabled.value:
                 notice = replace(notice, sound=None)
-            popupNotifier.send(replace(notice, timeout=0), popupId)
+            popupNotifier.send(notice, popupId)
             return
         sendNotice(notice)
 

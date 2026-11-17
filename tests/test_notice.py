@@ -68,6 +68,7 @@ def test_build_error_notices_activate_window_on_click():
     assert diskSpace.message.splitlines()[0] == "任务未自动开始"
     assert parseFailed.message.splitlines()[0] == "https://example.com/a"
     assert diskSpace.urgency == parseFailed.urgency == Urgency.Critical
+    assert diskSpace.timeout == parseFailed.timeout == 0
     diskSpace.on_clicked()
     parseFailed.on_clicked()
     assert activated == ["disk", "parse"]
@@ -161,6 +162,16 @@ def test_send_replaces_notice_in_place(qtbot, popupNotifier):
     finished = next(popup for popup in shownPopups() if popup.titleLabel.text() == "完成")
     assert finished.pos() == position
     assert dismissed == []
+
+
+def test_send_replacing_with_timeout_dismisses_after_duration(qtbot, popupNotifier):
+    popupNotifier.send(buildNotice("进度", timeout=0), "task:1")
+    qtbot.waitUntil(lambda: len(shownPopups()) == 1 and isSettled())
+
+    popupNotifier.send(buildNotice("完成", timeout=1), "task:1")
+
+    qtbot.waitUntil(lambda: [p.titleLabel.text() for p in shownPopups()] == ["完成"])
+    qtbot.waitUntil(lambda: not shownPopups(), timeout=3000)
 
 
 def test_add_replacing_takes_position_without_dismissing(qtbot, popupStack):

@@ -111,6 +111,7 @@ def buildDiskSpaceInsufficient(free: int, needed: int, activate: Callable[[], No
             toReadableSize(free), toReadableSize(needed)),
         urgency=Urgency.Critical,
         on_clicked=activate,
+        timeout=0,
     )
 
 
@@ -122,6 +123,7 @@ def buildParseFailed(url: str, error: TaskError, activate: Callable[[], None]) -
         message=f"{url}\n{toLocalizedError(error)}",
         urgency=Urgency.Critical,
         on_clicked=activate,
+        timeout=0,
     )
 
 
