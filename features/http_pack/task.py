@@ -104,6 +104,7 @@ class HttpTaskStep(TaskStep):
     lastModified: str = ""
     filePath: str = ""
     isAccelerated: bool = False
+    isFinishing: bool = field(default=False, init=False, repr=False)
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
     def rangeStep(self, start: int, end: int, path: Path) -> HttpTaskStep:
@@ -126,6 +127,10 @@ class HttpTaskStep(TaskStep):
     @property
     def canPause(self) -> bool:
         return self.canUseRangeRequests
+
+    def finish(self) -> None:
+        """可从任意线程调用，读循环在下一个数据块或读超时时收尾。"""
+        self.isFinishing = True
 
     def setOptions(self, options: dict[str, Any]) -> None:
         if "headers" in options:
@@ -352,6 +357,8 @@ class HttpTaskStep(TaskStep):
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
+                            if self.isFinishing:
+                                break
                     finally:
                         response.close()
                     ftruncate(fd, subworker.receivedBytes)
@@ -363,6 +370,9 @@ class HttpTaskStep(TaskStep):
                 except Exception as e:
                     if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
                         raise
+                    if self.isFinishing:
+                        ftruncate(fd, subworker.receivedBytes)
+                        return
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
                 finally:
@@ -433,7 +443,7 @@ class HttpTaskStep(TaskStep):
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
-                            if subworker.position > subworker.end:
+                            if subworker.position > subworker.end or self.isFinishing:
                                 break
                     finally:
                         response.close()
@@ -451,6 +461,9 @@ class HttpTaskStep(TaskStep):
                 except Exception as e:
                     if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
                         raise
+                    if self.isFinishing:
+                        ftruncate(fd, subworker.position)
+                        return
                     if not self.canUseRangeRequests:
                         raise RangeNotSupportedError() from e
                     # 服务器限流时仅拒绝新连接，尚未收到数据的分片留待左侧分片并入
@@ -481,6 +494,7 @@ class HttpTaskStep(TaskStep):
 
         self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
         self._effectiveUrl = self.url
+        self.isFinishing = False
 
         self.subworkers = self._loadRecord() if self.canUseRangeRequests else []
         isResuming = bool(self.subworkers)

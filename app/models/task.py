@@ -504,10 +504,8 @@ class Task:
 
     def deletePlaceholders(self) -> None:
         for step in self.steps:
-            outputPath = step.outputPath
-            if outputPath and step.status != TaskStatus.COMPLETED:
-                deletePath(Path(outputPath))
-                deletePath(Path(f"{outputPath}.ghd"))
+            if step.outputPath:
+                deletePath(Path(f"{step.outputPath}.ghd"))
         for path in self.placeholderPaths:
             deletePlaceholder(path)
             deletePath(Path(f"{path}.ghd"))

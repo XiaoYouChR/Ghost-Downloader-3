@@ -162,24 +162,27 @@ async def test_delete_finished_keeps_file(engine, downloadFolder):
     assert (downloadFolder / "a.zip").read_bytes() == b"downloaded"
 
 
-async def test_delete_unfinished_releases_name(engine, downloadFolder):
+async def test_delete_unfinished_keeps_file(engine, downloadFolder):
     task = buildTask(steps=[FakeStep(stepIndex=0, outcome="hang")])
     engine.taskService.add(task)
     await waitUntil(lambda: (downloadFolder / "a.zip").read_bytes() == b"half")
+    task.partPath.write_bytes(b"record")
 
     engine.taskService.delete(task, shouldDeleteFiles=False)
-    await waitUntil(lambda: namesIn(downloadFolder) == [])
+    await waitUntil(lambda: not task.partPath.exists())
+
+    assert (downloadFolder / "a.zip").read_bytes() == b"half"
 
 
-async def test_delete_unfinished_folder_keeps_finished_files(engine, downloadFolder):
+async def test_delete_failed_folder_keeps_downloaded_files(engine, downloadFolder):
     task = buildFolderTask("complete", "fail")
     engine.taskService.add(task)
     await waitUntil(lambda: task.status == TaskStatus.FAILED)
 
     engine.taskService.delete(task, shouldDeleteFiles=False)
-    await waitUntil(lambda: not (downloadFolder / "playlist" / "second.mp4").exists())
 
     assert (downloadFolder / "playlist" / "sub" / "first.mp4").read_bytes() == b"downloaded"
+    assert (downloadFolder / "playlist" / "second.mp4").read_bytes() == b"half"
 
 
 async def test_redownload_replaces_file(engine, downloadFolder):
@@ -321,3 +324,24 @@ async def test_resume_removes_missing_task_when_enabled(engine, startEngine):
     restarted = startEngine()
 
     assert restarted.taskService.tasks == []
+
+
+async def test_resume_interrupted_unpausable_task_fails(engine, startEngine, downloadFolder):
+    task = buildTask(steps=[FakeStep(stepIndex=0, outcome="hang", isPausable=False)])
+    engine.taskService.add(task)
+    await waitUntil(lambda: (downloadFolder / "a.zip").read_bytes() == b"half")
+
+    restarted = startEngine()
+
+    assert restarted.taskService.taskById(task.taskId).status == TaskStatus.FAILED
+    assert (downloadFolder / "a.zip").read_bytes() == b"half"
+
+
+async def test_pause_all_keeps_unpausable_task_running(engine, downloadFolder):
+    task = buildTask(steps=[FakeStep(stepIndex=0, outcome="hang", isPausable=False)])
+    engine.taskService.add(task)
+    await waitUntil(lambda: (downloadFolder / "a.zip").read_bytes() == b"half")
+
+    engine.taskService.pauseAll()
+
+    assert task.status == TaskStatus.RUNNING

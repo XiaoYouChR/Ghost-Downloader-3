@@ -47,7 +47,12 @@ class FakeStep(TaskStep):
     isInPartFolder: bool = False
     content: str = "downloaded"
     outcome: str = "complete"
+    isPausable: bool = True
     options: dict = field(default_factory=dict, init=False, repr=False)
+
+    @property
+    def canPause(self) -> bool:
+        return self.isPausable
 
     @property
     def outputPath(self) -> str:
@@ -65,6 +70,7 @@ class FakeStep(TaskStep):
         if self.outcome == "complete":
             Path(self.outputPath).write_text(self.content)
             return
+        self.receivedBytes = 4
         Path(self.outputPath).write_bytes(b"half")
         if self.outcome == "fail":
             raise OSError("server gone")

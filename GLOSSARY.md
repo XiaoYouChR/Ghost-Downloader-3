@@ -46,7 +46,7 @@ _Avoid_: side product、sidecar；与 Selectable File 混淆
 
 **Part Path**:
 最终路径旁存放其未完成数据的 `{最终路径}.ghd`。只有进度记录时是文件，还有中间文件时是文件夹。
-成品原地写入 Placeholder。Task 完成后 Part Path 被删除；Task 被移除时，未完成的输出和 Part Path 总是删除，"删除文件"只决定已完成的成品。
+成品原地写入 Placeholder。Task 完成后 Part Path 被删除；Task 被移除时 Part Path 总是删除，"删除文件"决定全部输出，包括未完成的。
 _Avoid_: Part Folder、work folder、temp、cache、Staging（Staging 指更新下载物）
 
 **Replace**:
@@ -64,6 +64,11 @@ _Avoid_: 已删除、文件不存在
 
 **Pausable**:
 Task 的可暂停性，派生属性。取决于当前运行 Step 是否支持断点恢复。
+不可暂停的 Task Run 中断（退出、崩溃、断网）后 Task 为 FAILED，不会自动重来；重试从头开始。M3U8 直播除外：中断即录制结束，Task 为 COMPLETED。
+
+**Finish**:
+用户结束不可暂停、没有 File Size 的 Task Run，已写入的内容即成品，Task 变为 COMPLETED。界面文案为"停止并定案"。
+_Avoid_: stop（指停止执行，不含转为完成）
 
 **Checksum**:
 用户为已完成成品按选定算法算出的校验值。每种算法各存一份，随 Task Record 持久化，重新下载时清空。

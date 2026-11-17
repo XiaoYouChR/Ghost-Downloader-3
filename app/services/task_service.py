@@ -505,11 +505,15 @@ class TaskService:
 
     def pauseAll(self) -> None:
         for task in list(self._store.tasks.values()):
-            if self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId):
+            if task.canPause and (self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId)):
                 self.pause(task)
 
     def resumeSaved(self) -> None:
         for task in self._store.loadSaved():
+            # 不可续传的 Step 若被退出打断，重来会覆盖已写入的数据
+            for step in task.steps:
+                if step.status in {TaskStatus.RUNNING, TaskStatus.PAUSED} and not step.canPause and step.receivedBytes > 0:
+                    step.setError(TaskError("无法续传，重试将从头开始"))
             self.taskAdded.emit(task)
             if task.status == TaskStatus.COMPLETED and task.hasOutputFile and isExisting(task.outputPath):
                 self._watchFile(task)

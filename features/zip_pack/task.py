@@ -108,8 +108,6 @@ class ZipTask(Task):
             deletePath(self.folderPath)
 
     def deletePlaceholders(self) -> None:
-        if self.archiveStep.status != TaskStatus.COMPLETED and (self.isWhole or self.hasArchive):
-            deletePath(self.archivePath)
         deletePath(Path(f"{self.archivePath}.ghd"))
         deletePath(Path(f"{self.folderPath}.ghd"))
         for path in self.placeholderPaths:

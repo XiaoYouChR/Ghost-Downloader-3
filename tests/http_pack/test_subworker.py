@@ -8,7 +8,7 @@ from struct import pack
 import pytest
 from aiohttp import web
 
-from app.models.task import Task, TaskError, TaskStatus
+from app.models.task import SpecialFileSize, Task, TaskError, TaskStatus
 from features.http_pack.task import HttpTask, HttpTaskStep
 from tests.helpers import buildFileContent, buildRangeHandler, runStep
 
@@ -90,6 +90,32 @@ async def test_run_finishes_when_server_sends_trailers(startServer, tmp_path):
         await runStep(step)
 
     assert (tmp_path / "test.bin").read_bytes() == content
+
+
+async def test_finish_keeps_received_stream_as_file(startServer, tmp_path):
+    async def endless(request: web.Request) -> web.StreamResponse:
+        response = web.StreamResponse(status=200)
+        response.enable_chunked_encoding()
+        await response.prepare(request)
+        while True:
+            await response.write(b"x" * 1024)
+            await asyncio.sleep(0.01)
+
+    url = await startServer(endless)
+    task, step = buildStep(url, tmp_path, fileSize=SpecialFileSize.UNKNOWN, subworkerCount=1,
+                           canUseRangeRequests=False)
+    run = asyncio.create_task(runStep(step))
+    path = tmp_path / "test.bin"
+    while not path.exists() or path.stat().st_size == 0:
+        await asyncio.sleep(0.01)
+
+    step.finish()
+    async with asyncio.timeout(3):
+        await run
+
+    assert task.status == TaskStatus.COMPLETED
+    content = path.read_bytes()
+    assert content and content == b"x" * len(content)
 
 
 async def test_run_falls_back_when_range_is_ignored(startServer, tmp_path):

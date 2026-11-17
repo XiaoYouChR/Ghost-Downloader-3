@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from PySide6.QtCore import Qt, QRectF, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
-from qfluentwidgets import isDarkTheme, themeColor
+from qfluentwidgets import FluentIcon, isDarkTheme, themeColor
 
-from app.view.cards.task_cards import TaskCard
+from app.models.task import Task, TaskStatus, SpecialFileSize
+from app.view.cards.task_cards import TaskCard, ButtonState, TOGGLE_BUTTON
 from .task import HttpTaskStep
 
 FILL_EASING = 0.25
@@ -94,7 +97,38 @@ class SegmentedProgressBar(QWidget):
             painter.drawRoundedRect(QRectF(x, 0, w, height), radius, radius)
 
 
+def finishableStep(task: Task) -> HttpTaskStep | None:
+    for step in task.steps:
+        if (step.status == TaskStatus.RUNNING and isinstance(step, HttpTaskStep)
+                and not step.canUseRangeRequests and step.fileSize == SpecialFileSize.UNKNOWN):
+            return step
+    return None
+
+
+def toRunningToggle(task: Task) -> ButtonState:
+    if finishableStep(task) is not None:
+        return ButtonState(icon=FluentIcon.ACCEPT)
+    return ButtonState(icon=FluentIcon.PAUSE, enabled=task.canPause)
+
+
+HTTP_TOGGLE_BUTTON = replace(TOGGLE_BUTTON, states={**TOGGLE_BUTTON.states, TaskStatus.RUNNING: toRunningToggle})
+
+
 class HttpTaskCard(TaskCard):
+    buttons = [HTTP_TOGGLE_BUTTON if b.name == "toggle" else b for b in TaskCard.buttons]
+
+    def _refreshButtons(self, names=None) -> None:
+        super()._refreshButtons(names)
+        if finishableStep(self._task) is not None:
+            self.toggleButton.setToolTip(self.tr("停止并定案"))
+
+    def _onToggleClicked(self) -> None:
+        if step := finishableStep(self._task):
+            self.toggleButton.setEnabled(False)
+            step.finish()
+            return
+        super()._onToggleClicked()
+
     def _createProgressBar(self) -> QWidget:
         step = self.task.steps[0] if self.task.steps else None
         if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.fileSize > 0 and step.subworkerCount > 1:
