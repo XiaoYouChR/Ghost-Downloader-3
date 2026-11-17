@@ -471,9 +471,7 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
       await mediaBridge.setMediaIndex(command.tabId, command.index);
       return buildPopupState({ currentView: "advanced" });
     case "popup_request_pairing":
-      void desktopBridge.requestPairing().catch(() => {
-        // The bridge snapshot carries the user-facing pairing failure message.
-      });
+      void desktopBridge.requestPairing();
       return { ok: true, message: chrome.i18n.getMessage("confirmPairing") };
     case "popup_task_action":
       if (command.action === "open_when_done") {
