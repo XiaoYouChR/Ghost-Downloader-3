@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QApplication
 from app.models.task import Task, TaskError
 from app.platform import desktop_notification
 from app.platform.desktop_notification import (
-    SCREEN_MARGIN, SPACING, NotificationPopup, Popup, PopupNotifier, PopupStack, Presence,
+    SCREEN_MARGIN, SPACING, DoNotDisturb, NotificationPopup, Popup, PopupNotifier, PopupStack,
     buildDiskSpaceInsufficient, buildParseFailed, buildTaskCompleted,
 )
 
@@ -32,7 +32,7 @@ def buildNotice(title: str = "下载完成", timeout: int = 60, **kwargs) -> Not
 
 @pytest.fixture
 def popupStack(qapp):
-    stack = PopupStack(Presence())
+    stack = PopupStack(DoNotDisturb())
     yield stack
     stack.clear()
 
@@ -51,7 +51,7 @@ def test_build_task_completed_opens_output(monkeypatch, tmp_path):
 
     notification = buildTaskCompleted(task, None)
 
-    assert notification.message.splitlines() == ["ubuntu.iso", f"5.00 GB · {tmp_path}"]
+    assert notification.message.splitlines() == ["ubuntu.iso", f"大小 5.00 GB，保存于 {tmp_path}"]
     for button in notification.buttons:
         button.on_pressed()
     notification.on_clicked()
@@ -146,6 +146,21 @@ def test_send_beyond_screen_keeps_long_lived_at_bottom(qtbot, popupNotifier):
     assert bottom.titleLabel.text() == "长驻"
     assert bottom.geometry().bottom() == area.bottom() - SCREEN_MARGIN
     assert "长驻" not in dismissed
+
+
+def test_send_replaces_notice_in_place(qtbot, popupNotifier):
+    dismissed = []
+    popupNotifier.send(buildNotice("进度", timeout=0, on_dismissed=lambda: dismissed.append(True)), "task:1")
+    popupNotifier.send(buildNotice("其他"))
+    qtbot.waitUntil(lambda: len(shownPopups()) == 2 and isSettled())
+    position = next(popup.pos() for popup in shownPopups() if popup.titleLabel.text() == "进度")
+
+    popupNotifier.send(buildNotice("完成", timeout=0), "task:1")
+
+    qtbot.waitUntil(lambda: len(shownPopups()) == 2 and isSettled())
+    finished = next(popup for popup in shownPopups() if popup.titleLabel.text() == "完成")
+    assert finished.pos() == position
+    assert dismissed == []
 
 
 def test_add_replacing_takes_position_without_dismissing(qtbot, popupStack):

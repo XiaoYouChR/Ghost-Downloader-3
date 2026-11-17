@@ -198,7 +198,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.destroyed.connect(self._menu.deleteLater)
 
         self.activated.connect(self._onActivated)
-        self._speedMeter.speedChanged.connect(self._onSpeedChanged)
+        self._speedMeter.speedChanged.connect(self._onSpeedChanged, owner=self)
 
     def _onActivated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.Trigger:

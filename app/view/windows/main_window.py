@@ -250,8 +250,8 @@ class MainWindow(MSFluentWindow):
             self.searchEdit.selectAll()
 
     def _bind(self) -> None:
-        self._draft.addFailed.connect(self.addTasks)
-        self._draft.parseFailed.connect(self._onDraftParseFailed)
+        self._draft.addFailed.connect(self.addTasks, owner=self)
+        self._draft.parseFailed.connect(self._onDraftParseFailed, owner=self)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)

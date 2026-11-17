@@ -1,6 +1,6 @@
 # 用 appbar、WTS 和 logind 判断能否打扰用户
 
-Popup 置顶显示，必须避开全屏、演示和锁屏，否则会打断全屏游戏（独占全屏下出现置顶窗口，游戏可能被最小化），或在锁屏期间到时关闭而无人看见。这类时候 Popup 先暂存，等到可以打扰再显示。判断由 `Presence` 负责：`send` 时同步查询一次，此后只在系统事件唤醒时重新查询，不轮询。
+Popup 置顶显示，必须避开全屏、演示和锁屏，否则会打断全屏游戏（独占全屏下出现置顶窗口，游戏可能被最小化），或在锁屏期间到时关闭而无人看见。这类时候 Popup 先暂存，等到可以打扰再显示。判断由 `DoNotDisturb` 负责：`isOn` 在 `send` 时同步查询一次，此后只在系统事件唤醒时重新查询，不轮询。不读系统的勿扰开关。
 
 - **Windows**：锁屏以 `WTSQuerySessionInformation` 的 `SessionFlags` 为准，全屏和演示以 `SHQueryUserNotificationState` 为准（`BUSY`、`RUNNING_D3D_FULL_SCREEN`、`PRESENTATION_MODE` 不能打扰）。唤醒事件有三个：
   - `ABN_FULLSCREENAPP`：用一个隐藏窗口 `ABM_NEW` 注册 appbar，不 `ABM_SETPOS`，所以不占屏幕空间；退出前 `ABM_REMOVE`。

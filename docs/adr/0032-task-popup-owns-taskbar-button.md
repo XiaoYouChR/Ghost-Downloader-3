@@ -17,4 +17,4 @@
 - 最小化的 Task Popup 退出右下角堆叠，还原时重新插入。
 - 任务结束后 Task Popup 被普通 Popup 形式的结果提示取代，任务栏按钮随之消失；最小化中的任务完成时，结果提示直接出现在右下角，不闪烁任务栏按钮。
 - Linux 只有应用级的 LauncherEntry 进度，Task Popup 有按钮但无单任务进度；macOS 和 Wayland 不显示 Popup。
-- 任务栏"合并"显示时合并按钮显示谁的进度、Win10 上的表现，均未实测。
+- 每张 Task Popup 使用单独的 `AppUserModelID`（`com.xychr.ghostdownloader.` 加任务 id），并禁止固定到任务栏。任务栏按这个 ID 分组，合并打开时进度按钮不跟主窗口或其他 Task Popup 合成一颗。窗口关闭前清掉该属性，避免系统留下这份存储。

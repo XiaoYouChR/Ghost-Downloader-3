@@ -24,7 +24,6 @@ from qfluentwidgets import (
 )
 
 from app.platform.desktop import openFile, revealInFolder
-from app.platform.taskbar import addTaskbarButton
 from app.platform.windows import isGreaterEqualWin11
 from app.signal import Signal
 
@@ -89,7 +88,8 @@ def buildTaskCompleted(task: Task, icon: Icon | None) -> Notification:
     outputPath = task.outputPath
     return Notification(
         title=QCoreApplication.translate("Notifications", "下载完成"),
-        message=f"{task.name}\n{toReadableSize(task.fileSize)} · {task.outputFolder}",
+        message=f"{task.name}\n" + QCoreApplication.translate(
+            "Notifications", "大小 {0}，保存于 {1}").format(toReadableSize(task.fileSize), task.outputFolder),
         icon=icon,
         buttons=(
             Button(title=QCoreApplication.translate("Notifications", "打开文件"),
@@ -145,7 +145,10 @@ def buildClipboardRequest(urls: list[str], accept: Callable[[], None]) -> Notifi
     return Notification(
         title=QCoreApplication.translate("Notifications", "检测到下载链接"),
         message=message,
-        buttons=(Button(title=QCoreApplication.translate("Notifications", "下载"), on_pressed=accept),),
+        buttons=(
+            Button(title=QCoreApplication.translate("Notifications", "下载"), on_pressed=accept),
+            Button(title=QCoreApplication.translate("Notifications", "忽略"), on_pressed=None),
+        ),
         on_clicked=accept,
     )
 
@@ -188,13 +191,11 @@ class SystemNotifier:
         await self._notifier.send_notification(notification)
 
 
-class Presence:
-    """能否打扰用户，见 ADR 0029。changed 只表示状态可能变了，要用 canInterrupt 重新查询。"""
-
+class DoNotDisturb:
     changed = Signal()
 
-    def canInterrupt(self) -> bool:
-        return True
+    def isOn(self) -> bool:
+        return False
 
     def close(self) -> None:
         pass
@@ -228,7 +229,7 @@ if sys.platform == "win32":
         _fields_ = [("cbSize", wintypes.DWORD), ("hWnd", wintypes.HWND), ("uCallbackMessage", wintypes.UINT),
                     ("uEdge", wintypes.UINT), ("rc", wintypes.RECT), ("lParam", wintypes.LPARAM)]
 
-    class WindowsPresence(QAbstractNativeEventFilter, Presence):
+    class WindowsDoNotDisturb(QAbstractNativeEventFilter, DoNotDisturb):
         def __init__(self):
             super().__init__()
             self._window = QWindow()
@@ -239,7 +240,7 @@ if sys.platform == "win32":
             if not wtsapi32.WTSRegisterSessionNotification(self._hwnd, 0):
                 logger.warning("注册会话通知失败: {}", ctypes.GetLastError())
 
-        def canInterrupt(self) -> bool:
+        def isOn(self) -> bool:
             buffer, size = ctypes.c_void_p(), wintypes.DWORD()
             if wtsapi32.WTSQuerySessionInformationW(
                     None, WTS_CURRENT_SESSION, WTS_SESSION_INFO_EX, ctypes.byref(buffer), ctypes.byref(size)):
@@ -247,11 +248,11 @@ if sys.platform == "win32":
                 isLocked = ctypes.c_int32.from_address(buffer.value + 16).value == WTS_SESSIONSTATE_LOCK
                 wtsapi32.WTSFreeMemory(buffer)
                 if isLocked:
-                    return False
+                    return True
             state = ctypes.c_int()
             if shell32.SHQueryUserNotificationState(ctypes.byref(state)) != 0:
-                return True
-            return state.value not in (QUNS_BUSY, QUNS_RUNNING_D3D_FULL_SCREEN, QUNS_PRESENTATION_MODE)
+                return False
+            return state.value in (QUNS_BUSY, QUNS_RUNNING_D3D_FULL_SCREEN, QUNS_PRESENTATION_MODE)
 
         def close(self) -> None:
             shell32.SHAppBarMessage(ABM_REMOVE, ctypes.byref(self._appbarData()))
@@ -289,20 +290,20 @@ if sys.platform == "linux":
     PROPERTIES = "org.freedesktop.DBus.Properties"
     PROPERTIES_CHANGED_SLOT = SLOT("onPropertiesChanged(QString,QVariantMap,QStringList)")
 
-    class LinuxPresence(QObject, Presence):
+    class LinuxDoNotDisturb(QObject, DoNotDisturb):
         def __init__(self, path: str):
             super().__init__()
             self._path = path
             QDBusConnection.systemBus().connect(
                 LOGIND, path, PROPERTIES, "PropertiesChanged", self, PROPERTIES_CHANGED_SLOT)
 
-        def canInterrupt(self) -> bool:
+        def isOn(self) -> bool:
             message = QDBusMessage.createMethodCall(LOGIND, self._path, PROPERTIES, "Get")
             message.setArguments([f"{LOGIND}.Session", "LockedHint"])
             reply = QDBusConnection.systemBus().call(message)
             if reply.type() == QDBusMessage.MessageType.ErrorMessage:
-                return True
-            return not reply.arguments()[0].variant()
+                return False
+            return bool(reply.arguments()[0].variant())
 
         def close(self) -> None:
             QDBusConnection.systemBus().disconnect(
@@ -314,17 +315,17 @@ if sys.platform == "linux":
                 self.changed.emit()
 
 
-def createPresence() -> Presence:
+def createDoNotDisturb() -> DoNotDisturb:
     if sys.platform == "win32":
-        return WindowsPresence()
+        return WindowsDoNotDisturb()
     if sys.platform == "linux":
         message = QDBusMessage.createMethodCall(LOGIND, "/org/freedesktop/login1", f"{LOGIND}.Manager", "GetSession")
         message.setArguments(["auto"])
         reply = QDBusConnection.systemBus().call(message)
         if reply.type() != QDBusMessage.MessageType.ErrorMessage:
-            return LinuxPresence(reply.arguments()[0].path())
+            return LinuxDoNotDisturb(reply.arguments()[0].path())
         logger.debug("logind 不可用，Popup 不判断锁屏: {}", reply.errorMessage())
-    return Presence()
+    return DoNotDisturb()
 
 
 class Popup(QWidget):
@@ -336,6 +337,8 @@ class Popup(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.popupId: str | None = None
+        self.openOnTaskbar = False
         self.duration = 0
         self.hasSound = False
         self.isExiting = False
@@ -360,6 +363,8 @@ class Popup(QWidget):
         self.windowEffect = None
         if sys.platform == "win32":
             from qframelesswindow import WindowEffect
+
+            from app.platform.taskbar import addTaskbarButton
             if self.hasTaskbarButton:
                 addTaskbarButton(int(self.winId()))
             self.windowEffect = WindowEffect(self)
@@ -420,16 +425,33 @@ class Popup(QWidget):
         return scaled
 
     def moveTo(self, pos: QPoint) -> None:
-        """第一次从屏幕右侧滑入，之后平移到 pos。"""
         isMoved = pos != self._targetPos
         self._targetPos = pos
+        if self.windowState() & Qt.WindowState.WindowMinimized:
+            return
+        if self.openOnTaskbar:
+            self.openOnTaskbar = False
+            self._detachFromActiveWindow()
+            if sys.platform == "win32":
+                from app.platform.taskbar import minimizeWithoutActivating
+                minimizeWithoutActivating(int(self.winId()), pos.x(), pos.y(), self.width(), self.height())
+                return
+            self.move(pos)
+            self.showMinimized()
+            return
         if not self.isVisible():
+            self._detachFromActiveWindow()
             self.move(pos.x() + self.width() + SCREEN_MARGIN, pos.y())
             self.show()
             self._animate(pos, ENTER_DURATION, ENTER_CURVE)
             self._restartTimer()
         elif isMoved and self._pressX is None:
             self._animate(pos, MOVE_DURATION, MOVE_CURVE)
+
+    def _detachFromActiveWindow(self) -> None:
+        self.winId()
+        if handle := self.windowHandle():
+            handle.setTransientParent(None)
 
     def showAt(self, pos: QPoint) -> None:
         self._targetPos = pos
@@ -482,6 +504,12 @@ class Popup(QWidget):
         if self._isAcrylic:
             self.windowEffect.setAcrylicEffect(self.winId(), "20202030" if isDarkTheme() else "FFFFFF30")
 
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        # 显示前写入的还原坐标还没落到正确屏幕上
+        if event.spontaneous() and not self.isMinimized():
+            self.move(self._targetPos)
+
     def changeEvent(self, event) -> None:
         if event.type() == QEvent.Type.WindowStateChange:
             self.layoutChanged.emit()
@@ -494,6 +522,9 @@ class Popup(QWidget):
             return
         self.closeTimer.stop()
         self.moveAnimation.stop()
+        if self.hasTaskbarButton and sys.platform == "win32":
+            from app.platform.taskbar import setWindowAppId
+            setWindowAppId(int(self.winId()), None)
         super().closeEvent(event)
 
     def paintEvent(self, event) -> None:
@@ -645,15 +676,13 @@ class NotificationPopup(Popup):
 
 
 class PopupStack:
-    """只能在 Qt 主线程调用。"""
-
-    def __init__(self, presence: Presence):
-        self._presence = presence
-        self._popups: list[Popup] = []  # 最早的在前；没有 parent 的窗口靠这里的引用存活
+    def __init__(self, doNotDisturb: DoNotDisturb):
+        self._doNotDisturb = doNotDisturb
+        self._popups: list[Popup] = []  # 没有 parent，窗口靠这份列表活着
         self._pending: deque[Popup] = deque()
         self._lastSoundAt = float("-inf")
         self._isClosed = False
-        presence.changed.connect(self._showPending)
+        doNotDisturb.changed.connect(self._showPending)
         application = QGuiApplication.instance()
         application.primaryScreenChanged.connect(self._onPrimaryScreenChanged)
         application.screenAdded.connect(self._onScreenAdded)
@@ -664,6 +693,8 @@ class PopupStack:
         if self._isClosed:
             popup.deleteLater()
             return
+        if replacing is None and popup.popupId:
+            replacing = self._byId(popup.popupId)
         popup.exited.connect(lambda: self._remove(popup))
         popup.layoutChanged.connect(self._arrange)
         if replacing in self._pending:
@@ -681,8 +712,38 @@ class PopupStack:
         self._pending.append(popup)
         self._showPending()
 
+    def has(self, popupId: str) -> bool:
+        return self._byId(popupId) is not None
+
+    def popup(self, popupId: str) -> Popup | None:
+        return self._byId(popupId)
+
+    def countShown(self, prefix: str) -> int:
+        return sum(1 for popup in self._popups
+                   if not popup.isExiting and not popup.isMinimized()
+                   and (popup.popupId or "").startswith(prefix))
+
+    def count(self, prefix: str) -> int:
+        return sum(1 for popup in (*self._pending, *self._popups)
+                   if not popup.isExiting and (popup.popupId or "").startswith(prefix))
+
+    def close(self, popupId: str) -> None:
+        popup = self._byId(popupId)
+        if popup is None:
+            return
+        if popup in self._pending:
+            self._pending.remove(popup)
+            self._close(popup)
+            return
+        popup.exit(isDismissed=False)
+
+    def _byId(self, popupId: str) -> Popup | None:
+        for popup in (*self._pending, *self._popups):
+            if popup.popupId == popupId and not popup.isExiting:
+                return popup
+        return None
+
     def clear(self) -> None:
-        """立即关闭全部 Popup，不触发 on_dismissed；之后的 add 一律忽略。"""
         self._isClosed = True
         for popup in [*self._pending, *self._popups]:
             self._close(popup)
@@ -690,7 +751,7 @@ class PopupStack:
         self._popups.clear()
 
     def _showPending(self) -> None:
-        if not self._pending or QGuiApplication.primaryScreen() is None or not self._presence.canInterrupt():
+        if not self._pending or QGuiApplication.primaryScreen() is None or self._doNotDisturb.isOn():
             return
         while self._pending:
             popup = self._pending.popleft()
@@ -760,5 +821,7 @@ class PopupNotifier:
     def __init__(self, stack: PopupStack):
         self._stack = stack
 
-    def send(self, notification: Notification) -> None:
-        self._stack.add(NotificationPopup(notification))
+    def send(self, notification: Notification, popupId: str | None = None) -> None:
+        popup = NotificationPopup(notification)
+        popup.popupId = popupId
+        self._stack.add(popup)
