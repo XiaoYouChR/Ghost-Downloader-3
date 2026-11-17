@@ -317,6 +317,11 @@
 <context>
     <name>AssociationCard</name>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <source>、</source>
+        <translation>, </translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="385"/>
         <source>文件与协议关联</source>
         <translation>File &amp; Protocol Associations</translation>
@@ -5663,12 +5668,12 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="56"/>
         <source>下载设置</source>
-        <translation>Download Settings</translation>
+        <translation>Download</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="57"/>
         <source>网络设置</source>
-        <translation>Network Settings</translation>
+        <translation>Network</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="123"/>
@@ -7845,6 +7850,21 @@ The next steps will guide you through the basic setup.</translation>
 </context>
 <context>
     <name>WrappedLinkPack</name>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
+        <source>迅雷</source>
+        <translation>Thunder</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
+        <source>快车</source>
+        <translation>FlashGet</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+        <source>QQ 旋风</source>
+        <translation>QQ Xuanfeng</translation>
+    </message>
     <message>
         <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
         <source>迅雷、快车、QQ 旋风链接</source>

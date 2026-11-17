@@ -141,6 +141,11 @@
 <context>
     <name>AssociationCard</name>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <source>、</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="385"/>
         <source>文件与协议关联</source>
         <translation type="unfinished"></translation>
@@ -6024,6 +6029,21 @@ http://example.com/{mp4,mkv}/video</source>
 </context>
 <context>
     <name>WrappedLinkPack</name>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
+        <source>迅雷</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
+        <source>快车</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+        <source>QQ 旋风</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
         <source>迅雷、快车、QQ 旋风链接</source>

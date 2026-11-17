@@ -184,6 +184,11 @@
 <context>
     <name>AssociationCard</name>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <source>、</source>
+        <translation>, </translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="385"/>
         <source>文件与协议关联</source>
         <translation>Asociación de archivos y protocolos</translation>
@@ -6672,6 +6677,21 @@ The next steps will help you complete the basic setup.</translation>
 </context>
 <context>
     <name>WrappedLinkPack</name>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
+        <source>迅雷</source>
+        <translation>Thunder</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
+        <source>快车</source>
+        <translation>FlashGet</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+        <source>QQ 旋风</source>
+        <translation>QQ Xuanfeng</translation>
+    </message>
     <message>
         <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
         <source>迅雷、快车、QQ 旋风链接</source>

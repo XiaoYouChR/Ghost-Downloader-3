@@ -401,7 +401,7 @@ class AssociationCard(CollapsibleSettingCard):
             context = type(pack).__name__
             fileTypes = pack.fileTypes()
             if fileTypes and pack.config.associateFileTypes is not None:
-                names = "、".join(QCoreApplication.translate(context, ft.displayName) for ft in fileTypes)
+                names = self.tr("、").join(QCoreApplication.translate(context, ft.displayName) for ft in fileTypes)
                 extensions = ", ".join(ext for ft in fileTypes for ext in ft.extensions)
                 checkBox = CheckBox(self.tr("关联 {0}（{1}）").format(names, extensions), self.itemWidget)
                 checkBox.setChecked(pack.config.associateFileTypes.value)

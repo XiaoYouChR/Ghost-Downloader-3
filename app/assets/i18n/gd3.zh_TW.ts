@@ -333,6 +333,11 @@
 <context>
     <name>AssociationCard</name>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <source>、</source>
+        <translation>、</translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="385"/>
         <source>文件与协议关联</source>
         <translation>檔案與協定關聯</translation>
@@ -7909,6 +7914,21 @@ FFmpeg: {2}</translation>
 </context>
 <context>
     <name>WrappedLinkPack</name>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
+        <source>迅雷</source>
+        <translation>迅雷</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
+        <source>快车</source>
+        <translation>快車</translation>
+    </message>
+    <message>
+        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+        <source>QQ 旋风</source>
+        <translation>QQ 旋風</translation>
+    </message>
     <message>
         <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
         <source>迅雷、快车、QQ 旋风链接</source>
