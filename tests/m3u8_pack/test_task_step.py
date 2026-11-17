@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from app.config.cfg import cfg
 from app.format import toBytes
 from features.m3u8_pack.task import M3U8Task, M3U8TaskStep
 
@@ -144,3 +145,10 @@ def test_parse_live_record_progress_without_speed():
     )
     assert step.liveStatus == "Recording"
     assert step.speed == 0
+
+
+def test_build_command_converts_global_speed_limit(monkeypatch):
+    monkeypatch.setattr(cfg.isSpeedLimitEnabled, "value", True)
+    monkeypatch.setattr(cfg.speedLimitation, "value", 1150976)
+    args = buildStep()._buildCommand("http://test")
+    assert "--max-speed=1124K" in args
