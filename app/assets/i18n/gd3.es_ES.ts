@@ -53,6 +53,11 @@
         <translation>Active las siguientes funciones según necesite; puede cambiarlas después en Ajustes</translation>
     </message>
     <message>
+        <location filename="../../view/windows/oobe_window.py" line="665"/>
+        <source>复制下载链接时由本程序接管</source>
+        <translation>Al copiar un enlace de descarga, que este programa lo gestione</translation>
+    </message>
+    <message>
         <location filename="../../view/windows/oobe_window.py" line="669"/>
         <source>自动分类保存</source>
         <translation>Automático Categorize Descargas</translation>
@@ -118,9 +123,8 @@
         <translation>Monitorizar portapapeles</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="665"/>
         <source>复制下载链接时自动弹出新任务提示</source>
-        <translation>Mostrar automáticamente el diálogo de nueva tarea al copiar un enlace de descarga</translation>
+        <translation type="vanished">Mostrar automáticamente el diálogo de nueva tarea al copiar un enlace de descarga</translation>
     </message>
 </context>
 <context>
@@ -1445,8 +1449,12 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="332"/>
+        <source>自动检测剪贴板中的下载链接</source>
+        <translation>Detectar automáticamente los enlaces de descarga en el portapapeles</translation>
+    </message>
+    <message>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
-        <translation>Detecta automáticamente los enlaces del portapapeles y añade tareas de descarga</translation>
+        <translation type="vanished">Detecta automáticamente los enlaces del portapapeles y añade tareas de descarga</translation>
     </message>
 </context>
 <context>
@@ -3325,7 +3333,7 @@ Permita solo si acaba de hacer clic en &quot;Emparejamiento automático&quot; en
 <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="581"/>
+        <location filename="../../view/cards/task_cards.py" line="586"/>
         <source>{0}/{1} 个文件</source>
         <translation>{0}/{1} archivos</translation>
     </message>
@@ -3394,14 +3402,19 @@ Permita solo si acaba de hacer clic en &quot;Emparejamiento automático&quot; en
 <context>
     <name>Notifications</name>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="148"/>
+        <location filename="../../platform/desktop_notification.py" line="149"/>
         <source>下载</source>
         <translation>Descarga</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="91"/>
+        <location filename="../../platform/desktop_notification.py" line="90"/>
         <source>下载完成</source>
         <translation>Descargar Complete</translation>
+    </message>
+    <message>
+        <location filename="../../platform/desktop_notification.py" line="91"/>
+        <source>大小 {0}，保存于 {1}</source>
+        <translation>Tamaño {0}, guardado en {1}</translation>
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="109"/>
@@ -3431,42 +3444,47 @@ Permita solo si acaba de hacer clic en &quot;Emparejamiento automático&quot; en
         <translation>Enlace de descarga detectado</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="154"/>
+        <location filename="../../platform/desktop_notification.py" line="150"/>
+        <source>忽略</source>
+        <translation>Ignorar</translation>
+    </message>
+    <message>
+        <location filename="../../platform/desktop_notification.py" line="157"/>
         <source>浏览器扩展</source>
         <translation>Extensión de navegador</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="155"/>
+        <location filename="../../platform/desktop_notification.py" line="158"/>
         <source>未知</source>
         <translation>Desconocido</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="157"/>
+        <location filename="../../platform/desktop_notification.py" line="160"/>
         <source>浏览器扩展配对请求</source>
         <translation>Solicitud de emparejamiento de la extensión de navegador</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="159"/>
+        <location filename="../../platform/desktop_notification.py" line="162"/>
         <source>{0} {1} 请求连接</source>
         <translation>{0} {1} solicita conectarse</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="160"/>
+        <location filename="../../platform/desktop_notification.py" line="163"/>
         <source>来源: {0}</source>
         <translation>Origen: {0}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="161"/>
+        <location filename="../../platform/desktop_notification.py" line="164"/>
         <source>仅在你刚刚点击扩展里的&quot;自动配对&quot;时允许</source>
         <translation>Permita solo si acaba de hacer clic en &quot;Emparejamiento automático&quot; en la extensión</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="164"/>
+        <location filename="../../platform/desktop_notification.py" line="167"/>
         <source>允许配对</source>
         <translation>Permitir emparejamiento</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="165"/>
+        <location filename="../../platform/desktop_notification.py" line="168"/>
         <source>拒绝</source>
         <translation>Rechazar</translation>
     </message>
@@ -4337,7 +4355,7 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="62"/>
-        <location filename="../../view/pages/setting_page.py" line="369"/>
+        <location filename="../../view/pages/setting_page.py" line="377"/>
         <source>关于</source>
         <translation>Acerca de</translation>
     </message>
@@ -4411,7 +4429,7 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="146"/>
-        <location filename="../../view/pages/setting_page.py" line="473"/>
+        <location filename="../../view/pages/setting_page.py" line="486"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>Receive downloads from browser - extension installation required</translation>
     </message>
@@ -4618,7 +4636,7 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="220"/>
-        <location filename="../../view/pages/setting_page.py" line="487"/>
+        <location filename="../../view/pages/setting_page.py" line="500"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
         <translation>Compatible with Aria2 JSON-RPC protocol, able to receive download links from external tools</translation>
     </message>
@@ -4794,14 +4812,12 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Currently in User mode, data stored at: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="316"/>
         <source>新建任务时显示下载进度</source>
-        <translation>Mostrar el progreso de descarga al crear una nueva tarea</translation>
+        <translation type="vanished">Mostrar el progreso de descarga al crear una nueva tarea</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="317"/>
         <source>在屏幕右下角显示进度，可最小化到任务栏；需要通知方式为弹窗</source>
-        <translation>Mostrar el progreso en la esquina inferior derecha de la pantalla; se puede minimizar a la barra de tareas; requiere que el estilo de notificación sea ventana emergente</translation>
+        <translation type="vanished">Mostrar el progreso en la esquina inferior derecha de la pantalla; se puede minimizar a la barra de tareas; requiere que el estilo de notificación sea ventana emergente</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="323"/>
@@ -4814,12 +4830,12 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Tras instalarla, usa el comando ghd en el terminal para añadir y gestionar tareas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="374"/>
+        <location filename="../../view/pages/setting_page.py" line="382"/>
         <source>在应用程序启动时检查更新</source>
         <translation>Verificar for updates on startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="375"/>
+        <location filename="../../view/pages/setting_page.py" line="383"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>Get more features and improved stability with new versions</translation>
     </message>
@@ -4859,27 +4875,27 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Reproducir un sonido al completar una descarga</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="359"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Help improve Ghost Downloader by providing feedback, or view logs to troubleshoot issues</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="365"/>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>查看详情</source>
         <translation>Ver detalles</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="365"/>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>功能包</source>
         <translation>Paquete de funciones</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="366"/>
+        <location filename="../../view/pages/setting_page.py" line="374"/>
         <source>管理已安装的功能包</source>
         <translation>Gestionar paquetes instalados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="491"/>
+        <location filename="../../view/pages/setting_page.py" line="504"/>
         <source>正在端口 {} 上监听</source>
         <translation>Escuchando en el puerto {}</translation>
     </message>
@@ -4887,6 +4903,31 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <location filename="../../view/pages/setting_page.py" line="339"/>
         <source>系统通知</source>
         <translation>Notificación del sistema</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="316"/>
+        <source>新建任务的下载进度</source>
+        <translation>Progreso de descarga de nuevas tareas</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="317"/>
+        <source>选择新建任务下载进度的显示方式</source>
+        <translation>Elija cómo mostrar el progreso de descarga de nuevas tareas</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <source>不显示</source>
+        <translation>No mostrar</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <source>通过弹窗显示</source>
+        <translation>Mostrar en ventana emergente</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <source>显示于任务栏</source>
+        <translation>Mostrar en la barra de tareas</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="337"/>
@@ -4909,62 +4950,72 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Desactivado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="521"/>
+        <location filename="../../view/pages/setting_page.py" line="349"/>
+        <source>复制链接后先询问</source>
+        <translation>Preguntar tras copiar el enlace</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="350"/>
+        <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
+        <translation>Cuando la ventana principal está cerrada o minimizada, si está activado se muestra primero una ventana preguntando si descargar; si está desactivado, se abre directamente la ventana principal.</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="534"/>
         <source>卸载</source>
         <translation>Desinstalar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="521"/>
+        <location filename="../../view/pages/setting_page.py" line="534"/>
         <source>安装</source>
         <translation>Instalar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="533"/>
+        <location filename="../../view/pages/setting_page.py" line="546"/>
         <source>已卸载命令行工具</source>
         <translation>Herramienta de línea de comandos desinstalada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="536"/>
+        <location filename="../../view/pages/setting_page.py" line="549"/>
         <source>新打开的终端即可使用 ghd</source>
         <translation>ghd estará disponible en los terminales que abras a partir de ahora</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="538"/>
+        <location filename="../../view/pages/setting_page.py" line="551"/>
         <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
         <translation>ghd estará disponible en los terminales que abras a partir de ahora; si no se encuentra el comando, añade ~/.local/bin al PATH</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="539"/>
+        <location filename="../../view/pages/setting_page.py" line="552"/>
         <source>已安装命令行工具</source>
         <translation>Herramienta de línea de comandos instalada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="558"/>
         <source>卸载命令行工具失败</source>
         <translation>No se pudo desinstalar la herramienta de línea de comandos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="545"/>
+        <location filename="../../view/pages/setting_page.py" line="558"/>
         <source>安装命令行工具失败</source>
         <translation>No se pudo instalar la herramienta de línea de comandos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="553"/>
+        <location filename="../../view/pages/setting_page.py" line="566"/>
         <source>用户模式</source>
         <translation>User Modo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="553"/>
+        <location filename="../../view/pages/setting_page.py" line="566"/>
         <source>Portable 模式</source>
         <translation>Portable Modo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="555"/>
+        <location filename="../../view/pages/setting_page.py" line="568"/>
         <source>切换数据存储模式</source>
         <translation>Switch Data Storage Modo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="556"/>
+        <location filename="../../view/pages/setting_page.py" line="569"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4973,27 +5024,27 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
 Data will be copied to new location and the program will then exit. Por favor manually restart.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="576"/>
+        <location filename="../../view/pages/setting_page.py" line="589"/>
         <source>正在检查更新...</source>
         <translation>Checking for updates...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="588"/>
+        <location filename="../../view/pages/setting_page.py" line="601"/>
         <source>当前已是最新版本</source>
         <translation>You&apos;re running the latest version</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="585"/>
+        <location filename="../../view/pages/setting_page.py" line="598"/>
         <source>检查更新失败</source>
         <translation>Fallido to check update</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="585"/>
+        <location filename="../../view/pages/setting_page.py" line="598"/>
         <source>无法获取最新版本信息</source>
         <translation>Unable to get the latest version information</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="601"/>
+        <location filename="../../view/pages/setting_page.py" line="614"/>
         <source>搜索设置</source>
         <translation>Buscar settings</translation>
     </message>
@@ -5016,23 +5067,23 @@ Data will be copied to new location and the program will then exit. Por favor ma
         <translation type="vanished">Automáticamente detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="380"/>
+        <location filename="../../view/pages/setting_page.py" line="388"/>
         <source>打开作者的个人空间</source>
         <translation>Abrir Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="381"/>
+        <location filename="../../view/pages/setting_page.py" line="389"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="381"/>
+        <location filename="../../view/pages/setting_page.py" line="389"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
-        <location filename="../../view/pages/setting_page.py" line="358"/>
+        <location filename="../../view/pages/setting_page.py" line="365"/>
+        <location filename="../../view/pages/setting_page.py" line="366"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
@@ -5042,63 +5093,63 @@ Data will be copied to new location and the program will then exit. Por favor ma
         <translation>Mínimo Redistribution Tamaño</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="361"/>
+        <location filename="../../view/pages/setting_page.py" line="369"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="369"/>
-        <location filename="../../view/pages/setting_page.py" line="576"/>
+        <location filename="../../view/pages/setting_page.py" line="377"/>
+        <location filename="../../view/pages/setting_page.py" line="589"/>
         <source>检查更新</source>
         <translation>Buscar actualizaciones</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="437"/>
+        <location filename="../../view/pages/setting_page.py" line="450"/>
         <source>已配置</source>
         <translation>Configuración Guardado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="437"/>
+        <location filename="../../view/pages/setting_page.py" line="450"/>
         <source>重启软件后生效</source>
         <translation>Reiniciar required to take effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="458"/>
         <source>已复制配对令牌</source>
         <translation>Token Copied</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="451"/>
+        <location filename="../../view/pages/setting_page.py" line="464"/>
         <source>已重新生成配对令牌</source>
         <translation>Token Regenerated</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="451"/>
+        <location filename="../../view/pages/setting_page.py" line="464"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Copied new token to clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="466"/>
+        <location filename="../../view/pages/setting_page.py" line="479"/>
         <source>解包失败</source>
         <translation>Unpack failed</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="477"/>
+        <location filename="../../view/pages/setting_page.py" line="490"/>
         <source>未连接</source>
         <translation>Not Conectado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="479"/>
+        <location filename="../../view/pages/setting_page.py" line="492"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Conectado v{} (Desktop-managed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="481"/>
+        <location filename="../../view/pages/setting_page.py" line="494"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Conectado v{} (Store-installed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="498"/>
+        <location filename="../../view/pages/setting_page.py" line="511"/>
         <source>选择导出路径</source>
         <translation>Seleccionar Export Ruta</translation>
     </message>
@@ -5222,12 +5273,12 @@ Data will be copied to new location and the program will then exit. Por favor ma
 <context>
     <name>TaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="84"/>
+        <location filename="../../view/cards/task_cards.py" line="85"/>
         <source>暂停/继续</source>
         <translation>Pausar/Reanudar</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="91"/>
+        <location filename="../../view/cards/task_cards.py" line="92"/>
         <source>选择文件</source>
         <translation>Seleccionar archivos</translation>
     </message>
@@ -5236,22 +5287,22 @@ Data will be copied to new location and the program will then exit. Por favor ma
         <translation type="vanished">Verificar hash del archivo</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="131"/>
+        <location filename="../../view/cards/task_cards.py" line="132"/>
         <source>计算校验值</source>
         <translation>Calcular valor de verificación</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="138"/>
+        <location filename="../../view/cards/task_cards.py" line="139"/>
         <source>打开文件</source>
         <translation>Abrir archivo</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="144"/>
+        <location filename="../../view/cards/task_cards.py" line="145"/>
         <source>打开文件夹</source>
         <translation>Abrir carpeta</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="145"/>
+        <location filename="../../view/cards/task_cards.py" line="146"/>
         <source>删除</source>
         <translation>Eliminar</translation>
     </message>
@@ -5260,52 +5311,52 @@ Data will be copied to new location and the program will then exit. Por favor ma
         <translation type="vanished">El archivo no existe</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="315"/>
+        <location filename="../../view/cards/task_cards.py" line="316"/>
         <source>文件缺失</source>
         <translation>Archivo faltante</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="318"/>
+        <location filename="../../view/cards/task_cards.py" line="319"/>
         <source>完成于 {}</source>
         <translation>Completado el {}</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="321"/>
+        <location filename="../../view/cards/task_cards.py" line="322"/>
         <source>任务已经完成</source>
         <translation>La tarea ya está completa</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="331"/>
+        <location filename="../../view/cards/task_cards.py" line="332"/>
         <source>下载过程中发生错误，请稍后重试</source>
         <translation>Error durante la descarga, reintente más tarde</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="337"/>
+        <location filename="../../view/cards/task_cards.py" line="338"/>
         <source>任务已经暂停</source>
         <translation>La tarea está pausada</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="339"/>
+        <location filename="../../view/cards/task_cards.py" line="340"/>
         <source>任务正在等待</source>
         <translation>La tarea está en espera</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="389"/>
+        <location filename="../../view/cards/task_cards.py" line="390"/>
         <source>删除任务</source>
         <translation>Eliminar tarea</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="389"/>
+        <location filename="../../view/cards/task_cards.py" line="390"/>
         <source>确定要删除这个下载任务吗？</source>
         <translation>¿Seguro que desea eliminar esta tarea?</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="390"/>
+        <location filename="../../view/cards/task_cards.py" line="391"/>
         <source>同时删除已下载的文件</source>
         <translation>Eliminar también los archivos descargados</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="403"/>
+        <location filename="../../view/cards/task_cards.py" line="404"/>
         <source>文件缺失，无法校验</source>
         <translation>El archivo falta, no se puede verificar</translation>
     </message>
@@ -5314,17 +5365,22 @@ Data will be copied to new location and the program will then exit. Por favor ma
         <translation type="vanished">El archivo no existe, no se puede verificar</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="406"/>
+        <location filename="../../view/cards/task_cards.py" line="407"/>
         <source>更多</source>
         <translation>Más</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="444"/>
+        <location filename="../../view/cards/task_cards.py" line="445"/>
         <source>任务详情</source>
         <translation>Detalles de la tarea</translation>
     </message>
     <message>
         <location filename="../../view/cards/task_cards.py" line="449"/>
+        <source>在单独弹窗中显示下载进度</source>
+        <translation>Mostrar el progreso de descarga en una ventana emergente separada</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="454"/>
         <source>复制下载链接</source>
         <translation>Copiar Descargar Link</translation>
     </message>
@@ -5333,27 +5389,27 @@ Data will be copied to new location and the program will then exit. Por favor ma
         <translation type="vanished">Copiar valor de verificación</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="454"/>
+        <location filename="../../view/cards/task_cards.py" line="459"/>
         <source>编辑任务参数...</source>
         <translation>Editar Tarea Options...</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="458"/>
+        <location filename="../../view/cards/task_cards.py" line="463"/>
         <source>移到最前</source>
         <translation>Mover al principio</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="462"/>
+        <location filename="../../view/cards/task_cards.py" line="467"/>
         <source>重新下载</source>
         <translation>Redownload</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="467"/>
+        <location filename="../../view/cards/task_cards.py" line="472"/>
         <source>移动到分类</source>
         <translation>Assign Category</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="469"/>
+        <location filename="../../view/cards/task_cards.py" line="474"/>
         <source>未分类</source>
         <translation>Uncategorized</translation>
     </message>
@@ -6165,27 +6221,52 @@ Data will be copied to new location and the program will then exit. Por favor ma
 <context>
     <name>TaskPopup</name>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="68"/>
+        <location filename="../../view/shell/task_popup.py" line="76"/>
         <source>取消</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="118"/>
+        <location filename="../../view/shell/task_popup.py" line="124"/>
+        <source>速度 {0}/s，剩余 {1}</source>
+        <translation>Velocidad {0}/s, restante {1}</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="127"/>
+        <source>速度 {0}/s</source>
+        <translation>Velocidad {0}/s</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="129"/>
+        <source>正在计算速度</source>
+        <translation>Calculando velocidad</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="131"/>
         <source>任务已经暂停</source>
         <translation>La tarea está pausada</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="120"/>
+        <location filename="../../view/shell/task_popup.py" line="133"/>
         <source>任务正在等待</source>
         <translation>La tarea está en espera</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="130"/>
+        <location filename="../../view/shell/task_popup.py" line="135"/>
+        <source>已下载 {0}，共 {1}</source>
+        <translation>Descargado {0} de {1}</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="138"/>
+        <source>已下载 {0}</source>
+        <translation>Descargado {0}</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="147"/>
         <source>继续</source>
         <translation>Reanudar</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="130"/>
+        <location filename="../../view/shell/task_popup.py" line="147"/>
         <source>暂停</source>
         <translation>Pausar</translation>
     </message>
