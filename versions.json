@@ -88,9 +88,9 @@
       "gdMinVersion": "4.5.0"
     },
     "http_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "http_pack.zip",
-      "sha256": "32315e488d70cc6241e33ef25c2b13f8b12021dca1b8536aa7d47174ef82e920",
+      "sha256": "84a6502b116d86b0429ffd24e3ceb4a49aaa9d082b01e19fb89e4447be631b54",
       "gdMinVersion": "4.5.0"
     },
     "huggingface_pack": {
@@ -118,15 +118,15 @@
       "gdMinVersion": "4.5.0"
     },
     "wrapped_link_pack": {
-      "version": "1.1.2",
+      "version": "1.1.3",
       "file": "wrapped_link_pack.zip",
-      "sha256": "010f46230ed7a182f7db6195919f5aa3f2011af89fa34b3e97c22a9ad4cb7c48",
+      "sha256": "6a655d115ea8c45c97a3f71e816b9cd6e19aa5cf68749cda8c96cc8737253b70",
       "gdMinVersion": "4.5.2"
     },
     "zip_pack": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "file": "zip_pack.zip",
-      "sha256": "f37ab2f1a19f6988f678cc0ee70f955f6f8560a4283901d964454b763147264a",
+      "sha256": "3f4331ca3ee55f4418a3779a232a1e83684386199e17194c76e6a84db570a33e",
       "gdMinVersion": "4.5.0"
     }
   }
