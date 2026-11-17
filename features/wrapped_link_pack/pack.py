@@ -57,4 +57,8 @@ class WrappedLinkPack(FeaturePack):
     parsers = [WrappedLinkParser]
 
     def uriSchemes(self) -> list[UriScheme]:
-        return [UriScheme("thunder", "迅雷"), UriScheme("flashget", "快车"), UriScheme("qqdl", "QQ 旋风")]
+        return [
+            UriScheme("thunder", N("WrappedLinkPack", "迅雷")),
+            UriScheme("flashget", N("WrappedLinkPack", "快车")),
+            UriScheme("qqdl", N("WrappedLinkPack", "QQ 旋风")),
+        ]
