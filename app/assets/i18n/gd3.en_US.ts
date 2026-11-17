@@ -4286,7 +4286,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <location filename="../../platform/desktop_notification.py" line="110"/>
         <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-        <translation>Task was not started automatically
+        <translation>Task added but not started
 {0} free, {1} required</translation>
     </message>
     <message>
