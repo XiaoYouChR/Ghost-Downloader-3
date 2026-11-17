@@ -3069,7 +3069,7 @@ http://example.com/{mp4,mkv}/video</source>
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="110"/>
-        <source>任务已加入等待队列
+        <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
         <translation type="unfinished"></translation>
     </message>

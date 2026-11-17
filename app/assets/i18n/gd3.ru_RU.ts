@@ -4326,9 +4326,9 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="110"/>
-        <source>任务已加入等待队列
+        <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-        <translation>Задача добавлена в очередь ожидания
+        <translation>Задача не запущена автоматически
 Осталось {0}, требуется {1}</translation>
     </message>
     <message>

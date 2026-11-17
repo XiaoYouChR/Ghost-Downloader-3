@@ -4326,9 +4326,9 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="110"/>
-        <source>任务已加入等待队列
+        <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-        <translation>タスクを待機キューに追加しました
+        <translation>タスクは自動開始されませんでした
 残り {0}、必要 {1}</translation>
     </message>
     <message>

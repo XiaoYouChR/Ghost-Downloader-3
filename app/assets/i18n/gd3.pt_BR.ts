@@ -3666,9 +3666,9 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="110"/>
-        <source>任务已加入等待队列
+        <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-        <translation>Tarefa adicionada à fila de espera
+        <translation>Tarefa não iniciada automaticamente
 Restam {0}, necessário {1}</translation>
     </message>
     <message>

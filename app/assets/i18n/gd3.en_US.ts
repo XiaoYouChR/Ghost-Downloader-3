@@ -4284,9 +4284,9 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     </message>
     <message>
         <location filename="../../platform/desktop_notification.py" line="110"/>
-        <source>任务已加入等待队列
+        <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-        <translation>Task added to pending queue
+        <translation>Task was not started automatically
 {0} free, {1} required</translation>
     </message>
     <message>
@@ -5835,8 +5835,7 @@ caused by file operations or possible disk disconnections</translation>
     </message>
     <message>
         <source>在屏幕右下角显示进度，可最小化到任务栏；需要通知方式为弹窗</source>
-        <translation>Show progress in the bottom-right corner of the screen; can be minimized to the taskbar
-Notification style must be set to Popup</translation>
+        <translation type="vanished">Show progress in the bottom-right corner of the screen; can be minimized to the taskbar. Notification style must be set to Popup</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="323"/>
