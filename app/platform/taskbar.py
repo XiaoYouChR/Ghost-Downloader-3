@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ctypes
 from ctypes import (
-    POINTER, WINFUNCTYPE, byref, c_byte, c_int, c_short, c_uint64, c_ulong, c_ushort, c_void_p, c_wchar_p,
+    POINTER, byref, c_byte, c_int, c_short, c_uint64, c_ulong, c_ushort, c_void_p, c_wchar_p,
 )
 from functools import cache, partial
 
@@ -28,7 +28,7 @@ def setWindowsProgress(hwnd: int, status: TaskStatus | None, progress: float | N
 
 
 def setWindowAppId(hwnd: int, appId: str | None) -> None:
-    from ctypes import HRESULT, wintypes
+    from ctypes import HRESULT, WINFUNCTYPE, wintypes
 
     class GUID(ctypes.Structure):
         _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD),
@@ -105,7 +105,7 @@ def minimizeWithoutActivating(hwnd: int, x: int, y: int, width: int, height: int
 @cache
 def createTaskbarList():
     # Qt6 和 pywin32 都没有封装 ITaskbarList3，只能按 shobjidl_core.h 的虚表序号直调
-    from ctypes import HRESULT, oledll
+    from ctypes import HRESULT, WINFUNCTYPE, oledll
 
     ole32 = oledll.ole32
     clsid = (c_byte * 16)()
