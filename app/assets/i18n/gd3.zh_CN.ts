@@ -2284,6 +2284,14 @@ http://example.com/{mp4,mkv}/video</source>
     </message>
 </context>
 <context>
+    <name>HttpTaskCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="123"/>
+        <source>停止并定案</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>HuggingFaceConfig</name>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="94"/>

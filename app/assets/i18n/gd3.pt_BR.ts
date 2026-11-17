@@ -2697,6 +2697,14 @@ Defina como não simular para enviar como original.</translation>
     </message>
 </context>
 <context>
+    <name>HttpTaskCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="123"/>
+        <source>停止并定案</source>
+        <translation>Parar e finalizar</translation>
+    </message>
+</context>
+<context>
     <name>HuggingFaceConfig</name>
     <message>
         <source>HuggingFace</source>

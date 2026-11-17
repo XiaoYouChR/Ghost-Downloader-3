@@ -3183,6 +3183,14 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
 </context>
 <context>
+    <name>HttpTaskCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="123"/>
+        <source>停止并定案</source>
+        <translation>Остановить и завершить</translation>
+    </message>
+</context>
+<context>
     <name>HuggingFaceConfig</name>
     <message>
         <source>HuggingFace</source>

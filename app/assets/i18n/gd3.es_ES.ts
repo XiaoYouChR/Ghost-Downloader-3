@@ -2509,6 +2509,14 @@ configura sin simular para enviar tal cual</translation>
     </message>
 </context>
 <context>
+    <name>HttpTaskCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="123"/>
+        <source>停止并定案</source>
+        <translation>Detener y finalizar</translation>
+    </message>
+</context>
+<context>
     <name>HuggingFaceConfig</name>
     <message>
         <source>HuggingFace</source>

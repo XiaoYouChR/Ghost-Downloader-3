@@ -3141,6 +3141,14 @@ select &quot;No Emulation&quot; to send as-is</translation>
     </message>
 </context>
 <context>
+    <name>HttpTaskCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="123"/>
+        <source>停止并定案</source>
+        <translation>Stop &amp; Finalize</translation>
+    </message>
+</context>
+<context>
     <name>HuggingFaceConfig</name>
     <message>
         <source>HuggingFace</source>
