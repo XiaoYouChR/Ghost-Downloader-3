@@ -2,8 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Qt
+
 if TYPE_CHECKING:
-    from PySide6.QtWidgets import QStackedWidget
+    from PySide6.QtWidgets import QStackedWidget, QWidget
+
+
+def resizableEdges(window: QWidget, edges: Qt.Edge) -> Qt.Edge:
+    if window.minimumWidth() == window.maximumWidth():
+        edges &= ~(Qt.Edge.LeftEdge | Qt.Edge.RightEdge)
+    if window.minimumHeight() == window.maximumHeight():
+        edges &= ~(Qt.Edge.TopEdge | Qt.Edge.BottomEdge)
+    return edges
 
 
 def patchStackedWidgetAnimation() -> None:
@@ -108,6 +118,7 @@ def patchLinuxFrameless() -> None:
             edges |= Edge.TopEdge
         elif pos.y() >= self.height() - border:
             edges |= Edge.BottomEdge
+        edges = resizableEdges(self, edges)
 
         if eventType == QEvent.Type.MouseMove:
             self.setCursor(EDGE_CURSORS.get(edges, Qt.CursorShape.ArrowCursor))
@@ -120,6 +131,34 @@ def patchLinuxFrameless() -> None:
 
     linux.LinuxFramelessWindowBase._initFrameless = _initFrameless
     linux.LinuxFramelessWindowBase.eventFilter = eventFilter
+
+
+def patchWindowsFrameless() -> None:
+    import win32con
+    from qframelesswindow import windows
+
+    Edge = Qt.Edge
+    HIT_EDGES = {
+        win32con.HTTOPLEFT: Edge.LeftEdge | Edge.TopEdge,
+        win32con.HTTOPRIGHT: Edge.RightEdge | Edge.TopEdge,
+        win32con.HTBOTTOMLEFT: Edge.LeftEdge | Edge.BottomEdge,
+        win32con.HTBOTTOMRIGHT: Edge.RightEdge | Edge.BottomEdge,
+        win32con.HTTOP: Edge.TopEdge,
+        win32con.HTBOTTOM: Edge.BottomEdge,
+        win32con.HTLEFT: Edge.LeftEdge,
+        win32con.HTRIGHT: Edge.RightEdge,
+    }
+    EDGE_HITS = {edges: hit for hit, edges in HIT_EDGES.items()} | {Edge(0): win32con.HTCLIENT}
+
+    _originalNativeEvent = windows.WindowsFramelessWindowBase.nativeEvent
+
+    def nativeEvent(self, eventType, message):
+        isHandled, result = _originalNativeEvent(self, eventType, message)
+        if result not in HIT_EDGES:
+            return isHandled, result
+        return True, EDGE_HITS[resizableEdges(self, HIT_EDGES[result])]
+
+    windows.WindowsFramelessWindowBase.nativeEvent = nativeEvent
 
 
 def unregisterRouter(stacked: QStackedWidget) -> None:

@@ -37,7 +37,6 @@ class StandaloneWrapper(FramelessDialog):
         self._initLayout()
 
     def _initWidget(self) -> None:
-        self.setResizeEnabled(False)
         titleBar = FluentTitleBar(self)
         self.setTitleBar(titleBar)
         self.titleBar.maxBtn.hide()
@@ -56,6 +55,18 @@ class StandaloneWrapper(FramelessDialog):
 
     def takeContent(self, widget) -> None:
         self.contentLayout.removeWidget(widget)
+
+    def event(self, e) -> bool:
+        isHandled = super().event(e)
+        if e.type() == QEvent.Type.LayoutRequest:
+            self._refreshHeight()
+        return isHandled
+
+    def _refreshHeight(self) -> None:
+        available = self.screen().availableGeometry()
+        height = min(self.contentLayout.sizeHint().height(), available.height())
+        self.setFixedHeight(height)
+        self.move(self.x(), min(self.y(), available.bottom() - height + 1))
 
     def closeEvent(self, event) -> None:
         event.ignore()
@@ -269,6 +280,7 @@ class TaskDraftDialog(MessageBoxBase):
         self._hBoxLayout.removeWidget(self.widget)
         self._standaloneWrapper.setContent(self.widget)
         self.widget.setStyleSheet("#centerWidget { border: none; border-radius: 0; }")
+        self.widget.setMaximumWidth(16777215)
         self.widget.show()
         self._isStandalone = True
 
@@ -276,6 +288,7 @@ class TaskDraftDialog(MessageBoxBase):
         self._standaloneWrapper.hide()
         self._standaloneWrapper.takeContent(self.widget)
         self.widget.setStyleSheet("")
+        self.widget.setMaximumWidth(700)
         self._hBoxLayout.addWidget(self.widget, 1, Qt.AlignmentFlag.AlignCenter)
         self.widget.show()
         self._isStandalone = False

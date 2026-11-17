@@ -40,7 +40,7 @@ def setupEnvironment() -> None:
         setupHiddenSubprocess()
 
     from app.view.qfw_patch import (
-        patchLinuxFrameless, patchMaskDialogAnimation, patchStackedWidgetAnimation,
+        patchLinuxFrameless, patchMaskDialogAnimation, patchStackedWidgetAnimation, patchWindowsFrameless,
     )
     from app.view.components.labels import IconBodyLabel
     patchStackedWidgetAnimation()
@@ -49,6 +49,8 @@ def setupEnvironment() -> None:
         patchMaskDialogAnimation()
     else:
         patchLinuxFrameless()
+    if sys.platform == "win32":
+        patchWindowsFrameless()
     qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
