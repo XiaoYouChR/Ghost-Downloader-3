@@ -356,19 +356,20 @@ class TaskService:
             self._unwatchFile(replaced)
             self._cancelWork(replaced)
             self.taskRemoved.emit(replaced.taskId)
-        self._flushSoon()
-        self.taskAdded.emit(task)
-        if not autoStart:
-            return True
-        if task.fileSize > 0:
+        if autoStart and task.fileSize > 0:
             try:
                 free = disk_usage(task.outputFolder).free
                 if free < task.fileSize:
                     self.diskSpaceInsufficient.emit(free, task.fileSize)
-                    return True
+                    autoStart = False
             except OSError:
                 pass
-        self._schedule(task)
+        if not autoStart:
+            task.setStatus(TaskStatus.PAUSED)
+        self._flushSoon()
+        self.taskAdded.emit(task)
+        if autoStart:
+            self._schedule(task)
         return True
 
     def probeConflict(self, task: Task) -> Path | None:
@@ -520,8 +521,7 @@ class TaskService:
                 if task.canSeed and task.shouldSeed:
                     self._seed(task)
             elif task.status in {TaskStatus.WAITING, TaskStatus.RUNNING}:
-                task.setStatus(TaskStatus.WAITING)
-                self._schedule(task)
+                task.setStatus(TaskStatus.PAUSED)
         if cfg.shouldRemoveMissingTasks.value:
             self.removeMissing()
 

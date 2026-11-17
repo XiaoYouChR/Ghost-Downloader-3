@@ -132,14 +132,9 @@ def test_version_replies_running_version(cli):
 
 async def test_wait_returns_when_task_completes(cli, engine):
     task = buildTask("complete")
-    engine.taskService.add(task, autoStart=False)
-    waiting = asyncio.ensure_future(run(cli, "wait", task.taskId))
-    await asyncio.sleep(0.05)
-    assert not waiting.done()
+    engine.taskService.add(task)
 
-    engine.taskService.start(task)
-
-    output, exitCode = await waiting
+    output, exitCode = await run(cli, "wait", task.taskId)
     assert exitCode == 0
     assert output["result"][0]["status"] == "completed"
 

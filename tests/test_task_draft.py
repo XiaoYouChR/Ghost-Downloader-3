@@ -138,7 +138,7 @@ async def test_add_link_failing_after_confirm_returns_to_draft(engine, draft, pa
     assert engine.taskService.tasks == []
 
 
-@pytest.mark.parametrize(("autoStart", "status"), [(True, TaskStatus.COMPLETED), (False, TaskStatus.WAITING)])
+@pytest.mark.parametrize(("autoStart", "status"), [(True, TaskStatus.COMPLETED), (False, TaskStatus.PAUSED)])
 async def test_add_link_confirmed_while_parsing(engine, draft, pack, autoStart, status):
     pack.heldUrls.add(A)
     draft.setUrls([A])

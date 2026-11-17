@@ -345,3 +345,42 @@ async def test_pause_all_keeps_unpausable_task_running(engine, downloadFolder):
     engine.taskService.pauseAll()
 
     assert task.status == TaskStatus.RUNNING
+
+
+async def test_pause_after_step_completed_keeps_paused(engine):
+    task = buildTask("v.mp4", steps=[FakeStep(stepIndex=0), FakeStep(stepIndex=1, sideSuffix="en.srt", outcome="hang")])
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.steps[0].status == TaskStatus.COMPLETED and task.status == TaskStatus.RUNNING)
+
+    engine.taskService.pause(task)
+
+    assert task.status == TaskStatus.PAUSED
+
+
+async def test_resume_paused_multi_step_task_stays_paused(engine, startEngine):
+    task = buildTask("v.mp4", steps=[FakeStep(stepIndex=0), FakeStep(stepIndex=1, sideSuffix="en.srt", outcome="hang")])
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.steps[0].status == TaskStatus.COMPLETED and task.status == TaskStatus.RUNNING)
+
+    restarted = startEngine()
+
+    assert restarted.taskService.taskById(task.taskId).status == TaskStatus.PAUSED
+    assert restarted.taskService.runningCount() == 0 and restarted.taskService.waitingOrder() == []
+
+
+async def test_resume_after_crash_keeps_task_paused(engine, startEngine, monkeypatch, downloadFolder):
+    task = buildTask(steps=[FakeStep(stepIndex=0, outcome="hang")])
+    engine.taskService.add(task)
+    await waitUntil(lambda: (downloadFolder / "a.zip").read_bytes() == b"half")
+    stop = engine.taskService.stop
+
+    def crash() -> None:
+        stop()
+        # 崩溃时 aboutToQuit 不触发，Task Record 停在 RUNNING
+        task.setStatus(TaskStatus.RUNNING)
+    monkeypatch.setattr(engine.taskService, "stop", crash)
+
+    restarted = startEngine()
+
+    assert restarted.taskService.taskById(task.taskId).status == TaskStatus.PAUSED
+    assert restarted.taskService.runningCount() == 0 and restarted.taskService.waitingOrder() == []

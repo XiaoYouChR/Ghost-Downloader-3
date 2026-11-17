@@ -393,7 +393,7 @@ class Task:
                     self.fileSize = receivedBytes
         elif any(s == TaskStatus.RUNNING for s in statuses):
             self.status = TaskStatus.RUNNING
-        elif all(s == TaskStatus.PAUSED for s in statuses):
+        elif all(s in {TaskStatus.PAUSED, TaskStatus.COMPLETED} for s in statuses):
             self.status = TaskStatus.PAUSED
         else:
             self.status = TaskStatus.WAITING

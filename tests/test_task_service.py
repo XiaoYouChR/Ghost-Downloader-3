@@ -16,12 +16,13 @@ def buildTask(outcome: str = "hang", name: str = "a.zip") -> Task:
 
 
 
-async def test_add_without_start_waits(engine):
+async def test_add_without_start_is_paused(engine):
     task = buildTask("complete")
 
     engine.taskService.add(task, autoStart=False)
 
-    assert task.status == TaskStatus.WAITING
+    assert task.status == TaskStatus.PAUSED
+    assert engine.taskService.waitingOrder() == []
     engine.taskService.start(task)
     await waitUntil(lambda: task.status == TaskStatus.COMPLETED)
 

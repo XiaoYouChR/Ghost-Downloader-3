@@ -9,6 +9,7 @@
 **Task**:
 用户可见的下载项。拥有 Name（成品文件的基本名）和 Output Folder（下载目标目录）。
 五个状态：WAITING、RUNNING、PAUSED、COMPLETED、FAILED。持久化为 Task Record。
+状态只看尚未完成的 Task Step：部分 Step 已完成的 Task 被暂停，仍是 PAUSED。
 _Avoid_: download、job；Name 不叫 title 或 filename；Output Folder 不叫 directory
 
 **Saved Tasks**:
