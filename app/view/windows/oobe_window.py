@@ -662,7 +662,7 @@ class AdvancedOptionsPage(QWidget):
         )
         self.clipboardCard = OptionCard(
             FluentIcon.PASTE, self.tr("剪贴板监听"),
-            self.tr("复制下载链接时自动弹出新任务提示"),
+            self.tr("复制下载链接时由本程序接管"),
             isChecked=cfg.isClipboardListenerEnabled.value, parent=self,
         )
         self.categoryCard = OptionCard(

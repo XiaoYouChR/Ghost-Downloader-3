@@ -129,6 +129,12 @@ class NoticeStyle(Enum):
     OFF = "Off"
 
 
+class TaskPopupPlace(Enum):
+    OFF = "Off"
+    CORNER = "Corner"
+    TASKBAR = "Taskbar"
+
+
 def canShowPopup() -> bool:
     # Wayland 不许客户端定位窗口；XWayland 在鼠标移到 Wayland 原生窗口时不发离开事件，Popup 会一直不关
     return (sys.platform != "darwin" and os.environ.get("XDG_SESSION_TYPE") != "wayland"
@@ -389,13 +395,17 @@ class Config(QConfig):
         OptionsValidator(CloseMode), EnumSerializer(CloseMode),
     )
     isClipboardListenerEnabled = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
+    isClipboardRequestEnabled = ConfigItem("Software", "ClipboardRequest", False, BoolValidator())
     noticeStyle = OptionsConfigItem(
         "Notice", "Style", NoticeStyle.POPUP if canShowPopup() else NoticeStyle.SYSTEM,
         OptionsValidator([s for s in NoticeStyle if s != NoticeStyle.POPUP or canShowPopup()]),
         EnumSerializer(NoticeStyle),
     )
     isNoticeSoundEnabled = ConfigItem("Notice", "SoundEnabled", True, BoolValidator())
-    isTaskPopupEnabled = ConfigItem("Notice", "TaskPopupEnabled", False, BoolValidator())
+    taskPopupPlace = OptionsConfigItem(
+        "Notice", "TaskPopupPlace", TaskPopupPlace.TASKBAR,
+        OptionsValidator(TaskPopupPlace), EnumSerializer(TaskPopupPlace),
+    )
     clipboardIgnoredPacks: ConfigItem[list[str]] = ConfigItem("Software", "ClipboardIgnoredPacks", [], StringListValidator())
     geometry = ConfigItem(
         "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),

@@ -49,9 +49,9 @@ def test_build_utp_for_both_directions(monkeypatch, isEnabled):
 @pytest.mark.parametrize(
     ("mode", "policy", "level", "preferRc4"),
     [
-        ("enabled", lt.enc_policy.enabled, lt.enc_level.both, True),
-        ("forced", lt.enc_policy.forced, lt.enc_level.rc4, True),
-        ("disabled", lt.enc_policy.disabled, lt.enc_level.both, False),
+        ("enabled", lt.enc_policy.pe_enabled, lt.enc_level.pe_both, True),
+        ("forced", lt.enc_policy.pe_forced, lt.enc_level.pe_rc4, True),
+        ("disabled", lt.enc_policy.pe_disabled, lt.enc_level.pe_both, False),
     ],
 )
 def test_build_encryption_mode(monkeypatch, mode, policy, level, preferRc4):

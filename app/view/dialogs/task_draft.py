@@ -133,12 +133,12 @@ class TaskDraftDialog(MessageBoxBase):
         self._parseTimer.timeout.connect(self._onParseNeeded)
         self.urlEdit.textChanged.connect(self._parseTimer.start)
 
-        self._draft.parsingBusyChanged.connect(self.progressBar.setVisible)
-        self._draft.parseSucceeded.connect(self._onParseSucceeded)
-        self._draft.parseFailed.connect(self._onParseFailed)
+        self._draft.parsingBusyChanged.connect(self.progressBar.setVisible, owner=self)
+        self._draft.parseSucceeded.connect(self._onParseSucceeded, owner=self)
+        self._draft.parseFailed.connect(self._onParseFailed, owner=self)
         self.draftGroup.refreshRequested.connect(self._draft.refreshFailed)
-        self._draft.itemsChanged.connect(self._onItemsChanged)
-        self._draft.itemsCleared.connect(self._onCleared)
+        self._draft.itemsChanged.connect(self._onItemsChanged, owner=self)
+        self._draft.itemsCleared.connect(self._onCleared, owner=self)
 
         self.downloadButton.clicked.connect(self._accept)
         self.downloadButton.dropDownClicked.connect(lambda: self._accept(autoStart=False))

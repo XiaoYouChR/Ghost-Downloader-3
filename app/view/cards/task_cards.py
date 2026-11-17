@@ -15,7 +15,7 @@ from qfluentwidgets import (
     isDarkTheme, themeColor,
 )
 
-from app.config.cfg import cfg
+from app.config.cfg import canShowPopup, cfg
 from app.format import toReadableSize, toReadableTime
 from app.checksum import ALGORITHMS, COMMON_ALGORITHMS
 from app.models.task import TaskStatus, SpecialFileSize
@@ -24,6 +24,7 @@ from app.platform.filesystem import isExisting, isFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 from app.view.components.category_settings import toCategoryName
 from app.i18n import toLocalizedError
+from app.signal_bus import signalBus
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -444,6 +445,10 @@ class TaskCard(CardWidget):
         detail = Action(FluentIcon.INFO, self.tr("任务详情"), self)
         detail.triggered.connect(self._openDrawer)
         menu.addAction(detail)
+        if self._task.status == TaskStatus.RUNNING and canShowPopup():
+            showProgress = Action(FluentIcon.BACK_TO_WINDOW, self.tr("在单独弹窗中显示下载进度"), self)
+            showProgress.triggered.connect(lambda: signalBus.taskPopupRequested.emit(self._task))
+            menu.addAction(showProgress)
         menu.addSeparator()
 
         copyUrl = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)

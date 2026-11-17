@@ -68,7 +68,7 @@ def setupEnvironment() -> None:
 
 def startApp(application: Application, primaryInstance: PrimaryInstance, isSilent: bool = False) -> None:
     from PySide6.QtGui import QIcon
-    from app.config.cfg import NoticeStyle, cfg
+    from app.config.cfg import NoticeStyle, TaskPopupPlace, cfg
     from app.view.dialogs.name_conflict import NameConflictPrompt
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
@@ -243,82 +243,110 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     taskService.tasksAllCompleted.connect(release)
 
     from app.platform.desktop_notification import (
-        NotificationPopup, PopupNotifier, PopupStack, SystemNotifier, buildClipboardRequest,
-        buildDiskSpaceInsufficient, buildPairRequest, buildParseFailed, buildTaskCompleted, buildTaskFailed, createPresence,
-        toFileIcon,
+        PopupNotifier, PopupStack, SystemNotifier, buildClipboardRequest,
+        buildDiskSpaceInsufficient, buildPairRequest, buildParseFailed, buildTaskCompleted, buildTaskFailed,
+        createDoNotDisturb, toFileIcon,
     )
     systemNotifier = SystemNotifier(coroutineRunner.submit)
     sendTo = {NoticeStyle.SYSTEM: systemNotifier.send, NoticeStyle.OFF: lambda _: None}
     popupStack: PopupStack | None = None
+    popupNotifier: PopupNotifier | None = None
     if NoticeStyle.POPUP in cfg.noticeStyle.options:
-        presence = createPresence()
-        popupStack = PopupStack(presence)
-        sendTo[NoticeStyle.POPUP] = PopupNotifier(popupStack).send
+        doNotDisturb = createDoNotDisturb()
+        popupStack = PopupStack(doNotDisturb)
+        popupNotifier = PopupNotifier(popupStack)
+        sendTo[NoticeStyle.POPUP] = popupNotifier.send
         # 先于 onAboutToQuit 连接，engine.stop() 期间再来的 Notice 会被忽略
-        application.aboutToQuit.connect(presence.close)
+        application.aboutToQuit.connect(doNotDisturb.close)
         application.aboutToQuit.connect(popupStack.clear)
 
-    def canShowRequestPopup() -> bool:
-        return popupStack is not None and (window is None or not window.isVisible() or window.isMinimized())
-
-    clipboardPopup: NotificationPopup | None = None
-    pairPopup: NotificationPopup | None = None
+    def windowIsAway() -> bool:
+        return window is None or not window.isVisible() or window.isMinimized()
 
     def onUrlsDetected(urls: list[str]) -> None:
-        nonlocal clipboardPopup
-        if not canShowRequestPopup():
+        if not cfg.isClipboardRequestEnabled.value or not windowIsAway() or popupNotifier is None:
             show().addUrls(urls)
             return
-        if not presence.canInterrupt():
-            return
-        popup = NotificationPopup(buildClipboardRequest(urls, lambda: show().addUrls(urls)))
-        popupStack.add(popup, replacing=clipboardPopup)
-        clipboardPopup = popup
+        popupNotifier.send(buildClipboardRequest(urls, lambda: show().addUrls(urls)), "clipboard")
 
     def onPairRequestChanged(request: PairRequest | None) -> None:
-        nonlocal pairPopup
-        if pairPopup is not None:
-            pairPopup.exit(isDismissed=False)
-        pairPopup = None
-        if request is None:
+        if request is None or not windowIsAway() or popupNotifier is None:
+            if popupStack is not None:
+                popupStack.close("pair")
+            if request is not None:
+                show().onPairRequested(request)
             return
-        if not canShowRequestPopup():
-            show().onPairRequested(request)
-            return
-        pairPopup = NotificationPopup(buildPairRequest(
+        popupNotifier.send(buildPairRequest(
             request, lambda: browserService.approvePair(request.requestId),
-            lambda: browserService.rejectPair(request.requestId)))
-        popupStack.add(pairPopup)
+            lambda: browserService.rejectPair(request.requestId)), "pair")
 
     application.clipboardListener.urlsDetected.connect(onUrlsDetected)
     browserService.pairRequestChanged.connect(onPairRequestChanged)
     activate = signalBus.activationRequested.emit
 
-    def toNotice(notification: Notification) -> Notification:
-        return notification if cfg.isNoticeSoundEnabled.value else replace(notification, sound=None)
-
     def sendNotice(notification: Notification) -> None:
-        sendTo[cfg.noticeStyle.value](toNotice(notification))
+        if not cfg.isNoticeSoundEnabled.value:
+            notification = replace(notification, sound=None)
+        sendTo[cfg.noticeStyle.value](notification)
 
-    from app.models.task import TaskStatus
+    candidates: set[str] = set()
 
-    def buildTaskResult(task: Task) -> Notification:
-        if task.status == TaskStatus.COMPLETED:
-            return toNotice(replace(buildTaskCompleted(task, toFileIcon(task.outputPath)), timeout=0))
-        return buildTaskFailed(task, activate)
+    def showTaskPopup(task: Task, minimized: bool) -> None:
+        if popupStack is None:
+            return
+        popupId = f"task:{task.taskId}"
+        if (popup := popupStack.popup(popupId)) is not None:
+            if minimized or not popup.isMinimized():
+                return
+            if popupStack.countShown("task:") >= 3:
+                return
+            popup.showNormal()
+            return
+        if not minimized and popupStack.countShown("task:") >= 3:
+            return
+        from app.view.shell.task_popup import TaskPopup
+        popup = TaskPopup(task, taskService, speedMeter.speedChanged)
+        popup.openOnTaskbar = minimized
+        popupStack.add(popup)
 
-    taskTracker = None
-    if popupStack is not None:
-        from app.view.shell.task_popup import TaskTracker
-        taskTracker = TaskTracker(
-            taskService, popupStack,
-            lambda: cfg.noticeStyle.value == NoticeStyle.POPUP and cfg.isTaskPopupEnabled.value, buildTaskResult)
-        application.taskTracker = taskTracker
+    def onTaskAdded(task: Task) -> None:
+        candidates.add(task.taskId)
+
+    def onTaskStarted(task: Task) -> None:
+        if task.taskId not in candidates:
+            return
+        candidates.discard(task.taskId)
+        if (popupStack is None or cfg.noticeStyle.value != NoticeStyle.POPUP
+                or cfg.taskPopupPlace.value == TaskPopupPlace.OFF):
+            return
+        showTaskPopup(task, minimized=cfg.taskPopupPlace.value == TaskPopupPlace.TASKBAR)
+
+    def onTaskRemoved(taskId: str) -> None:
+        candidates.discard(taskId)
+        if popupStack is not None:
+            popupStack.close(f"task:{taskId}")
 
     def onTaskCompleted(task: Task) -> None:
-        if taskTracker is None or not taskTracker.isTracking(task.taskId):
-            sendNotice(buildTaskCompleted(task, toFileIcon(task.outputPath)))
+        notice = buildTaskCompleted(task, toFileIcon(task.outputPath))
+        popupId = f"task:{task.taskId}"
+        if popupNotifier is not None and popupStack is not None and popupStack.has(popupId):
+            if not cfg.isNoticeSoundEnabled.value:
+                notice = replace(notice, sound=None)
+            popupNotifier.send(replace(notice, timeout=0), popupId)
+            return
+        sendNotice(notice)
 
+    def onTaskFailed(task: Task) -> None:
+        popupId = f"task:{task.taskId}"
+        if popupNotifier is not None and popupStack is not None and popupStack.has(popupId):
+            popupNotifier.send(buildTaskFailed(task, activate), popupId)
+
+    if popupStack is not None:
+        taskService.taskAdded.connect(onTaskAdded)
+        taskService.taskStarted.connect(onTaskStarted)
+        taskService.taskRemoved.connect(onTaskRemoved)
+        taskService.taskFailed.connect(onTaskFailed)
+        signalBus.taskPopupRequested.connect(lambda task: showTaskPopup(task, minimized=False))
     taskService.taskCompleted.connect(onTaskCompleted)
     taskService.diskSpaceInsufficient.connect(
         lambda free, needed: sendNotice(buildDiskSpaceInsufficient(free, needed, activate)))

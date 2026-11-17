@@ -13,7 +13,7 @@ from qfluentwidgets import (
 
 from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
 
-from app.config.cfg import NoticeStyle, cfg, LANGUAGE_TEXTS
+from app.config.cfg import NoticeStyle, canShowPopup, cfg, LANGUAGE_TEXTS
 from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.services.port_listener import ListenStatus
@@ -312,10 +312,10 @@ class SettingPage(QWidget):
                 self.tr("当前为用户模式，数据保存在: {0}").format(APP_DATA_DIR),
             )
 
-        self.taskPopupCard = SwitchSettingCard(
-            FluentIcon.SPEED_HIGH, self.tr("新建任务时显示下载进度"),
-            self.tr("在屏幕右下角显示进度，可最小化到任务栏；需要通知方式为弹窗"),
-            cfg.isTaskPopupEnabled,
+        self.taskPopupCard = ComboBoxSettingCard(
+            cfg.taskPopupPlace, FluentIcon.SPEED_HIGH, self.tr("新建任务的下载进度"),
+            self.tr("选择新建任务下载进度的显示方式"),
+            texts=[self.tr("不显示"), self.tr("通过弹窗显示"), self.tr("显示于任务栏")],
         )
         self.taskPopupCard.setEnabled(cfg.noticeStyle.value == NoticeStyle.POPUP)
 
@@ -344,6 +344,14 @@ class SettingPage(QWidget):
             *([self.taskPopupCard] if NoticeStyle.POPUP in cfg.noticeStyle.options else []),
             ClipboardSettingCard(self._featureService.packs),
         ]
+        if canShowPopup():
+            self.clipboardAskCard = SwitchSettingCard(
+                FluentIcon.CHAT, self.tr("复制链接后先询问"),
+                self.tr("主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。"),
+                cfg.isClipboardRequestEnabled,
+            )
+            self.clipboardAskCard.setEnabled(cfg.isClipboardListenerEnabled.value)
+            softwareCards.append(self.clipboardAskCard)
         if sys.platform != "darwin":
             self.associationCard = AssociationCard(self._featureService.packs)
             softwareCards.append(self.associationCard)
@@ -407,7 +415,9 @@ class SettingPage(QWidget):
         self._aria2RpcListener.stateChanged.connect(self._refreshAria2Status, owner=self)
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
-        cfg.noticeStyle.valueChanged.connect(lambda style: self.taskPopupCard.setEnabled(style == NoticeStyle.POPUP))
+        cfg.noticeStyle.valueChanged.connect(self._onNoticeStyleChanged)
+        if canShowPopup():
+            cfg.isClipboardListenerEnabled.valueChanged.connect(self.clipboardAskCard.setEnabled)
 
         self.downloadFolderPicker.pathChanged.connect(self._onDownloadFolderChanged)
         cfg.downloadFolder.valueChanged.connect(self.downloadFolderPicker.setPath)
@@ -425,6 +435,9 @@ class SettingPage(QWidget):
         self.feedbackCard.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
         self.openLogButton.clicked.connect(self._onOpenLogClicked)
         self.migrateCard.clicked.connect(self._onMigrateClicked)
+
+    def _onNoticeStyleChanged(self, _value=None) -> None:
+        self.taskPopupCard.setEnabled(cfg.noticeStyle.value == NoticeStyle.POPUP)
 
     def _onAutoSelectPortChanged(self, isAuto: bool) -> None:
         self.browserPortCard.setEnabled(not isAuto)

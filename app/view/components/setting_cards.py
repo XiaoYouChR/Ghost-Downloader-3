@@ -329,7 +329,7 @@ class ClipboardSettingCard(CollapsibleSettingCard):
 
     def __init__(self, packs: list, parent=None):
         super().__init__(FluentIcon.PASTE, self.tr("剪贴板监听"),
-                         self.tr("剪贴板监听器将自动检测剪贴板中的链接并添加下载任务"), parent=parent)
+                         self.tr("自动检测剪贴板中的下载链接"), parent=parent)
         self._packs = [pack for pack in packs if pack.capturedLinks]
         self._initWidget()
         self._initLayout()
