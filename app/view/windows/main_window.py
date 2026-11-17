@@ -101,6 +101,7 @@ class MainWindow(MSFluentWindow):
         updateService: UpdateService | None = None,
         parent: QWidget | None = None,
     ) -> None:
+        self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self._macVisualEffectView = None
         self.searchEdit = None
@@ -133,11 +134,6 @@ class MainWindow(MSFluentWindow):
         self.setWindowIcon(QIcon(":/image/logo.png"))
         self.setWindowTitle("Ghost Downloader")
         self.setMinimumSize(960, 540)
-        rect = QRect(*cfg.geometry.value)
-        if rect.isValid() and QApplication.screenAt(rect.center()) is not None:
-            self.setGeometry(rect)
-        else:
-            self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
         if sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
             self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.titleBar.hBoxLayout.insertSpacing(2, 6)
@@ -558,6 +554,15 @@ class MainWindow(MSFluentWindow):
         event.accept()
 
     def setVisible(self, visible: bool) -> None:
+        # 主窗口隐藏时 setGeometry 不传给原生窗口，事件循环一跑就被改回，所以在首次显示前设置
+        if visible and not self._isGeometryRestored:
+            self._isGeometryRestored = True
+            rect = QRect(*cfg.geometry.value)
+            if rect.isValid() and QApplication.screenAt(rect.center()) is not None:
+                self.setGeometry(rect)
+            else:
+                self.resize(960, 540)
+                self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
         if visible and not self.isVisible() and sys.platform == "win32":
             self._refreshBackgroundEffect()
         super().setVisible(visible)
