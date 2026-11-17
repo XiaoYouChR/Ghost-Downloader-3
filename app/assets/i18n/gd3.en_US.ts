@@ -3852,7 +3852,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="436"/>
+        <location filename="../../view/windows/main_window.py" line="432"/>
         <source>程序发生异常</source>
         <translation>An exception occurred</translation>
     </message>
@@ -3865,32 +3865,32 @@ Click the “Document” icon to open the log.
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="155"/>
+        <location filename="../../view/windows/main_window.py" line="151"/>
         <source>下载任务</source>
         <translation>Tasks</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="159"/>
+        <location filename="../../view/windows/main_window.py" line="155"/>
         <source>新建任务</source>
         <translation>New Task</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="165"/>
+        <location filename="../../view/windows/main_window.py" line="161"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="318"/>
+        <location filename="../../view/windows/main_window.py" line="314"/>
         <source>未知</source>
         <translation>Unknown</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="317"/>
+        <location filename="../../view/windows/main_window.py" line="313"/>
         <source>浏览器扩展</source>
         <translation>Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="314"/>
+        <location filename="../../view/windows/main_window.py" line="310"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -3907,62 +3907,62 @@ Extension Version: {2}
 Only allow this request if you have requested &quot;Auto Pair&quot; from the extension.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="320"/>
+        <location filename="../../view/windows/main_window.py" line="316"/>
         <source>浏览器扩展配对请求</source>
         <translation>Browser Extension Pairing Request</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="321"/>
+        <location filename="../../view/windows/main_window.py" line="317"/>
         <source>允许配对</source>
         <translation>Allow</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="322"/>
+        <location filename="../../view/windows/main_window.py" line="318"/>
         <source>拒绝</source>
         <translation>Decline</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="332"/>
+        <location filename="../../view/windows/main_window.py" line="328"/>
         <source>浏览器扩展服务无法启动</source>
         <translation>Unable to start browser extension service</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="335"/>
+        <location filename="../../view/windows/main_window.py" line="331"/>
         <source>Aria2 RPC 兼容服务无法启动</source>
         <translation>Unable to start Aria2 RPC service</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="348"/>
+        <location filename="../../view/windows/main_window.py" line="344"/>
         <source>前往设置</source>
         <translation>Open Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="374"/>
+        <location filename="../../view/windows/main_window.py" line="370"/>
         <source>查看详情</source>
         <translation>View Details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="488"/>
+        <location filename="../../view/windows/main_window.py" line="484"/>
         <source>是否完全退出程序？</source>
         <translation>Exit App Completely?</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="489"/>
+        <location filename="../../view/windows/main_window.py" line="485"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation>While running in background, you may reopen the app from the system tray icon.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="492"/>
+        <location filename="../../view/windows/main_window.py" line="488"/>
         <source>退出程序</source>
         <translation>Exit App</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="493"/>
+        <location filename="../../view/windows/main_window.py" line="489"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="494"/>
+        <location filename="../../view/windows/main_window.py" line="490"/>
         <source>记住我的选择</source>
         <translation>Remember my choice</translation>
     </message>
@@ -3971,7 +3971,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Please select manually in version details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="437"/>
+        <location filename="../../view/windows/main_window.py" line="433"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -3980,7 +3980,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="441"/>
+        <location filename="../../view/windows/main_window.py" line="437"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
@@ -4009,17 +4009,17 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="360"/>
+        <location filename="../../view/windows/main_window.py" line="356"/>
         <source>检测到新版本</source>
         <translation>New Version Available</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="361"/>
+        <location filename="../../view/windows/main_window.py" line="357"/>
         <source>最新版本: {0}</source>
         <translation>Latest version: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="368"/>
+        <location filename="../../view/windows/main_window.py" line="364"/>
         <source>立即下载</source>
         <translation>Download Now</translation>
     </message>
@@ -4028,7 +4028,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">View Release Details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="377"/>
+        <location filename="../../view/windows/main_window.py" line="373"/>
         <source>请作者喝咖啡</source>
         <translation>Buy Author A Coffee</translation>
     </message>
@@ -4263,7 +4263,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>Notifications</name>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="149"/>
+        <location filename="../../platform/desktop_notification.py" line="151"/>
         <source>下载</source>
         <translation>Download</translation>
     </message>
@@ -4290,62 +4290,62 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 {0} free, {1} required</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="133"/>
+        <location filename="../../platform/desktop_notification.py" line="135"/>
         <source>下载失败</source>
         <translation>Download Failed</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="144"/>
+        <location filename="../../platform/desktop_notification.py" line="146"/>
         <source>等 {0} 个链接</source>
         <translation>and {0} more links</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="146"/>
+        <location filename="../../platform/desktop_notification.py" line="148"/>
         <source>检测到下载链接</source>
         <translation>Download Link Detected</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="150"/>
+        <location filename="../../platform/desktop_notification.py" line="152"/>
         <source>忽略</source>
         <translation>Ignore</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="157"/>
+        <location filename="../../platform/desktop_notification.py" line="159"/>
         <source>浏览器扩展</source>
         <translation>Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="158"/>
+        <location filename="../../platform/desktop_notification.py" line="160"/>
         <source>未知</source>
         <translation>Unknown</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="160"/>
+        <location filename="../../platform/desktop_notification.py" line="162"/>
         <source>浏览器扩展配对请求</source>
         <translation>Browser Extension Pairing Request</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="162"/>
+        <location filename="../../platform/desktop_notification.py" line="164"/>
         <source>{0} {1} 请求连接</source>
         <translation>{0} {1} Requesting Connection</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="163"/>
+        <location filename="../../platform/desktop_notification.py" line="165"/>
         <source>来源: {0}</source>
         <translation>From: {0}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="164"/>
+        <location filename="../../platform/desktop_notification.py" line="166"/>
         <source>仅在你刚刚点击扩展里的&quot;自动配对&quot;时允许</source>
         <translation>Only allow this request if you have just clicked &quot;Auto Pair&quot; in the extension</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="167"/>
+        <location filename="../../platform/desktop_notification.py" line="169"/>
         <source>允许配对</source>
         <translation>Allow</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="168"/>
+        <location filename="../../platform/desktop_notification.py" line="170"/>
         <source>拒绝</source>
         <translation>Decline</translation>
     </message>
@@ -4354,7 +4354,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">{0} free, {1} required; task added as pending start</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="121"/>
+        <location filename="../../platform/desktop_notification.py" line="122"/>
         <source>链接解析失败</source>
         <translation>Link Parsing Failed</translation>
     </message>
@@ -6539,38 +6539,38 @@ Data will be copied to new location and the app will then exit. Please manually 
 <context>
     <name>TaskDraftDialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="77"/>
+        <location filename="../../view/dialogs/task_draft.py" line="88"/>
         <source>添加任务</source>
         <translation>Add Task</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="82"/>
+        <location filename="../../view/dialogs/task_draft.py" line="93"/>
         <source>批量添加</source>
         <translation>Batch Add</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="382"/>
+        <location filename="../../view/dialogs/task_draft.py" line="94"/>
+        <location filename="../../view/dialogs/task_draft.py" line="395"/>
         <source>导入文件</source>
         <translation>Import File(s)</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="97"/>
+        <location filename="../../view/dialogs/task_draft.py" line="108"/>
         <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
         <translation>When adding multiple download links, make sure each line contains only one link</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="107"/>
+        <location filename="../../view/dialogs/task_draft.py" line="118"/>
         <source>下载</source>
         <translation>Download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="109"/>
+        <location filename="../../view/dialogs/task_draft.py" line="120"/>
         <source>稍后下载</source>
         <translation>Download Later</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="115"/>
+        <location filename="../../view/dialogs/task_draft.py" line="126"/>
         <source>取消</source>
         <translation>Cancel</translation>
     </message>
@@ -6579,22 +6579,22 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation type="vanished">Link Parsing Failed</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="319"/>
+        <location filename="../../view/dialogs/task_draft.py" line="332"/>
         <source>无法添加任务</source>
         <translation>Unable to add task</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="328"/>
+        <location filename="../../view/dialogs/task_draft.py" line="341"/>
         <source>更改默认文件夹</source>
         <translation>Change Default Folder</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="334"/>
+        <location filename="../../view/dialogs/task_draft.py" line="347"/>
         <source>选择默认下载文件夹</source>
         <translation>Choose Default Download Folder</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="377"/>
+        <location filename="../../view/dialogs/task_draft.py" line="390"/>
         <source>所有可导入文件 ({0})</source>
         <translation>All Supported Formats ({0})</translation>
     </message>
@@ -8216,7 +8216,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
 <context>
     <name>self._dialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="47"/>
+        <location filename="../../view/dialogs/task_draft.py" line="46"/>
         <source>添加任务</source>
         <translation>Add Task</translation>
     </message>
