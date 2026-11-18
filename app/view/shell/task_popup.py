@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QFileInfo, Qt
+from PySide6.QtCore import QCoreApplication, QFileInfo, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout
 from qfluentwidgets import (
@@ -19,12 +19,16 @@ from app.platform.desktop_notification import (
 
 def toRemainingText(seconds: int) -> str:
     if seconds < 60:
-        return f"{seconds} 秒"
+        return QCoreApplication.translate("TaskPopup", "{0} 秒").format(seconds)
     minutes, secs = divmod(seconds, 60)
     if seconds < 3600:
-        return f"{minutes} 分 {secs} 秒" if secs else f"{minutes} 分"
+        if secs:
+            return QCoreApplication.translate("TaskPopup", "{0} 分 {1} 秒").format(minutes, secs)
+        return QCoreApplication.translate("TaskPopup", "{0} 分").format(minutes)
     hours, minutes = divmod(minutes, 60)
-    return f"{hours} 小时 {minutes} 分" if minutes else f"{hours} 小时"
+    if minutes:
+        return QCoreApplication.translate("TaskPopup", "{0} 小时 {1} 分").format(hours, minutes)
+    return QCoreApplication.translate("TaskPopup", "{0} 小时").format(hours)
 
 
 if TYPE_CHECKING:
