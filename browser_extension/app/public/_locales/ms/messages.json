@@ -1,0 +1,776 @@
+{
+  "about": {
+    "message": "Perihal"
+  },
+  "advancedFeatures": {
+    "message": "Ciri Lanjutan"
+  },
+  "advancedFeaturesHint": {
+    "message": "Dayakan mengikut keperluan; sesetengah ciri memerlukan suntikan halaman atau kebenaran khas"
+  },
+  "audio": {
+    "message": "Audio",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "Trek Audio"
+  },
+  "authenticating": {
+    "message": "Mengesahkan"
+  },
+  "autoPair": {
+    "message": "Ganding Automatik"
+  },
+  "autoSelectPort": {
+    "message": "Pilih Port Automatik"
+  },
+  "awaitingPairing": {
+    "message": "Menunggu Penggandingan"
+  },
+  "browserDownload": {
+    "message": "Muat Turun Pelayar"
+  },
+  "bypassShortcutKey": {
+    "message": "Pintasan Langkau"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "Tahan kekunci ini semasa mengklik pautan muat turun untuk melangkau pemintasan dan memuat turun menggunakan pelayar"
+  },
+  "pressShortcutKey": {
+    "message": "Tekan kekunci pintasan..."
+  },
+  "cacheCapture": {
+    "message": "Tangkapan Cache"
+  },
+  "cacheCaptureDescription": {
+    "message": "Tangkap sumber daripada cache pelayar"
+  },
+  "cancel": {
+    "message": "Batal"
+  },
+  "clearSelection": {
+    "message": "Kosongkan Pilihan",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "Selesai"
+  },
+  "fileMissing": {
+    "message": "Fail hilang"
+  },
+  "confirmPairing": {
+    "message": "Sahkan Penggandingan"
+  },
+  "connected": {
+    "message": "Tersambung"
+  },
+  "connecting": {
+    "message": "Menyambung"
+  },
+  "connectionClosed": {
+    "message": "Sambungan Terputus"
+  },
+  "connectionConfig": {
+    "message": "Tetapan Sambungan"
+  },
+  "darkTheme": {
+    "message": "Gelap"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 segmen DASH $2"
+  },
+  "deepSearch": {
+    "message": "Carian Mendalam"
+  },
+  "deepSearchDescription": {
+    "message": "Analisis sumber permintaan halaman secara mendalam"
+  },
+  "desktopVersionInfo": {
+    "message": "Desktop $1"
+  },
+  "disconnected": {
+    "message": "Terputus"
+  },
+  "downloadThisMedia": {
+    "message": "Muat turun media ini"
+  },
+  "mediaButtonLabel": {
+    "message": "Butang media"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "Muat turun dengan Ghost Downloader"
+  },
+  "saveAsWithGhostDownloader": {
+    "message": "Simpan Sebagai dengan Ghost Downloader"
+  },
+  "downloading": {
+    "message": "Memuat turun"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "Selepas memainkan video atau audio, sumber yang ditangkap akan muncul di sini secara automatik."
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "Belum ada sumber pada halaman semasa"
+  },
+  "emptyImagesDescription": {
+    "message": "Cuba beralih ke halaman yang mempunyai imej, atau laraskan kriteria penapis."
+  },
+  "emptyImagesTitle": {
+    "message": "Tiada imej ditemui pada halaman semasa"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "Selepas beralih ke tab lain dan menangkap sumber, ia akan muncul di sini secara automatik."
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "Belum ada sumber daripada halaman lain"
+  },
+  "emptyTasksDescription": {
+    "message": "Tugas akan muncul di sini selepas pelayar mengambil alih muat turun atau sumber dihantar dari halaman penghidu sumber."
+  },
+  "emptyTasksTitle": {
+    "message": "Belum ada tugas"
+  },
+  "errorAutoPairingFailed": {
+    "message": "Penggandingan automatik gagal"
+  },
+  "errorBackgroundNotReady": {
+    "message": "Perkhidmatan latar belakang belum sedia"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "Pelayar tidak mengembalikan tugas muat turun"
+  },
+  "errorCannotLocateMedia": {
+    "message": "Tidak dapat mencari media"
+  },
+  "errorConnectionFailed": {
+    "message": "Sambungan gagal"
+  },
+  "errorExtensionNotReady": {
+    "message": "Sambungan belum sedia"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "Pertukaran ciri gagal"
+  },
+  "errorFullscreenFailed": {
+    "message": "Skrin penuh gagal"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "Permintaan muat turun tidak sah"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "Permintaan gabung tidak sah"
+  },
+  "errorInvalidPairToken": {
+    "message": "Token penggandingan tidak sah"
+  },
+  "errorMediaActionFailed": {
+    "message": "Tindakan media gagal"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "Sumber media tidak dikenali"
+  },
+  "errorMergeFailed": {
+    "message": "Gabungan dalam talian gagal"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "Gabungan dalam talian buat masa ini hanya menyokong pemilihan 2 sumber"
+  },
+  "errorMultipleMediaFound": {
+    "message": "Pelbagai sumber media ditemui. Sila pilih satu pada halaman penghidu sumber."
+  },
+  "errorNoActiveTab": {
+    "message": "Tiada tab aktif yang tersedia"
+  },
+  "errorNoControllableMedia": {
+    "message": "Tiada media boleh kawal yang tersedia"
+  },
+  "errorNoMediaDetected": {
+    "message": "Tiada media dikesan"
+  },
+  "errorNoTokenReturned": {
+    "message": "Tiada token dikembalikan"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "Gabungan dalam talian gagal"
+  },
+  "errorPairingDisconnected": {
+    "message": "Penggandingan terputus"
+  },
+  "errorPairingRejected": {
+    "message": "Penggandingan ditolak"
+  },
+  "errorPairingTimeout": {
+    "message": "Masa penggandingan tamat"
+  },
+  "errorPipFailed": {
+    "message": "Gambar dalam gambar gagal"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "Gagal membaca keadaan media"
+  },
+  "errorReconnectFailed": {
+    "message": "Penyambungan semula gagal"
+  },
+  "errorResourceNotFound": {
+    "message": "Sumber tidak ditemui"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "Sumber yang dipilih tidak memenuhi syarat gabungan dalam talian"
+  },
+  "errorResponseTimeout": {
+    "message": "Masa respons tamat"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "Gagal menyimpan token penggandingan"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "Gagal menyimpan alamat pelayan"
+  },
+  "errorSendFailed": {
+    "message": "Penghantaran gagal"
+  },
+  "errorSendImagesFailed": {
+    "message": "Gagal menghantar imej"
+  },
+  "errorSendResourceFailed": {
+    "message": "Gagal menghantar sumber"
+  },
+  "errorStrategyException": {
+    "message": "Pengecualian strategi: $1"
+  },
+  "errorSwitchMediaFailed": {
+    "message": "Pertukaran media gagal"
+  },
+  "errorTargetTabNotFound": {
+    "message": "Tab sasaran tidak ditemui"
+  },
+  "errorTaskActionFailed": {
+    "message": "Tindakan tugas gagal"
+  },
+  "errorUnknownCommand": {
+    "message": "Perintah tidak diketahui: $1"
+  },
+  "errorUnknownDownloadType": {
+    "message": "Jenis permintaan muat turun tidak diketahui"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "Gagal mengemas kini butang muat turun"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "Gagal mengemas kini pengambilalihan muat turun"
+  },
+  "extensionDescription": {
+    "message": "Urus tugas Ghost Downloader dan hantar sumber pelayar ke Ghost Downloader."
+  },
+  "extensionName": {
+    "message": "Ghost Downloader untuk Pelayar"
+  },
+  "extensionVersionInfo": {
+    "message": "Versi sambungan $1"
+  },
+  "failed": {
+    "message": "Gagal"
+  },
+  "featureBackgroundDisabled": {
+    "message": "Keadaan latar belakang ciri dimatikan. Panel pada halaman boleh ditutup dalam laman web."
+  },
+  "featureDisabled": {
+    "message": "Ciri dinyahdayakan"
+  },
+  "featureEnabled": {
+    "message": "Ciri didayakan"
+  },
+  "featureEnabledAfterReload": {
+    "message": "Ciri didayakan. Ia akan berkuat kuasa selepas halaman dimuat semula."
+  },
+  "featureStateUpdated": {
+    "message": "Keadaan ciri dikemas kini"
+  },
+  "featureToggles": {
+    "message": "Suis Ciri"
+  },
+  "filterAll": {
+    "message": "Semua"
+  },
+  "filterAudio": {
+    "message": "Audio"
+  },
+  "filterHeightLabel": {
+    "message": "T",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "Video"
+  },
+  "filterWidthLabel": {
+    "message": "L",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "Ikut Sistem"
+  },
+  "fullscreen": {
+    "message": "Skrin Penuh"
+  },
+  "general": {
+    "message": "Umum"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 segmen HLS $2"
+  },
+  "imagesProcessed": {
+    "message": "$1 imej telah diproses"
+  },
+  "imagesSent": {
+    "message": "Imej telah dihantar"
+  },
+  "installMethodInfo": {
+    "message": "Kaedah Pemasangan $1"
+  },
+  "installTypeDevelopment": {
+    "message": "Kendalian sendiri desktop"
+  },
+  "installTypeSideload": {
+    "message": "Dipasang dari sisi (Sideload)"
+  },
+  "installTypeStore": {
+    "message": "Dipasang dari gedung"
+  },
+  "installTypeUnknown": {
+    "message": "Tidak diketahui"
+  },
+  "interceptUnknownSize": {
+    "message": "Ambil alih apabila saiz tidak diketahui"
+  },
+  "skipExtensions": {
+    "message": "Langkau Sambungan Fail"
+  },
+  "skipExtensionsHint": {
+    "message": "Masukkan sambungan fail yang tidak mahu diambil alih, dipisahkan dengan koma"
+  },
+  "catImages": {
+    "message": "Imej"
+  },
+  "catDocuments": {
+    "message": "Dokumen"
+  },
+  "catAudio": {
+    "message": "Audio"
+  },
+  "invertSelection": {
+    "message": "Songsangkan Pilihan"
+  },
+  "itemCount": {
+    "message": "$1 item"
+  },
+  "launchDesktop": {
+    "message": "Lancar Desktop"
+  },
+  "lightTheme": {
+    "message": "Cerah"
+  },
+  "localServerAddress": {
+    "message": "Alamat Pelayan Tempatan"
+  },
+  "loop": {
+    "message": "Ulang"
+  },
+  "mediaBridgeNotReady": {
+    "message": "Jambatan media pada halaman semasa belum sedia"
+  },
+  "mediaConnected": {
+    "message": "Keadaan media semasa tersambung"
+  },
+  "mediaControl": {
+    "message": "Kawalan Media"
+  },
+  "mediaReleased": {
+    "message": "Media dilepaskan"
+  },
+  "merge": {
+    "message": "Gabung"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "Tugas gabungan dalam talian dihantar ke Ghost Downloader"
+  },
+  "minInterceptSize": {
+    "message": "Saiz Pengambilalihan Minimum"
+  },
+  "minInterceptSizeHint": {
+    "message": "Fail yang lebih kecil daripada saiz ini akan dimuat turun terus oleh pelayar. 0 bermaksud mengambil alih semua."
+  },
+  "mobileUserAgent": {
+    "message": "User-Agent Mudah Alih"
+  },
+  "mobileUserAgentDescription": {
+    "message": "Simulasi peranti mudah alih untuk mengakses halaman"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "Simulasi mudah alih dinyahdayakan"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "Simulasi mudah alih didayakan. Akan berkuat kuasa selepas muat semula."
+  },
+  "mute": {
+    "message": "Redam"
+  },
+  "navAdvanced": {
+    "message": "Lanjutan"
+  },
+  "navImages": {
+    "message": "Imej"
+  },
+  "navResources": {
+    "message": "Sumber"
+  },
+  "navTasks": {
+    "message": "Tugas"
+  },
+  "noActiveTabForMedia": {
+    "message": "Tiada tab aktif yang tersedia"
+  },
+  "noControllableMedia": {
+    "message": "Tiada media boleh kawal yang tersedia"
+  },
+  "noControllableMediaDetected": {
+    "message": "Tiada media boleh kawal dikesan"
+  },
+  "noMediaDetected": {
+    "message": "Tiada media dikesan"
+  },
+  "noMediaStateResponse": {
+    "message": "Halaman tidak mengembalikan keadaan media"
+  },
+  "notConnected": {
+    "message": "Tidak Tersambung"
+  },
+  "openFile": {
+    "message": "Buka Fail"
+  },
+  "openFolder": {
+    "message": "Buka Folder"
+  },
+  "openWhenDone": {
+    "message": "Buka Apabila Selesai"
+  },
+  "pageNoControllableMedia": {
+    "message": "Tiada media boleh kawal dikesan pada halaman semasa"
+  },
+  "pairing": {
+    "message": "Menggandingkan"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "Permintaan penggandingan telah dihantar. Sila sahkan pada aplikasi desktop."
+  },
+  "pairingToken": {
+    "message": "Token Penggandingan"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "Masukkan token penggandingan"
+  },
+  "pairingTokenSaved": {
+    "message": "Token penggandingan disimpan"
+  },
+  "pasteToken": {
+    "message": "Tampal Token"
+  },
+  "pause": {
+    "message": "Jeda"
+  },
+  "paused": {
+    "message": "Dijeda"
+  },
+  "pendingPairing": {
+    "message": "Menunggu Penggandingan"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 Dalam Baris Gilir"
+  },
+  "pictureInPicture": {
+    "message": "Gambar dalam Gambar"
+  },
+  "play": {
+    "message": "Main"
+  },
+  "reconnect": {
+    "message": "Sambung Semula"
+  },
+  "recordWebRTC": {
+    "message": "Rakam WebRTC"
+  },
+  "recordWebRTCDescription": {
+    "message": "Rakam kandungan komunikasi masa nyata WebRTC"
+  },
+  "redownload": {
+    "message": "Muat Turun Semula"
+  },
+  "removeTask": {
+    "message": "Alih Keluar Tugas Sahaja"
+  },
+  "reloadRequired": {
+    "message": "Perlu Muat Semula"
+  },
+  "rescan": {
+    "message": "Imbas Semula"
+  },
+  "resolving": {
+    "message": "Menghuraikan"
+  },
+  "resource": {
+    "message": "Sumber",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "Tab semasa tidak dapat menyediakan senarai sumber buat masa ini."
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "Tab semasa belum menyokong jambatan sumber"
+  },
+  "resourceProcessed": {
+    "message": "Sumber berjaya diproses"
+  },
+  "resourceSentToBrowser": {
+    "message": "Sumber diserahkan kepada pelayar untuk dimuat turun"
+  },
+  "resourceSentToDesktop": {
+    "message": "Sumber dihantar ke Ghost Downloader"
+  },
+  "restoringCapturedResources": {
+    "message": "Memulihkan sumber yang ditangkap"
+  },
+  "restoringCatCatchResources": {
+    "message": "Memulihkan sumber tangkapan cat-catch"
+  },
+  "restoringResourcesDescription": {
+    "message": "Memulihkan sumber yang ditangkap."
+  },
+  "restoringResourcesTitle": {
+    "message": "Memulihkan sumber halaman semasa"
+  },
+  "resume": {
+    "message": "Sambung Semula"
+  },
+  "scanning": {
+    "message": "Mengimbas…"
+  },
+  "scopeCurrentPage": {
+    "message": "Halaman Semasa"
+  },
+  "scopeOtherPages": {
+    "message": "Halaman Lain"
+  },
+  "screenCapture": {
+    "message": "Tangkapan Skrin"
+  },
+  "screenCaptureDescription": {
+    "message": "Tangkap skrin, tetingkap atau tab"
+  },
+  "screenshot": {
+    "message": "Tangkapan Skrin"
+  },
+  "selectAll": {
+    "message": "Pilih Semua"
+  },
+  "selectMedia": {
+    "message": "Pilih Media"
+  },
+  "selectMediaPlaceholder": {
+    "message": "Pilih Media"
+  },
+  "selectResourceLabel": {
+    "message": "Pilih $1"
+  },
+  "sendCount": {
+    "message": "Hantar ($1)"
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "Hantar media semasa ke Ghost Downloader"
+  },
+  "sendToDesktop": {
+    "message": "Hantar ke Ghost Downloader"
+  },
+  "sending": {
+    "message": "Sedang menghantar"
+  },
+  "sent": {
+    "message": "Dihantar"
+  },
+  "sentToBrowserDownload": {
+    "message": "Diserahkan kepada muat turun pelayar"
+  },
+  "sentToDesktop": {
+    "message": "Dihantar ke Ghost Downloader"
+  },
+  "serverUrlSaved": {
+    "message": "Alamat disimpan"
+  },
+  "settings": {
+    "message": "Tetapan"
+  },
+  "sortByArea": {
+    "message": "Keluasan"
+  },
+  "sortByHeight": {
+    "message": "Tinggi"
+  },
+  "sortByWidth": {
+    "message": "Lebar"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "Tab semasa tidak menyokong jambatan sumber cat-catch"
+  },
+  "takeOverDownloads": {
+    "message": "Ambil Alih Muat Turun"
+  },
+  "taskQueued": {
+    "message": "Desktop tidak bersambung, tugas dibariskan"
+  },
+  "theme": {
+    "message": "Tema"
+  },
+  "tokenInvalid": {
+    "message": "Token tidak sah"
+  },
+  "unmute": {
+    "message": "Nyahredam"
+  },
+  "video": {
+    "message": "Video",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "Rakaman Video"
+  },
+  "videoRecordingDescription": {
+    "message": "Rakam kandungan video dalam halaman web"
+  },
+  "videoTrack": {
+    "message": "Trek Video"
+  },
+  "waitedTimeout": {
+    "message": "$1 (menunggu $2s)"
+  },
+  "waiting": {
+    "message": "Menunggu"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "Menunggu trek audio dan video Instagram yang berasingan"
+  },
+  "waitingForResource": {
+    "message": "Menunggu sumber…"
+  },
+  "waitingForResourceCapture": {
+    "message": "Menunggu tangkapan sumber cat-catch"
+  },
+  "waitingForSeparateTracks": {
+    "message": "Menunggu trek audio dan video yang berasingan"
+  },
+  "waitingForVideoResource": {
+    "message": "Menunggu sumber video semasa dihidu"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "Menunggu senarai main induk X"
+  },
+  "skipDomains": {
+    "message": "Langkau Domain"
+  },
+  "skipDomainsHint": {
+    "message": "Muat turun daripada laman web ini tidak akan diambil alih"
+  },
+  "addCurrentSite": {
+    "message": "Tambah Laman Semasa"
+  },
+  "openPopupOnSent": {
+    "message": "Buka pop timbul apabila tugas dihantar"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "Imej"
+  },
+  "filterArchive": {
+    "message": "Arkib"
+  },
+  "filterDocument": {
+    "message": "Dokumen"
+  },
+  "filterSpreadsheet": {
+    "message": "Helaian Hamparan"
+  },
+  "filterOther": {
+    "message": "Lain-lain"
+  },
+  "moreKinds": {
+    "message": "Lebih Banyak Jenis"
+  },
+  "sortByTime": {
+    "message": "Masa"
+  },
+  "sortBySize": {
+    "message": "Saiz"
+  },
+  "sortByName": {
+    "message": "Nama"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "Cari nama atau pautan"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "Tiada sumber yang sepadan"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "Cuba kata kunci lain, atau kosongkan penapis."
+  },
+  "clearFilters": {
+    "message": "Kosongkan Penapis"
+  },
+  "sortByStatus": {
+    "message": "Status"
+  },
+  "sortAscending": {
+    "message": "Menaik"
+  },
+  "sortDescending": {
+    "message": "Menurun"
+  },
+  "searchTasksPlaceholder": {
+    "message": "Cari nama tugas"
+  },
+  "noMatchingTasksTitle": {
+    "message": "Tiada tugas yang sepadan"
+  },
+  "noMatchingTasksDescription": {
+    "message": "Cuba kata kunci lain."
+  },
+  "moreOptions": {
+    "message": "Pilihan Lain"
+  },
+  "removeCompletedTasks": {
+    "message": "Alih Keluar Tugas Selesai"
+  },
+  "removeMissingTasks": {
+    "message": "Alih Keluar Tugas Hilang"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "Gagal mengalih keluar $1 tugas",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "mediaButtonStyle": {
+    "message": "Gaya Butang Media"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "Standard"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "Padat"
+  },
+  "mediaButtonStyleHint": {
+    "message": "Gaya padat hanya menunjukkan ikon"
+  }
+}

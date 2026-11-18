@@ -101,6 +101,7 @@ class Language(Enum):
     RUSSIAN = "ru_RU"
     PORTUGUESE_BRAZIL = "pt_BR"
     SPANISH = "es_ES"
+    MALAY = "ms_MY"
     AUTO = "Auto"
 
 
@@ -114,6 +115,7 @@ LANGUAGE_TEXTS = {
     Language.RUSSIAN: "Русский (Россия)",
     Language.PORTUGUESE_BRAZIL: "Português (Brasil)",
     Language.SPANISH: "Español (España)",
+    Language.MALAY: "Bahasa Melayu (Malaysia)",
 }
 
 

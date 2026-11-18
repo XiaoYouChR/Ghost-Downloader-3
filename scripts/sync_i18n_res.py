@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR", "es_ES"]
+LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR", "es_ES", "ms_MY"]
 LANGUAGE_FAMILY_FALLBACKS = {
     "zh": "zh_CN",
     "yue": "zh_HK",
@@ -17,6 +17,7 @@ LANGUAGE_FAMILY_FALLBACKS = {
     "ru": "ru_RU",
     "pt": "pt_BR",
     "es": "es_ES",
+    "ms": "ms_MY",
 }
 ASSETS_DIR = REPO / "app" / "assets"
 I18N_DIR = ASSETS_DIR / "i18n"
@@ -41,6 +42,7 @@ ANDROID_LOCALE_FOLDERS = {
     "ru_RU": "values-ru",
     "pt_BR": "values-pt-rBR",
     "es_ES": "values-es",
+    "ms_MY": "values-ms",
 }
 
 

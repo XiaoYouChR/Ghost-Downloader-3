@@ -29,6 +29,7 @@ ANDROID_LOCALE_FOLDERS = {
     "zh_HK": "values-zh-rHK",
     "pt_BR": "values-pt-rBR",
     "es_ES": "values-es",
+    "ms_MY": "values-ms",
 }
 
 API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
@@ -43,6 +44,7 @@ LOCALES = {
     "zh_TW": "繁體中文 (Taiwan)",
     "pt_BR": "Português (Brasil)",
     "es_ES": "Español (España)",
+    "ms_MY": "Bahasa Melayu (Malaysia)",
 }
 
 SYSTEM_PROMPT_DESKTOP = """\
