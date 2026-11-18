@@ -149,6 +149,9 @@ jobs:
 
   build-windows:
     needs: [prepare]
+    permissions:
+      actions: read
+      contents: write
     if: ${{ github.event.inputs.build_target == 'windows' || github.event.inputs.build_target == 'all' }}
     strategy:
       fail-fast: false
@@ -257,7 +260,7 @@ jobs:
 
       - name: Sign binaries
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
@@ -299,7 +302,7 @@ jobs:
 
       - name: Sign installer
         if: ${{ github.event.inputs.sign_artifact == 'true' && (github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true') }}
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
