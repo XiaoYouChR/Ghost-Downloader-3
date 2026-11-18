@@ -19,8 +19,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from wreq import ClientConfig
 
-# 公共镜像站按 UA 拦截下载器，Chrome 140 是目前实测仍放行的最新 Chrome
-FALLBACK_EMULATION = Emulation.Chrome140
 FETCH_READ_TIMEOUT = 30
 
 FAMILY_BY_PREFIX = {
@@ -51,6 +49,7 @@ def buildRegistry() -> dict[str, list[tuple[str, tuple[int, ...], Profile]]]:
 
 
 PROFILES_BY_FAMILY = buildRegistry()
+FALLBACK_PROFILE = PROFILES_BY_FAMILY["firefox"][0][2]
 
 
 def toEmulation(profile: str, sourceUa: str = "") -> Emulation | None:
@@ -61,7 +60,7 @@ def toEmulation(profile: str, sourceUa: str = "") -> Emulation | None:
         return None
 
     if profile == "auto":
-        return matchEmulation(sourceUa, host) or Emulation(profile=FALLBACK_EMULATION, platform=host)
+        return matchEmulation(sourceUa, host) or Emulation(profile=FALLBACK_PROFILE, platform=host)
 
     if profile in PROFILES_BY_FAMILY:
         return Emulation(
@@ -77,7 +76,7 @@ def toEmulation(profile: str, sourceUa: str = "") -> Emulation | None:
                 return Emulation(profile=pinned, platform=PLATFORM_BY_FAMILY.get(fam, host))
 
     logger.warning("未知的模拟身份 {}, 退回默认", profile)
-    return Emulation(profile=FALLBACK_EMULATION, platform=host)
+    return Emulation(profile=FALLBACK_PROFILE, platform=host)
 
 
 def matchIdentityPreset(host: str) -> dict | None:
