@@ -7358,6 +7358,31 @@ FFmpeg: {2}</translation>
 <context>
     <name>TaskPopup</name>
     <message>
+        <location filename="../../view/shell/task_popup.py" line="22"/>
+        <source>{0} 秒</source>
+        <translation>{0} с</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="26"/>
+        <source>{0} 分 {1} 秒</source>
+        <translation>{0} мин {1} с</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="27"/>
+        <source>{0} 分</source>
+        <translation>{0} мин</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="30"/>
+        <source>{0} 小时 {1} 分</source>
+        <translation>{0} ч {1} мин</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="31"/>
+        <source>{0} 小时</source>
+        <translation>{0} ч</translation>
+    </message>
+    <message>
         <location filename="../../view/shell/task_popup.py" line="76"/>
         <source>取消</source>
         <translation>Отмена</translation>
