@@ -115,6 +115,7 @@ class DraftCard(QWidget):
             self.nameLabel.setText(self._task.name)
             self.nameEdit.setText(self._task.name)
             self._refreshFileIcon()
+            self._refreshCategoryButton()
             self._refreshConflictIcon()
         self.nameEdit.hide()
         self.nameLabel.show()
@@ -123,7 +124,7 @@ class DraftCard(QWidget):
         if not cfg.isCategoryEnabled.value:
             self.categoryButton.hide()
             return
-        category = self._categoryService.categoryById(self._task.category)
+        category = self._categoryService.categoryById(self._categoryService.categoryOf(self._task))
         if category:
             self.categoryButton.setIcon(getattr(FluentIcon, category.icon, FluentIcon.TAG))
             self.categoryButton.setToolTip(toCategoryName(category))

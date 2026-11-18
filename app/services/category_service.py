@@ -171,6 +171,8 @@ class CategoryService:
         return ""
 
     def categoryOf(self, task: Task) -> str:
+        if task.category is not None:
+            return task.category
         if task.isOutputFolder:
             return ""
         return self.matchByName(task.name)
@@ -184,9 +186,7 @@ class CategoryService:
     def outputFolderOf(self, task: Task) -> tuple[str | None, Path]:
         if not cfg.isCategoryEnabled.value:
             return task.category, task.outputFolder
-        categoryId = task.category
-        if categoryId is None:
-            categoryId = self.categoryOf(task)
+        categoryId = self.categoryOf(task)
         folder = task.outputFolder
         if categoryId and folder == Path(cfg.downloadFolder.value):
             folder = Path(self.folderOf(categoryId) or folder)
