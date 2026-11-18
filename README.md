@@ -2,8 +2,11 @@
   <a href="README_zh.md">简体中文</a> | English
 </h4>
 
-> [!TIP]
-> Join the Ghost Downloader community on Discord: [discord.gg/fKfhkPumEM](https://discord.gg/fKfhkPumEM)
+> [!NOTE]
+> <p align="center"><a href="https://www.swiftproxy.net/?ref=GhostDownloader"><img width="550" alt="Swiftproxy AD" src=".github/assets/ad/Swiftproxy.webp" /></a></p>
+>
+> [Swiftproxy](https://www.swiftproxy.net/?ref=GhostDownloader) – Premium Global Residential Proxy Network
+Swiftproxy provides 90M+ real residential IPs across 220+ locations worldwide, helping users access global content and manage location-specific network connections. With rotating and static residential proxies, flexible geo-targeting, and HTTP(S)/SOCKS5 support, Swiftproxy is ideal for cross-region downloads, network testing, and browser automation. Free testing available, with 10% off using code `PROXY90`.
 
 <!-- PROJECT LOGO -->
 <div align="center">

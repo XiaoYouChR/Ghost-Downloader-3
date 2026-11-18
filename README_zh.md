@@ -2,8 +2,11 @@
   简体中文 | <a href="README.md">English</a>
 </h4>
 
-> [!TIP]
-> 欢迎加入 Ghost Downloader Discord 社区: [discord.gg/fKfhkPumEM](https://discord.gg/fKfhkPumEM)
+> [!NOTE]
+> <p align="center"><a href="https://www.swiftproxy.net/?ref=GhostDownloader"><img width="550" alt="Swiftproxy AD" src=".github/assets/ad/Swiftproxy_zh.webp" /></a></p>
+>
+> [Swiftproxy](https://www.swiftproxy.net/?ref=GhostDownloader) – 全球优质住宅代理网络
+Swiftproxy 提供覆盖全球 220 多个地区的 9000 万+真实住宅 IP，支持动态和静态住宅代理，帮助用户访问不同地区的网络内容，满足跨地区下载、网络测试和自动化浏览等需求。支持 HTTP(S)、SOCKS5 协议及灵活的地理位置定位，并提供免费测试。使用优惠码 `PROXY90` 可享 9 折优惠。
 
 <!-- PROJECT LOGO -->
 <div align="center">
