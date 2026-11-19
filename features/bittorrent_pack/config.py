@@ -63,7 +63,7 @@ class BitTorrentConfig(PackConfig):
 
         btGroup = CollapsibleSettingCardGroup(self.tr("BitTorrent 下载"), "bittorrent", parent)
 
-        stopCard = PushSettingCard(self.tr("停止"), FluentIcon.CLOSE, self.tr("停止 BitTorrent 会话"), "", btGroup)
+        stopCard = PushSettingCard(self.tr("停止"), FluentIcon.CLOSE, self.tr("停止 BitTorrent 会话"), self.tr("未运行"), btGroup)
         stopContent = {
             SessionState.STOPPED: self.tr("未运行"),
             SessionState.BUSY: self.tr("有 BT 任务正在下载或做种，结束后才能停止"),
