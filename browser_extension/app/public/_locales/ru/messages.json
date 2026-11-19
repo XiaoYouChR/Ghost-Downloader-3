@@ -77,7 +77,17 @@
     "message": "Тёмная"
   },
   "dashSegmentsCount": {
-    "message": "$1 сегментов DASH $2"
+    "message": "$1 сегментов DASH $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "deepSearch": {
     "message": "Глубокий поиск"
@@ -86,7 +96,13 @@
     "message": "Глубокий анализ запрошенных ресурсов страницы"
   },
   "desktopVersionInfo": {
-    "message": "Десктопная версия $1"
+    "message": "Десктопная версия $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
   },
   "disconnected": {
     "message": "Не подключено"
@@ -236,7 +252,13 @@
     "message": "Не удалось отправить ресурс"
   },
   "errorStrategyException": {
-    "message": "Исключение стратегии: $1"
+    "message": "Исключение стратегии: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
   },
   "errorSwitchMediaFailed": {
     "message": "Не удалось переключить медиа"
@@ -248,7 +270,13 @@
     "message": "Не удалось выполнить действие с задачей"
   },
   "errorUnknownCommand": {
-    "message": "Неизвестная команда: $1"
+    "message": "Неизвестная команда: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
   },
   "errorUnknownDownloadType": {
     "message": "Неизвестный тип запроса на загрузку"
@@ -266,7 +294,13 @@
     "message": "Ghost Downloader for Browser"
   },
   "extensionVersionInfo": {
-    "message": "Версия расширения $1"
+    "message": "Версия расширения $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
   },
   "failed": {
     "message": "Не удалось"
@@ -316,16 +350,38 @@
     "message": "Основные"
   },
   "hlsSegmentsCount": {
-    "message": "$1 сегментов HLS $2"
+    "message": "$1 сегментов HLS $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "imagesProcessed": {
-    "message": "Обработано $1 изображений"
+    "message": "Обработано $1 изображений",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
   },
   "imagesSent": {
     "message": "Изображения отправлены"
   },
   "installMethodInfo": {
-    "message": "Способ установки $1"
+    "message": "Способ установки $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
   },
   "installTypeDevelopment": {
     "message": "Самоуправляемая десктопная версия"
@@ -361,7 +417,13 @@
     "message": "Инвертировать выделение"
   },
   "itemCount": {
-    "message": "$1 элементов"
+    "message": "$1 элементов",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
   },
   "launchDesktop": {
     "message": "Запустить десктопную версию"
@@ -484,7 +546,17 @@
     "message": "Ожидание"
   },
   "pendingQueueBadge": {
-    "message": "$1 · $2 в очереди"
+    "message": "$1 · $2 в очереди",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
   },
   "pictureInPicture": {
     "message": "Картинка в картинке"
@@ -578,10 +650,22 @@
     "message": "Выберите медиа"
   },
   "selectResourceLabel": {
-    "message": "Выбрать $1"
+    "message": "Выбрать $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
   },
   "sendCount": {
-    "message": "Отправить ($1)"
+    "message": "Отправить ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "sendCurrentMediaToGhostDownloader": {
     "message": "Отправить текущее медиа в Ghost Downloader"
@@ -648,7 +732,17 @@
     "message": "Видеодорожка"
   },
   "waitedTimeout": {
-    "message": "$1 (ожидание $2с)"
+    "message": "$1 (ожидание $2с)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
   },
   "waiting": {
     "message": "Ожидание"
@@ -753,7 +847,13 @@
     "message": "Удалить отсутствующие задачи"
   },
   "errorRemoveTasksFailed": {
-    "message": "Не удалось удалить задачи: $1"
+    "message": "Не удалось удалить задачи: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "mediaButtonStyle": {
     "message": "Стиль кнопки медиа"
