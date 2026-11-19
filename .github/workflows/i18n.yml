@@ -93,6 +93,7 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/crowdin-translations
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           delete-branch: true
           title: "chore(i18n): 同步 Crowdin 译文"
           commit-message: "chore(i18n): 同步 Crowdin 译文"
@@ -111,6 +112,7 @@ jobs:
           path: android
           token: ${{ secrets.ANDROID_REPO_TOKEN }}
           branch: chore/crowdin-translations
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           delete-branch: true
           title: "chore(i18n): 同步 Crowdin 译文"
           commit-message: "chore(i18n): 同步 Crowdin 译文"
