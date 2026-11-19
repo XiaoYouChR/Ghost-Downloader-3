@@ -1,3330 +1,2895 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.1" language="pt_BR" sourcelanguage="zh_CN">
-<context>
-    <name></name>
-    <message>
-        <source>仪表盘</source>
-        <translation type="vanished">Painel</translation>
-    </message>
-    <message>
-        <source>全部开始</source>
-        <translation type="vanished">Iniciar tudo</translation>
-    </message>
-    <message>
-        <source>全部暂停</source>
-        <translation type="vanished">Pausar tudo</translation>
-    </message>
-    <message>
-        <source>退出程序</source>
-        <translation type="vanished">Sair do programa</translation>
-    </message>
-    <message>
-        <source>自动（匹配来源）</source>
-        <translation type="vanished">Automático (corresponder à origem)</translation>
-    </message>
-    <message>
-        <source>不模拟（原样发送）</source>
-        <translation type="vanished">Não simular (enviar como original)</translation>
-    </message>
-    <message>
-        <source>{0}（最新）</source>
-        <translation type="vanished">{0} (mais recente)</translation>
-    </message>
-    <message>
-        <source>KeepAlive</source>
-        <comment>Background task</comment>
-        <translation type="vanished">KeepAlive</translation>
-    </message>
-    <message>
-        <source>KeepAlive</source>
-        <comment>Downloading</comment>
-        <translation type="vanished">KeepAlive</translation>
-    </message>
-    <message>
-        <source>KeepAlive</source>
-        <comment>Browser extension connected</comment>
-        <translation type="vanished">KeepAlive</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Downloads</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Download completed</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Disk space insufficient</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Remaining {0}, need {1}, task not auto-started</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Browser push</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Browser push ({count})</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment> and {count} more</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Browser extension connected</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Open file</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <comment>Open folder</comment>
-        <translation type="vanished">Notificações</translation>
-    </message>
-    <message>
-        <source>未拉取</source>
-        <translation type="obsolete">Não obtido</translation>
-    </message>
-    <message>
-        <source>{0} 条</source>
-        <translation type="obsolete">{0} itens</translation>
-    </message>
-    <message>
-        <source>取消</source>
-        <translation type="obsolete">Cancelar</translation>
-    </message>
-    <message>
-        <source>下载完成</source>
-        <translation type="obsolete">Download concluído</translation>
-    </message>
-    <message>
-        <source>打开文件</source>
-        <translation type="obsolete">Abrir arquivo</translation>
-    </message>
-    <message>
-        <source>打开文件夹</source>
-        <translation type="obsolete">Abrir pasta</translation>
-    </message>
-    <message>
-        <source>磁盘空间不足</source>
-        <translation type="obsolete">Espaço em disco insuficiente</translation>
-    </message>
-    <message>
-        <source>链接解析失败</source>
-        <translation type="obsolete">Falha ao analisar o link</translation>
-    </message>
-</context>
-<context>
+  <context>
     <name>AdvancedOptionsPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="655"/>
-        <source>更多选项</source>
-        <translation>Mais opções</translation>
+      <location filename="../../view/windows/oobe_window.py" line="654"/>
+      <source>更多选项</source>
+      <translation>Mais opções</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="656"/>
-        <source>按需开启以下功能，也可以稍后在设置中修改</source>
-        <translation>Ative as funções abaixo conforme necessário; você também pode alterá-las mais tarde nas configurações</translation>
+      <location filename="../../view/windows/oobe_window.py" line="655"/>
+      <source>按需开启以下功能，也可以稍后在设置中修改</source>
+      <translation>Ative as funções abaixo conforme necessário; você também pode alterá-las mais tarde nas configurações</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="665"/>
-        <source>复制下载链接时由本程序接管</source>
-        <translation>Assumir com este programa ao copiar links de download</translation>
+      <location filename="../../view/windows/oobe_window.py" line="664"/>
+      <source>复制下载链接时由本程序接管</source>
+      <translation>Assumir com este programa ao copiar links de download</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="669"/>
-        <source>自动分类保存</source>
-        <translation>Salvar automaticamente por categoria</translation>
+      <location filename="../../view/windows/oobe_window.py" line="668"/>
+      <source>自动分类保存</source>
+      <translation>Salvar automaticamente por categoria</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="670"/>
-        <source>按文件类型自动保存到 视频、音频、文档 等子文件夹</source>
-        <translation>Salvar automaticamente em subpastas como Vídeos, Áudio, Documentos, de acordo com o tipo de arquivo</translation>
+      <location filename="../../view/windows/oobe_window.py" line="669"/>
+      <source>按文件类型自动保存到 视频、音频、文档 等子文件夹</source>
+      <translation>Salvar automaticamente em subpastas como Vídeos, Áudio, Documentos, de acordo com o tipo de arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="675"/>
-        <source>关联文件类型</source>
-        <translation>Associar tipos de arquivo</translation>
+      <location filename="../../view/windows/oobe_window.py" line="674"/>
+      <source>关联文件类型</source>
+      <translation>Associar tipos de arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="676"/>
-        <source>双击 .torrent 等文件时用 Ghost Downloader 打开</source>
-        <translation>Abrir com o Ghost Downloader ao clicar duas vezes em arquivos como .torrent</translation>
+      <location filename="../../view/windows/oobe_window.py" line="675"/>
+      <source>双击 .torrent 等文件时用 Ghost Downloader 打开</source>
+      <translation>Abrir com o Ghost Downloader ao clicar duas vezes em arquivos como .torrent</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="680"/>
-        <source>处理协议链接</source>
-        <translation>Processar links de protocolo</translation>
+      <location filename="../../view/windows/oobe_window.py" line="679"/>
+      <source>处理协议链接</source>
+      <translation>Processar links de protocolo</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="681"/>
-        <source>点击 Magnet/eD2k/FTP 链接时唤起 Ghost Downloader</source>
-        <translation>Abrir o Ghost Downloader ao clicar em links Magnet/eD2k/FTP</translation>
+      <location filename="../../view/windows/oobe_window.py" line="680"/>
+      <source>点击 Magnet/eD2k/FTP 链接时唤起 Ghost Downloader</source>
+      <translation>Abrir o Ghost Downloader ao clicar em links Magnet/eD2k/FTP</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="685"/>
-        <source>允许浏览器扩展唤醒</source>
-        <translation>Permitir que a extensão do navegador desperte o aplicativo</translation>
+      <location filename="../../view/windows/oobe_window.py" line="684"/>
+      <source>允许浏览器扩展唤醒</source>
+      <translation>Permitir que a extensão do navegador desperte o aplicativo</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="686"/>
-        <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-        <translation>A extensão do navegador pode iniciar o aplicativo de desktop através do protocolo ghostdownloader://</translation>
+      <location filename="../../view/windows/oobe_window.py" line="685"/>
+      <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
+      <translation>A extensão do navegador pode iniciar o aplicativo de desktop através do protocolo ghostdownloader://</translation>
     </message>
     <message>
-        <source>双击 .torrent 等文件时自动用 Ghost Downloader 打开</source>
-        <translation type="vanished">Abrir automaticamente com o Ghost Downloader ao clicar duas vezes em arquivos como .torrent</translation>
+      <location filename="../../view/windows/oobe_window.py" line="693"/>
+      <source>Aria2 RPC 兼容</source>
+      <translation>Compatibilidade Aria2 RPC</translation>
     </message>
     <message>
-        <source>注册 URL 协议</source>
-        <translation type="vanished">Registrar protocolo URL</translation>
+      <location filename="../../view/windows/oobe_window.py" line="694"/>
+      <source>让支持 Aria2 的工具和网站把下载任务发给 Ghost Downloader</source>
+      <translation>Permite que ferramentas e sites compatíveis com Aria2 enviem tarefas de download para o Ghost Downloader</translation>
     </message>
     <message>
-        <source>允许网页通过 ghostdownloader:// 链接唤起本应用</source>
-        <translation type="vanished">Permitir que páginas da web abram este aplicativo através de links ghostdownloader://</translation>
+      <location filename="../../view/windows/oobe_window.py" line="658"/>
+      <source>开机自启</source>
+      <translation>Iniciar com o sistema</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="694"/>
-        <source>Aria2 RPC 兼容</source>
-        <translation>Compatibilidade Aria2 RPC</translation>
+      <location filename="../../view/windows/oobe_window.py" line="659"/>
+      <source>登录系统时自动在后台启动，随时接管下载</source>
+      <translation>Iniciar automaticamente em segundo plano ao fazer login no sistema, sempre pronto para assumir downloads</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="695"/>
-        <source>让支持 Aria2 的工具和网站把下载任务发给 Ghost Downloader</source>
-        <translation>Permite que ferramentas e sites compatíveis com Aria2 enviem tarefas de download para o Ghost Downloader</translation>
+      <location filename="../../view/windows/oobe_window.py" line="663"/>
+      <source>剪贴板监听</source>
+      <translation>Monitoramento da área de transferência</translation>
     </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="659"/>
-        <source>开机自启</source>
-        <translation>Iniciar com o sistema</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="660"/>
-        <source>登录系统时自动在后台启动，随时接管下载</source>
-        <translation>Iniciar automaticamente em segundo plano ao fazer login no sistema, sempre pronto para assumir downloads</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="664"/>
-        <source>剪贴板监听</source>
-        <translation>Monitoramento da área de transferência</translation>
-    </message>
-    <message>
-        <source>复制下载链接时自动弹出新任务提示</source>
-        <translation type="vanished">Mostrar automaticamente um aviso de nova tarefa ao copiar um link de download</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ArxivConfig</name>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="22"/>
-        <source>arXiv 下载</source>
-        <translation>Download do arXiv</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="22"/>
+      <source>arXiv 下载</source>
+      <translation>Download do arXiv</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="25"/>
-        <source>解析 arXiv 链接</source>
-        <translation>Analisar links do arXiv</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="25"/>
+      <source>解析 arXiv 链接</source>
+      <translation>Analisar links do arXiv</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="26"/>
-        <source>将论文页、PDF 链接和论文编号下载为以标题命名的 PDF，关闭后按普通链接下载</source>
-        <translation>Baixar páginas de artigos, links de PDF e IDs de artigos como PDFs nomeados pelo título; quando desativado, baixar como links comuns</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="26"/>
+      <source>将论文页、PDF 链接和论文编号下载为以标题命名的 PDF，关闭后按普通链接下载</source>
+      <translation>Baixar páginas de artigos, links de PDF e IDs de artigos como PDFs nomeados pelo título; quando desativado, baixar como links comuns</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="30"/>
-        <source>默认下载 TeX 源码</source>
-        <translation>Baixar código-fonte TeX por padrão</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="30"/>
+      <source>默认下载 TeX 源码</source>
+      <translation>Baixar código-fonte TeX por padrão</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="31"/>
-        <source>新任务默认勾选源码包，可在添加任务时逐个修改</source>
-        <translation>Marcar o pacote de código-fonte por padrão em novas tarefas; pode ser alterado individualmente ao adicionar a tarefa</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="31"/>
+      <source>新任务默认勾选源码包，可在添加任务时逐个修改</source>
+      <translation>Marcar o pacote de código-fonte por padrão em novas tarefas; pode ser alterado individualmente ao adicionar a tarefa</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="35"/>
-        <source>默认下载 BibTeX</source>
-        <translation>Baixar BibTeX por padrão</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="35"/>
+      <source>默认下载 BibTeX</source>
+      <translation>Baixar BibTeX por padrão</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/config.py" line="36"/>
-        <source>新任务默认勾选 .bib 引用文件，可在添加任务时逐个修改</source>
-        <translation>Marcar o arquivo de citação .bib por padrão em novas tarefas; pode ser alterado individualmente ao adicionar a tarefa</translation>
+      <location filename="../../../features/arxiv_pack/config.py" line="36"/>
+      <source>新任务默认勾选 .bib 引用文件，可在添加任务时逐个修改</source>
+      <translation>Marcar o arquivo de citação .bib por padrão em novas tarefas; pode ser alterado individualmente ao adicionar a tarefa</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ArxivDraftCard</name>
     <message>
-        <location filename="../../../features/arxiv_pack/cards.py" line="24"/>
-        <source>TeX 源码</source>
-        <translation>Código-fonte TeX</translation>
+      <location filename="../../../features/arxiv_pack/cards.py" line="24"/>
+      <source>TeX 源码</source>
+      <translation>Código-fonte TeX</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ArxivPack</name>
     <message>
-        <location filename="../../../features/arxiv_pack/pack.py" line="141"/>
-        <source>arXiv 论文</source>
-        <translation>Artigos do arXiv</translation>
+      <location filename="../../../features/arxiv_pack/pack.py" line="141"/>
+      <source>arXiv 论文</source>
+      <translation>Artigos do arXiv</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>AssociationCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="404"/>
-        <source>、</source>
-        <translation>, </translation>
+      <location filename="../../view/components/setting_cards.py" line="404"/>
+      <source>、</source>
+      <translation>, </translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="385"/>
-        <source>文件与协议关联</source>
-        <translation>Associação de arquivos e protocolos</translation>
+      <location filename="../../view/components/setting_cards.py" line="385"/>
+      <source>文件与协议关联</source>
+      <translation>Associação de arquivos e protocolos</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="386"/>
-        <source>选择交给 Ghost Downloader 打开的本地文件类型与链接协议</source>
-        <translation>Selecione os tipos de arquivos locais e protocolos de link a serem abertos pelo Ghost Downloader</translation>
+      <location filename="../../view/components/setting_cards.py" line="386"/>
+      <source>选择交给 Ghost Downloader 打开的本地文件类型与链接协议</source>
+      <translation>Selecione os tipos de arquivos locais e protocolos de link a serem abertos pelo Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="406"/>
-        <source>关联 {0}（{1}）</source>
-        <translation>Associar {0} ({1})</translation>
+      <location filename="../../view/components/setting_cards.py" line="406"/>
+      <source>关联 {0}（{1}）</source>
+      <translation>Associar {0} ({1})</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="413"/>
-        <source>关联 {0} 链接（{1}）</source>
-        <translation>Associar links {0} ({1})</translation>
+      <location filename="../../view/components/setting_cards.py" line="413"/>
+      <source>关联 {0} 链接（{1}）</source>
+      <translation>Associar links {0} ({1})</translation>
     </message>
-</context>
-<context>
-    <name>BTDraftCard</name>
-    <message>
-        <source>选择文件</source>
-        <translation type="vanished">Selecionar arquivos</translation>
-    </message>
-    <message>
-        <source>{0}/{1} 个文件 · {2}</source>
-        <translation type="vanished">{0}/{1} arquivos · {2}</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BTTaskCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="115"/>
-        <source>分享率 {0}</source>
-        <translation>Taxa de compartilhamento {0}</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="104"/>
+      <source>分享率 {0}</source>
+      <translation>Taxa de compartilhamento {0}</translation>
     </message>
     <message>
-        <source>做种 {0}</source>
-        <translation type="vanished">Semeando {0}</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="52"/>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="85"/>
+      <source>做种中</source>
+      <translation>Semeando</translation>
     </message>
     <message>
-        <source>{0} peers</source>
-        <translation type="vanished">{0} peers</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="47"/>
+      <source>校验已有文件</source>
+      <translation>Verificar arquivos existentes</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="53"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="96"/>
-        <source>做种中</source>
-        <translation>Semeando</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="48"/>
+      <source>检查续传状态</source>
+      <translation>Verificar status de continuação</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="48"/>
-        <source>校验已有文件</source>
-        <translation>Verificar arquivos existentes</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="49"/>
+      <source>获取元数据</source>
+      <translation>Obter metadados</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="49"/>
-        <source>检查续传状态</source>
-        <translation>Verificar status de continuação</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="50"/>
+      <source>下载中</source>
+      <translation>Baixando</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="50"/>
-        <source>获取元数据</source>
-        <translation>Obter metadados</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="51"/>
+      <source>下载完成</source>
+      <translation>Download concluído</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="51"/>
-        <source>下载中</source>
-        <translation>Baixando</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="53"/>
+      <source>分配文件中</source>
+      <translation>Alocando arquivos</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="52"/>
-        <source>下载完成</source>
-        <translation>Download concluído</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="54"/>
+      <source>等待校验</source>
+      <translation>Aguardando verificação</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="54"/>
-        <source>分配文件中</source>
-        <translation>Alocando arquivos</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="55"/>
+      <source>已暂停下载</source>
+      <translation>Download pausado</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="55"/>
-        <source>等待校验</source>
-        <translation>Aguardando verificação</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="85"/>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="99"/>
+      <source>，</source>
+      <translation>,</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="96"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="110"/>
-        <source>，</source>
-        <translation>,</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="106"/>
+      <source>已做种 {0}</source>
+      <translation>Semeado {0}</translation>
     </message>
-    <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="117"/>
-        <source>已做种 {0}</source>
-        <translation>Semeado {0}</translation>
-    </message>
-    <message>
-        <source>已暂停做种</source>
-        <translation type="vanished">Seeding pausado</translation>
-    </message>
-    <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="56"/>
-        <source>已暂停下载</source>
-        <translation>Download pausado</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BasicSettingsPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="320"/>
-        <source>基本设置</source>
-        <translation>Configurações básicas</translation>
+      <location filename="../../view/windows/oobe_window.py" line="320"/>
+      <source>基本设置</source>
+      <translation>Configurações básicas</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="321"/>
-        <source>选择你喜欢的外观，设置下载文件的保存位置</source>
-        <translation>Escolha a aparência de sua preferência e defina o local de salvamento dos arquivos</translation>
+      <location filename="../../view/windows/oobe_window.py" line="321"/>
+      <source>选择你喜欢的外观，设置下载文件的保存位置</source>
+      <translation>Escolha a aparência de sua preferência e defina o local de salvamento dos arquivos</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="325"/>
-        <source>浅色</source>
-        <translation>Claro</translation>
+      <location filename="../../view/windows/oobe_window.py" line="325"/>
+      <source>浅色</source>
+      <translation>Claro</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="326"/>
-        <source>深色</source>
-        <translation>Escuro</translation>
+      <location filename="../../view/windows/oobe_window.py" line="326"/>
+      <source>深色</source>
+      <translation>Escuro</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="327"/>
-        <source>跟随系统</source>
-        <translation>Seguir o sistema</translation>
+      <location filename="../../view/windows/oobe_window.py" line="327"/>
+      <source>跟随系统</source>
+      <translation>Seguir o sistema</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="331"/>
-        <source>偏好</source>
-        <translation>Preferência</translation>
+      <location filename="../../view/windows/oobe_window.py" line="331"/>
+      <source>偏好</source>
+      <translation>Preferência</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="336"/>
-        <source>使用系统设置</source>
-        <translation>Usar configurações do sistema</translation>
+      <location filename="../../view/windows/oobe_window.py" line="335"/>
+      <source>使用系统设置</source>
+      <translation>Usar configurações do sistema</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="339"/>
-        <source>浏览...</source>
-        <translation>Navegar...</translation>
+      <location filename="../../view/windows/oobe_window.py" line="338"/>
+      <source>浏览...</source>
+      <translation>Navegar...</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="356"/>
-        <source>界面语言</source>
-        <translation>Idioma da interface</translation>
+      <location filename="../../view/windows/oobe_window.py" line="355"/>
+      <source>界面语言</source>
+      <translation>Idioma da interface</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="357"/>
-        <source>更改立即生效</source>
-        <translation>Alteração aplicada imediatamente</translation>
+      <location filename="../../view/windows/oobe_window.py" line="356"/>
+      <source>更改立即生效</source>
+      <translation>Alteração aplicada imediatamente</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="360"/>
-        <source>下载保存位置</source>
-        <translation>Local de salvamento</translation>
+      <location filename="../../view/windows/oobe_window.py" line="359"/>
+      <source>下载保存位置</source>
+      <translation>Local de salvamento</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="391"/>
-        <source>选择下载目录</source>
-        <translation>Escolher diretório de download</translation>
+      <location filename="../../view/windows/oobe_window.py" line="390"/>
+      <source>选择下载目录</source>
+      <translation>Escolher diretório de download</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BatchUrlDialog</name>
     <message>
-        <location filename="../../view/dialogs/batch_url.py" line="98"/>
-        <source>批量添加</source>
-        <translation>Adicionar em lote</translation>
+      <location filename="../../view/dialogs/batch_url.py" line="98"/>
+      <source>批量添加</source>
+      <translation>Adicionar em lote</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/batch_url.py" line="112"/>
-        <source>http://example.com/img/[001-100].jpg
+      <location filename="../../view/dialogs/batch_url.py" line="112"/>
+      <source>http://example.com/img/[001-100].jpg
 http://example.com/{mp4,mkv}/video</source>
-        <translation>http://example.com/img/[001-100].jpg
+      <translation>http://example.com/img/[001-100].jpg
 http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/batch_url.py" line="116"/>
-        <source>输入模板后在此预览</source>
-        <translation>Visualize o modelo aqui após inseri-lo</translation>
+      <location filename="../../view/dialogs/batch_url.py" line="116"/>
+      <source>输入模板后在此预览</source>
+      <translation>Visualize o modelo aqui após inseri-lo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/batch_url.py" line="147"/>
-        <source>语法说明</source>
-        <translation>Explicação da sintaxe</translation>
+      <location filename="../../view/dialogs/batch_url.py" line="147"/>
+      <source>语法说明</source>
+      <translation>Explicação da sintaxe</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/batch_url.py" line="149"/>
-        <source>[1-100] → 1, 2, 3, …, 100
+      <location filename="../../view/dialogs/batch_url.py" line="149"/>
+      <source>[1-100] → 1, 2, 3, …, 100
 [001-050] → 001, 002, …, 050 (自动补零)
 [1-10:2] → 1, 3, 5, 7, 9 (步长)
 [a-z] → a, b, …, z (字母范围)
 {mp4,mkv,avi} → mp4, mkv, avi (枚举)</source>
-        <translation>[1-100] → 1, 2, 3, …, 100
+      <translation>[1-100] → 1, 2, 3, …, 100
 [001-050] → 001, 002, …, 050 (preenchimento automático com zeros)
 [1-10:2] → 1, 3, 5, 7, 9 (intervalo)
 [a-z] → a, b, …, z (intervalo alfabético)
 {mp4,mkv,avi} → mp4, mkv, avi (enumeração)</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/batch_url.py" line="183"/>
-        <source>共 {} 个链接</source>
-        <translation>Total: {} links</translation>
+      <location filename="../../view/dialogs/batch_url.py" line="183"/>
+      <source>共 {} 个链接</source>
+      <translation>Total: {} links</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BilibiliConfig</name>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="43"/>
-        <source>Bilibili 下载</source>
-        <translation>Download do Bilibili</translation>
+      <location filename="../../../features/bili_pack/config.py" line="17"/>
+      <source>杜比视界</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="46"/>
-        <source>默认画质</source>
-        <translation>Qualidade padrão</translation>
+      <location filename="../../../features/bili_pack/config.py" line="20"/>
+      <source>杜比全景声</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="47"/>
-        <source>选择偏好的视频画质</source>
-        <translation>Selecione a qualidade de vídeo preferida</translation>
+      <location filename="../../../features/bili_pack/config.py" line="44"/>
+      <source>Bilibili 下载</source>
+      <translation>Download do Bilibili</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="49"/>
-        <source>默认音质</source>
-        <translation>Qualidade de áudio padrão</translation>
+      <location filename="../../../features/bili_pack/config.py" line="47"/>
+      <source>默认画质</source>
+      <translation>Qualidade padrão</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="50"/>
-        <source>选择偏好的音质</source>
-        <translation>Selecione a qualidade de áudio preferida</translation>
+      <location filename="../../../features/bili_pack/config.py" line="48"/>
+      <source>选择偏好的视频画质</source>
+      <translation>Selecione a qualidade de vídeo preferida</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="52"/>
-        <source>默认弹幕</source>
-        <translation>Danmaku padrão</translation>
+      <location filename="../../../features/bili_pack/config.py" line="50"/>
+      <source>默认音质</source>
+      <translation>Qualidade de áudio padrão</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="53"/>
-        <source>选择默认下载的弹幕格式</source>
-        <translation>Selecione o formato de danmaku baixado por padrão</translation>
+      <location filename="../../../features/bili_pack/config.py" line="51"/>
+      <source>选择偏好的音质</source>
+      <translation>Selecione a qualidade de áudio preferida</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="54"/>
-        <source>不下载</source>
-        <translation>Não baixar</translation>
+      <location filename="../../../features/bili_pack/config.py" line="53"/>
+      <source>默认弹幕</source>
+      <translation>Danmaku padrão</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="55"/>
-        <source>画质或音质不可用时</source>
-        <translation>Quando a qualidade de vídeo ou áudio não estiver disponível</translation>
+      <location filename="../../../features/bili_pack/config.py" line="54"/>
+      <source>选择默认下载的弹幕格式</source>
+      <translation>Selecione o formato de danmaku baixado por padrão</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="56"/>
-        <source>当选择的画质或音质不可用时的替代策略</source>
-        <translation>Estratégia alternativa quando a qualidade de vídeo ou áudio selecionada não estiver disponível</translation>
+      <location filename="../../../features/bili_pack/config.py" line="55"/>
+      <source>不下载</source>
+      <translation>Não baixar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="57"/>
-        <source>选择最高</source>
-        <translation>Selecionar a mais alta</translation>
+      <location filename="../../../features/bili_pack/config.py" line="56"/>
+      <source>画质或音质不可用时</source>
+      <translation>Quando a qualidade de vídeo ou áudio não estiver disponível</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/config.py" line="57"/>
-        <source>选择最低</source>
-        <translation>Selecionar a mais baixa</translation>
+      <location filename="../../../features/bili_pack/config.py" line="57"/>
+      <source>当选择的画质或音质不可用时的替代策略</source>
+      <translation>Estratégia alternativa quando a qualidade de vídeo ou áudio selecionada não estiver disponível</translation>
     </message>
     <message>
-        <source>画质不可用时</source>
-        <translation type="vanished">Quando a qualidade não está disponível</translation>
+      <location filename="../../../features/bili_pack/config.py" line="58"/>
+      <source>选择最高</source>
+      <translation>Selecionar a mais alta</translation>
     </message>
     <message>
-        <source>当选择的画质不可用时的替代策略</source>
-        <translation type="vanished">Estratégia alternativa quando a qualidade selecionada não está disponível</translation>
+      <location filename="../../../features/bili_pack/config.py" line="58"/>
+      <source>选择最低</source>
+      <translation>Selecionar a mais baixa</translation>
     </message>
-    <message>
-        <source>选择最高画质</source>
-        <translation type="vanished">Selecionar a qualidade mais alta</translation>
-    </message>
-    <message>
-        <source>选择最低画质</source>
-        <translation type="vanished">Selecionar a qualidade mais baixa</translation>
-    </message>
-    <message>
-        <source>HDR</source>
-        <translation type="vanished">HDR</translation>
-    </message>
-    <message>
-        <source>请求 HDR 视频流（需要大会员）</source>
-        <translation type="vanished">Solicitar streaming de vídeo HDR (requer assinatura premium)</translation>
-    </message>
-    <message>
-        <source>杜比全景声/视界</source>
-        <translation type="vanished">Dolby Atmos/Vision</translation>
-    </message>
-    <message>
-        <source>请求杜比全景声和杜比视界（需要大会员）</source>
-        <translation type="vanished">Solicitar Dolby Atmos e Dolby Vision (requer assinatura premium)</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BilibiliDraftCard</name>
     <message>
-        <source>选择字幕</source>
-        <translation type="vanished">Selecionar legenda</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="454"/>
+      <source>最佳画质</source>
+      <translation>Melhor qualidade</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="456"/>
-        <source>最佳画质</source>
-        <translation>Melhor qualidade</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="455"/>
+      <source>最佳音质</source>
+      <translation>Melhor áudio</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="457"/>
-        <source>最佳音质</source>
-        <translation>Melhor áudio</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="468"/>
+      <source>弹幕</source>
+      <translation>Danmaku</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="470"/>
-        <source>弹幕</source>
-        <translation>Danmaku</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="475"/>
+      <source>截取片段</source>
+      <translation>Recortar segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="477"/>
-        <source>截取片段</source>
-        <translation>Recortar segmento</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="491"/>
+      <source>选择分P</source>
+      <translation>Selecionar parte/segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="493"/>
-        <source>选择分P</source>
-        <translation>Selecionar parte/segmento</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="491"/>
+      <source>选择视频</source>
+      <translation>Selecionar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="493"/>
-        <source>选择视频</source>
-        <translation>Selecionar vídeo</translation>
+      <location filename="../../../features/bili_pack/task.py" line="87"/>
+      <source>（自动生成）</source>
+      <translation>(gerado automaticamente)</translation>
     </message>
-    <message>
-        <source>选择合集</source>
-        <translation type="vanished">Selecionar coleção</translation>
-    </message>
-    <message>
-        <location filename="../../../features/bili_pack/task.py" line="88"/>
-        <source>（自动生成）</source>
-        <translation>(gerado automaticamente)</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BilibiliLoginSettingCard</name>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="167"/>
-        <source>账号登录</source>
-        <translation>Login da conta</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="168"/>
+      <source>账号登录</source>
+      <translation>Login da conta</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="168"/>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="201"/>
-        <source>状态：未登录</source>
-        <translation>Status: não conectado</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="169"/>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="202"/>
+      <source>状态：未登录</source>
+      <translation>Status: não conectado</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="170"/>
-        <source>扫码登录</source>
-        <translation>Login por QR code</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="171"/>
+      <source>扫码登录</source>
+      <translation>Login por QR code</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="171"/>
-        <source>导入 Cookie</source>
-        <translation>Importar Cookie</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="172"/>
+      <source>导入 Cookie</source>
+      <translation>Importar Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="198"/>
-        <source>状态：已登录 用户名：{0} UID：{1} 会员状态：{2}</source>
-        <translation>Status: conectado, usuário: {0}, UID: {1}, status de membro: {2}</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="199"/>
+      <source>状态：已登录 用户名：{0} UID：{1} 会员状态：{2}</source>
+      <translation>Status: conectado, usuário: {0}, UID: {1}, status de membro: {2}</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="230"/>
-        <source>正在退出登录...</source>
-        <translation>Saindo...</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="231"/>
+      <source>正在退出登录...</source>
+      <translation>Saindo...</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="172"/>
-        <source>退出登录</source>
-        <translation>Sair</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="173"/>
+      <source>退出登录</source>
+      <translation>Sair</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BilibiliPack</name>
     <message>
-        <location filename="../../../features/bili_pack/pack.py" line="232"/>
-        <source>哔哩哔哩视频、番剧</source>
-        <translation>Vídeos e animes do Bilibili</translation>
+      <location filename="../../../features/bili_pack/pack.py" line="233"/>
+      <source>哔哩哔哩视频、番剧</source>
+      <translation>Vídeos e animes do Bilibili</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BilibiliTaskCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="781"/>
-        <source>选择分P</source>
-        <translation>Selecionar parte/segmento</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="774"/>
+      <source>选择分P</source>
+      <translation>Selecionar parte/segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="781"/>
-        <source>选择视频</source>
-        <translation>Selecionar vídeo</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="774"/>
+      <source>选择视频</source>
+      <translation>Selecionar vídeo</translation>
     </message>
-    <message>
-        <source>选择合集</source>
-        <translation type="vanished">Selecionar coleção</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BinaryRuntime</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="188"/>
-        <source>eD2k / eMule</source>
-        <translation>eD2k / eMule</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="188"/>
+      <source>eD2k / eMule</source>
+      <translation>eD2k / eMule</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="189"/>
-        <source>支持电驴协议，适合下载经典资源</source>
-        <translation>Suporta o protocolo eDonkey, adequado para baixar recursos clássicos</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="189"/>
+      <source>支持电驴协议，适合下载经典资源</source>
+      <translation>Suporta o protocolo eDonkey, adequado para baixar recursos clássicos</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="69"/>
-        <source>视频合并</source>
-        <translation>Mesclagem de vídeo</translation>
+      <location filename="../../../features/ffmpeg_pack/config.py" line="69"/>
+      <source>视频合并</source>
+      <translation>Mesclagem de vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="70"/>
-        <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
-        <translation>Essencial para baixar vídeos de sites como Bilibili, YouTube, mesclando faixas de áudio e vídeo em um arquivo completo</translation>
+      <location filename="../../../features/ffmpeg_pack/config.py" line="70"/>
+      <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
+      <translation>Essencial para baixar vídeos de sites como Bilibili, YouTube, mesclando faixas de áudio e vídeo em um arquivo completo</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="153"/>
-        <source>M3U8 / 直播下载</source>
-        <translation>Download M3U8 / Transmissão ao vivo</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="153"/>
+      <source>M3U8 / 直播下载</source>
+      <translation>Download M3U8 / Transmissão ao vivo</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="154"/>
-        <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
-        <translation>Suporta protocolos de streaming como HLS, DASH, pode gravar transmissões ao vivo</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="154"/>
+      <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
+      <translation>Suporta protocolos de streaming como HLS, DASH, pode gravar transmissões ao vivo</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="144"/>
-        <source>YouTube 下载</source>
-        <translation>Download do YouTube</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="144"/>
+      <source>YouTube 下载</source>
+      <translation>Download do YouTube</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="145"/>
-        <source>支持 YouTube、Twitter 等数百个视频网站</source>
-        <translation>Suporta centenas de sites de vídeo como YouTube, Twitter</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="145"/>
+      <source>支持 YouTube、Twitter 等数百个视频网站</source>
+      <translation>Suporta centenas de sites de vídeo como YouTube, Twitter</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BitTorrentConfig</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="63"/>
-        <source>BitTorrent 下载</source>
-        <translation>Download BitTorrent</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="64"/>
+      <source>BitTorrent 下载</source>
+      <translation>Download BitTorrent</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
-        <source>监听端口</source>
-        <translation>Porta de escuta</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+      <source>停止</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
-        <source>0 表示交给系统自动分配可用端口</source>
-        <translation>0 significa que o sistema atribuirá automaticamente uma porta disponível</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+      <source>停止 BitTorrent 会话</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
-        <source>元数据超时</source>
-        <translation>Tempo limite de metadados</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
+      <source>未运行</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
-        <source>解析 magnet 链接时等待元数据的最长时间</source>
-        <translation>Tempo máximo de espera para metadados ao resolver links magnet</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
+      <source>有 BT 任务正在下载或做种，结束后才能停止</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
-        <source>连接数上限</source>
-        <translation>Limite de conexões</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
+      <source>空闲 5 分钟后自动停止，开始任务时会自动启动</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="71"/>
-        <source>单个 BT 任务对应 session 的最大连接数</source>
-        <translation>Número máximo de conexões por sessão de tarefa BT</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
+      <source>监听端口</source>
+      <translation>Porta de escuta</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="72"/>
-        <source>上传限速</source>
-        <translation>Limite de upload</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
+      <source>0 表示交给系统自动分配可用端口</source>
+      <translation>0 significa que o sistema atribuirá automaticamente uma porta disponível</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="73"/>
-        <source>0 表示不限速，单位为 session 级别的 KB/s</source>
-        <translation>0 significa sem limite, unidade KB/s no nível da sessão</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
+      <source>元数据超时</source>
+      <translation>Tempo limite de metadados</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="75"/>
-        <source>自动停止做种分享率</source>
-        <translation>Taxa de compartilhamento para parada automática de seeding</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
+      <source>解析 magnet 链接时等待元数据的最长时间</source>
+      <translation>Tempo máximo de espera para metadados ao resolver links magnet</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="76"/>
-        <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
-        <translation>0 desativa a parada automática por taxa de compartilhamento; 100% significa taxa 1,0</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
+      <source>连接数上限</source>
+      <translation>Limite de conexões</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="78"/>
-        <source>自动停止做种时长</source>
-        <translation>Duração de seeding para parada automática</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="95"/>
+      <source>单个 BT 任务对应 session 的最大连接数</source>
+      <translation>Número máximo de conexões por sessão de tarefa BT</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="79"/>
-        <source>0 表示不按做种时长自动停止</source>
-        <translation>0 desativa a parada automática por duração de seeding</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
+      <source>上传限速</source>
+      <translation>Limite de upload</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="81"/>
-        <source>文件分配模式</source>
-        <translation>Modo de alocação de arquivos</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
+      <source>0 表示不限速，单位为 session 级别的 KB/s</source>
+      <translation>0 significa sem limite, unidade KB/s no nível da sessão</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
-        <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
-        <translation>Alocação esparsa economiza gravação em disco, pré-alocação expõe falta de espaço mais cedo</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="99"/>
+      <source>自动停止做种分享率</source>
+      <translation>Taxa de compartilhamento para parada automática de seeding</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
-        <source>稀疏分配</source>
-        <translation>Alocação esparsa</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="100"/>
+      <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
+      <translation>0 desativa a parada automática por taxa de compartilhamento; 100% significa taxa 1,0</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
-        <source>预分配</source>
-        <translation>Pré-alocação</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
+      <source>自动停止做种时长</source>
+      <translation>Duração de seeding para parada automática</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="84"/>
-        <source>保存 Magnet 种子文件</source>
-        <translation>Salvar arquivo torrent do Magnet</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="103"/>
+      <source>0 表示不按做种时长自动停止</source>
+      <translation>0 desativa a parada automática por duração de seeding</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="85"/>
-        <source>下载 magnet 链接或在线种子时额外保存 .torrent 文件</source>
-        <translation>Salvar também o arquivo .torrent ao baixar links magnet ou torrents online</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="105"/>
+      <source>文件分配模式</source>
+      <translation>Modo de alocação de arquivos</translation>
     </message>
     <message>
-        <source>下载 magnet 链接时额外保存 .torrent 文件</source>
-        <translation type="vanished">Salvar também o arquivo .torrent ao baixar links magnet</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
+      <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
+      <translation>Alocação esparsa economiza gravação em disco, pré-alocação expõe falta de espaço mais cedo</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="86"/>
-        <source>顺序下载</source>
-        <translation>Download sequencial</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
+      <source>稀疏分配</source>
+      <translation>Alocação esparsa</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="87"/>
-        <source>按文件顺序下载，适合边下边看但通常会影响整体效率</source>
-        <translation>Baixa na ordem dos arquivos, adequado para assistir enquanto baixa, mas pode afetar a eficiência geral</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
+      <source>预分配</source>
+      <translation>Pré-alocação</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
-        <source>启用 uTP</source>
-        <translation>Habilitar uTP</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
+      <source>保存 Magnet 种子文件</source>
+      <translation>Salvar arquivo torrent do Magnet</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
-        <source>使用 uTP 传输协议控制拥塞，关闭后仅使用 TCP</source>
-        <translation>Usar o protocolo de transporte uTP para controle de congestionamento; quando desativado, usar apenas TCP</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="110"/>
+      <source>顺序下载</source>
+      <translation>Download sequencial</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="95"/>
-        <source>协议加密</source>
-        <translation>Criptografia de protocolo</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="111"/>
+      <source>按文件顺序下载，适合边下边看但通常会影响整体效率</source>
+      <translation>Baixa na ordem dos arquivos, adequado para assistir enquanto baixa, mas pode afetar a eficiência geral</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
-        <source>混淆对等连接流量特征，减少被运营商识别和限速</source>
-        <translation>Ofuscar as características do tráfego de conexões peer-to-peer para reduzir a identificação e a limitação de velocidade pelas operadoras</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
+      <source>启用 uTP</source>
+      <translation>Habilitar uTP</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
-        <source>允许加密</source>
-        <translation>Permitir criptografia</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
+      <source>使用 uTP 传输协议控制拥塞，关闭后仅使用 TCP</source>
+      <translation>Usar o protocolo de transporte uTP para controle de congestionamento; quando desativado, usar apenas TCP</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
-        <source>强制加密</source>
-        <translation>Forçar criptografia</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="119"/>
+      <source>协议加密</source>
+      <translation>Criptografia de protocolo</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
-        <source>禁用加密</source>
-        <translation>Desativar criptografia</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="120"/>
+      <source>混淆对等连接流量特征，减少被运营商识别和限速</source>
+      <translation>Ofuscar as características do tráfego de conexões peer-to-peer para reduzir a identificação e a limitação de velocidade pelas operadoras</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="98"/>
-        <source>附加 Tracker 列表</source>
-        <translation>Lista de trackers adicionais</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <source>允许加密</source>
+      <translation>Permitir criptografia</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="99"/>
-        <source>把 Tracker 列表合并到新建的 BT 任务中</source>
-        <translation>Mesclar a lista de trackers em novas tarefas BT</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <source>强制加密</source>
+      <translation>Forçar criptografia</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="101"/>
-        <source>自动更新订阅</source>
-        <translation>Atualização automática de assinaturas</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <source>禁用加密</source>
+      <translation>Desativar criptografia</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
-        <source>每天在后台更新一次 Tracker 列表</source>
-        <translation>Atualizar a lista de trackers uma vez por dia em segundo plano</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="122"/>
+      <source>附加 Tracker 列表</source>
+      <translation>Lista de trackers adicionais</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="104"/>
-        <source>Tracker 列表</source>
-        <translation>Lista de trackers</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="123"/>
+      <source>把 Tracker 列表合并到新建的 BT 任务中</source>
+      <translation>Mesclar a lista de trackers em novas tarefas BT</translation>
     </message>
     <message>
-        <source>创建新的 BT 任务时先从源地址拉取最新 Tracker</source>
-        <translation type="vanished">Ao criar nova tarefa BT, primeiro buscar os trackers mais recentes da fonte</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
+      <source>自动更新订阅</source>
+      <translation>Atualização automática de assinaturas</translation>
     </message>
     <message>
-        <source>关联 .torrent 文件</source>
-        <translation type="vanished">Associar arquivos .torrent</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="126"/>
+      <source>每天在后台更新一次 Tracker 列表</source>
+      <translation>Atualizar a lista de trackers uma vez por dia em segundo plano</translation>
     </message>
     <message>
-        <source>把 .torrent 文件的打开方式设为 Ghost Downloader</source>
-        <translation type="vanished">Definir o Ghost Downloader como programa padrão para abrir arquivos .torrent</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
+      <source>Tracker 列表</source>
+      <translation>Lista de trackers</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="89"/>
-        <source>启用 DHT</source>
-        <translation>Habilitar DHT</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="113"/>
+      <source>启用 DHT</source>
+      <translation>Habilitar DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
-        <source>允许通过 DHT 网络发现 peers</source>
-        <translation>Permitir descoberta de peers via rede DHT</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
+      <source>下载 magnet 链接或在线种子时额外保存 .torrent 文件</source>
+      <translation>Salvar também o arquivo .torrent ao baixar links magnet ou torrents online</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
-        <source>启用 LSD</source>
-        <translation>Habilitar LSD</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="114"/>
+      <source>允许通过 DHT 网络发现 peers</source>
+      <translation>Permitir descoberta de peers via rede DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
-        <source>在局域网中广播并发现同一 torrent 的 peers</source>
-        <translation>Transmitir na rede local e descobrir peers do mesmo torrent</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="115"/>
+      <source>启用 LSD</source>
+      <translation>Habilitar LSD</translation>
     </message>
     <message>
-        <source>启用 Web Tracker</source>
-        <translation type="vanished">Habilitar Web Tracker</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="116"/>
+      <source>在局域网中广播并发现同一 torrent 的 peers</source>
+      <translation>Transmitir na rede local e descobrir peers do mesmo torrent</translation>
     </message>
-    <message>
-        <source>把配置好的额外 Trackers 合并到新建 BT 任务中</source>
-        <translation type="vanished">Adicionar trackers extras configurados às novas tarefas BT</translation>
-    </message>
-    <message>
-        <source>新建任务时刷新 Web Tracker</source>
-        <translation type="vanished">Atualizar Web Tracker ao criar nova tarefa</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BitTorrentPack</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="136"/>
-        <source>磁力链接</source>
-        <translation>Links magnet</translation>
+      <location filename="../../../features/bittorrent_pack/pack.py" line="137"/>
+      <source>磁力链接</source>
+      <translation>Links magnet</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/pack.py" line="162"/>
-        <source>BitTorrent 种子文件</source>
-        <translation>Arquivo torrent BitTorrent</translation>
+      <location filename="../../../features/bittorrent_pack/pack.py" line="167"/>
+      <source>BitTorrent 种子文件</source>
+      <translation>Arquivo torrent BitTorrent</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BootstrapList</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="114"/>
-        <source>DHT 节点 {nodes}</source>
-        <translation>Nós DHT {nodes}</translation>
+      <location filename="../../../features/bittorrent_pack/config.py" line="136"/>
+      <source>DHT 节点 {nodes}</source>
+      <translation>Nós DHT {nodes}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="153"/>
-        <location filename="../../../features/ed2k_pack/config.py" line="172"/>
-        <source>未运行</source>
-        <translation>Não em execução</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="153"/>
+      <location filename="../../../features/ed2k_pack/config.py" line="172"/>
+      <source>未运行</source>
+      <translation>Não em execução</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="155"/>
-        <location filename="../../../features/ed2k_pack/config.py" line="174"/>
-        <source>无法连接代理</source>
-        <translation>Não foi possível conectar ao proxy</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="155"/>
+      <location filename="../../../features/ed2k_pack/config.py" line="174"/>
+      <source>无法连接代理</source>
+      <translation>Não foi possível conectar ao proxy</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="157"/>
-        <source>未连接服务器</source>
-        <translation>Servidor não conectado</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="157"/>
+      <source>未连接服务器</source>
+      <translation>Servidor não conectado</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="159"/>
-        <source>已连接服务器（HighID）</source>
-        <translation>Servidor conectado (HighID)</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="159"/>
+      <source>已连接服务器（HighID）</source>
+      <translation>Servidor conectado (HighID)</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="161"/>
-        <source>已连接服务器（LowID，经代理连接时无法获得 HighID）</source>
-        <translation>Servidor conectado (LowID; não é possível obter HighID ao conectar via proxy)</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="161"/>
+      <source>已连接服务器（LowID，经代理连接时无法获得 HighID）</source>
+      <translation>Servidor conectado (LowID; não é possível obter HighID ao conectar via proxy)</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="163"/>
-        <source>已连接服务器（LowID，运营商 NAT，无法获得 HighID）</source>
-        <translation>Servidor conectado (LowID, NAT da operadora, não é possível obter HighID)</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="163"/>
+      <source>已连接服务器（LowID，运营商 NAT，无法获得 HighID）</source>
+      <translation>Servidor conectado (LowID, NAT da operadora, não é possível obter HighID)</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="164"/>
-        <source>已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）</source>
-        <translation>Servidor conectado (LowID; ative UPnP ou encaminhe a porta de escuta no roteador para obter HighID)</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="164"/>
+      <source>已连接服务器（LowID，开启 UPnP 或在路由器转发监听端口可获得 HighID）</source>
+      <translation>Servidor conectado (LowID; ative UPnP ou encaminhe a porta de escuta no roteador para obter HighID)</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="168"/>
-        <source>KAD 已关闭</source>
-        <translation>KAD desativado</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="168"/>
+      <source>KAD 已关闭</source>
+      <translation>KAD desativado</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="176"/>
-        <source>代理不转发 UDP，KAD 无法使用</source>
-        <translation>O proxy não encaminha UDP, KAD indisponível</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="176"/>
+      <source>代理不转发 UDP，KAD 无法使用</source>
+      <translation>O proxy não encaminha UDP, KAD indisponível</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="178"/>
-        <source>KAD 节点 {nodes}（处于防火墙后）</source>
-        <translation>Nós KAD {nodes} (atrás de firewall)</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="178"/>
+      <source>KAD 节点 {nodes}（处于防火墙后）</source>
+      <translation>Nós KAD {nodes} (atrás de firewall)</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="179"/>
-        <source>KAD 节点 {nodes}</source>
-        <translation>Nós KAD {nodes}</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="179"/>
+      <source>KAD 节点 {nodes}</source>
+      <translation>Nós KAD {nodes}</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="34"/>
-        <source>刚刚</source>
-        <translation>Agora mesmo</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="35"/>
+      <source>刚刚</source>
+      <translation>Agora mesmo</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="36"/>
-        <source>{0} 分钟前</source>
-        <translation>{0} minutos atrás</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="37"/>
+      <source>{0} 分钟前</source>
+      <translation>{0} minutos atrás</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="38"/>
-        <source>{0} 小时前</source>
-        <translation>{0} horas atrás</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="39"/>
+      <source>{0} 小时前</source>
+      <translation>{0} horas atrás</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="39"/>
-        <source>{0} 天前</source>
-        <translation>{0} dias atrás</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="40"/>
+      <source>{0} 天前</source>
+      <translation>{0} dias atrás</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="44"/>
-        <location filename="../../view/components/bootstrap_list.py" line="47"/>
-        <source>更新失败</source>
-        <translation>Falha ao atualizar</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="45"/>
+      <location filename="../../view/components/bootstrap_list.py" line="48"/>
+      <source>更新失败</source>
+      <translation>Falha ao atualizar</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="44"/>
-        <source>未拉取</source>
-        <translation>Não obtido</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="45"/>
+      <source>未拉取</source>
+      <translation>Não obtido</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="45"/>
-        <source>{0} 条</source>
-        <translation>{0} itens</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="46"/>
+      <source>{0} 条</source>
+      <translation>{0} itens</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="45"/>
-        <source>{0}更新</source>
-        <translation>{0} atualizações</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="46"/>
+      <source>{0}更新</source>
+      <translation>{0} atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="48"/>
-        <source>，</source>
-        <translation>,</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="49"/>
+      <source>，</source>
+      <translation>,</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BootstrapListCard</name>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="76"/>
-        <source>管理</source>
-        <translation>Gerenciar</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="77"/>
+      <source>管理</source>
+      <translation>Gerenciar</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="85"/>
-        <source>立即更新</source>
-        <translation>Atualizar agora</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="86"/>
+      <source>立即更新</source>
+      <translation>Atualizar agora</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="105"/>
-        <source>正在更新…</source>
-        <translation>Atualizando...</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="106"/>
+      <source>正在更新…</source>
+      <translation>Atualizando...</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="110"/>
-        <source>{0} 个订阅</source>
-        <translation>{0} assinaturas</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="111"/>
+      <source>{0} 个订阅</source>
+      <translation>{0} assinaturas</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="113"/>
-        <source>共 {0} 条</source>
-        <translation>Total de {0} itens</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="114"/>
+      <source>共 {0} 条</source>
+      <translation>Total de {0} itens</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="114"/>
-        <source>{0}更新</source>
-        <translation>{0} atualizações</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="115"/>
+      <source>{0}更新</source>
+      <translation>{0} atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="116"/>
-        <location filename="../../view/components/bootstrap_list.py" line="120"/>
-        <source>更新失败</source>
-        <translation>Falha ao atualizar</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="117"/>
+      <location filename="../../view/components/bootstrap_list.py" line="121"/>
+      <source>更新失败</source>
+      <translation>Falha ao atualizar</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="118"/>
-        <source>使用内置列表</source>
-        <translation>Usar lista integrada</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="119"/>
+      <source>使用内置列表</source>
+      <translation>Usar lista integrada</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="123"/>
-        <source>，</source>
-        <translation>,</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="124"/>
+      <source>，</source>
+      <translation>,</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BootstrapListDialog</name>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="193"/>
-        <source>订阅地址</source>
-        <translation>Endereço de assinatura</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="195"/>
+      <source>订阅地址</source>
+      <translation>Endereço de assinatura</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="194"/>
-        <source>恢复默认</source>
-        <translation>Restaurar padrão</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="196"/>
+      <source>恢复默认</source>
+      <translation>Restaurar padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="195"/>
-        <source>添加</source>
-        <translation>Adicionar</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="197"/>
+      <source>添加</source>
+      <translation>Adicionar</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="197"/>
-        <source>自定义条目</source>
-        <translation>Itens personalizados</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="200"/>
+      <source>自定义条目</source>
+      <translation>Itens personalizados</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="208"/>
-        <source>保存并更新</source>
-        <translation>Salvar e atualizar</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="211"/>
+      <source>保存并更新</source>
+      <translation>Salvar e atualizar</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="209"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="212"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="215"/>
-        <source>每行一个，不会被订阅更新覆盖</source>
-        <translation>Um por linha, não será sobrescrito pela atualização da assinatura</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="218"/>
+      <source>每行一个，不会被订阅更新覆盖</source>
+      <translation>Um por linha, não será sobrescrito pela atualização da assinatura</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="241"/>
-        <source>订阅地址无效</source>
-        <translation>Endereço de assinatura inválido</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="249"/>
+      <source>订阅地址无效</source>
+      <translation>Endereço de assinatura inválido</translation>
     </message>
     <message>
-        <location filename="../../view/components/bootstrap_list.py" line="241"/>
-        <source>请输入有效的 HTTP/HTTPS 地址</source>
-        <translation>Insira um endereço HTTP/HTTPS válido</translation>
+      <location filename="../../view/components/bootstrap_list.py" line="249"/>
+      <source>请输入有效的 HTTP/HTTPS 地址</source>
+      <translation>Insira um endereço HTTP/HTTPS válido</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>BrowserExtensionPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="413"/>
-        <source>安装浏览器扩展</source>
-        <translation>Instalar extensão do navegador</translation>
+      <location filename="../../view/windows/oobe_window.py" line="412"/>
+      <source>安装浏览器扩展</source>
+      <translation>Instalar extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="414"/>
-        <source>让浏览器中的下载自动接管到 Ghost Downloader</source>
-        <translation>Transferir automaticamente os downloads do navegador para o Ghost Downloader</translation>
+      <location filename="../../view/windows/oobe_window.py" line="413"/>
+      <source>让浏览器中的下载自动接管到 Ghost Downloader</source>
+      <translation>Transferir automaticamente os downloads do navegador para o Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="426"/>
-        <source>安装教程动图</source>
-        <translation>GIF tutorial de instalação</translation>
+      <location filename="../../view/windows/oobe_window.py" line="425"/>
+      <source>安装教程动图</source>
+      <translation>GIF tutorial de instalação</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="436"/>
-        <source>手动安装</source>
-        <translation>Instalação manual</translation>
+      <location filename="../../view/windows/oobe_window.py" line="435"/>
+      <source>手动安装</source>
+      <translation>Instalação manual</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="437"/>
-        <source>随桌面端自动更新，适用于所有 Chromium 浏览器</source>
-        <translation>Atualização automática junto com o aplicativo desktop, compatível com todos os navegadores Chromium</translation>
+      <location filename="../../view/windows/oobe_window.py" line="436"/>
+      <source>随桌面端自动更新，适用于所有 Chromium 浏览器</source>
+      <translation>Atualização automática junto com o aplicativo desktop, compatível com todos os navegadores Chromium</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="442"/>
-        <source>Chrome 商店</source>
-        <translation>Loja Chrome</translation>
+      <location filename="../../view/windows/oobe_window.py" line="441"/>
+      <source>Chrome 商店</source>
+      <translation>Loja Chrome</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="443"/>
-        <source>Edge 商店</source>
-        <translation>Loja Edge</translation>
+      <location filename="../../view/windows/oobe_window.py" line="442"/>
+      <source>Edge 商店</source>
+      <translation>Loja Edge</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="444"/>
-        <source>Firefox 商店</source>
-        <translation>Loja Firefox</translation>
+      <location filename="../../view/windows/oobe_window.py" line="443"/>
+      <source>Firefox 商店</source>
+      <translation>Loja Firefox</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="448"/>
-        <source>商店版更新需等待审核，可能滞后于桌面端</source>
-        <translation>A atualização da versão da loja precisa aguardar revisão e pode ficar atrasada em relação ao aplicativo desktop</translation>
+      <location filename="../../view/windows/oobe_window.py" line="447"/>
+      <source>商店版更新需等待审核，可能滞后于桌面端</source>
+      <translation>A atualização da versão da loja precisa aguardar revisão e pode ficar atrasada em relação ao aplicativo desktop</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="519"/>
-        <source>正在端口 {} 上等待扩展连接</source>
-        <translation>Aguardando conexão da extensão na porta {}</translation>
+      <location filename="../../view/windows/oobe_window.py" line="518"/>
+      <source>正在端口 {} 上等待扩展连接</source>
+      <translation>Aguardando conexão da extensão na porta {}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="512"/>
-        <source>浏览器扩展未启用，可稍后在设置中开启</source>
-        <translation>Extensão do navegador não habilitada; você pode ativá-la mais tarde nas configurações</translation>
+      <location filename="../../view/windows/oobe_window.py" line="511"/>
+      <source>浏览器扩展未启用，可稍后在设置中开启</source>
+      <translation>Extensão do navegador não habilitada; você pode ativá-la mais tarde nas configurações</translation>
     </message>
     <message>
-        <source>端口 {} 被占用，请在设置中更换端口</source>
-        <translation type="vanished">Porta {} em uso; altere a porta nas configurações</translation>
+      <location filename="../../view/windows/oobe_window.py" line="523"/>
+      <source>已连接扩展 v{}，最新版本为 v{}</source>
+      <translation>Extensão conectada v{}, versão mais recente é v{}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="524"/>
-        <source>已连接扩展 v{}，最新版本为 v{}</source>
-        <translation>Extensão conectada v{}, versão mais recente é v{}</translation>
+      <location filename="../../view/windows/oobe_window.py" line="527"/>
+      <source>已连接扩展，最新版本为 v{}</source>
+      <translation>Extensão conectada, versão mais recente é v{}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="528"/>
-        <source>已连接扩展，最新版本为 v{}</source>
-        <translation>Extensão conectada, versão mais recente é v{}</translation>
+      <location filename="../../view/windows/oobe_window.py" line="552"/>
+      <source>请手动打开浏览器</source>
+      <translation>Abra o navegador manualmente</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="553"/>
-        <source>请手动打开浏览器</source>
-        <translation>Abra o navegador manualmente</translation>
+      <location filename="../../view/windows/oobe_window.py" line="553"/>
+      <source>chrome://extensions 已复制到剪贴板</source>
+      <translation>chrome://extensions foi copiado para a área de transferência</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="554"/>
-        <source>chrome://extensions 已复制到剪贴板</source>
-        <translation>chrome://extensions foi copiado para a área de transferência</translation>
+      <location filename="../../view/windows/oobe_window.py" line="559"/>
+      <source>解包失败</source>
+      <translation>Falha ao desempacotar</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="560"/>
-        <source>解包失败</source>
-        <translation>Falha ao desempacotar</translation>
+      <location filename="../../view/windows/oobe_window.py" line="575"/>
+      <source>协议版本不匹配，商店版可能滞后，请尝试手动安装</source>
+      <translation>Versão do protocolo incompatível; a versão da loja pode estar desatualizada, tente a instalação manual</translation>
     </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="576"/>
-        <source>协议版本不匹配，商店版可能滞后，请尝试手动安装</source>
-        <translation>Versão do protocolo incompatível; a versão da loja pode estar desatualizada, tente a instalação manual</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CatalogCard</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="183"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="181"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="187"/>
-        <source>观看视频</source>
-        <translation>Assistir vídeo</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="185"/>
+      <source>观看视频</source>
+      <translation>Assistir vídeo</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CatalogDownloadDialog</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="232"/>
-        <location filename="../../../features/jack_yao/pack.py" line="234"/>
-        <source>选择版本</source>
-        <translation>Selecione a versão</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="230"/>
+      <location filename="../../../features/jack_yao/pack.py" line="232"/>
+      <source>选择版本</source>
+      <translation>Selecione a versão</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="234"/>
-        <source>选择你想下载的版本</source>
-        <translation>Selecione a versão que deseja baixar</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="232"/>
+      <source>选择你想下载的版本</source>
+      <translation>Selecione a versão que deseja baixar</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="239"/>
-        <source>更新日志</source>
-        <translation>Registro de alterações</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="237"/>
+      <source>更新日志</source>
+      <translation>Registro de alterações</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="249"/>
-        <source>开始下载</source>
-        <translation>Iniciar download</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="247"/>
+      <source>开始下载</source>
+      <translation>Iniciar download</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="250"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="248"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="272"/>
-        <source>下载失败</source>
-        <translation>Falha no download</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="270"/>
+      <source>下载失败</source>
+      <translation>Falha no download</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CatalogPage</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="113"/>
-        <source>加载失败，请检查网络后重试
+      <location filename="../../../features/jack_yao/pack.py" line="111"/>
+      <source>加载失败，请检查网络后重试
 </source>
-        <translation>Falha ao carregar, verifique a rede e tente novamente
+      <translation>Falha ao carregar, verifique a rede e tente novamente
 </translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>Categories</name>
     <message>
-        <location filename="../../view/components/category_settings.py" line="15"/>
-        <source>视频</source>
-        <translation>Vídeos</translation>
+      <location filename="../../services/category_service.py" line="19"/>
+      <source>视频</source>
+      <translation>Vídeos</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="16"/>
-        <source>音频</source>
-        <translation>Áudio</translation>
+      <location filename="../../services/category_service.py" line="30"/>
+      <source>音频</source>
+      <translation>Áudio</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="17"/>
-        <source>图片</source>
-        <translation>Imagens</translation>
+      <location filename="../../services/category_service.py" line="40"/>
+      <source>图片</source>
+      <translation>Imagens</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="18"/>
-        <source>字幕</source>
-        <translation>Legendas</translation>
+      <location filename="../../services/category_service.py" line="50"/>
+      <source>字幕</source>
+      <translation>Legendas</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="19"/>
-        <source>文档</source>
-        <translation>Documentos</translation>
+      <location filename="../../services/category_service.py" line="60"/>
+      <source>文档</source>
+      <translation>Documentos</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="20"/>
-        <source>压缩包</source>
-        <translation>Arquivos compactados</translation>
+      <location filename="../../services/category_service.py" line="71"/>
+      <source>压缩包</source>
+      <translation>Arquivos compactados</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="21"/>
-        <source>程序</source>
-        <translation>Programas</translation>
+      <location filename="../../services/category_service.py" line="83"/>
+      <source>程序</source>
+      <translation>Programas</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="22"/>
-        <source>其他</source>
-        <translation>Outros</translation>
+      <location filename="../../services/category_service.py" line="94"/>
+      <source>其他</source>
+      <translation>Outros</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="23"/>
-        <source>未命名分类</source>
-        <translation>Categoria sem nome</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="95"/>
+      <source>未命名分类</source>
+      <translation>Categoria sem nome</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CategoryEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="29"/>
-        <source>编辑分类</source>
-        <translation>Editar categoria</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="30"/>
+      <source>编辑分类</source>
+      <translation>Editar categoria</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="29"/>
-        <source>添加分类</source>
-        <translation>Adicionar categoria</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="30"/>
+      <source>添加分类</source>
+      <translation>Adicionar categoria</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="49"/>
-        <source>输入扩展名后按回车添加</source>
-        <translation>Digite a extensão e pressione Enter para adicionar</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="50"/>
+      <source>输入扩展名后按回车添加</source>
+      <translation>Digite a extensão e pressione Enter para adicionar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="50"/>
-        <source>留空则使用默认下载路径；可用 {default} 代表默认下载文件夹</source>
-        <translation>Deixe em branco para usar o caminho de download padrão; use {default} para a pasta padrão</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="51"/>
+      <source>留空则使用默认下载路径；可用 {default} 代表默认下载文件夹</source>
+      <translation>Deixe em branco para usar o caminho de download padrão; use {default} para a pasta padrão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="66"/>
-        <source>名称</source>
-        <translation>Nome</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="67"/>
+      <source>名称</source>
+      <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="68"/>
-        <source>图标</source>
-        <translation>Ícone</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="69"/>
+      <source>图标</source>
+      <translation>Ícone</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="70"/>
-        <source>扩展名</source>
-        <translation>Extensão</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="71"/>
+      <source>扩展名</source>
+      <translation>Extensão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="72"/>
-        <source>下载文件夹</source>
-        <translation>Pasta de download</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="73"/>
+      <source>下载文件夹</source>
+      <translation>Pasta de download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="46"/>
-        <source>确定</source>
-        <translation>OK</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="47"/>
+      <source>确定</source>
+      <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="47"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="48"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="48"/>
-        <source>分类名称</source>
-        <translation>Nome da categoria</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="49"/>
+      <source>分类名称</source>
+      <translation>Nome da categoria</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="51"/>
-        <source>选择文件夹</source>
-        <translation>Selecionar pasta</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="52"/>
+      <source>选择文件夹</source>
+      <translation>Selecionar pasta</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/category_edit.py" line="89"/>
-        <source>选择下载文件夹</source>
-        <translation>Escolher pasta de download</translation>
+      <location filename="../../view/dialogs/category_edit.py" line="90"/>
+      <source>选择下载文件夹</source>
+      <translation>Escolher pasta de download</translation>
     </message>
-    <message>
-        <source>未命名分类</source>
-        <translation type="vanished">Categoria sem nome</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CategoryRowWidget</name>
     <message>
-        <location filename="../../view/components/category_settings.py" line="50"/>
-        <source>编辑</source>
-        <translation>Editar</translation>
+      <location filename="../../view/components/category_settings.py" line="40"/>
+      <source>编辑</source>
+      <translation>Editar</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="52"/>
-        <source>删除</source>
-        <translation>Excluir</translation>
+      <location filename="../../view/components/category_settings.py" line="42"/>
+      <source>删除</source>
+      <translation>Excluir</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="73"/>
-        <source>无扩展名</source>
-        <translation>Sem extensão</translation>
+      <location filename="../../view/components/category_settings.py" line="63"/>
+      <source>无扩展名</source>
+      <translation>Sem extensão</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="76"/>
-        <source>{0} 等 {1} 项</source>
-        <translation>{0} e mais {1} itens</translation>
+      <location filename="../../view/components/category_settings.py" line="66"/>
+      <source>{0} 等 {1} 项</source>
+      <translation>{0} e mais {1} itens</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CategoryRulesCard</name>
     <message>
-        <source>下载分类规则</source>
-        <translation type="vanished">Regras de categorização de downloads</translation>
+      <location filename="../../view/components/category_settings.py" line="75"/>
+      <source>下载分类</source>
+      <translation>Categorias de download</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="85"/>
-        <source>下载分类</source>
-        <translation>Categorias de download</translation>
+      <location filename="../../view/components/category_settings.py" line="76"/>
+      <source>根据扩展名自动归类，可为分类指定下载文件夹</source>
+      <translation>Categoriza automaticamente por extensão; você pode especificar pastas de download para cada categoria</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="86"/>
-        <source>根据扩展名自动归类，可为分类指定下载文件夹</source>
-        <translation>Categoriza automaticamente por extensão; você pode especificar pastas de download para cada categoria</translation>
+      <location filename="../../view/components/category_settings.py" line="95"/>
+      <source>恢复默认</source>
+      <translation>Restaurar padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="105"/>
-        <source>恢复默认</source>
-        <translation>Restaurar padrão</translation>
+      <location filename="../../view/components/category_settings.py" line="96"/>
+      <source>添加分类</source>
+      <translation>Adicionar categoria</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="106"/>
-        <source>添加分类</source>
-        <translation>Adicionar categoria</translation>
+      <location filename="../../view/components/category_settings.py" line="137"/>
+      <source>已配置 {0} 个分类</source>
+      <translation>{0} categorias configuradas</translation>
     </message>
-    <message>
-        <location filename="../../view/components/category_settings.py" line="147"/>
-        <source>已配置 {0} 个分类</source>
-        <translation>{0} categorias configuradas</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ChecksumCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="245"/>
-        <source>校验值</source>
-        <translation>Valor de verificação</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="245"/>
+      <source>校验值</source>
+      <translation>Valor de verificação</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="249"/>
-        <source>比对</source>
-        <translation>Comparar</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="249"/>
+      <source>比对</source>
+      <translation>Comparar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="258"/>
-        <source>粘贴期望值</source>
-        <translation>Colar valor esperado</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="258"/>
+      <source>粘贴期望值</source>
+      <translation>Colar valor esperado</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="262"/>
-        <source>粘贴</source>
-        <translation>Colar</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="262"/>
+      <source>粘贴</source>
+      <translation>Colar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="301"/>
-        <source>与 {0} 一致</source>
-        <translation>Corresponde a {0}</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="301"/>
+      <source>与 {0} 一致</source>
+      <translation>Corresponde a {0}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="304"/>
-        <source>与已计算的校验值都不一致</source>
-        <translation>Não corresponde a nenhum valor de verificação calculado</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="304"/>
+      <source>与已计算的校验值都不一致</source>
+      <translation>Não corresponde a nenhum valor de verificação calculado</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ClientProfileCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="27"/>
-        <source>自动（匹配来源）</source>
-        <translation>Automático (corresponder à origem)</translation>
+      <location filename="../../view/components/option_cards.py" line="30"/>
+      <source>自动（匹配来源）</source>
+      <translation>Automático (corresponder à origem)</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="29"/>
-        <source>不模拟（原样发送）</source>
-        <translation>Não simular (enviar como original)</translation>
+      <location filename="../../view/components/option_cards.py" line="32"/>
+      <source>不模拟（原样发送）</source>
+      <translation>Não simular (enviar como original)</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="31"/>
-        <source>{0}（最新）</source>
-        <translation>{0} (mais recente)</translation>
+      <location filename="../../view/components/option_cards.py" line="34"/>
+      <source>{0}（最新）</source>
+      <translation>{0} (mais recente)</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="171"/>
-        <source>模拟身份</source>
-        <translation>Perfil de cliente simulado</translation>
+      <location filename="../../view/components/option_cards.py" line="174"/>
+      <source>模拟身份</source>
+      <translation>Perfil de cliente simulado</translation>
     </message>
-</context>
-<context>
-    <name>ClientProfileSettingCard</name>
-    <message>
-        <source>模拟身份</source>
-        <translation type="vanished">Perfil de cliente simulado</translation>
-    </message>
-    <message>
-        <source>浏览器 TLS 指纹与 User-Agent</source>
-        <translation type="vanished">Fingerprint TLS do navegador e User-Agent</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ClipboardSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="331"/>
-        <source>剪贴板监听</source>
-        <translation>Monitoramento da área de transferência</translation>
+      <location filename="../../view/components/setting_cards.py" line="331"/>
+      <source>剪贴板监听</source>
+      <translation>Monitoramento da área de transferência</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="332"/>
-        <source>自动检测剪贴板中的下载链接</source>
-        <translation>Detectar automaticamente links de download na área de transferência</translation>
+      <location filename="../../view/components/setting_cards.py" line="332"/>
+      <source>自动检测剪贴板中的下载链接</source>
+      <translation>Detectar automaticamente links de download na área de transferência</translation>
     </message>
-    <message>
-        <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
-        <translation type="vanished">O monitor da área de transferência detectará automaticamente links na área de transferência e adicionará tarefas de download</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>CompletePage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="755"/>
-        <source>一切就绪</source>
-        <translation>Tudo pronto</translation>
+      <location filename="../../view/windows/oobe_window.py" line="754"/>
+      <source>一切就绪</source>
+      <translation>Tudo pronto</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="759"/>
-        <source>Ghost Downloader 已准备好为你工作。
+      <location filename="../../view/windows/oobe_window.py" line="758"/>
+      <source>Ghost Downloader 已准备好为你工作。
 你可以随时在设置中调整所有选项。</source>
-        <translation>O Ghost Downloader está pronto para trabalhar para você.
+      <translation>O Ghost Downloader está pronto para trabalhar para você.
 Você pode ajustar todas as opções nas configurações a qualquer momento.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="765"/>
-        <source>开始使用</source>
-        <translation>Começar a usar</translation>
+      <location filename="../../view/windows/oobe_window.py" line="764"/>
+      <source>开始使用</source>
+      <translation>Começar a usar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>DecryptionKeyCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="195"/>
-        <source>解密密钥</source>
-        <translation>Chave de descriptografia</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="265"/>
+      <source>解密密钥</source>
+      <translation>Chave de descriptografia</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="205"/>
-        <location filename="../../../features/m3u8_pack/cards.py" line="229"/>
-        <source>选择 KEY 文本文件</source>
-        <translation>Selecionar arquivo de texto KEY</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="275"/>
+      <location filename="../../../features/m3u8_pack/cards.py" line="299"/>
+      <source>选择 KEY 文本文件</source>
+      <translation>Selecionar arquivo de texto KEY</translation>
     </message>
-</context>
-<context>
-    <name>DefaultHeadersSettingCard</name>
-    <message>
-        <source>编辑</source>
-        <translation type="vanished">Editar</translation>
-    </message>
-    <message>
-        <source>编辑默认请求头</source>
-        <translation type="vanished">Editar cabeçalhos de requisição padrão</translation>
-    </message>
-    <message>
-        <source>恢复默认</source>
-        <translation type="vanished">Restaurar padrão</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>DraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="70"/>
-        <source>编辑任务参数</source>
-        <translation>Editar parâmetros da tarefa</translation>
+      <location filename="../../view/cards/draft_cards.py" line="70"/>
+      <source>编辑任务参数</source>
+      <translation>Editar parâmetros da tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="74"/>
-        <source>下载目录中已有同名文件，下载时按设置处理</source>
-        <translation>Já existe um arquivo com o mesmo nome no diretório de download; o download será tratado conforme as configurações</translation>
+      <location filename="../../view/cards/draft_cards.py" line="74"/>
+      <source>下载目录中已有同名文件，下载时按设置处理</source>
+      <translation>Já existe um arquivo com o mesmo nome no diretório de download; o download será tratado conforme as configurações</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="132"/>
-        <location filename="../../view/cards/draft_cards.py" line="137"/>
-        <source>未分类</source>
-        <translation>Sem categoria</translation>
+      <location filename="../../view/cards/draft_cards.py" line="133"/>
+      <location filename="../../view/cards/draft_cards.py" line="138"/>
+      <source>未分类</source>
+      <translation>Sem categoria</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>DraftCardGroup</name>
     <message>
-        <location filename="../../view/components/card_groups.py" line="71"/>
-        <source>重试失败项</source>
-        <translation>Tentar novamente itens com falha</translation>
+      <location filename="../../view/components/card_groups.py" line="71"/>
+      <source>重试失败项</source>
+      <translation>Tentar novamente itens com falha</translation>
     </message>
     <message>
-        <location filename="../../view/components/card_groups.py" line="96"/>
-        <source>解析结果</source>
-        <translation>Resultado da análise</translation>
+      <location filename="../../view/components/card_groups.py" line="96"/>
+      <source>解析结果</source>
+      <translation>Resultado da análise</translation>
     </message>
     <message>
-        <location filename="../../view/components/card_groups.py" line="118"/>
-        <source>{0} 个任务</source>
-        <translation>{0} tarefas</translation>
+      <location filename="../../view/components/card_groups.py" line="118"/>
+      <source>{0} 个任务</source>
+      <translation>{0} tarefas</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>DropOverlay</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="70"/>
-        <source>松开以添加任务</source>
-        <translation>Solte para adicionar tarefa</translation>
+      <location filename="../../view/windows/main_window.py" line="70"/>
+      <source>松开以添加任务</source>
+      <translation>Solte para adicionar tarefa</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ED2kCard</name>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="67"/>
-        <source>eD2k</source>
-        <translation>eD2k</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="67"/>
+      <source>eD2k</source>
+      <translation>eD2k</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="69"/>
-        <source>文件哈希</source>
-        <translation>Hash do arquivo</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="69"/>
+      <source>文件哈希</source>
+      <translation>Hash do arquivo</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="70"/>
-        <source>AICH 根哈希</source>
-        <translation>Hash raiz AICH</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="70"/>
+      <source>AICH 根哈希</source>
+      <translation>Hash raiz AICH</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="71"/>
-        <source>分块</source>
-        <translation>Partes</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="71"/>
+      <source>分块</source>
+      <translation>Partes</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="72"/>
-        <source>速度</source>
-        <translation>Velocidade</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="72"/>
+      <source>速度</source>
+      <translation>Velocidade</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="73"/>
-        <source>来源</source>
-        <translation>Fontes</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="73"/>
+      <source>来源</source>
+      <translation>Fontes</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="74"/>
-        <source>暂缓</source>
-        <translation>Adiado</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="74"/>
+      <source>暂缓</source>
+      <translation>Adiado</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="75"/>
-        <source>已上传</source>
-        <translation>Enviado</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="75"/>
+      <source>已上传</source>
+      <translation>Enviado</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="76"/>
-        <source>分享率</source>
-        <translation>Taxa de compartilhamento</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="76"/>
+      <source>分享率</source>
+      <translation>Taxa de compartilhamento</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="99"/>
-        <source>下载 {0}，上传 {1}</source>
-        <translation>Baixado {0}, enviado {1}</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="99"/>
+      <source>下载 {0}，上传 {1}</source>
+      <translation>Baixado {0}, enviado {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="101"/>
-        <source>传输中 {0}，共 {1}</source>
-        <translation>Transferindo {0}, total {1}</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="101"/>
+      <source>传输中 {0}，共 {1}</source>
+      <translation>Transferindo {0}, total {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="107"/>
-        <source>{0}，已做种 {1}</source>
-        <translation>{0}, semeado {1}</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="107"/>
+      <source>{0}，已做种 {1}</source>
+      <translation>{0}, semeado {1}</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="63"/>
-        <source>eD2k 下载</source>
-        <translation>Download eD2k</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="63"/>
+      <source>eD2k 下载</source>
+      <translation>Download eD2k</translation>
     </message>
     <message>
-        <source>goed2kd 安装目录</source>
-        <translation type="vanished">Diretório de instalação do goed2kd</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="66"/>
+      <source>Kelpie 安装目录</source>
+      <translation>Diretório de instalação do Kelpie</translation>
     </message>
     <message>
-        <source>服务器列表源</source>
-        <translation type="vanished">Fonte da lista de servidores</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="75"/>
+      <source>未运行</source>
+      <translation>Não em execução</translation>
     </message>
     <message>
-        <source>eD2k server.met 文件的 URL，留空则不引导</source>
-        <translation type="vanished">URL do arquivo eD2k server.met；deixe em branco para não guiar</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="77"/>
+      <source>有 eD2k 任务正在下载或做种，结束后才能终止</source>
+      <translation>Há tarefas eD2k baixando ou semeando; só é possível encerrar após a conclusão</translation>
     </message>
     <message>
-        <source>DHT 节点源</source>
-        <translation type="vanished">Fonte de nós DHT</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="78"/>
+      <source>空闲 5 分钟后自动终止，开始 eD2k 任务时会自动重新启动</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <source>KAD nodes.dat 文件的 URL，留空则不引导</source>
-        <translation type="vanished">URL do arquivo KAD nodes.dat；deixe em branco para não guiar</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="81"/>
+      <source>终止</source>
+      <translation>Encerrar</translation>
     </message>
     <message>
-        <source>启用 DHT</source>
-        <translation type="vanished">Habilitar DHT</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="81"/>
+      <source>终止 Kelpie 进程</source>
+      <translation>Encerrar processo do Kelpie</translation>
     </message>
     <message>
-        <source>通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器</source>
-        <translation type="vanished">Busca nós via tabela hash distribuída; desative para usar apenas servidores eD2k</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="94"/>
+      <source>服务器列表</source>
+      <translation>Lista de servidores</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="66"/>
-        <source>Kelpie 安装目录</source>
-        <translation>Diretório de instalação do Kelpie</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="98"/>
+      <source>KAD 节点列表</source>
+      <translation>Lista de nós KAD</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="75"/>
-        <source>未运行</source>
-        <translation>Não em execução</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="108"/>
+      <source>自动更新订阅</source>
+      <translation>Atualização automática de assinaturas</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="77"/>
-        <source>有 eD2k 任务正在下载或做种，结束后才能终止</source>
-        <translation>Há tarefas eD2k baixando ou semeando; só é possível encerrar após a conclusão</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="109"/>
+      <source>每天在后台更新一次服务器列表和 KAD 节点列表</source>
+      <translation>Atualizar a lista de servidores e a lista de nós KAD uma vez por dia em segundo plano</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="78"/>
-        <source>开始 eD2k 任务时会自动重新启动</source>
-        <translation>Reiniciará automaticamente ao iniciar uma tarefa eD2k</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="116"/>
+      <source>启用 KAD</source>
+      <translation>Habilitar KAD</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
-        <source>终止</source>
-        <translation>Encerrar</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="117"/>
+      <source>通过 KAD 网络查找来源，关闭后仅使用 eD2k 服务器</source>
+      <translation>Buscar fontes através da rede KAD; se desativado, usar apenas servidores eD2k</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
-        <source>终止 Kelpie 进程</source>
-        <translation>Encerrar processo do Kelpie</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="121"/>
+      <source>启用 UPnP</source>
+      <translation>Habilitar UPnP</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="94"/>
-        <source>服务器列表</source>
-        <translation>Lista de servidores</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="122"/>
+      <source>自动配置路由器端口转发</source>
+      <translation>Configurar automaticamente o encaminhamento de portas do roteador</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="98"/>
-        <source>KAD 节点列表</source>
-        <translation>Lista de nós KAD</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="126"/>
+      <source>监听端口</source>
+      <translation>Porta de escuta</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="108"/>
-        <source>自动更新订阅</source>
-        <translation>Atualização automática de assinaturas</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="127"/>
+      <source>0 表示交给系统自动分配可用端口</source>
+      <translation>0 significa que o sistema atribuirá automaticamente uma porta disponível</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="109"/>
-        <source>每天在后台更新一次服务器列表和 KAD 节点列表</source>
-        <translation>Atualizar a lista de servidores e a lista de nós KAD uma vez por dia em segundo plano</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="131"/>
+      <source>上传限速</source>
+      <translation>Limite de upload</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="116"/>
-        <source>启用 KAD</source>
-        <translation>Habilitar KAD</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="132"/>
+      <source>0 表示不限速。上传越多积分越高，在别人的队列里排得越靠前，自己下载也越快</source>
+      <translation>0 significa sem limite. Quanto mais upload, mais pontos, mais à frente na fila dos outros e mais rápido seu download</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="117"/>
-        <source>通过 KAD 网络查找来源，关闭后仅使用 eD2k 服务器</source>
-        <translation>Buscar fontes através da rede KAD; se desativado, usar apenas servidores eD2k</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="136"/>
+      <source>自动停止做种分享率</source>
+      <translation>Taxa de compartilhamento para parada automática de seeding</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="121"/>
-        <source>启用 UPnP</source>
-        <translation>Habilitar UPnP</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="137"/>
+      <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
+      <translation>0 desativa a parada automática por taxa de compartilhamento; 100% significa taxa 1,0</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="122"/>
-        <source>自动配置路由器端口转发</source>
-        <translation>Configurar automaticamente o encaminhamento de portas do roteador</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="141"/>
+      <source>自动停止做种时长</source>
+      <translation>Duração de seeding para parada automática</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="126"/>
-        <source>监听端口</source>
-        <translation>Porta de escuta</translation>
+      <location filename="../../../features/ed2k_pack/config.py" line="142"/>
+      <source>0 表示不按做种时长自动停止</source>
+      <translation>0 desativa a parada automática por duração de seeding</translation>
     </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="127"/>
-        <source>0 表示交给系统自动分配可用端口</source>
-        <translation>0 significa que o sistema atribuirá automaticamente uma porta disponível</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="131"/>
-        <source>上传限速</source>
-        <translation>Limite de upload</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="132"/>
-        <source>0 表示不限速。上传越多积分越高，在别人的队列里排得越靠前，自己下载也越快</source>
-        <translation>0 significa sem limite. Quanto mais upload, mais pontos, mais à frente na fila dos outros e mais rápido seu download</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="136"/>
-        <source>自动停止做种分享率</source>
-        <translation>Taxa de compartilhamento para parada automática de seeding</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="137"/>
-        <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
-        <translation>0 desativa a parada automática por taxa de compartilhamento; 100% significa taxa 1,0</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="141"/>
-        <source>自动停止做种时长</source>
-        <translation>Duração de seeding para parada automática</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="142"/>
-        <source>0 表示不按做种时长自动停止</source>
-        <translation>0 desativa a parada automática por duração de seeding</translation>
-    </message>
-    <message>
-        <source>自动停止共享时长</source>
-        <translation type="vanished">Duração de compartilhamento para parada automática</translation>
-    </message>
-    <message>
-        <source>0 表示不按共享时长自动停止</source>
-        <translation type="vanished">0 desativa a parada automática por duração de compartilhamento</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ED2kPack</name>
     <message>
-        <location filename="../../../features/ed2k_pack/pack.py" line="56"/>
-        <source>eD2k 链接</source>
-        <translation>Links eD2k</translation>
+      <location filename="../../../features/ed2k_pack/pack.py" line="57"/>
+      <source>eD2k 链接</source>
+      <translation>Links eD2k</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ED2kSourceCard</name>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="36"/>
-        <source>传输中</source>
-        <translation>Transferindo</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="36"/>
+      <source>传输中</source>
+      <translation>Transferindo</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="38"/>
-        <source>排队 #{0}</source>
-        <translation>Na fila #{0}</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="38"/>
+      <source>排队 #{0}</source>
+      <translation>Na fila #{0}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="40"/>
-        <source>排队</source>
-        <translation>Na fila</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="40"/>
+      <source>排队</source>
+      <translation>Na fila</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="42"/>
-        <source>连接中</source>
-        <translation>Conectando</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="42"/>
+      <source>连接中</source>
+      <translation>Conectando</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="44"/>
-        <source>暂缓</source>
-        <translation>Adiado</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="44"/>
+      <source>暂缓</source>
+      <translation>Adiado</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="52"/>
-        <source>链接</source>
-        <translation>Link</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="52"/>
+      <source>链接</source>
+      <translation>Link</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="54"/>
-        <source>服务器</source>
-        <translation>Servidor</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="54"/>
+      <source>服务器</source>
+      <translation>Servidor</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="58"/>
-        <source>来源交换</source>
-        <translation>Troca de fontes</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="58"/>
+      <source>来源交换</source>
+      <translation>Troca de fontes</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="60"/>
-        <source>对方连入</source>
-        <translation>Conexão recebida</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="60"/>
+      <source>对方连入</source>
+      <translation>Conexão recebida</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="113"/>
-        <source>来源</source>
-        <translation>Fonte</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="113"/>
+      <source>来源</source>
+      <translation>Fonte</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
-        <source>地址</source>
-        <translation>Endereço</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
+      <source>地址</source>
+      <translation>Endereço</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
-        <source>客户端</source>
-        <translation>Cliente</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
+      <source>客户端</source>
+      <translation>Cliente</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
-        <source>状态</source>
-        <translation>Status</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
+      <source>状态</source>
+      <translation>Status</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
-        <source>渠道</source>
-        <translation>Canal</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="116"/>
+      <source>渠道</source>
+      <translation>Canal</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/detail_cards.py" line="118"/>
-        <source>任务运行时显示</source>
-        <translation>Exibir durante a execução da tarefa</translation>
+      <location filename="../../../features/ed2k_pack/detail_cards.py" line="118"/>
+      <source>任务运行时显示</source>
+      <translation>Exibir durante a execução da tarefa</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ED2kTaskCard</name>
     <message>
-        <source>已共享 {0}</source>
-        <translation type="vanished">Compartilhado {0}</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="17"/>
+      <source>不到 1 分钟</source>
+      <translation>Menos de 1 minuto</translation>
     </message>
     <message>
-        <source>共享中</source>
-        <translation type="vanished">Compartilhando</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="18"/>
+      <source>约 {0} 分钟</source>
+      <translation>Aproximadamente {0} minutos</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="17"/>
-        <source>不到 1 分钟</source>
-        <translation>Menos de 1 minuto</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="25"/>
+      <source>为免被对方判为请求过频而封禁，{0} 个来源{1}后再请求</source>
+      <translation>Para evitar ser banido por solicitações frequentes, solicitar novamente após {0} fontes {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="18"/>
-        <source>约 {0} 分钟</source>
-        <translation>Aproximadamente {0} minutos</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="34"/>
+      <source>{0} 个来源{1}后恢复</source>
+      <translation>{0} fontes {1} para recuperar</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="25"/>
-        <source>为免被对方判为请求过频而封禁，{0} 个来源{1}后再请求</source>
-        <translation>Para evitar ser banido por solicitações frequentes, solicitar novamente após {0} fontes {1}</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="42"/>
+      <source>{0}/{1} 来源</source>
+      <translation>{0}/{1} fontes</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="34"/>
-        <source>{0} 个来源{1}后恢复</source>
-        <translation>{0} fontes {1} para recuperar</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="78"/>
+      <location filename="../../../features/ed2k_pack/cards.py" line="80"/>
+      <source>，</source>
+      <translation>,</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="42"/>
-        <source>{0}/{1} 来源</source>
-        <translation>{0}/{1} fontes</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="78"/>
+      <source>做种中</source>
+      <translation>Semeando</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="83"/>
-        <location filename="../../../features/ed2k_pack/cards.py" line="85"/>
-        <source>，</source>
-        <translation>,</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="85"/>
+      <source>分享率 {0}</source>
+      <translation>Taxa de compartilhamento {0}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="83"/>
-        <source>做种中</source>
-        <translation>Semeando</translation>
+      <location filename="../../../features/ed2k_pack/cards.py" line="87"/>
+      <source>已做种 {0}</source>
+      <translation>Semeado {0}</translation>
     </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="90"/>
-        <source>分享率 {0}</source>
-        <translation>Taxa de compartilhamento {0}</translation>
-    </message>
-    <message>
-        <location filename="../../../features/ed2k_pack/cards.py" line="92"/>
-        <source>已做种 {0}</source>
-        <translation>Semeado {0}</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>EditCookieDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="147"/>
-        <source>保存</source>
-        <translation>Salvar</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="148"/>
+      <source>保存</source>
+      <translation>Salvar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="148"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="149"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="150"/>
-        <source>手动导入 Cookie</source>
-        <translation>Importar Cookie manualmente</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="151"/>
+      <source>手动导入 Cookie</source>
+      <translation>Importar Cookie manualmente</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="152"/>
-        <source>请粘贴浏览器导出的完整 Cookie，留空后保存可清空当前 Cookie</source>
-        <translation>Cole o Cookie completo exportado do navegador; deixe em branco e salve para limpar o Cookie atual</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="153"/>
+      <source>请粘贴浏览器导出的完整 Cookie，留空后保存可清空当前 Cookie</source>
+      <translation>Cole o Cookie completo exportado do navegador; deixe em branco e salve para limpar o Cookie atual</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="155"/>
-        <source>请在此输入用户 Cookie</source>
-        <translation>Insira o Cookie do usuário aqui</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="156"/>
+      <source>请在此输入用户 Cookie</source>
+      <translation>Insira o Cookie do usuário aqui</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>EditTaskDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="26"/>
-        <source>编辑任务参数</source>
-        <translation>Editar parâmetros da tarefa</translation>
+      <location filename="../../view/dialogs/edit_task.py" line="26"/>
+      <source>编辑任务参数</source>
+      <translation>Editar parâmetros da tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="32"/>
-        <source>应用</source>
-        <translation>Aplicar</translation>
+      <location filename="../../view/dialogs/edit_task.py" line="32"/>
+      <source>应用</source>
+      <translation>Aplicar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="33"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/edit_task.py" line="33"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ErrorBar</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="332"/>
-        <source>下载失败</source>
-        <translation>Falha no download</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="332"/>
+      <source>下载失败</source>
+      <translation>Falha no download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="338"/>
-        <source>复制</source>
-        <translation>Copiar</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="338"/>
+      <source>复制</source>
+      <translation>Copiar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ExtensionInstallDialog</name>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="24"/>
-        <source>扩展已解包，按以下步骤安装</source>
-        <translation>Extensão descompactada, siga as etapas para instalar</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="24"/>
+      <source>扩展已解包，按以下步骤安装</source>
+      <translation>Extensão descompactada, siga as etapas para instalar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="38"/>
-        <source>打开扩展页面并定位目录</source>
-        <translation>Abra a página de extensões e localize o diretório</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="38"/>
+      <source>打开扩展页面并定位目录</source>
+      <translation>Abra a página de extensões e localize o diretório</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="39"/>
-        <source>关闭</source>
-        <translation>Fechar</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="39"/>
+      <source>关闭</source>
+      <translation>Fechar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="54"/>
-        <source>演示动画即将上线</source>
-        <translation>Animação de demonstração em breve</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="54"/>
+      <source>演示动画即将上线</source>
+      <translation>Animação de demonstração em breve</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="71"/>
-        <source>在浏览器中打开 {}</source>
-        <translation>Abrir {} no navegador</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="71"/>
+      <source>在浏览器中打开 {}</source>
+      <translation>Abrir {} no navegador</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="72"/>
-        <source>开启 {}</source>
-        <translation>Ativar {}</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="72"/>
+      <source>开启 {}</source>
+      <translation>Ativar {}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="72"/>
-        <source>开发者模式</source>
-        <translation>Modo desenvolvedor</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="72"/>
+      <source>开发者模式</source>
+      <translation>Modo desenvolvedor</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="73"/>
-        <source>将 {} 拖入浏览器窗口</source>
-        <translation>Arraste {} para a janela do navegador</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="73"/>
+      <source>将 {} 拖入浏览器窗口</source>
+      <translation>Arraste {} para a janela do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="73"/>
-        <source>扩展文件夹</source>
-        <translation>Pasta da extensão</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="73"/>
+      <source>扩展文件夹</source>
+      <translation>Pasta da extensão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="74"/>
-        <source>启用扩展</source>
-        <translation>Ativar extensão</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="74"/>
+      <source>启用扩展</source>
+      <translation>Ativar extensão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="75"/>
-        <source>打开 {}，点击 {}</source>
-        <translation>Abra {} e clique em {}</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="75"/>
+      <source>打开 {}，点击 {}</source>
+      <translation>Abra {} e clique em {}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="75"/>
-        <source>扩展弹窗</source>
-        <translation>Pop-up da extensão</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="75"/>
+      <source>扩展弹窗</source>
+      <translation>Pop-up da extensão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="75"/>
-        <source>自动配对</source>
-        <translation>Emparelhamento automático</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="75"/>
+      <source>自动配对</source>
+      <translation>Emparelhamento automático</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="130"/>
-        <source>请手动打开浏览器</source>
-        <translation>Abra o navegador manualmente</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="130"/>
+      <source>请手动打开浏览器</source>
+      <translation>Abra o navegador manualmente</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/extension_install.py" line="131"/>
-        <source>chrome://extensions 已复制到剪贴板，请粘贴到地址栏</source>
-        <translation>chrome://extensions foi copiado para a área de transferência, cole na barra de endereços</translation>
+      <location filename="../../view/dialogs/extension_install.py" line="131"/>
+      <source>chrome://extensions 已复制到剪贴板，请粘贴到地址栏</source>
+      <translation>chrome://extensions foi copiado para a área de transferência, cole na barra de endereços</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FFmpegConfig</name>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="49"/>
-        <source>FFmpeg</source>
-        <translation>FFmpeg</translation>
+      <location filename="../../../features/ffmpeg_pack/config.py" line="49"/>
+      <source>FFmpeg</source>
+      <translation>FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="52"/>
-        <source>FFmpeg 安装目录</source>
-        <translation>Diretório de instalação do FFmpeg</translation>
+      <location filename="../../../features/ffmpeg_pack/config.py" line="52"/>
+      <source>FFmpeg 安装目录</source>
+      <translation>Diretório de instalação do FFmpeg</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FFmpegDraftCard</name>
     <message>
-        <location filename="../../../features/ffmpeg_pack/cards.py" line="40"/>
-        <source>截取片段</source>
-        <translation>Recortar segmento</translation>
+      <location filename="../../../features/ffmpeg_pack/cards.py" line="34"/>
+      <source>截取片段</source>
+      <translation>Recortar segmento</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FailedDraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="232"/>
-        <source>重试</source>
-        <translation>Tentar novamente</translation>
+      <location filename="../../view/cards/draft_cards.py" line="233"/>
+      <source>重试</source>
+      <translation>Tentar novamente</translation>
     </message>
-</context>
-<context>
-    <name>FileHashDialog</name>
-    <message>
-        <source>校验下载文件</source>
-        <translation type="vanished">Verificar integridade do arquivo baixado</translation>
-    </message>
-    <message>
-        <source>等待开始</source>
-        <translation type="vanished">Aguardando início</translation>
-    </message>
-    <message>
-        <source>开始校验</source>
-        <translation type="vanished">Iniciar verificação</translation>
-    </message>
-    <message>
-        <source>取消</source>
-        <translation type="vanished">Cancelar</translation>
-    </message>
-    <message>
-        <source>选择校验算法</source>
-        <translation type="vanished">Selecione o algoritmo de verificação</translation>
-    </message>
-    <message>
-        <source>正在校验...</source>
-        <translation type="vanished">Verificando...</translation>
-    </message>
-    <message>
-        <source>校验完成</source>
-        <translation type="vanished">Verificação concluída</translation>
-    </message>
-    <message>
-        <source>校验失败：{0}</source>
-        <translation type="vanished">Falha na verificação: {0}</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FileListCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="382"/>
-        <location filename="../../view/dialogs/task_drawer.py" line="385"/>
-        <source>文件</source>
-        <translation>Arquivo</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="382"/>
+      <location filename="../../view/dialogs/task_drawer.py" line="385"/>
+      <source>文件</source>
+      <translation>Arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="385"/>
-        <source>大小</source>
-        <translation>Tamanho</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="385"/>
+      <source>大小</source>
+      <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="385"/>
-        <source>状态</source>
-        <translation>Status</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="385"/>
+      <source>状态</source>
+      <translation>Status</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="402"/>
-        <source>未选择</source>
-        <translation>Não selecionado</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="402"/>
+      <source>未选择</source>
+      <translation>Não selecionado</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="404"/>
-        <source>已完成</source>
-        <translation>Concluído</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="404"/>
+      <source>已完成</source>
+      <translation>Concluído</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FileSelectDialog</name>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="39"/>
-        <source>选择下载文件</source>
-        <translation>Selecionar arquivos para download</translation>
+      <location filename="../../view/dialogs/file_select.py" line="39"/>
+      <source>选择下载文件</source>
+      <translation>Selecionar arquivos para download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="44"/>
-        <source>没有匹配的文件</source>
-        <translation>Nenhum arquivo correspondente</translation>
+      <location filename="../../view/dialogs/file_select.py" line="44"/>
+      <source>没有匹配的文件</source>
+      <translation>Nenhum arquivo correspondente</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="47"/>
-        <source>全选</source>
-        <translation>Selecionar todos</translation>
+      <location filename="../../view/dialogs/file_select.py" line="47"/>
+      <source>全选</source>
+      <translation>Selecionar todos</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="48"/>
-        <source>全不选</source>
-        <translation>Desmarcar todos</translation>
+      <location filename="../../view/dialogs/file_select.py" line="48"/>
+      <source>全不选</source>
+      <translation>Desmarcar todos</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="49"/>
-        <source>反选</source>
-        <translation>Inverter seleção</translation>
+      <location filename="../../view/dialogs/file_select.py" line="49"/>
+      <source>反选</source>
+      <translation>Inverter seleção</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="50"/>
-        <source>按类型选择</source>
-        <translation>Selecionar por tipo</translation>
+      <location filename="../../view/dialogs/file_select.py" line="50"/>
+      <source>按类型选择</source>
+      <translation>Selecionar por tipo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="65"/>
-        <source>应用</source>
-        <translation>Aplicar</translation>
+      <location filename="../../view/dialogs/file_select.py" line="65"/>
+      <source>应用</source>
+      <translation>Aplicar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="66"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/file_select.py" line="66"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="67"/>
-        <source>搜索文件</source>
-        <translation>Buscar arquivos</translation>
+      <location filename="../../view/dialogs/file_select.py" line="67"/>
+      <source>搜索文件</source>
+      <translation>Buscar arquivos</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="73"/>
-        <source>文件</source>
-        <translation>Arquivo</translation>
+      <location filename="../../view/dialogs/file_select.py" line="73"/>
+      <source>文件</source>
+      <translation>Arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="73"/>
-        <source>大小</source>
-        <translation>Tamanho</translation>
+      <location filename="../../view/dialogs/file_select.py" line="73"/>
+      <source>大小</source>
+      <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="158"/>
-        <source>其他</source>
-        <translation>Outros</translation>
+      <location filename="../../view/dialogs/file_select.py" line="158"/>
+      <source>其他</source>
+      <translation>Outros</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="239"/>
-        <source>仅选{0} ({1})</source>
-        <translation>Selecionar apenas {0} ({1})</translation>
+      <location filename="../../view/dialogs/file_select.py" line="239"/>
+      <source>仅选{0} ({1})</source>
+      <translation>Selecionar apenas {0} ({1})</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="245"/>
-        <source>已选择 {0}/{1} 个文件，共 {2}</source>
-        <translation>{0}/{1} arquivos selecionados, total {2}</translation>
+      <location filename="../../view/dialogs/file_select.py" line="245"/>
+      <source>已选择 {0}/{1} 个文件，共 {2}</source>
+      <translation>{0}/{1} arquivos selecionados, total {2}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="248"/>
-        <source>，显示 {0} 个</source>
-        <translation>, exibindo {0}</translation>
+      <location filename="../../view/dialogs/file_select.py" line="248"/>
+      <source>，显示 {0} 个</source>
+      <translation>, exibindo {0}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="258"/>
-        <source>至少选择一个文件</source>
-        <translation>Selecione pelo menos um arquivo</translation>
+      <location filename="../../view/dialogs/file_select.py" line="258"/>
+      <source>至少选择一个文件</source>
+      <translation>Selecione pelo menos um arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/file_select.py" line="259"/>
-        <source>当前没有任何文件被勾选</source>
-        <translation>Nenhum arquivo selecionado no momento</translation>
+      <location filename="../../view/dialogs/file_select.py" line="259"/>
+      <source>当前没有任何文件被勾选</source>
+      <translation>Nenhum arquivo selecionado no momento</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FolderPicker</name>
     <message>
-        <location filename="../../view/components/editors.py" line="77"/>
-        <source>常用文件夹</source>
-        <translation>Pastas frequentes</translation>
+      <location filename="../../view/components/editors.py" line="77"/>
+      <source>常用文件夹</source>
+      <translation>Pastas frequentes</translation>
     </message>
     <message>
-        <location filename="../../view/components/editors.py" line="88"/>
-        <source>浏览文件夹</source>
-        <translation>Navegar na pasta</translation>
+      <location filename="../../view/components/editors.py" line="88"/>
+      <source>浏览文件夹</source>
+      <translation>Navegar na pasta</translation>
     </message>
     <message>
-        <location filename="../../view/components/editors.py" line="120"/>
-        <source>选择文件夹</source>
-        <translation>Selecionar pasta</translation>
+      <location filename="../../view/components/editors.py" line="120"/>
+      <source>选择文件夹</source>
+      <translation>Selecionar pasta</translation>
     </message>
     <message>
-        <location filename="../../view/components/editors.py" line="142"/>
-        <source>从常用文件夹中移除</source>
-        <translation>Remover das pastas frequentes</translation>
+      <location filename="../../view/components/editors.py" line="142"/>
+      <source>从常用文件夹中移除</source>
+      <translation>Remover das pastas frequentes</translation>
     </message>
-</context>
-<context>
-    <name>FtpDraftCard</name>
-    <message>
-        <source>选择文件</source>
-        <translation type="vanished">Selecionar arquivos</translation>
-    </message>
-    <message>
-        <source>{0}/{1} 个文件 · {2}</source>
-        <translation type="vanished">{0}/{1} arquivos · {2}</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>FtpPack</name>
     <message>
-        <location filename="../../../features/ftp_pack/pack.py" line="133"/>
-        <source>FTP / FTPS 链接</source>
-        <translation>Links FTP / FTPS</translation>
+      <location filename="../../../features/ftp_pack/pack.py" line="133"/>
+      <source>FTP / FTPS 链接</source>
+      <translation>Links FTP / FTPS</translation>
     </message>
-</context>
-<context>
-    <name>FtpTaskCard</name>
-    <message>
-        <source>{0}/{1} 个文件</source>
-        <translation type="vanished">{0}/{1} arquivos</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>GitHubConfig</name>
     <message>
-        <location filename="../../../features/github_pack/config.py" line="89"/>
-        <source>GitHub 加速</source>
-        <translation>Aceleração do GitHub</translation>
+      <location filename="../../../features/github_pack/config.py" line="89"/>
+      <source>GitHub 加速</source>
+      <translation>Aceleração do GitHub</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/config.py" line="91"/>
-        <source>启用 GitHub 加速</source>
-        <translation>Habilitar aceleração do GitHub</translation>
+      <location filename="../../../features/github_pack/config.py" line="91"/>
+      <source>启用 GitHub 加速</source>
+      <translation>Habilitar aceleração do GitHub</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/config.py" line="92"/>
-        <source>经代理站下载 GitHub 文件，不可用时自动切换其他站点或直连</source>
-        <translation>Baixar arquivos do GitHub através do site proxy; alternar automaticamente para outros sites ou conexão direta quando indisponível</translation>
+      <location filename="../../../features/github_pack/config.py" line="92"/>
+      <source>经代理站下载 GitHub 文件，不可用时自动切换其他站点或直连</source>
+      <translation>Baixar arquivos do GitHub através do site proxy; alternar automaticamente para outros sites ou conexão direta quando indisponível</translation>
     </message>
-    <message>
-        <source>优先使用所选代理站，不可用时自动切换其他站点或直连</source>
-        <translation type="vanished">Usar preferencialmente o site proxy selecionado, alternar automaticamente para outros sites ou conexão direta quando indisponível</translation>
-    </message>
-    <message>
-        <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation type="vanished">Ao identificar links de arquivos do GitHub, reescrever automaticamente para o proxy reverso selecionado</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>GitHubPack</name>
     <message>
-        <location filename="../../../features/github_pack/pack.py" line="141"/>
-        <source>GitHub 发布文件与仓库文件</source>
-        <translation>Arquivos de releases e repositórios do GitHub</translation>
+      <location filename="../../../features/github_pack/pack.py" line="141"/>
+      <source>GitHub 发布文件与仓库文件</source>
+      <translation>Arquivos de releases e repositórios do GitHub</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>GitHubProxySiteCard</name>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="22"/>
-        <source>代理站</source>
-        <translation>Site proxy</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="22"/>
+      <source>代理站</source>
+      <translation>Site proxy</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="23"/>
-        <source>选择 GitHub 反向代理站，延迟仅供参考</source>
-        <translation>Selecione o proxy reverso do GitHub; latência é apenas referência</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="23"/>
+      <source>选择 GitHub 反向代理站，延迟仅供参考</source>
+      <translation>Selecione o proxy reverso do GitHub; latência é apenas referência</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="40"/>
-        <source>刷新延迟</source>
-        <translation>Atualizar latência</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="40"/>
+      <source>刷新延迟</source>
+      <translation>Atualizar latência</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="43"/>
-        <source>自动</source>
-        <translation>Automático</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="43"/>
+      <source>自动</source>
+      <translation>Automático</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="46"/>
-        <location filename="../../../features/github_pack/setting_cards.py" line="85"/>
-        <source>自定义</source>
-        <translation>Personalizado</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="46"/>
+      <location filename="../../../features/github_pack/setting_cards.py" line="85"/>
+      <source>自定义</source>
+      <translation>Personalizado</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="70"/>
-        <source>不可用</source>
-        <translation>Indisponível</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="70"/>
+      <source>不可用</source>
+      <translation>Indisponível</translation>
     </message>
     <message>
-        <location filename="../../../features/github_pack/setting_cards.py" line="72"/>
-        <source>超时</source>
-        <translation>Tempo esgotado</translation>
+      <location filename="../../../features/github_pack/setting_cards.py" line="72"/>
+      <source>超时</source>
+      <translation>Tempo esgotado</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeaderCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="197"/>
-        <source>做种中</source>
-        <translation>Semeando</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="197"/>
+      <source>做种中</source>
+      <translation>Semeando</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="197"/>
-        <source>已完成</source>
-        <translation>Concluído</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="197"/>
+      <source>已完成</source>
+      <translation>Concluído</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="199"/>
-        <source>失败</source>
-        <translation>Falhou</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="199"/>
+      <source>失败</source>
+      <translation>Falhou</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="201"/>
-        <source>已暂停</source>
-        <translation>Pausado</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="201"/>
+      <source>已暂停</source>
+      <translation>Pausado</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="202"/>
-        <source>等待中</source>
-        <translation>Aguardando</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="202"/>
+      <source>等待中</source>
+      <translation>Aguardando</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeaderRow</name>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="162"/>
-        <source>名称</source>
-        <translation>Nome</translation>
+      <location filename="../../view/components/headers_editor.py" line="162"/>
+      <source>名称</source>
+      <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="165"/>
-        <source>值</source>
-        <translation>Valor</translation>
+      <location filename="../../view/components/headers_editor.py" line="165"/>
+      <source>值</source>
+      <translation>Valor</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeadersEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="264"/>
-        <source>请求标头</source>
-        <translation>Cabeçalhos da requisição</translation>
+      <location filename="../../view/components/option_cards.py" line="267"/>
+      <source>请求标头</source>
+      <translation>Cabeçalhos da requisição</translation>
     </message>
-    <message>
-        <source>恢复默认请求标头</source>
-        <translation type="vanished">Restaurar cabeçalhos de requisição padrão</translation>
-    </message>
-    <message>
-        <source>每行一个 Name: Value</source>
-        <translation type="vanished">Um por linha no formato Name: Value</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeadersEditor</name>
     <message>
-        <source>名称</source>
-        <translation type="vanished">Nome</translation>
+      <location filename="../../view/components/headers_editor.py" line="238"/>
+      <source>每行一个 名称: 值，或直接粘贴 cURL 命令</source>
+      <translation>Um par Nome: Valor por linha, ou cole um comando cURL diretamente</translation>
     </message>
     <message>
-        <source>值</source>
-        <translation type="vanished">Valor</translation>
+      <location filename="../../view/components/headers_editor.py" line="239"/>
+      <location filename="../../view/components/headers_editor.py" line="331"/>
+      <source>使用帮助</source>
+      <translation>Ajuda de uso</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="238"/>
-        <source>每行一个 名称: 值，或直接粘贴 cURL 命令</source>
-        <translation>Um par Nome: Valor por linha, ou cole um comando cURL diretamente</translation>
+      <location filename="../../view/components/headers_editor.py" line="240"/>
+      <location filename="../../view/components/headers_editor.py" line="323"/>
+      <source>切换到文本视图</source>
+      <translation>Alternar para visualização de texto</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="239"/>
-        <location filename="../../view/components/headers_editor.py" line="331"/>
-        <source>使用帮助</source>
-        <translation>Ajuda de uso</translation>
+      <location filename="../../view/components/headers_editor.py" line="241"/>
+      <source>恢复默认请求标头</source>
+      <translation>Restaurar cabeçalhos de requisição padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="240"/>
-        <location filename="../../view/components/headers_editor.py" line="323"/>
-        <source>切换到文本视图</source>
-        <translation>Alternar para visualização de texto</translation>
+      <location filename="../../view/components/headers_editor.py" line="323"/>
+      <source>切换到表格视图</source>
+      <translation>Alternar para visualização em tabela</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="241"/>
-        <source>恢复默认请求标头</source>
-        <translation>Restaurar cabeçalhos de requisição padrão</translation>
-    </message>
-    <message>
-        <location filename="../../view/components/headers_editor.py" line="323"/>
-        <source>切换到表格视图</source>
-        <translation>Alternar para visualização em tabela</translation>
-    </message>
-    <message>
-        <location filename="../../view/components/headers_editor.py" line="333"/>
-        <source>粘贴即可识别 cURL 或 名称: 值（每行一个）
+      <location filename="../../view/components/headers_editor.py" line="333"/>
+      <source>粘贴即可识别 cURL 或 名称: 值（每行一个）
 多条 cURL 只取第一条
 
 模拟身份开启时 User-Agent 和 sec-ch-ua 不生效，
 设为不模拟可原样发送</source>
-        <translation>Cole para reconhecer cURL ou Nome: Valor (um por linha)
+      <translation>Cole para reconhecer cURL ou Nome: Valor (um por linha)
 Se houver vários cURL, apenas o primeiro será considerado
 
 Quando a identidade simulada está ativa, User-Agent e sec-ch-ua não têm efeito.
 Defina como não simular para enviar como original.</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeadersPresetEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="26"/>
-        <source>确定</source>
-        <translation>OK</translation>
+      <location filename="../../view/dialogs/headers_preset_edit.py" line="27"/>
+      <source>确定</source>
+      <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="27"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/headers_preset_edit.py" line="28"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="28"/>
-        <source>预设名称</source>
-        <translation>Nome da predefinição</translation>
+      <location filename="../../view/dialogs/headers_preset_edit.py" line="29"/>
+      <source>预设名称</source>
+      <translation>Nome da predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="48"/>
-        <source>请输入预设名称</source>
-        <translation>Digite o nome da predefinição</translation>
+      <location filename="../../view/dialogs/headers_preset_edit.py" line="49"/>
+      <source>请输入预设名称</source>
+      <translation>Digite o nome da predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="49"/>
-        <source>预设名称不能为空</source>
-        <translation>O nome da predefinição não pode estar vazio</translation>
+      <location filename="../../view/dialogs/headers_preset_edit.py" line="50"/>
+      <source>预设名称不能为空</source>
+      <translation>O nome da predefinição não pode estar vazio</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="60"/>
-        <source>未命名预设</source>
-        <translation>Predefinição sem nome</translation>
+      <location filename="../../view/dialogs/headers_preset_edit.py" line="60"/>
+      <source>未命名预设</source>
+      <translation>Predefinição sem nome</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeadersPresetRow</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="742"/>
-        <source>{0} 条标头</source>
-        <translation>{0} cabeçalhos</translation>
+      <location filename="../../view/components/setting_cards.py" line="745"/>
+      <source>{0} 条标头</source>
+      <translation>{0} cabeçalhos</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="752"/>
-        <source>编辑</source>
-        <translation>Editar</translation>
+      <location filename="../../view/components/setting_cards.py" line="755"/>
+      <source>编辑</source>
+      <translation>Editar</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="754"/>
-        <source>删除</source>
-        <translation>Excluir</translation>
+      <location filename="../../view/components/setting_cards.py" line="757"/>
+      <source>删除</source>
+      <translation>Excluir</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HeadersPresetSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="777"/>
-        <source>请求标头预设</source>
-        <translation>Predefinições de cabeçalhos de requisição</translation>
+      <location filename="../../view/components/setting_cards.py" line="780"/>
+      <source>请求标头预设</source>
+      <translation>Predefinições de cabeçalhos de requisição</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="778"/>
-        <source>新建任务的标头起点</source>
-        <translation>Cabeçalhos iniciais para novas tarefas</translation>
+      <location filename="../../view/components/setting_cards.py" line="781"/>
+      <source>新建任务的标头起点</source>
+      <translation>Cabeçalhos iniciais para novas tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="785"/>
-        <source>添加预设</source>
-        <translation>Adicionar predefinição</translation>
+      <location filename="../../view/components/setting_cards.py" line="788"/>
+      <source>添加预设</source>
+      <translation>Adicionar predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="854"/>
-        <source>未命名预设</source>
-        <translation>Predefinição sem nome</translation>
+      <location filename="../../view/components/setting_cards.py" line="858"/>
+      <source>未命名预设</source>
+      <translation>Predefinição sem nome</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="856"/>
-        <source>删除预设</source>
-        <translation>Excluir predefinição</translation>
+      <location filename="../../view/components/setting_cards.py" line="860"/>
+      <source>删除预设</source>
+      <translation>Excluir predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="857"/>
-        <source>确定要删除 {0} 吗？</source>
-        <translation>Tem certeza de que deseja excluir {0}?</translation>
+      <location filename="../../view/components/setting_cards.py" line="861"/>
+      <source>确定要删除 {0} 吗？</source>
+      <translation>Tem certeza de que deseja excluir {0}?</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HttpPack</name>
     <message>
-        <location filename="../../../features/http_pack/pack.py" line="262"/>
-        <source>文件直链（视频、音频、压缩包、安装包、镜像、文档）</source>
-        <translation>Links diretos de arquivos (vídeo, áudio, compactados, instaladores, imagens de disco, documentos)</translation>
+      <location filename="../../../features/http_pack/pack.py" line="256"/>
+      <source>文件直链（视频、音频、压缩包、安装包、镜像、文档）</source>
+      <translation>Links diretos de arquivos (vídeo, áudio, compactados, instaladores, imagens de disco, documentos)</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HttpTaskCard</name>
     <message>
-        <location filename="../../../features/http_pack/cards.py" line="123"/>
-        <source>停止并定案</source>
-        <translation>Parar e finalizar</translation>
+      <location filename="../../../features/http_pack/cards.py" line="123"/>
+      <source>停止并定案</source>
+      <translation>Parar e finalizar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HuggingFaceConfig</name>
     <message>
-        <source>HuggingFace</source>
-        <translation type="vanished">HuggingFace</translation>
+      <location filename="../../../features/huggingface_pack/config.py" line="94"/>
+      <source>HuggingFace 下载</source>
+      <translation>Download do HuggingFace</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="94"/>
-        <source>HuggingFace 下载</source>
-        <translation>Download do HuggingFace</translation>
+      <location filename="../../../features/huggingface_pack/config.py" line="97"/>
+      <source>启用 HuggingFace 加速</source>
+      <translation>Habilitar aceleração do HuggingFace</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="97"/>
-        <source>启用 HuggingFace 加速</source>
-        <translation>Habilitar aceleração do HuggingFace</translation>
+      <location filename="../../../features/huggingface_pack/config.py" line="98"/>
+      <source>命中 HuggingFace 链接时，自动改写为所选镜像站</source>
+      <translation>Ao identificar links do HuggingFace, reescrever automaticamente para o mirror selecionado</translation>
     </message>
-    <message>
-        <location filename="../../../features/huggingface_pack/config.py" line="98"/>
-        <source>命中 HuggingFace 链接时，自动改写为所选镜像站</source>
-        <translation>Ao identificar links do HuggingFace, reescrever automaticamente para o mirror selecionado</translation>
-    </message>
-</context>
-<context>
-    <name>HuggingFaceDraftCard</name>
-    <message>
-        <source>选择文件</source>
-        <translation type="vanished">Selecionar arquivos</translation>
-    </message>
-    <message>
-        <source>{0}/{1} 个文件 · {2}</source>
-        <translation type="vanished">{0}/{1} arquivos · {2}</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HuggingFaceMirrorSiteCard</name>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="29"/>
-        <source>镜像站</source>
-        <translation>Site mirror</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="29"/>
+      <source>镜像站</source>
+      <translation>Site mirror</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="30"/>
-        <source>选择 HuggingFace 镜像站，延迟仅供参考</source>
-        <translation>Selecione o mirror do HuggingFace; latência é apenas referência</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="30"/>
+      <source>选择 HuggingFace 镜像站，延迟仅供参考</source>
+      <translation>Selecione o mirror do HuggingFace; latência é apenas referência</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="47"/>
-        <source>刷新延迟</source>
-        <translation>Atualizar latência</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="47"/>
+      <source>刷新延迟</source>
+      <translation>Atualizar latência</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="52"/>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="92"/>
-        <source>自定义</source>
-        <translation>Personalizado</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="52"/>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="92"/>
+      <source>自定义</source>
+      <translation>Personalizado</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HuggingFacePack</name>
     <message>
-        <location filename="../../../features/huggingface_pack/pack.py" line="142"/>
-        <source>Hugging Face 模型与数据集文件</source>
-        <translation>Arquivos de modelos e conjuntos de dados do Hugging Face</translation>
+      <location filename="../../../features/huggingface_pack/pack.py" line="142"/>
+      <source>Hugging Face 模型与数据集文件</source>
+      <translation>Arquivos de modelos e conjuntos de dados do Hugging Face</translation>
     </message>
-</context>
-<context>
-    <name>HuggingFaceProxySiteCard</name>
-    <message>
-        <source>镜像站</source>
-        <translation type="vanished">Site mirror</translation>
-    </message>
-    <message>
-        <source>选择 HuggingFace 镜像站，延迟仅供参考</source>
-        <translation type="vanished">Selecione o mirror do HuggingFace; latência é apenas referência</translation>
-    </message>
-    <message>
-        <source>刷新延迟</source>
-        <translation type="vanished">Atualizar latência</translation>
-    </message>
-    <message>
-        <source>自定义</source>
-        <translation type="vanished">Personalizado</translation>
-    </message>
-</context>
-<context>
-    <name>HuggingFaceTaskCard</name>
-    <message>
-        <source>{0}/{1} 个文件</source>
-        <translation type="vanished">{0}/{1} arquivos</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>HuggingFaceTokenCard</name>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="140"/>
-        <source>Access Token</source>
-        <translation>Token de acesso</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="140"/>
+      <source>Access Token</source>
+      <translation>Token de acesso</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="141"/>
-        <source>用于下载需要授权的模型（如 Llama、Mistral）</source>
-        <translation>Para baixar modelos que exigem autorização (ex.: Llama, Mistral)</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="141"/>
+      <source>用于下载需要授权的模型（如 Llama、Mistral）</source>
+      <translation>Para baixar modelos que exigem autorização (ex.: Llama, Mistral)</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/setting_cards.py" line="148"/>
-        <source>获取 Token</source>
-        <translation>Obter token</translation>
+      <location filename="../../../features/huggingface_pack/setting_cards.py" line="148"/>
+      <source>获取 Token</source>
+      <translation>Obter token</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>IdentitySettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="580"/>
-        <source>模拟身份</source>
-        <translation>Perfil de cliente simulado</translation>
+      <location filename="../../view/components/setting_cards.py" line="581"/>
+      <source>模拟身份</source>
+      <translation>Perfil de cliente simulado</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="581"/>
-        <source>TLS 指纹与 User-Agent 预设</source>
-        <translation>Predefinições de impressão digital TLS e User-Agent</translation>
+      <location filename="../../view/components/setting_cards.py" line="582"/>
+      <source>TLS 指纹与 User-Agent 预设</source>
+      <translation>Predefinições de impressão digital TLS e User-Agent</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="595"/>
-        <source>全局默认</source>
-        <translation>Padrão global</translation>
+      <location filename="../../view/components/setting_cards.py" line="596"/>
+      <source>全局默认</source>
+      <translation>Padrão global</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="596"/>
-        <source>未被预设匹配时使用</source>
-        <translation>Usar quando nenhuma predefinição corresponder</translation>
+      <location filename="../../view/components/setting_cards.py" line="597"/>
+      <source>未被预设匹配时使用</source>
+      <translation>Usar quando nenhuma predefinição corresponder</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="601"/>
-        <source>添加预设</source>
-        <translation>Adicionar predefinição</translation>
+      <location filename="../../view/components/setting_cards.py" line="602"/>
+      <source>添加预设</source>
+      <translation>Adicionar predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="709"/>
-        <source>未命名预设</source>
-        <translation>Predefinição sem nome</translation>
+      <location filename="../../view/components/setting_cards.py" line="711"/>
+      <source>未命名预设</source>
+      <translation>Predefinição sem nome</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="711"/>
-        <source>删除预设</source>
-        <translation>Excluir predefinição</translation>
+      <location filename="../../view/components/setting_cards.py" line="713"/>
+      <source>删除预设</source>
+      <translation>Excluir predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="712"/>
-        <source>确定要删除 {0} 吗？</source>
-        <translation>Tem certeza de que deseja excluir {0}?</translation>
+      <location filename="../../view/components/setting_cards.py" line="714"/>
+      <source>确定要删除 {0} 吗？</source>
+      <translation>Tem certeza de que deseja excluir {0}?</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>InfoCard</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="207"/>
-        <source>信息</source>
-        <translation>Informações</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="207"/>
+      <source>信息</source>
+      <translation>Informações</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="210"/>
-        <source>下载链接</source>
-        <translation>Link de download</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="210"/>
+      <source>下载链接</source>
+      <translation>Link de download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="211"/>
-        <source>保存位置</source>
-        <translation>Local de salvamento</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="211"/>
+      <source>保存位置</source>
+      <translation>Local de salvamento</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="212"/>
-        <source>大小</source>
-        <translation>Tamanho</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="212"/>
+      <source>大小</source>
+      <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="213"/>
-        <source>分类</source>
-        <translation>Categoria</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="213"/>
+      <source>分类</source>
+      <translation>Categoria</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="214"/>
-        <source>创建时间</source>
-        <translation>Data de criação</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="214"/>
+      <source>创建时间</source>
+      <translation>Data de criação</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="215"/>
-        <source>完成时间</source>
-        <translation>Data de conclusão</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="215"/>
+      <source>完成时间</source>
+      <translation>Data de conclusão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="222"/>
-        <source>在文件夹中显示</source>
-        <translation>Mostrar na pasta</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="222"/>
+      <source>在文件夹中显示</source>
+      <translation>Mostrar na pasta</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="237"/>
-        <source>未分类</source>
-        <translation>Sem categoria</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="237"/>
+      <source>未分类</source>
+      <translation>Sem categoria</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>InfoRow</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="124"/>
-        <source>复制</source>
-        <translation>Copiar</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="124"/>
+      <source>复制</source>
+      <translation>Copiar</translation>
     </message>
-</context>
-<context>
-    <name>KeepAlive</name>
-    <message>
-        <source>后台任务</source>
-        <translation type="vanished">Tarefa em segundo plano</translation>
-    </message>
-    <message>
-        <source>下载中</source>
-        <translation type="vanished">Baixando</translation>
-    </message>
-    <message>
-        <source>浏览器扩展已连接</source>
-        <translation type="vanished">Extensão do navegador conectada</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>LiveEditDialog</name>
     <message>
-        <source>确认更换链接</source>
-        <translation type="vanished">Confirmar substituição do link</translation>
+      <location filename="../../view/dialogs/edit_task.py" line="109"/>
+      <source>链接解析失败</source>
+      <translation>Falha ao analisar o link</translation>
     </message>
-    <message>
-        <source>新链接与原链接的内容不一致，将清除已下载的 {0} 数据，是否继续？</source>
-        <translation type="vanished">O novo link tem conteúdo diferente do original, os dados baixados {0} serão removidos. Continuar?</translation>
-    </message>
-    <message>
-        <location filename="../../view/dialogs/edit_task.py" line="109"/>
-        <source>链接解析失败</source>
-        <translation>Falha ao analisar o link</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>LoadingWidget</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="126"/>
-        <location filename="../../../features/jack_yao/pack.py" line="150"/>
-        <source>正在加载...</source>
-        <translation>Carregando...</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="124"/>
+      <location filename="../../../features/jack_yao/pack.py" line="148"/>
+      <source>正在加载...</source>
+      <translation>Carregando...</translation>
     </message>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="130"/>
-        <source>重试</source>
-        <translation>Tentar novamente</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="128"/>
+      <source>重试</source>
+      <translation>Tentar novamente</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>M3U8Config</name>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="79"/>
-        <source>N_m3u8DL-RE 安装目录</source>
-        <translation>Diretório de instalação do N_m3u8DL-RE</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="79"/>
+      <source>N_m3u8DL-RE 安装目录</source>
+      <translation>Diretório de instalação do N_m3u8DL-RE</translation>
     </message>
     <message>
-        <source>关联 M3U8/MPD 文件</source>
-        <translation type="vanished">Associar arquivos M3U8/MPD</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="85"/>
+      <source>输出容器</source>
+      <translation>Contêiner de saída</translation>
     </message>
     <message>
-        <source>把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader</source>
-        <translation type="vanished">Definir o Ghost Downloader como programa padrão para abrir arquivos .m3u8/.m3u/.mpd</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="86"/>
+      <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
+      <translation>Após o download de vídeos sob demanda, usar ffmpeg para multiplexar no contêiner especificado</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
-        <source>输出容器</source>
-        <translation>Contêiner de saída</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="87"/>
+      <source>分片线程数</source>
+      <translation>Número de threads de segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="86"/>
-        <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
-        <translation>Após o download de vídeos sob demanda, usar ffmpeg para multiplexar no contêiner especificado</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="88"/>
+      <source>传给 N_m3u8DL-RE 的下载线程数</source>
+      <translation>Número de threads de download passado para o N_m3u8DL-RE</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="87"/>
-        <source>分片线程数</source>
-        <translation>Número de threads de segmento</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="89"/>
+      <source>分片重试次数</source>
+      <translation>Tentativas de segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
-        <source>传给 N_m3u8DL-RE 的下载线程数</source>
-        <translation>Número de threads de download passado para o N_m3u8DL-RE</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="90"/>
+      <source>单个分片下载失败时的最大重试次数</source>
+      <translation>Número máximo de tentativas por segmento em caso de falha de download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
-        <source>分片重试次数</source>
-        <translation>Tentativas de segmento</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+      <source>请求超时</source>
+      <translation>Timeout da requisição</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
-        <source>单个分片下载失败时的最大重试次数</source>
-        <translation>Número máximo de tentativas por segmento em caso de falha de download</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+      <source>HTTP 请求超时时间</source>
+      <translation>Tempo limite da requisição HTTP</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
-        <source>请求超时</source>
-        <translation>Timeout da requisição</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="93"/>
+      <source>自动选择最佳轨道</source>
+      <translation>Selecionar automaticamente a melhor faixa</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
-        <source>HTTP 请求超时时间</source>
-        <translation>Tempo limite da requisição HTTP</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="76"/>
+      <source>M3U8 下载</source>
+      <translation>Download M3U8</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
-        <source>自动选择最佳轨道</source>
-        <translation>Selecionar automaticamente a melhor faixa</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="94"/>
+      <source>默认选择最佳音视频轨道</source>
+      <translation>Por padrão selecionar as melhores faixas de áudio e vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="76"/>
-        <source>M3U8 下载</source>
-        <translation>Download M3U8</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="95"/>
+      <source>并发下载音视频</source>
+      <translation>Baixar áudio e vídeo simultaneamente</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
-        <source>默认选择最佳音视频轨道</source>
-        <translation>Por padrão selecionar as melhores faixas de áudio e vídeo</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="96"/>
+      <source>同时下载已选择的音频、视频和字幕轨道</source>
+      <translation>Baixar simultaneamente as faixas de áudio, vídeo e legendas selecionadas</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
-        <source>并发下载音视频</source>
-        <translation>Baixar áudio e vídeo simultaneamente</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="97"/>
+      <source>追加 URL 参数</source>
+      <translation>Adicionar parâmetros de URL</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
-        <source>同时下载已选择的音频、视频和字幕轨道</source>
-        <translation>Baixar simultaneamente as faixas de áudio, vídeo e legendas selecionadas</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="98"/>
+      <source>把输入链接上的 Query 参数追加到分片请求</source>
+      <translation>Anexar os parâmetros de consulta do link de entrada às requisições dos segmentos</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
-        <source>追加 URL 参数</source>
-        <translation>Adicionar parâmetros de URL</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="99"/>
+      <source>二进制合并</source>
+      <translation>Concatenação binária</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
-        <source>把输入链接上的 Query 参数追加到分片请求</source>
-        <translation>Anexar os parâmetros de consulta do link de entrada às requisições dos segmentos</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="100"/>
+      <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
+      <translation>Fazer o N_m3u8DL-RE concatenar segmentos em modo binário</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
-        <source>二进制合并</source>
-        <translation>Concatenação binária</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="101"/>
+      <source>校验分片数量</source>
+      <translation>Verificar contagem de segmentos</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
-        <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
-        <translation>Fazer o N_m3u8DL-RE concatenar segmentos em modo binário</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="102"/>
+      <source>下载完成后检查实际分片数是否与预期一致</source>
+      <translation>Verificar se a contagem real de segmentos corresponde ao esperado após o download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
-        <source>校验分片数量</source>
-        <translation>Verificar contagem de segmentos</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="103"/>
+      <source>直播保留原始分片</source>
+      <translation>Manter segmentos originais na transmissão ao vivo</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
-        <source>下载完成后检查实际分片数是否与预期一致</source>
-        <translation>Verificar se a contagem real de segmentos corresponde ao esperado após o download</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="104"/>
+      <source>实时合并录制时仍保留下载的原始分片</source>
+      <translation>Manter segmentos originais mesmo durante a gravação por concatenação em tempo real</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
-        <source>直播保留原始分片</source>
-        <translation>Manter segmentos originais na transmissão ao vivo</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="106"/>
+      <source>录制时通过管道交给 ffmpeg 实时混流为封装容器</source>
+      <translation>Durante a gravação, pipe para o ffmpeg multiplexar em tempo real em um contêiner</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
-        <source>实时合并录制时仍保留下载的原始分片</source>
-        <translation>Manter segmentos originais mesmo durante a gravação por concatenação em tempo real</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="107"/>
+      <source>直播校正 VTT 字幕</source>
+      <translation>Corrigir legendas VTT na transmissão ao vivo</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
-        <source>录制时通过管道交给 ffmpeg 实时混流为封装容器</source>
-        <translation>Durante a gravação, pipe para o ffmpeg multiplexar em tempo real em um contêiner</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="108"/>
+      <source>根据音频起始时间校正 VTT 字幕时间轴</source>
+      <translation>Ajustar a linha do tempo das legendas VTT com base no tempo de início do áudio</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
-        <source>直播校正 VTT 字幕</source>
-        <translation>Corrigir legendas VTT na transmissão ao vivo</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="109"/>
+      <source>直播刷新等待时间</source>
+      <translation>Intervalo de atualização da transmissão ao vivo</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
-        <source>根据音频起始时间校正 VTT 字幕时间轴</source>
-        <translation>Ajustar a linha do tempo das legendas VTT com base no tempo de início do áudio</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="110"/>
+      <source>两次拉取直播清单之间的等待秒数，0 为自动</source>
+      <translation>Segundos de espera entre as buscas da lista de reprodução ao vivo; 0 para automático</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
-        <source>直播刷新等待时间</source>
-        <translation>Intervalo de atualização da transmissão ao vivo</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="111"/>
+      <source>直播每次取片数</source>
+      <translation>Número de segmentos por busca</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="110"/>
-        <source>两次拉取直播清单之间的等待秒数，0 为自动</source>
-        <translation>Segundos de espera entre as buscas da lista de reprodução ao vivo; 0 para automático</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="112"/>
+      <source>每次刷新最多取走的分片数量，0 为自动</source>
+      <translation>Número máximo de segmentos a obter por atualização; 0 para automático</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="111"/>
-        <source>直播每次取片数</source>
-        <translation>Número de segmentos por busca</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="113"/>
+      <source>解密引擎</source>
+      <translation>Motor de descriptografia</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="112"/>
-        <source>每次刷新最多取走的分片数量，0 为自动</source>
-        <translation>Número máximo de segmentos a obter por atualização; 0 para automático</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="114"/>
+      <source>调用的第三方解密程序</source>
+      <translation>Programa de descriptografia de terceiros chamado</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
-        <source>解密引擎</source>
-        <translation>Motor de descriptografia</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="115"/>
+      <source>解密引擎二进制路径</source>
+      <translation>Caminho do binário do motor de descriptografia</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
-        <source>调用的第三方解密程序</source>
-        <translation>Programa de descriptografia de terceiros chamado</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="116"/>
+      <source>MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg</source>
+      <translation>Caminho do executável MP4Decrypt / Shaka Packager; deixe em branco para usar FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
-        <source>解密引擎二进制路径</source>
-        <translation>Caminho do binário do motor de descriptografia</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="134"/>
+      <source>下载全部音轨</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
-        <source>MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg</source>
-        <translation>Caminho do executável MP4Decrypt / Shaka Packager; deixe em branco para usar FFmpeg</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="135"/>
+      <source>默认拉取全部音频轨道</source>
+      <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="135"/>
-        <source>默认拉取全部音频与字幕轨道</source>
-        <translation>Por padrão, baixar todas as faixas de áudio e legendas</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="118"/>
+      <source>MP4 实时解密</source>
+      <translation>Descriptografia em tempo real de MP4</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
-        <source>MP4 实时解密</source>
-        <translation>Descriptografia em tempo real de MP4</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+      <source>下载 MP4 分片时实时解密</source>
+      <translation>Descriptografar segmentos MP4 durante o download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
-        <source>下载 MP4 分片时实时解密</source>
-        <translation>Descriptografar segmentos MP4 durante o download</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="120"/>
+      <source>限速</source>
+      <translation>Limite de velocidade</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
-        <source>限速</source>
-        <translation>Limite de velocidade</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="121"/>
+      <source>最大下载速度，-1 为不限速</source>
+      <translation>Velocidade máxima de download; -1 para ilimitado</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
-        <source>最大下载速度，-1 为不限速</source>
-        <translation>Velocidade máxima de download; -1 para ilimitado</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="122"/>
+      <source>限速单位</source>
+      <translation>Unidade de limite de velocidade</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
-        <source>限速单位</source>
-        <translation>Unidade de limite de velocidade</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="123"/>
+      <source>限速数值的单位</source>
+      <translation>Unidade do valor de limite</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
-        <source>限速数值的单位</source>
-        <translation>Unidade do valor de limite</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="124"/>
+      <source>广告过滤</source>
+      <translation>Filtro de anúncios</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
-        <source>广告过滤</source>
-        <translation>Filtro de anúncios</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+      <source>匹配广告分片 URL 的正则表达式</source>
+      <translation>Expressão regular para corresponder a URLs de segmento de anúncios</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
-        <source>匹配广告分片 URL 的正则表达式</source>
-        <translation>Expressão regular para corresponder a URLs de segmento de anúncios</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+      <source>正则表达式</source>
+      <translation>Expressão regular</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
-        <source>正则表达式</source>
-        <translation>Expressão regular</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="126"/>
+      <source>字幕格式</source>
+      <translation>Formato das legendas</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
-        <source>字幕格式</source>
-        <translation>Formato das legendas</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="127"/>
+      <source>字幕输出格式</source>
+      <translation>Formato de saída das legendas</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
-        <source>字幕输出格式</source>
-        <translation>Formato de saída das legendas</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="128"/>
+      <source>不写入日期信息</source>
+      <translation>Não escrever informações de data</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
-        <source>不写入日期信息</source>
-        <translation>Não escrever informações de data</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="129"/>
+      <source>混流时不写入日期信息</source>
+      <translation>Não incluir informações de data durante a multiplexação</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
-        <source>混流时不写入日期信息</source>
-        <translation>Não incluir informações de data durante a multiplexação</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="130"/>
+      <source>保留图形分片</source>
+      <translation>Manter segmentos gráficos</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
-        <source>保留图形分片</source>
-        <translation>Manter segmentos gráficos</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="131"/>
+      <source>把图形字幕转图片后保留原始分片</source>
+      <translation>Manter segmentos originais após converter legendas gráficas para imagens</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="131"/>
-        <source>把图形字幕转图片后保留原始分片</source>
-        <translation>Manter segmentos originais após converter legendas gráficas para imagens</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="132"/>
+      <source>完成后删除临时文件</source>
+      <translation>Excluir arquivos temporários após conclusão</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="132"/>
-        <source>完成后删除临时文件</source>
-        <translation>Excluir arquivos temporários após conclusão</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="133"/>
+      <source>下载完成后删除分片临时目录</source>
+      <translation>Excluir diretório temporário de segmentos após o download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="133"/>
-        <source>下载完成后删除分片临时目录</source>
-        <translation>Excluir diretório temporário de segmentos após o download</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="136"/>
+      <source>自定义混流参数</source>
+      <translation>Parâmetros de multiplexação personalizados</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="134"/>
-        <source>下载全部音轨与字幕</source>
-        <translation>Baixar todas as faixas de áudio e legendas</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="137"/>
+      <source>自定义 --mux-after-done，留空则按输出容器自动混流</source>
+      <translation>Personalizar --mux-after-done; deixe em branco para usar a multiplexação automática conforme o contêiner de saída</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="136"/>
-        <source>自定义混流参数</source>
-        <translation>Parâmetros de multiplexação personalizados</translation>
+      <location filename="../../../features/m3u8_pack/config.py" line="105"/>
+      <source>直播管道混流</source>
+      <translation>Multiplexação via pipe na transmissão ao vivo</translation>
     </message>
+  </context>
+  <context>
+    <name>M3U8DraftCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="137"/>
-        <source>自定义 --mux-after-done，留空则按输出容器自动混流</source>
-        <translation>Personalizar --mux-after-done; deixe em branco para usar a multiplexação automática conforme o contêiner de saída</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="34"/>
+      <source>字幕</source>
+      <translation type="unfinished"/>
     </message>
-    <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
-        <source>直播管道混流</source>
-        <translation>Multiplexação via pipe na transmissão ao vivo</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>M3U8LiveTaskCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="69"/>
-        <source>等待中</source>
-        <translation>Aguardando</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="144"/>
+      <source>等待中</source>
+      <translation>Aguardando</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="70"/>
-        <source>录制中</source>
-        <translation>Gravando</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="145"/>
+      <source>录制中</source>
+      <translation>Gravando</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="104"/>
-        <source>录制已结束</source>
-        <translation>Gravação encerrada</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="174"/>
+      <source>录制已结束</source>
+      <translation>Gravação encerrada</translation>
     </message>
-    <message>
-        <source>停止并定案</source>
-        <translation type="vanished">Parar e finalizar</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>M3U8Pack</name>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="274"/>
-        <source>M3U8 / DASH 流媒体</source>
-        <translation>Streams M3U8 / DASH</translation>
+      <location filename="../../../features/m3u8_pack/pack.py" line="303"/>
+      <source>M3U8 / DASH 流媒体</source>
+      <translation>Streams M3U8 / DASH</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="339"/>
-        <source>M3U8 播放列表</source>
-        <translation>Lista de reprodução M3U8</translation>
+      <location filename="../../../features/m3u8_pack/pack.py" line="370"/>
+      <source>M3U8 播放列表</source>
+      <translation>Lista de reprodução M3U8</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/pack.py" line="345"/>
-        <source>DASH 清单</source>
-        <translation>Manifesto DASH</translation>
+      <location filename="../../../features/m3u8_pack/pack.py" line="376"/>
+      <source>DASH 清单</source>
+      <translation>Manifesto DASH</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="432"/>
-        <source>程序发生异常</source>
-        <translation>O programa encontrou um erro</translation>
+      <location filename="../../view/windows/main_window.py" line="432"/>
+      <source>程序发生异常</source>
+      <translation>O programa encontrou um erro</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="151"/>
-        <source>下载任务</source>
-        <translation>Tarefas de download</translation>
+      <location filename="../../view/windows/main_window.py" line="151"/>
+      <source>下载任务</source>
+      <translation>Tarefas de download</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="155"/>
-        <source>新建任务</source>
-        <translation>Nova tarefa</translation>
+      <location filename="../../view/windows/main_window.py" line="155"/>
+      <source>新建任务</source>
+      <translation>Nova tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="161"/>
-        <source>设置</source>
-        <translation>Configurações</translation>
+      <location filename="../../view/windows/main_window.py" line="161"/>
+      <source>设置</source>
+      <translation>Configurações</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="314"/>
-        <source>未知</source>
-        <translation>Desconhecido</translation>
+      <location filename="../../view/windows/main_window.py" line="314"/>
+      <source>未知</source>
+      <translation>Desconhecido</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="313"/>
-        <source>浏览器扩展</source>
-        <translation>Extensão do navegador</translation>
+      <location filename="../../view/windows/main_window.py" line="313"/>
+      <source>浏览器扩展</source>
+      <translation>Extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="310"/>
-        <source>浏览器扩展正在请求连接到 Ghost Downloader。
+      <location filename="../../view/windows/main_window.py" line="310"/>
+      <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
 客户端: {1}
 扩展版本: {2}
 
 仅在你刚刚点击扩展里的&quot;自动配对&quot;时允许。</source>
-        <translation>A extensão do navegador está solicitando conexão ao Ghost Downloader.
+      <translation>A extensão do navegador está solicitando conexão ao Ghost Downloader.
 
 Origem: {0}
 Cliente: {1}
@@ -3333,4041 +2898,3473 @@ Versão da extensão: {2}
 Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quot; na extensão.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="316"/>
-        <source>浏览器扩展配对请求</source>
-        <translation>Solicitação de emparelhamento da extensão</translation>
+      <location filename="../../view/windows/main_window.py" line="316"/>
+      <source>浏览器扩展配对请求</source>
+      <translation>Solicitação de emparelhamento da extensão</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="317"/>
-        <source>允许配对</source>
-        <translation>Permitir emparelhamento</translation>
+      <location filename="../../view/windows/main_window.py" line="317"/>
+      <source>允许配对</source>
+      <translation>Permitir emparelhamento</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="318"/>
-        <source>拒绝</source>
-        <translation>Negar</translation>
+      <location filename="../../view/windows/main_window.py" line="318"/>
+      <source>拒绝</source>
+      <translation>Negar</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="328"/>
-        <source>浏览器扩展服务无法启动</source>
-        <translation>Não foi possível iniciar o serviço da extensão do navegador</translation>
+      <location filename="../../view/windows/main_window.py" line="328"/>
+      <source>浏览器扩展服务无法启动</source>
+      <translation>Não foi possível iniciar o serviço da extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="331"/>
-        <source>Aria2 RPC 兼容服务无法启动</source>
-        <translation>Não foi possível iniciar o serviço de compatibilidade Aria2 RPC</translation>
+      <location filename="../../view/windows/main_window.py" line="331"/>
+      <source>Aria2 RPC 兼容服务无法启动</source>
+      <translation>Não foi possível iniciar o serviço de compatibilidade Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="344"/>
-        <source>前往设置</source>
-        <translation>Ir para Ajustes</translation>
+      <location filename="../../view/windows/main_window.py" line="344"/>
+      <source>前往设置</source>
+      <translation>Ir para Ajustes</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="370"/>
-        <source>查看详情</source>
-        <translation>Ver detalhes</translation>
+      <location filename="../../view/windows/main_window.py" line="370"/>
+      <source>查看详情</source>
+      <translation>Ver detalhes</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="484"/>
-        <source>是否完全退出程序？</source>
-        <translation>Deseja realmente sair do programa?</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/main_window.py" line="485"/>
-        <source>后台运行时可通过系统托盘图标重新打开。</source>
-        <translation>Ao executar em segundo plano, você pode reabrir pelo ícone na bandeja do sistema.</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/main_window.py" line="488"/>
-        <source>退出程序</source>
-        <translation>Sair do programa</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/main_window.py" line="489"/>
-        <source>继续在后台运行</source>
-        <translation>Continuar em segundo plano</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/main_window.py" line="490"/>
-        <source>记住我的选择</source>
-        <translation>Lembrar minha escolha</translation>
-    </message>
-    <message>
-        <source>请在版本详情中手动选择</source>
-        <translation type="vanished">Selecione manualmente nos detalhes da versão</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/main_window.py" line="433"/>
-        <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
+      <location filename="../../view/windows/main_window.py" line="433"/>
+      <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
-        <translation>Ao clicar em &quot;OK&quot;, a mensagem de erro será copiada e a página de feedback será aberta.
+      <translation>Ao clicar em &quot;OK&quot;, a mensagem de erro será copiada e a página de feedback será aberta.
 
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="437"/>
-        <source>查看日志</source>
-        <translation>Ver registro</translation>
+      <location filename="../../view/windows/main_window.py" line="437"/>
+      <source>查看日志</source>
+      <translation>Ver registro</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="356"/>
-        <source>检测到新版本</source>
-        <translation>Nova versão detectada</translation>
+      <location filename="../../view/windows/main_window.py" line="484"/>
+      <source>是否完全退出程序？</source>
+      <translation>Deseja realmente sair do programa?</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="357"/>
-        <source>最新版本: {0}</source>
-        <translation>Última versão: {0}</translation>
+      <location filename="../../view/windows/main_window.py" line="485"/>
+      <source>后台运行时可通过系统托盘图标重新打开。</source>
+      <translation>Ao executar em segundo plano, você pode reabrir pelo ícone na bandeja do sistema.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="364"/>
-        <source>立即下载</source>
-        <translation>Baixar agora</translation>
+      <location filename="../../view/windows/main_window.py" line="488"/>
+      <source>退出程序</source>
+      <translation>Sair do programa</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="373"/>
-        <source>请作者喝咖啡</source>
-        <translation>Convide o autor para um café</translation>
+      <location filename="../../view/windows/main_window.py" line="489"/>
+      <source>继续在后台运行</source>
+      <translation>Continuar em segundo plano</translation>
     </message>
     <message>
-        <source>未找到适配的安装包</source>
-        <translation type="vanished">Pacote de instalação compatível não encontrado</translation>
+      <location filename="../../view/windows/main_window.py" line="490"/>
+      <source>记住我的选择</source>
+      <translation>Lembrar minha escolha</translation>
     </message>
     <message>
-        <source>创建下载任务失败</source>
-        <translation type="vanished">Falha ao criar tarefa de download</translation>
+      <location filename="../../view/windows/main_window.py" line="356"/>
+      <source>检测到新版本</source>
+      <translation>Nova versão detectada</translation>
     </message>
     <message>
-        <source>功能包更新</source>
-        <translation type="vanished">Atualização de pacote de funcionalidades</translation>
+      <location filename="../../view/windows/main_window.py" line="357"/>
+      <source>最新版本: {0}</source>
+      <translation>Última versão: {0}</translation>
     </message>
     <message>
-        <source>{0} 将在下次启动时生效</source>
-        <translation type="vanished">{0} terá efeito na próxima inicialização</translation>
+      <location filename="../../view/windows/main_window.py" line="364"/>
+      <source>立即下载</source>
+      <translation>Baixar agora</translation>
     </message>
-</context>
-<context>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="373"/>
+      <source>请作者喝咖啡</source>
+      <translation>Convide o autor para um café</translation>
+    </message>
+  </context>
+  <context>
     <name>MarkdownViewer</name>
     <message>
-        <location filename="../../view/components/markdown_viewer.py" line="98"/>
-        <source>Note</source>
-        <translation>Nota</translation>
+      <location filename="../../view/components/markdown_viewer.py" line="98"/>
+      <source>Note</source>
+      <translation>Nota</translation>
     </message>
     <message>
-        <location filename="../../view/components/markdown_viewer.py" line="99"/>
-        <source>Tip</source>
-        <translation>Dica</translation>
+      <location filename="../../view/components/markdown_viewer.py" line="99"/>
+      <source>Tip</source>
+      <translation>Dica</translation>
     </message>
     <message>
-        <location filename="../../view/components/markdown_viewer.py" line="100"/>
-        <source>Important</source>
-        <translation>Importante</translation>
+      <location filename="../../view/components/markdown_viewer.py" line="100"/>
+      <source>Important</source>
+      <translation>Importante</translation>
     </message>
     <message>
-        <location filename="../../view/components/markdown_viewer.py" line="101"/>
-        <source>Warning</source>
-        <translation>Aviso</translation>
+      <location filename="../../view/components/markdown_viewer.py" line="101"/>
+      <source>Warning</source>
+      <translation>Aviso</translation>
     </message>
     <message>
-        <location filename="../../view/components/markdown_viewer.py" line="102"/>
-        <source>Caution</source>
-        <translation>Cuidado</translation>
+      <location filename="../../view/components/markdown_viewer.py" line="102"/>
+      <source>Caution</source>
+      <translation>Cuidado</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>MenuTrackButton</name>
     <message>
-        <location filename="../../view/components/track_bar.py" line="62"/>
-        <source>不下载</source>
-        <translation>Não baixar</translation>
+      <location filename="../../view/components/track_bar.py" line="62"/>
+      <source>不下载</source>
+      <translation>Não baixar</translation>
     </message>
-</context>
-<context>
-    <name>MobileMainWindow</name>
-    <message>
-        <source>未开启通知权限，下载完成后将无法提醒</source>
-        <translation type="vanished">Permissão de notificação não ativada, não será possível alertar após a conclusão do download</translation>
-    </message>
-    <message>
-        <source>任务</source>
-        <translation type="vanished">Tarefas</translation>
-    </message>
-    <message>
-        <source>设置</source>
-        <translation type="vanished">Configurações</translation>
-    </message>
-    <message>
-        <source>需要存储权限</source>
-        <translation type="vanished">Permissão de armazenamento necessária</translation>
-    </message>
-    <message>
-        <source>请授予存储权限后再新建任务</source>
-        <translation type="vanished">Conceda a permissão de armazenamento antes de criar uma nova tarefa</translation>
-    </message>
-    <message>
-        <source>检测到新版本</source>
-        <translation type="vanished">Nova versão detectada</translation>
-    </message>
-    <message>
-        <source>最新版本: {0}</source>
-        <translation type="vanished">Última versão: {0}</translation>
-    </message>
-    <message>
-        <source>立即下载</source>
-        <translation type="vanished">Baixar agora</translation>
-    </message>
-    <message>
-        <source>查看详情</source>
-        <translation type="vanished">Ver detalhes</translation>
-    </message>
-    <message>
-        <source>程序发生异常</source>
-        <translation type="vanished">O programa encontrou um erro</translation>
-    </message>
-    <message>
-        <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
-
-{0}</source>
-        <translation type="vanished">Ao clicar em &quot;OK&quot;, a mensagem de erro será copiada e a página de feedback será aberta.
-
-{0}</translation>
-    </message>
-    <message>
-        <source>查看日志</source>
-        <translation type="vanished">Ver registro</translation>
-    </message>
-</context>
-<context>
-    <name>MobileTaskCardBase</name>
-    <message>
-        <source>打开文件</source>
-        <translation type="vanished">Abrir arquivo</translation>
-    </message>
-    <message>
-        <source>打开文件夹</source>
-        <translation type="vanished">Abrir pasta</translation>
-    </message>
-    <message>
-        <source>校验哈希</source>
-        <translation type="vanished">Verificar hash</translation>
-    </message>
-    <message>
-        <source>删除</source>
-        <translation type="vanished">Excluir</translation>
-    </message>
-</context>
-<context>
-    <name>MobileTaskPage</name>
-    <message>
-        <source>全部开始</source>
-        <translation type="vanished">Iniciar tudo</translation>
-    </message>
-    <message>
-        <source>全部暂停</source>
-        <translation type="vanished">Pausar tudo</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>MultiFileDraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="173"/>
-        <source>选择文件</source>
-        <translation>Selecionar arquivos</translation>
+      <location filename="../../view/cards/draft_cards.py" line="174"/>
+      <source>选择文件</source>
+      <translation>Selecionar arquivos</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="202"/>
-        <source>{0}/{1} 个文件 · {2}</source>
-        <translation>{0}/{1} arquivos · {2}</translation>
+      <location filename="../../view/cards/draft_cards.py" line="203"/>
+      <source>{0}/{1} 个文件 · {2}</source>
+      <translation>{0}/{1} arquivos · {2}</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="586"/>
-        <source>{0}/{1} 个文件</source>
-        <translation>{0}/{1} arquivos</translation>
+      <location filename="../../view/cards/task_cards.py" line="586"/>
+      <source>{0}/{1} 个文件</source>
+      <translation>{0}/{1} arquivos</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>MuxImportCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="243"/>
-        <source>导入音轨/字幕</source>
-        <translation>Importar faixa de áudio/legenda</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="313"/>
+      <source>导入音轨/字幕</source>
+      <translation>Importar faixa de áudio/legenda</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>NameConflictDialog</name>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="18"/>
-        <source>现有文件夹：{0} 修改</source>
-        <translation>Pasta existente: {0} modificada</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="18"/>
+      <source>现有文件夹：{0} 修改</source>
+      <translation>Pasta existente: {0} modificada</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="20"/>
-        <source>现有文件：{0}，{1} 修改</source>
-        <translation>Arquivo existente: {0}, {1} modificado</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="20"/>
+      <source>现有文件：{0}，{1} 修改</source>
+      <translation>Arquivo existente: {0}, {1} modificado</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="21"/>
-        <source>未知大小</source>
-        <translation>Tamanho desconhecido</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="21"/>
+      <source>未知大小</source>
+      <translation>Tamanho desconhecido</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="22"/>
-        <source>新文件：{0}</source>
-        <translation>Novo arquivo: {0}</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="22"/>
+      <source>新文件：{0}</source>
+      <translation>Novo arquivo: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="22"/>
-        <source>覆盖时，旧文件会移到回收站。</source>
-        <translation>Ao sobrescrever, o arquivo antigo será movido para a lixeira.</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="22"/>
+      <source>覆盖时，旧文件会移到回收站。</source>
+      <translation>Ao sobrescrever, o arquivo antigo será movido para a lixeira.</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="28"/>
-        <source>下载目录中已有 {0}</source>
-        <translation>Já existe {0} no diretório de download</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="28"/>
+      <source>下载目录中已有 {0}</source>
+      <translation>Já existe {0} no diretório de download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="39"/>
-        <source>保留两者</source>
-        <translation>Manter ambos</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="39"/>
+      <source>保留两者</source>
+      <translation>Manter ambos</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="40"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="40"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="41"/>
-        <source>覆盖</source>
-        <translation>Sobrescrever</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="41"/>
+      <source>覆盖</source>
+      <translation>Sobrescrever</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/name_conflict.py" line="42"/>
-        <source>对其余 {0} 个冲突执行相同操作</source>
-        <translation>Executar a mesma ação para os outros {0} conflitos</translation>
+      <location filename="../../view/dialogs/name_conflict.py" line="42"/>
+      <source>对其余 {0} 个冲突执行相同操作</source>
+      <translation>Executar a mesma ação para os outros {0} conflitos</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>Notifications</name>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="151"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../platform/desktop_notification.py" line="90"/>
+      <source>下载完成</source>
+      <translation>Download concluído</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="90"/>
-        <source>下载完成</source>
-        <translation>Download concluído</translation>
+      <location filename="../../platform/desktop_notification.py" line="91"/>
+      <source>大小 {0}，保存于 {1}</source>
+      <translation>Tamanho {0}, salvo em {1}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="91"/>
-        <source>大小 {0}，保存于 {1}</source>
-        <translation>Tamanho {0}, salvo em {1}</translation>
+      <location filename="../../platform/desktop_notification.py" line="95"/>
+      <source>打开文件</source>
+      <translation>Abrir arquivo</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="109"/>
-        <source>磁盘空间不足</source>
-        <translation>Espaço em disco insuficiente</translation>
+      <location filename="../../platform/desktop_notification.py" line="97"/>
+      <source>打开文件夹</source>
+      <translation>Abrir pasta</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="110"/>
-        <source>任务未自动开始
+      <location filename="../../platform/desktop_notification.py" line="109"/>
+      <source>磁盘空间不足</source>
+      <translation>Espaço em disco insuficiente</translation>
+    </message>
+    <message>
+      <location filename="../../platform/desktop_notification.py" line="110"/>
+      <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-        <translation>Tarefa não iniciada automaticamente
+      <translation>Tarefa não iniciada automaticamente
 Restam {0}, necessário {1}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="135"/>
-        <source>下载失败</source>
-        <translation>Falha no download</translation>
+      <location filename="../../platform/desktop_notification.py" line="122"/>
+      <source>链接解析失败</source>
+      <translation>Falha ao analisar o link</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="146"/>
-        <source>等 {0} 个链接</source>
-        <translation>mais {0} links</translation>
+      <location filename="../../platform/desktop_notification.py" line="135"/>
+      <source>下载失败</source>
+      <translation>Falha no download</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="148"/>
-        <source>检测到下载链接</source>
-        <translation>Link de download detectado</translation>
+      <location filename="../../platform/desktop_notification.py" line="146"/>
+      <source>等 {0} 个链接</source>
+      <translation>mais {0} links</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="152"/>
-        <source>忽略</source>
-        <translation>Ignorar</translation>
+      <location filename="../../platform/desktop_notification.py" line="148"/>
+      <source>检测到下载链接</source>
+      <translation>Link de download detectado</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="159"/>
-        <source>浏览器扩展</source>
-        <translation>Extensão do navegador</translation>
+      <location filename="../../platform/desktop_notification.py" line="151"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="160"/>
-        <source>未知</source>
-        <translation>Desconhecido</translation>
+      <location filename="../../platform/desktop_notification.py" line="152"/>
+      <source>忽略</source>
+      <translation>Ignorar</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="162"/>
-        <source>浏览器扩展配对请求</source>
-        <translation>Solicitação de emparelhamento da extensão</translation>
+      <location filename="../../platform/desktop_notification.py" line="159"/>
+      <source>浏览器扩展</source>
+      <translation>Extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="164"/>
-        <source>{0} {1} 请求连接</source>
-        <translation>{0} {1} solicita conexão</translation>
+      <location filename="../../platform/desktop_notification.py" line="160"/>
+      <source>未知</source>
+      <translation>Desconhecido</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="165"/>
-        <source>来源: {0}</source>
-        <translation>Origem: {0}</translation>
+      <location filename="../../platform/desktop_notification.py" line="162"/>
+      <source>浏览器扩展配对请求</source>
+      <translation>Solicitação de emparelhamento da extensão</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="166"/>
-        <source>仅在你刚刚点击扩展里的&quot;自动配对&quot;时允许</source>
-        <translation>Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quot; na extensão</translation>
+      <location filename="../../platform/desktop_notification.py" line="164"/>
+      <source>{0} {1} 请求连接</source>
+      <translation>{0} {1} solicita conexão</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="169"/>
-        <source>允许配对</source>
-        <translation>Permitir emparelhamento</translation>
+      <location filename="../../platform/desktop_notification.py" line="165"/>
+      <source>来源: {0}</source>
+      <translation>Origem: {0}</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="170"/>
-        <source>拒绝</source>
-        <translation>Negar</translation>
+      <location filename="../../platform/desktop_notification.py" line="166"/>
+      <source>仅在你刚刚点击扩展里的&quot;自动配对&quot;时允许</source>
+      <translation>Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quot; na extensão</translation>
     </message>
     <message>
-        <source>剩余 {0}，需要 {1}，任务未自动开始</source>
-        <translation type="vanished">Restam {0}, necessário {1}, tarefa não iniciada automaticamente</translation>
+      <location filename="../../platform/desktop_notification.py" line="169"/>
+      <source>允许配对</source>
+      <translation>Permitir emparelhamento</translation>
     </message>
     <message>
-        <location filename="../../platform/desktop_notification.py" line="122"/>
-        <source>链接解析失败</source>
-        <translation>Falha ao analisar o link</translation>
+      <location filename="../../platform/desktop_notification.py" line="170"/>
+      <source>拒绝</source>
+      <translation>Negar</translation>
     </message>
-    <message>
-        <source>浏览器推送</source>
-        <translation type="vanished">Notificações do navegador</translation>
-    </message>
-    <message>
-        <source>浏览器推送（{count}）</source>
-        <translation type="vanished">Notificações do navegador ({count})</translation>
-    </message>
-    <message>
-        <source>等 {count} 个</source>
-        <translation type="vanished">mais {count}</translation>
-    </message>
-    <message>
-        <source>浏览器扩展已连接</source>
-        <translation type="vanished">Extensão do navegador conectada</translation>
-    </message>
-    <message>
-        <location filename="../../platform/desktop_notification.py" line="95"/>
-        <source>打开文件</source>
-        <translation>Abrir arquivo</translation>
-    </message>
-    <message>
-        <location filename="../../platform/desktop_notification.py" line="97"/>
-        <source>打开文件夹</source>
-        <translation>Abrir pasta</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>OobeWindow</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="841"/>
-        <source>上一步</source>
-        <translation>Voltar</translation>
+      <location filename="../../view/windows/oobe_window.py" line="840"/>
+      <source>上一步</source>
+      <translation>Voltar</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="842"/>
-        <source>跳过全部</source>
-        <translation>Pular tudo</translation>
+      <location filename="../../view/windows/oobe_window.py" line="841"/>
+      <source>跳过全部</source>
+      <translation>Pular tudo</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="843"/>
-        <source>下一步</source>
-        <translation>Avançar</translation>
+      <location filename="../../view/windows/oobe_window.py" line="842"/>
+      <source>下一步</source>
+      <translation>Avançar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>OptionCardGroup</name>
     <message>
-        <location filename="../../view/components/card_groups.py" line="187"/>
-        <source>下载设置</source>
-        <translation>Configurações de download</translation>
+      <location filename="../../view/components/card_groups.py" line="187"/>
+      <source>下载设置</source>
+      <translation>Configurações de download</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>OutputFolderCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="96"/>
-        <source>选择下载路径</source>
-        <translation>Escolher caminho de download</translation>
+      <location filename="../../view/components/option_cards.py" line="99"/>
+      <source>选择下载路径</source>
+      <translation>Escolher caminho de download</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="97"/>
-        <source>默认</source>
-        <translation>Padrão</translation>
+      <location filename="../../view/components/option_cards.py" line="100"/>
+      <source>默认</source>
+      <translation>Padrão</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="100"/>
-        <source>功能包</source>
-        <translation>Pacote de funcionalidades</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="100"/>
+      <source>功能包</source>
+      <translation>Pacote de funcionalidades</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="101"/>
-        <source>功能包已更新</source>
-        <translation>Pacote de funcionalidades atualizado</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="101"/>
+      <source>功能包已更新</source>
+      <translation>Pacote de funcionalidades atualizado</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="101"/>
-        <source>重启软件后生效</source>
-        <translation>Reinicie o aplicativo para aplicar</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="101"/>
+      <source>重启软件后生效</source>
+      <translation>Reinicie o aplicativo para aplicar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="120"/>
-        <source>辅助组件</source>
-        <translation>Componentes auxiliares</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="120"/>
+      <source>辅助组件</source>
+      <translation>Componentes auxiliares</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="97"/>
-        <source>关闭</source>
-        <translation>Fechar</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="97"/>
+      <source>关闭</source>
+      <translation>Fechar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PackPage</name>
     <message>
-        <location filename="../../../features/jack_yao/pack.py" line="54"/>
-        <source>资源下载</source>
-        <translation>Download de recursos</translation>
+      <location filename="../../../features/jack_yao/pack.py" line="52"/>
+      <source>资源下载</source>
+      <translation>Download de recursos</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PackRow</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="64"/>
-        <source>更新中…</source>
-        <translation>Atualizando…</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="64"/>
+      <source>更新中…</source>
+      <translation>Atualizando…</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="65"/>
-        <source>重启后生效</source>
-        <translation>Aplica-se após reiniciar</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="65"/>
+      <source>重启后生效</source>
+      <translation>Aplica-se após reiniciar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="66"/>
-        <source>更新失败</source>
-        <translation>Falha ao atualizar</translation>
+      <location filename="../../view/dialogs/pack_info.py" line="66"/>
+      <source>更新失败</source>
+      <translation>Falha ao atualizar</translation>
     </message>
-</context>
-<context>
-    <name>PageSelectDialog</name>
-    <message>
-        <source>选择分P</source>
-        <translation type="vanished">Selecionar parte/segmento</translation>
-    </message>
-    <message>
-        <source>全选</source>
-        <translation type="vanished">Selecionar todos</translation>
-    </message>
-    <message>
-        <source>全不选</source>
-        <translation type="vanished">Desmarcar todos</translation>
-    </message>
-    <message>
-        <source>反选</source>
-        <translation type="vanished">Inverter seleção</translation>
-    </message>
-    <message>
-        <source>确定</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>取消</source>
-        <translation type="vanished">Cancelar</translation>
-    </message>
-    <message>
-        <source>分P</source>
-        <translation type="vanished">Parte</translation>
-    </message>
-    <message>
-        <source>大小</source>
-        <translation type="vanished">Tamanho</translation>
-    </message>
-    <message>
-        <source>开始</source>
-        <translation type="vanished">Início</translation>
-    </message>
-    <message>
-        <source>结束</source>
-        <translation type="vanished">Fim</translation>
-    </message>
-    <message>
-        <source>{0}/{1} 个分P</source>
-        <translation type="vanished">{0}/{1} partes</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PeerCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="140"/>
-        <source>Peer</source>
-        <translation>Peer</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="140"/>
+      <source>Peer</source>
+      <translation>Peer</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
-        <source>地址</source>
-        <translation>Endereço</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
+      <source>地址</source>
+      <translation>Endereço</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
-        <source>客户端</source>
-        <translation>Cliente</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
+      <source>客户端</source>
+      <translation>Cliente</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
-        <source>上传</source>
-        <translation>Enviar</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
+      <source>上传</source>
+      <translation>Enviar</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="146"/>
-        <source>任务运行时显示</source>
-        <translation>Exibir durante a execução da tarefa</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="146"/>
+      <source>任务运行时显示</source>
+      <translation>Exibir durante a execução da tarefa</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="164"/>
-        <source>{0}
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="164"/>
+      <source>{0}
 {1}
 标志 {2}  进度 {3}</source>
-        <translation>{0}
+      <translation>{0}
 {1}
 Sinalizadores {2}  Progresso {3}</translation>
     </message>
-</context>
-<context>
-    <name>PermissionBanner</name>
-    <message>
-        <source>未授予存储权限，下载到公共目录将失败</source>
-        <translation type="vanished">Permissão de armazenamento não concedida, downloads para diretórios públicos falharão</translation>
-    </message>
-    <message>
-        <source>去授权</source>
-        <translation type="vanished">Conceder</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PlanTaskDialog</name>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="17"/>
-        <source>设置计划任务</source>
-        <translation>Configurar tarefa programada</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="17"/>
+      <source>设置计划任务</source>
+      <translation>Configurar tarefa programada</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="18"/>
-        <source>所有任务完成后执行以下操作：</source>
-        <translation>Após todas as tarefas concluídas, executar:</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="18"/>
+      <source>所有任务完成后执行以下操作：</source>
+      <translation>Após todas as tarefas concluídas, executar:</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="20"/>
-        <source>关机</source>
-        <translation>Desligar</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="20"/>
+      <source>关机</source>
+      <translation>Desligar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="21"/>
-        <source>重启</source>
-        <translation>Reiniciar</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="21"/>
+      <source>重启</source>
+      <translation>Reiniciar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="22"/>
-        <source>睡眠</source>
-        <translation>Suspender</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="22"/>
+      <source>睡眠</source>
+      <translation>Suspender</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="23"/>
-        <source>打开文件</source>
-        <translation>Abrir arquivo</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="23"/>
+      <source>打开文件</source>
+      <translation>Abrir arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="35"/>
-        <source>确认</source>
-        <translation>Confirmar</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="35"/>
+      <source>确认</source>
+      <translation>Confirmar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="36"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="36"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="45"/>
-        <source>请选择要打开的文件</source>
-        <translation>Selecione o arquivo a ser aberto</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="45"/>
+      <source>请选择要打开的文件</source>
+      <translation>Selecione o arquivo a ser aberto</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/plan_task.py" line="47"/>
-        <location filename="../../view/dialogs/plan_task.py" line="81"/>
-        <source>选择文件</source>
-        <translation>Selecionar arquivo</translation>
+      <location filename="../../view/dialogs/plan_task.py" line="47"/>
+      <location filename="../../view/dialogs/plan_task.py" line="81"/>
+      <source>选择文件</source>
+      <translation>Selecionar arquivo</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PresetEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="21"/>
-        <source>编辑身份预设</source>
-        <translation>Editar predefinição de identidade</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="22"/>
+      <source>编辑身份预设</source>
+      <translation>Editar predefinição de identidade</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="21"/>
-        <source>添加身份预设</source>
-        <translation>Adicionar predefinição de identidade</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="22"/>
+      <source>添加身份预设</source>
+      <translation>Adicionar predefinição de identidade</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="37"/>
-        <source>确定</source>
-        <translation>OK</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="38"/>
+      <source>确定</source>
+      <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="38"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="39"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="39"/>
-        <source>预设名称</source>
-        <translation>Nome da predefinição</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="40"/>
+      <source>预设名称</source>
+      <translation>Nome da predefinição</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="40"/>
-        <source>留空则跟随 TLS 指纹自动生成</source>
-        <translation>Deixe em branco para gerar automaticamente com base na impressão digital TLS</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="41"/>
+      <source>留空则跟随 TLS 指纹自动生成</source>
+      <translation>Deixe em branco para gerar automaticamente com base na impressão digital TLS</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="50"/>
-        <source>匹配 Host</source>
-        <translation>Host correspondente</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="51"/>
+      <source>匹配 Host</source>
+      <translation>Host correspondente</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="57"/>
-        <source>名称</source>
-        <translation>Nome</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="58"/>
+      <source>名称</source>
+      <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="61"/>
-        <source>TLS 指纹</source>
-        <translation>Impressão digital TLS</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="62"/>
+      <source>TLS 指纹</source>
+      <translation>Impressão digital TLS</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="63"/>
-        <source>User-Agent</source>
-        <translation>User-Agent</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="64"/>
+      <source>User-Agent</source>
+      <translation>User-Agent</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="80"/>
-        <source>Host 匹配规则</source>
-        <translation>Regras de correspondência de Host</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="81"/>
+      <source>Host 匹配规则</source>
+      <translation>Regras de correspondência de Host</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="82"/>
-        <source>输入域名后按回车添加，支持两种格式：
+      <location filename="../../view/dialogs/preset_edit.py" line="83"/>
+      <source>输入域名后按回车添加，支持两种格式：
 
 精确匹配: pcs.baidu.com
 通配符: *.pcs.baidu.com（匹配所有子域名）</source>
-        <translation>Digite o domínio e pressione Enter para adicionar; aceita dois formatos:
+      <translation>Digite o domínio e pressione Enter para adicionar; aceita dois formatos:
 
 Correspondência exata: pcs.baidu.com
 Curinga: *.pcs.baidu.com (corresponde a todos os subdomínios)</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="101"/>
-        <source>跟随全局默认</source>
-        <translation>Seguir o padrão global</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="102"/>
+      <source>跟随全局默认</source>
+      <translation>Seguir o padrão global</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="107"/>
-        <source>请添加匹配 Host</source>
-        <translation>Adicione um Host correspondente</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="108"/>
+      <source>请添加匹配 Host</source>
+      <translation>Adicione um Host correspondente</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="108"/>
-        <source>预设需要至少一个 Host 才能匹配请求</source>
-        <translation>A predefinição precisa de pelo menos um Host para corresponder às requisições</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="109"/>
+      <source>预设需要至少一个 Host 才能匹配请求</source>
+      <translation>A predefinição precisa de pelo menos um Host para corresponder às requisições</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/preset_edit.py" line="115"/>
-        <source>未命名预设</source>
-        <translation>Predefinição sem nome</translation>
+      <location filename="../../view/dialogs/preset_edit.py" line="115"/>
+      <source>未命名预设</source>
+      <translation>Predefinição sem nome</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>PresetRowWidget</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="511"/>
-        <source>编辑</source>
-        <translation>Editar</translation>
+      <location filename="../../view/components/setting_cards.py" line="512"/>
+      <source>编辑</source>
+      <translation>Editar</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="513"/>
-        <source>删除</source>
-        <translation>Excluir</translation>
+      <location filename="../../view/components/setting_cards.py" line="514"/>
+      <source>删除</source>
+      <translation>Excluir</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
+    <name>Presets</name>
+    <message>
+      <location filename="../../config/cfg.py" line="221"/>
+      <source>默认</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../config/cfg.py" line="348"/>
+      <source>百度网盘客户端</source>
+      <translation type="unfinished"/>
+    </message>
+  </context>
+  <context>
     <name>ProgressToast</name>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="90"/>
-        <source>正在下载更新</source>
-        <translation>Baixando atualização</translation>
+      <location filename="../../view/components/progress_toast.py" line="90"/>
+      <source>正在下载更新</source>
+      <translation>Baixando atualização</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="100"/>
-        <source>更新已就绪</source>
-        <translation>Atualização pronta</translation>
+      <location filename="../../view/components/progress_toast.py" line="100"/>
+      <source>更新已就绪</source>
+      <translation>Atualização pronta</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="101"/>
-        <source>重启后生效</source>
-        <translation>Efetivo após reiniciar</translation>
+      <location filename="../../view/components/progress_toast.py" line="101"/>
+      <source>重启后生效</source>
+      <translation>Efetivo após reiniciar</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="111"/>
-        <source>下载更新失败</source>
-        <translation>Falha ao baixar atualização</translation>
+      <location filename="../../view/components/progress_toast.py" line="111"/>
+      <source>下载更新失败</source>
+      <translation>Falha ao baixar atualização</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="114"/>
-        <source>未知错误</source>
-        <translation>Erro desconhecido</translation>
+      <location filename="../../view/components/progress_toast.py" line="114"/>
+      <source>未知错误</source>
+      <translation>Erro desconhecido</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ProxySettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="145"/>
-        <source>代理</source>
-        <translation>Proxy</translation>
+      <location filename="../../view/components/setting_cards.py" line="145"/>
+      <source>代理</source>
+      <translation>Proxy</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="146"/>
-        <source>设置下载时希望使用的代理</source>
-        <translation>Definir o proxy a ser usado para download</translation>
+      <location filename="../../view/components/setting_cards.py" line="146"/>
+      <source>设置下载时希望使用的代理</source>
+      <translation>Definir o proxy a ser usado para download</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="155"/>
-        <source>不使用代理</source>
-        <translation>Sem proxy</translation>
+      <location filename="../../view/components/setting_cards.py" line="155"/>
+      <source>不使用代理</source>
+      <translation>Sem proxy</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="156"/>
-        <source>自动检测系统代理</source>
-        <translation>Detectar proxy do sistema automaticamente</translation>
+      <location filename="../../view/components/setting_cards.py" line="156"/>
+      <source>自动检测系统代理</source>
+      <translation>Detectar proxy do sistema automaticamente</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="157"/>
-        <source>使用自定义代理</source>
-        <translation>Usar proxy personalizado</translation>
+      <location filename="../../view/components/setting_cards.py" line="157"/>
+      <source>使用自定义代理</source>
+      <translation>Usar proxy personalizado</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="209"/>
-        <source>编辑代理服务器: </source>
-        <translation>Editar servidor proxy: </translation>
+      <location filename="../../view/components/setting_cards.py" line="209"/>
+      <source>编辑代理服务器: </source>
+      <translation>Editar servidor proxy: </translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="266"/>
-        <source>请填写代理地址</source>
-        <translation>Preencha o endereço do proxy</translation>
+      <location filename="../../view/components/setting_cards.py" line="266"/>
+      <source>请填写代理地址</source>
+      <translation>Preencha o endereço do proxy</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="300"/>
-        <source>、</source>
-        <translation>,</translation>
+      <location filename="../../view/components/setting_cards.py" line="300"/>
+      <source>、</source>
+      <translation>,</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="302"/>
-        <source>{0} 不支持当前代理协议，将直连；使用 SOCKS5 可兼容全部下载方式</source>
-        <translation>{0} não suporta o protocolo de proxy atual, será usada conexão direta; use SOCKS5 para compatibilidade com todos os métodos de download</translation>
+      <location filename="../../view/components/setting_cards.py" line="302"/>
+      <source>{0} 不支持当前代理协议，将直连；使用 SOCKS5 可兼容全部下载方式</source>
+      <translation>{0} não suporta o protocolo de proxy atual, será usada conexão direta; use SOCKS5 para compatibilidade com todos os métodos de download</translation>
     </message>
     <message>
-        <source>{0} 不支持当前代理协议，建议使用 SOCKS5 以兼容全部下载方式</source>
-        <translation type="vanished">{0} não suporta o protocolo de proxy atual; recomenda-se SOCKS5 para compatibilidade com todos os métodos de download</translation>
+      <location filename="../../view/components/setting_cards.py" line="164"/>
+      <source>代理 IP 地址</source>
+      <translation>Endereço IP do proxy</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="164"/>
-        <source>代理 IP 地址</source>
-        <translation>Endereço IP do proxy</translation>
+      <location filename="../../view/components/setting_cards.py" line="166"/>
+      <source>端口</source>
+      <translation>Porta</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="166"/>
-        <source>端口</source>
-        <translation>Porta</translation>
+      <location filename="../../view/components/setting_cards.py" line="218"/>
+      <source>认证信息: </source>
+      <translation>Autenticação: </translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="218"/>
-        <source>认证信息: </source>
-        <translation>Autenticação: </translation>
+      <location filename="../../view/components/setting_cards.py" line="171"/>
+      <source>用户名（可选）</source>
+      <translation>Nome de usuário (opcional)</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="171"/>
-        <source>用户名（可选）</source>
-        <translation>Nome de usuário (opcional)</translation>
+      <location filename="../../view/components/setting_cards.py" line="173"/>
+      <source>密码（可选）</source>
+      <translation>Senha (opcional)</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="173"/>
-        <source>密码（可选）</source>
-        <translation>Senha (opcional)</translation>
+      <location filename="../../view/components/setting_cards.py" line="261"/>
+      <source>未检测到代理</source>
+      <translation>Nenhum proxy detectado</translation>
     </message>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="261"/>
-        <source>未检测到代理</source>
-        <translation>Nenhum proxy detectado</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ReleaseInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="31"/>
-        <source>⚠️ 预发布版本</source>
-        <translation>⚠️ Versão de pré-lançamento</translation>
+      <location filename="../../view/dialogs/release_info.py" line="31"/>
+      <source>⚠️ 预发布版本</source>
+      <translation>⚠️ Versão de pré-lançamento</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="45"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../view/dialogs/release_info.py" line="45"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="48"/>
-        <source>打开发布页</source>
-        <translation>Abrir página de lançamento</translation>
+      <location filename="../../view/dialogs/release_info.py" line="48"/>
+      <source>打开发布页</source>
+      <translation>Abrir página de lançamento</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="50"/>
-        <source>赞助作者</source>
-        <translation>Apoiar o autor</translation>
+      <location filename="../../view/dialogs/release_info.py" line="50"/>
+      <source>赞助作者</source>
+      <translation>Apoiar o autor</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="53"/>
-        <source>暂无更新说明</source>
-        <translation>Sem notas de atualização disponíveis</translation>
+      <location filename="../../view/dialogs/release_info.py" line="53"/>
+      <source>暂无更新说明</source>
+      <translation>Sem notas de atualização disponíveis</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="62"/>
-        <source>文件名</source>
-        <translation>Nome do arquivo</translation>
+      <location filename="../../view/dialogs/release_info.py" line="62"/>
+      <source>文件名</source>
+      <translation>Nome do arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="62"/>
-        <source>大小</source>
-        <translation>Tamanho</translation>
+      <location filename="../../view/dialogs/release_info.py" line="62"/>
+      <source>大小</source>
+      <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/release_info.py" line="62"/>
-        <source>下载次数</source>
-        <translation>Número de downloads</translation>
+      <location filename="../../view/dialogs/release_info.py" line="62"/>
+      <source>下载次数</source>
+      <translation>Número de downloads</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>RuntimeCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="924"/>
-        <location filename="../../view/components/setting_cards.py" line="995"/>
-        <source>正在检测运行时...</source>
-        <translation>Detectando runtime...</translation>
+      <location filename="../../view/components/setting_cards.py" line="928"/>
+      <location filename="../../view/components/setting_cards.py" line="999"/>
+      <source>正在检测运行时...</source>
+      <translation>Detectando runtime...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="938"/>
-        <location filename="../../view/components/setting_cards.py" line="1023"/>
-        <source>一键安装</source>
-        <translation>Instalar com um clique</translation>
+      <location filename="../../view/components/setting_cards.py" line="942"/>
+      <location filename="../../view/components/setting_cards.py" line="1027"/>
+      <source>一键安装</source>
+      <translation>Instalar com um clique</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="979"/>
-        <source>正在准备...</source>
-        <translation>Preparando...</translation>
+      <location filename="../../view/components/setting_cards.py" line="983"/>
+      <source>正在准备...</source>
+      <translation>Preparando...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="981"/>
-        <source>正在下载... {0}%</source>
-        <translation>Baixando... {0}%</translation>
+      <location filename="../../view/components/setting_cards.py" line="985"/>
+      <source>正在下载... {0}%</source>
+      <translation>Baixando... {0}%</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="986"/>
-        <source>取消安装</source>
-        <translation>Cancelar instalação</translation>
+      <location filename="../../view/components/setting_cards.py" line="990"/>
+      <source>取消安装</source>
+      <translation>Cancelar instalação</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="941"/>
-        <source>卸载</source>
-        <translation>Desinstalar</translation>
+      <location filename="../../view/components/setting_cards.py" line="945"/>
+      <source>卸载</source>
+      <translation>Desinstalar</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="943"/>
-        <source>刷新</source>
-        <translation>Atualizar</translation>
+      <location filename="../../view/components/setting_cards.py" line="947"/>
+      <source>刷新</source>
+      <translation>Atualizar</translation>
     </message>
     <message>
-        <source>正在安装... {0}%</source>
-        <translation type="vanished">Instalando... {0}%</translation>
+      <location filename="../../view/components/setting_cards.py" line="987"/>
+      <source>正在安装...</source>
+      <translation>Instalando...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="983"/>
-        <source>正在安装...</source>
-        <translation>Instalando...</translation>
+      <location filename="../../view/components/setting_cards.py" line="1011"/>
+      <source>版本: {0}（最新: {1}）</source>
+      <translation>Versão: {0} (mais recente: {1})</translation>
     </message>
     <message>
-        <source>检测运行时失败</source>
-        <translation type="vanished">Falha ao detectar runtime</translation>
+      <location filename="../../view/components/setting_cards.py" line="1013"/>
+      <source>版本: {0}</source>
+      <translation>Versão: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="1007"/>
-        <source>版本: {0}（最新: {1}）</source>
-        <translation>Versão: {0} (mais recente: {1})</translation>
+      <location filename="../../view/components/setting_cards.py" line="1015"/>
+      <source>最新版本: {0}</source>
+      <translation>Última versão: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="1009"/>
-        <source>版本: {0}</source>
-        <translation>Versão: {0}</translation>
+      <location filename="../../view/components/setting_cards.py" line="1054"/>
+      <source>确认卸载</source>
+      <translation>Confirmar desinstalação</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="1011"/>
-        <source>最新版本: {0}</source>
-        <translation>Última versão: {0}</translation>
+      <location filename="../../view/components/setting_cards.py" line="1055"/>
+      <source>确定要卸载 {0} 吗？</source>
+      <translation>Tem certeza de que deseja desinstalar {0}?</translation>
     </message>
     <message>
-        <source>安装任务已创建</source>
-        <translation type="vanished">Tarefa de instalação criada</translation>
+      <location filename="../../view/components/setting_cards.py" line="1066"/>
+      <source>卸载失败</source>
+      <translation>Falha na desinstalação</translation>
     </message>
     <message>
-        <source>请前往任务页查看安装进度</source>
-        <translation type="vanished">Vá para a página de tarefas para ver o progresso da instalação</translation>
+      <location filename="../../view/components/setting_cards.py" line="1018"/>
+      <source>路径: {0}</source>
+      <translation>Caminho: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="1050"/>
-        <source>确认卸载</source>
-        <translation>Confirmar desinstalação</translation>
+      <location filename="../../view/components/setting_cards.py" line="1021"/>
+      <source>未检测到可用的 {0}</source>
+      <translation>Nenhum {0} utilizável detectado</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="1051"/>
-        <source>确定要卸载 {0} 吗？</source>
-        <translation>Tem certeza de que deseja desinstalar {0}?</translation>
+      <location filename="../../view/components/setting_cards.py" line="1024"/>
+      <source>更新到 {0}</source>
+      <translation>Atualizar para {0}</translation>
     </message>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="1062"/>
-        <source>卸载失败</source>
-        <translation>Falha na desinstalação</translation>
-    </message>
-    <message>
-        <source>版本: {0}
-路径: {1}</source>
-        <translation type="vanished">Versão: {0}
-Caminho: {1}</translation>
-    </message>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="1014"/>
-        <source>路径: {0}</source>
-        <translation>Caminho: {0}</translation>
-    </message>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="1017"/>
-        <source>未检测到可用的 {0}</source>
-        <translation>Nenhum {0} utilizável detectado</translation>
-    </message>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="1020"/>
-        <source>更新到 {0}</source>
-        <translation>Atualizar para {0}</translation>
-    </message>
-    <message>
-        <source>安装失败</source>
-        <translation type="vanished">Falha na instalação</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>RuntimeInstallPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="592"/>
-        <source>安装推荐组件</source>
-        <translation>Instalar componentes recomendados</translation>
+      <location filename="../../view/windows/oobe_window.py" line="591"/>
+      <source>安装推荐组件</source>
+      <translation>Instalar componentes recomendados</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="593"/>
-        <source>点击下一步将自动安装勾选的组件，稍后可在设置中管理</source>
-        <translation>Clique em Avançar para instalar automaticamente os componentes selecionados; você poderá gerenciá-los nas configurações posteriormente.</translation>
+      <location filename="../../view/windows/oobe_window.py" line="592"/>
+      <source>点击下一步将自动安装勾选的组件，稍后可在设置中管理</source>
+      <translation>Clique em Avançar para instalar automaticamente os componentes selecionados; você poderá gerenciá-los nas configurações posteriormente.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="595"/>
-        <source>推荐组件</source>
-        <translation>Componentes recomendados</translation>
+      <location filename="../../view/windows/oobe_window.py" line="594"/>
+      <source>推荐组件</source>
+      <translation>Componentes recomendados</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="625"/>
-        <source>已安装</source>
-        <translation>Instalado</translation>
+      <location filename="../../view/windows/oobe_window.py" line="624"/>
+      <source>已安装</source>
+      <translation>Instalado</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>ScanLoginDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="49"/>
-        <source>关闭</source>
-        <translation>Fechar</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="50"/>
+      <source>关闭</source>
+      <translation>Fechar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="51"/>
-        <source>扫码登录</source>
-        <translation>Login por QR code</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="52"/>
+      <source>扫码登录</source>
+      <translation>Login por QR code</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="53"/>
-        <source>使用哔哩哔哩手机客户端扫描下方二维码，并在手机端确认登录</source>
-        <translation>Escaneie o código QR abaixo com o aplicativo Bilibili e confirme o login no celular</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="54"/>
+      <source>使用哔哩哔哩手机客户端扫描下方二维码，并在手机端确认登录</source>
+      <translation>Escaneie o código QR abaixo com o aplicativo Bilibili e confirme o login no celular</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="61"/>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="106"/>
-        <source>正在获取二维码...</source>
-        <translation>Obtendo código QR...</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="62"/>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="107"/>
+      <source>正在获取二维码...</source>
+      <translation>Obtendo código QR...</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="63"/>
-        <source>二维码有效期约 180 秒，失效后可点击&quot;刷新二维码&quot;重新生成</source>
-        <translation>O código QR é válido por cerca de 180 segundos; se expirar, clique em &quot;Atualizar QR code&quot; para regenerar</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="64"/>
+      <source>二维码有效期约 180 秒，失效后可点击&quot;刷新二维码&quot;重新生成</source>
+      <translation>O código QR é válido por cerca de 180 segundos; se expirar, clique em &quot;Atualizar QR code&quot; para regenerar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="67"/>
-        <source>刷新二维码</source>
-        <translation>Atualizar QR code</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="68"/>
+      <source>刷新二维码</source>
+      <translation>Atualizar QR code</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="68"/>
-        <source>打开登录链接</source>
-        <translation>Abrir link de login</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="69"/>
+      <source>打开登录链接</source>
+      <translation>Abrir link de login</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="120"/>
-        <source>请使用哔哩哔哩客户端扫码</source>
-        <translation>Use o app Bilibili para escanear</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="121"/>
+      <source>请使用哔哩哔哩客户端扫码</source>
+      <translation>Use o app Bilibili para escanear</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="123"/>
-        <source>等待扫码</source>
-        <translation>Aguardando escaneamento</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="124"/>
+      <source>等待扫码</source>
+      <translation>Aguardando escaneamento</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="125"/>
-        <source>二维码已扫码，请在手机端确认登录</source>
-        <translation>Código QR escaneado, confirme o login no celular</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="126"/>
+      <source>二维码已扫码，请在手机端确认登录</source>
+      <translation>Código QR escaneado, confirme o login no celular</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="127"/>
-        <source>二维码已失效，请点击&quot;刷新二维码&quot;重新生成</source>
-        <translation>Código QR expirado, clique em &quot;Atualizar QR code&quot; para regenerar</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="128"/>
+      <source>二维码已失效，请点击&quot;刷新二维码&quot;重新生成</source>
+      <translation>Código QR expirado, clique em &quot;Atualizar QR code&quot; para regenerar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/setting_cards.py" line="114"/>
-        <source>登录成功，正在导入 Cookie...</source>
-        <translation>Login bem-sucedido, importando Cookie...</translation>
+      <location filename="../../../features/bili_pack/setting_cards.py" line="115"/>
+      <source>登录成功，正在导入 Cookie...</source>
+      <translation>Login bem-sucedido, importando Cookie...</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SelectDialog</name>
     <message>
-        <source>选择合集</source>
-        <translation type="vanished">Selecionar coleção</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="74"/>
+      <source>选择分P</source>
+      <translation>Selecionar parte/segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="71"/>
-        <source>选择分P</source>
-        <translation>Selecionar parte/segmento</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="74"/>
+      <source>选择视频</source>
+      <translation>Selecionar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="71"/>
-        <source>选择视频</source>
-        <translation>Selecionar vídeo</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="78"/>
+      <source>全选</source>
+      <translation>Selecionar todos</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="75"/>
-        <source>全选</source>
-        <translation>Selecionar todos</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="79"/>
+      <source>全不选</source>
+      <translation>Desmarcar todos</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="76"/>
-        <source>全不选</source>
-        <translation>Desmarcar todos</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="80"/>
+      <source>反选</source>
+      <translation>Inverter seleção</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="77"/>
-        <source>反选</source>
-        <translation>Inverter seleção</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="92"/>
+      <source>确定</source>
+      <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="89"/>
-        <source>确定</source>
-        <translation>OK</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="93"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="90"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="385"/>
+      <source>已选 {0}/{1}</source>
+      <translation>Selecionados {0}/{1}</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="382"/>
-        <source>已选 {0}/{1}</source>
-        <translation>Selecionados {0}/{1}</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="99"/>
+      <source>分P</source>
+      <translation>Parte</translation>
     </message>
     <message>
-        <source>合集</source>
-        <translation type="vanished">Coleção</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="99"/>
+      <source>视频</source>
+      <translation>Vídeos</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="96"/>
-        <source>分P</source>
-        <translation>Parte</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="101"/>
+      <source>大小</source>
+      <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="96"/>
-        <source>视频</source>
-        <translation>Vídeos</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="101"/>
+      <source>开始</source>
+      <translation>Início</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="98"/>
-        <source>大小</source>
-        <translation>Tamanho</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="101"/>
+      <source>结束</source>
+      <translation>Fim</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="98"/>
-        <source>开始</source>
-        <translation>Início</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="387"/>
+      <source>{0}/{1} 个分P</source>
+      <translation>{0}/{1} partes</translation>
     </message>
-    <message>
-        <location filename="../../../features/bili_pack/cards.py" line="98"/>
-        <source>结束</source>
-        <translation>Fim</translation>
-    </message>
-    <message>
-        <source>{0}/{1} 集</source>
-        <translation type="vanished">{0}/{1} episódios</translation>
-    </message>
-    <message>
-        <location filename="../../../features/bili_pack/cards.py" line="384"/>
-        <source>{0}/{1} 个分P</source>
-        <translation>{0}/{1} partes</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SelectFileCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="893"/>
-        <location filename="../../view/components/setting_cards.py" line="907"/>
-        <source>选择文件</source>
-        <translation>Selecionar arquivo</translation>
+      <location filename="../../view/components/setting_cards.py" line="897"/>
+      <location filename="../../view/components/setting_cards.py" line="911"/>
+      <source>选择文件</source>
+      <translation>Selecionar arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="895"/>
-        <source>清除路径</source>
-        <translation>Limpar caminho</translation>
+      <location filename="../../view/components/setting_cards.py" line="899"/>
+      <source>清除路径</source>
+      <translation>Limpar caminho</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SelectFolderSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="460"/>
-        <source>浏览文件夹</source>
-        <translation>Navegar na pasta</translation>
+      <location filename="../../view/components/setting_cards.py" line="460"/>
+      <source>浏览文件夹</source>
+      <translation>Navegar na pasta</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="462"/>
-        <source>恢复默认路径</source>
-        <translation>Restaurar caminho padrão</translation>
+      <location filename="../../view/components/setting_cards.py" line="462"/>
+      <source>恢复默认路径</source>
+      <translation>Restaurar caminho padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="474"/>
-        <source>选择文件夹</source>
-        <translation>Selecionar pasta</translation>
+      <location filename="../../view/components/setting_cards.py" line="474"/>
+      <source>选择文件夹</source>
+      <translation>Selecionar pasta</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SettingPage</name>
     <message>
-        <source>综合下载设置</source>
-        <translation type="vanished">Configurações gerais de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="58"/>
+      <source>浏览器扩展</source>
+      <translation>Extensão do navegador</translation>
     </message>
     <message>
-        <source>下载分类</source>
-        <translation type="vanished">Categorias de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="60"/>
+      <source>个性化</source>
+      <translation>Personalização</translation>
     </message>
     <message>
-        <source>关联设置</source>
-        <translation type="vanished">Configurações de associação</translation>
+      <location filename="../../view/pages/setting_page.py" line="61"/>
+      <source>应用</source>
+      <translation>Aplicar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="58"/>
-        <source>浏览器扩展</source>
-        <translation>Extensão do navegador</translation>
+      <location filename="../../view/pages/setting_page.py" line="62"/>
+      <location filename="../../view/pages/setting_page.py" line="376"/>
+      <source>关于</source>
+      <translation>Sobre</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="60"/>
-        <source>个性化</source>
-        <translation>Personalização</translation>
+      <location filename="../../view/pages/setting_page.py" line="107"/>
+      <source>最大任务数</source>
+      <translation>Número máximo de tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="61"/>
-        <source>应用</source>
-        <translation>Aplicar</translation>
+      <location filename="../../view/pages/setting_page.py" line="108"/>
+      <source>最多能同时进行的任务数量</source>
+      <translation>Número máximo de tarefas simultâneas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="62"/>
-        <location filename="../../view/pages/setting_page.py" line="377"/>
-        <source>关于</source>
-        <translation>Sobre</translation>
+      <location filename="../../view/pages/setting_page.py" line="109"/>
+      <source>预分配线程数</source>
+      <translation>Número de threads pré-alocadas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="107"/>
-        <source>最大任务数</source>
-        <translation>Número máximo de tarefas</translation>
+      <location filename="../../view/pages/setting_page.py" line="110"/>
+      <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
+      <translation>Quanto mais threads, mais rápido o download. Acima de 64 threads, há risco de acionar anti-raspagem e corromper arquivos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="108"/>
-        <source>最多能同时进行的任务数量</source>
-        <translation>Número máximo de tarefas simultâneas</translation>
+      <location filename="../../view/pages/setting_page.py" line="111"/>
+      <source>自动提速</source>
+      <translation>Aceleração automática</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="109"/>
-        <source>预分配线程数</source>
-        <translation>Número de threads pré-alocadas</translation>
+      <location filename="../../view/pages/setting_page.py" line="112"/>
+      <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
+      <translation>A IA detecta a eficiência de cada thread em tempo real e aumenta automaticamente o número de threads para melhorar a velocidade de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="110"/>
-        <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
-        <translation>Quanto mais threads, mais rápido o download. Acima de 64 threads, há risco de acionar anti-raspagem e corromper arquivos</translation>
+      <location filename="../../view/pages/setting_page.py" line="115"/>
+      <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
+      <translation>Quando o restante por thread for maior que este valor, a conclusão de uma thread ou a condição de aceleração automática acionará a redistribuição</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="111"/>
-        <source>自动提速</source>
-        <translation>Aceleração automática</translation>
+      <location filename="../../view/pages/setting_page.py" line="100"/>
+      <source>下载限速</source>
+      <translation>Limite de velocidade de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="112"/>
-        <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
-        <translation>A IA detecta a eficiência de cada thread em tempo real e aumenta automaticamente o número de threads para melhorar a velocidade de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="101"/>
+      <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
+      <translation>Quando o interruptor de limite de velocidade na interface de tarefas estiver ativado, todas as tarefas serão limitadas de acordo com este valor</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="115"/>
-        <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
-        <translation>Quando o restante por thread for maior que este valor, a conclusão de uma thread ou a condição de aceleração automática acionará a redistribuição</translation>
+      <location filename="../../view/pages/setting_page.py" line="137"/>
+      <source>下载时验证 SSL 证书</source>
+      <translation>Verificar certificado SSL durante o download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="100"/>
-        <source>下载限速</source>
-        <translation>Limite de velocidade de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="138"/>
+      <source>文件无法下载时，可尝试关闭该选项</source>
+      <translation>Se o arquivo não puder ser baixado, tente desativar esta opção</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="101"/>
-        <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
-        <translation>Quando o interruptor de limite de velocidade na interface de tarefas estiver ativado, todas as tarefas serão limitadas de acordo com este valor</translation>
+      <location filename="../../view/pages/setting_page.py" line="145"/>
+      <source>启用浏览器扩展</source>
+      <translation>Habilitar extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="137"/>
-        <source>下载时验证 SSL 证书</source>
-        <translation>Verificar certificado SSL durante o download</translation>
+      <location filename="../../view/pages/setting_page.py" line="146"/>
+      <location filename="../../view/pages/setting_page.py" line="485"/>
+      <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
+      <translation>Receber informações de download do navegador; instale a extensão do navegador para usar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="138"/>
-        <source>文件无法下载时，可尝试关闭该选项</source>
-        <translation>Se o arquivo não puder ser baixado, tente desativar esta opção</translation>
+      <location filename="../../view/pages/setting_page.py" line="178"/>
+      <source>复制令牌</source>
+      <translation>Copiar token</translation>
     </message>
     <message>
-        <source>设置默认 HTTP 请求头</source>
-        <translation type="vanished">Definir cabeçalhos de requisição HTTP padrão</translation>
+      <location filename="../../view/pages/setting_page.py" line="178"/>
+      <source>配对令牌</source>
+      <translation>Token de emparelhamento</translation>
     </message>
     <message>
-        <source>启用下载分类</source>
-        <translation type="vanished">Habilitar categorização de downloads</translation>
+      <location filename="../../view/pages/setting_page.py" line="182"/>
+      <source>重新生成令牌</source>
+      <translation>Regenerar token</translation>
     </message>
     <message>
-        <source>根据扩展名将下载任务归类，便于筛选与分发到指定文件夹</source>
-        <translation type="vanished">Classifica tarefas de download por extensão, facilitando a filtragem e distribuição para pastas específicas</translation>
+      <location filename="../../view/pages/setting_page.py" line="250"/>
+      <source>应用主题</source>
+      <translation>Aplicar tema</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="145"/>
-        <source>启用浏览器扩展</source>
-        <translation>Habilitar extensão do navegador</translation>
+      <location filename="../../view/pages/setting_page.py" line="251"/>
+      <source>更改应用程序的外观</source>
+      <translation>Alterar a aparência do aplicativo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="146"/>
-        <location filename="../../view/pages/setting_page.py" line="486"/>
-        <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
-        <translation>Receber informações de download do navegador; instale a extensão do navegador para usar</translation>
+      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <source>浅色</source>
+      <translation>Claro</translation>
     </message>
     <message>
-        <source>收到下载信息时弹出窗口</source>
-        <translation type="vanished">Mostrar janela pop-up ao receber informações de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <source>深色</source>
+      <translation>Escuro</translation>
     </message>
     <message>
-        <source>收到下载信息时弹出窗口，方便您调整下载参数</source>
-        <translation type="vanished">Mostrar janela pop-up ao receber informações de download para facilitar o ajuste dos parâmetros</translation>
+      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <source>跟随系统设置</source>
+      <translation>Seguir configuração do sistema</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="178"/>
-        <source>复制令牌</source>
-        <translation>Copiar token</translation>
+      <location filename="../../view/pages/setting_page.py" line="257"/>
+      <location filename="../../view/pages/setting_page.py" line="264"/>
+      <source>窗口背景透明材质</source>
+      <translation>Material transparente de fundo da janela</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="178"/>
-        <source>配对令牌</source>
-        <translation>Token de emparelhamento</translation>
+      <location filename="../../view/pages/setting_page.py" line="258"/>
+      <location filename="../../view/pages/setting_page.py" line="265"/>
+      <source>设置窗口背景透明效果和透明材质</source>
+      <translation>Configurar efeito de transparência e material do fundo da janela</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="182"/>
-        <source>重新生成令牌</source>
-        <translation>Regenerar token</translation>
+      <location filename="../../view/pages/setting_page.py" line="244"/>
+      <source>界面缩放</source>
+      <translation>Escala da interface</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="250"/>
-        <source>应用主题</source>
-        <translation>Aplicar tema</translation>
+      <location filename="../../view/pages/setting_page.py" line="59"/>
+      <source>Aria2 RPC 兼容</source>
+      <translation>Compatibilidade Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="251"/>
-        <source>更改应用程序的外观</source>
-        <translation>Alterar a aparência do aplicativo</translation>
+      <location filename="../../view/pages/setting_page.py" line="90"/>
+      <source>下载路径</source>
+      <translation>Caminho de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="252"/>
-        <source>浅色</source>
-        <translation>Claro</translation>
+      <location filename="../../view/pages/setting_page.py" line="90"/>
+      <source>文件默认保存位置</source>
+      <translation>Local de salvamento padrão de arquivos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="252"/>
-        <source>深色</source>
-        <translation>Escuro</translation>
+      <location filename="../../view/pages/setting_page.py" line="118"/>
+      <source>保留文件修改时间</source>
+      <translation>Manter a data de modificação do arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="252"/>
-        <source>跟随系统设置</source>
-        <translation>Seguir configuração do sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="119"/>
+      <source>下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值</source>
+      <translation>Definir a data de modificação do arquivo como o valor Last-Modified fornecido pelo servidor após a conclusão do download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="257"/>
-        <location filename="../../view/pages/setting_page.py" line="264"/>
-        <source>窗口背景透明材质</source>
-        <translation>Material transparente de fundo da janela</translation>
+      <location filename="../../view/pages/setting_page.py" line="168"/>
+      <source>Edge 商店</source>
+      <translation>Loja Edge</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="258"/>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
-        <source>设置窗口背景透明效果和透明材质</source>
-        <translation>Configurar efeito de transparência e material do fundo da janela</translation>
+      <location filename="../../view/pages/setting_page.py" line="164"/>
+      <source>从商店安装扩展</source>
+      <translation>Instalar extensão da loja</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="244"/>
-        <source>界面缩放</source>
-        <translation>Escala da interface</translation>
+      <location filename="../../view/pages/setting_page.py" line="165"/>
+      <source>商店版扩展需等待审核后才能获得更新</source>
+      <translation>A extensão da loja precisa aguardar revisão para receber atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="59"/>
-        <source>Aria2 RPC 兼容</source>
-        <translation>Compatibilidade Aria2 RPC</translation>
+      <location filename="../../view/pages/setting_page.py" line="173"/>
+      <source>Chrome 商店</source>
+      <translation>Loja Chrome</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="90"/>
-        <source>下载路径</source>
-        <translation>Caminho de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="163"/>
+      <source>Firefox 商店</source>
+      <translation>Loja Firefox</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="90"/>
-        <source>文件默认保存位置</source>
-        <translation>Local de salvamento padrão de arquivos</translation>
+      <location filename="../../view/pages/setting_page.py" line="65"/>
+      <source>未找到匹配的设置项</source>
+      <translation>Nenhuma configuração correspondente</translation>
     </message>
     <message>
-        <source>恢复默认路径</source>
-        <translation type="vanished">Restaurar caminho padrão</translation>
+      <location filename="../../view/pages/setting_page.py" line="134"/>
+      <source>使用系统 DNS</source>
+      <translation>Usar DNS do sistema</translation>
     </message>
     <message>
-        <source>最小再分配大小 (KB)</source>
-        <translation type="vanished">Tamanho mínimo de redistribuição (KB)</translation>
+      <location filename="../../view/pages/setting_page.py" line="135"/>
+      <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
+      <translation>Utilizar a resolução DNS do sistema operacional, compatível com ambientes de rede como TUN, VPN e proxy</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="118"/>
-        <source>保留文件修改时间</source>
-        <translation>Manter a data de modificação do arquivo</translation>
+      <location filename="../../view/pages/setting_page.py" line="151"/>
+      <source>一键安装</source>
+      <translation>Instalar com um clique</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="119"/>
-        <source>下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值</source>
-        <translation>Definir a data de modificação do arquivo como o valor Last-Modified fornecido pelo servidor após a conclusão do download</translation>
+      <location filename="../../view/pages/setting_page.py" line="152"/>
+      <source>安装到 Chromium 浏览器</source>
+      <translation>Instalar no navegador Chromium</translation>
     </message>
     <message>
-        <source>默认请求头</source>
-        <translation type="vanished">Cabeçalhos de requisição padrão</translation>
+      <location filename="../../view/pages/setting_page.py" line="153"/>
+      <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
+      <translation>Desempacota e instala automaticamente a extensão no Chrome/Brave etc. A extensão é atualizada automaticamente junto com a versão desktop</translation>
     </message>
     <message>
-        <source>设置默认 HTTP 请求头，User-Agent 由模拟身份控制（选择原样发送时除外）</source>
-        <translation type="vanished">Definir cabeçalhos de requisição HTTP padrão; o User-Agent é controlado pelo perfil de cliente simulado (exceto quando a opção de enviar como original estiver selecionada)</translation>
+      <location filename="../../view/pages/setting_page.py" line="156"/>
+      <source>导出 CRX</source>
+      <translation>Exportar CRX</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="168"/>
-        <source>Edge 商店</source>
-        <translation>Loja Edge</translation>
+      <location filename="../../view/pages/setting_page.py" line="193"/>
+      <source>服务端口</source>
+      <translation>Porta de serviço</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="164"/>
-        <source>从商店安装扩展</source>
-        <translation>Instalar extensão da loja</translation>
+      <location filename="../../view/pages/setting_page.py" line="194"/>
+      <source>浏览器扩展连接使用的端口</source>
+      <translation>Porta usada para conexão da extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="165"/>
-        <source>商店版扩展需等待审核后才能获得更新</source>
-        <translation>A extensão da loja precisa aguardar revisão para receber atualizações</translation>
+      <location filename="../../view/pages/setting_page.py" line="208"/>
+      <source>接管下载时进入草稿模式</source>
+      <translation>Entrar em modo de rascunho ao assumir o download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="173"/>
-        <source>Chrome 商店</source>
-        <translation>Loja Chrome</translation>
+      <location filename="../../view/pages/setting_page.py" line="209"/>
+      <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
+      <translation>Ao assumir automaticamente downloads do navegador, entrar primeiro no rascunho para ajustar local e nome do arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="163"/>
-        <source>Firefox 商店</source>
-        <translation>Loja Firefox</translation>
+      <location filename="../../view/pages/setting_page.py" line="202"/>
+      <source>允许浏览器扩展唤醒</source>
+      <translation>Permitir que a extensão do navegador desperte o aplicativo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="65"/>
-        <source>未找到匹配的设置项</source>
-        <translation>Nenhuma configuração correspondente</translation>
+      <location filename="../../view/pages/setting_page.py" line="203"/>
+      <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
+      <translation>A extensão do navegador pode iniciar o aplicativo de desktop através do protocolo ghostdownloader://</translation>
     </message>
     <message>
-        <source>删除任务时默认删除本地文件</source>
-        <translation type="vanished">Excluir arquivos locais por padrão ao excluir tarefas</translation>
+      <location filename="../../view/pages/setting_page.py" line="220"/>
+      <source>启用 Aria2 RPC 兼容</source>
+      <translation>Habilitar compatibilidade Aria2 RPC</translation>
     </message>
     <message>
-        <source>删除任务的确认对话框中默认勾选同时删除已下载的文件</source>
-        <translation type="vanished">No diálogo de exclusão, marcar &quot;Excluir também os arquivos baixados&quot; por padrão</translation>
+      <location filename="../../view/pages/setting_page.py" line="220"/>
+      <location filename="../../view/pages/setting_page.py" line="499"/>
+      <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
+      <translation>Compatível com o protocolo Aria2 JSON-RPC, pode receber links de download enviados por ferramentas externas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="151"/>
-        <source>一键安装</source>
-        <translation>Instalar com um clique</translation>
+      <location filename="../../view/pages/setting_page.py" line="225"/>
+      <source>监听端口</source>
+      <translation>Porta de escuta</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="152"/>
-        <source>安装到 Chromium 浏览器</source>
-        <translation>Instalar no navegador Chromium</translation>
+      <location filename="../../view/pages/setting_page.py" line="92"/>
+      <source>系统默认</source>
+      <translation>Padrão do sistema</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="153"/>
-        <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
-        <translation>Desempacota e instala automaticamente a extensão no Chrome/Brave etc. A extensão é atualizada automaticamente junto com a versão desktop</translation>
+      <location filename="../../view/pages/setting_page.py" line="56"/>
+      <source>下载设置</source>
+      <translation>Configurações de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="156"/>
-        <source>导出 CRX</source>
-        <translation>Exportar CRX</translation>
+      <location filename="../../view/pages/setting_page.py" line="57"/>
+      <source>网络设置</source>
+      <translation>Configurações de rede</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="193"/>
-        <source>服务端口</source>
-        <translation>Porta de serviço</translation>
+      <location filename="../../view/pages/setting_page.py" line="123"/>
+      <source>同名文件</source>
+      <translation>Arquivo com mesmo nome</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="194"/>
-        <source>浏览器扩展连接使用的端口</source>
-        <translation>Porta usada para conexão da extensão do navegador</translation>
+      <location filename="../../view/pages/setting_page.py" line="124"/>
+      <source>下载目录中已有同名文件时的处理方式</source>
+      <translation>Como tratar quando já existe um arquivo com o mesmo nome no diretório de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="208"/>
-        <source>接管下载时进入草稿模式</source>
-        <translation>Entrar em modo de rascunho ao assumir o download</translation>
+      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <source>保留两者</source>
+      <translation>Manter ambos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="209"/>
-        <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
-        <translation>Ao assumir automaticamente downloads do navegador, entrar primeiro no rascunho para ajustar local e nome do arquivo</translation>
+      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <source>覆盖</source>
+      <translation>Sobrescrever</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="202"/>
-        <source>允许浏览器扩展唤醒</source>
-        <translation>Permitir que a extensão do navegador desperte o aplicativo</translation>
+      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <source>询问</source>
+      <translation>Perguntar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="203"/>
-        <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-        <translation>A extensão do navegador pode iniciar o aplicativo de desktop através do protocolo ghostdownloader://</translation>
+      <location filename="../../view/pages/setting_page.py" line="126"/>
+      <source>自动移除缺失的任务</source>
+      <translation>Remover automaticamente tarefas ausentes</translation>
     </message>
     <message>
-        <source>关联 {0} 文件</source>
-        <translation type="vanished">Associar arquivos {0}</translation>
+      <location filename="../../view/pages/setting_page.py" line="127"/>
+      <source>文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务</source>
+      <translation>Quando arquivos forem excluídos, movidos ou o disco onde estão não estiver conectado, remover automaticamente as tarefas concluídas da lista</translation>
     </message>
     <message>
-        <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
-        <translation type="vanished">Abrir arquivos {0} com o Ghost Downloader ao clicar duas vezes</translation>
+      <location filename="../../view/pages/setting_page.py" line="187"/>
+      <source>自动选择端口</source>
+      <translation>Selecionar porta automaticamente</translation>
     </message>
     <message>
-        <source>处理 {0} 链接</source>
-        <translation type="vanished">Processar links {0}</translation>
+      <location filename="../../view/pages/setting_page.py" line="188"/>
+      <source>端口冲突时自动切换至可用候选端口</source>
+      <translation>Alternar automaticamente para uma porta candidata disponível em caso de conflito de porta</translation>
     </message>
     <message>
-        <source>点击 {0} 链接时唤起 Ghost Downloader</source>
-        <translation type="vanished">Abrir o Ghost Downloader ao clicar em links {0}</translation>
+      <location filename="../../view/pages/setting_page.py" line="226"/>
+      <source>Aria2 RPC 默认端口为 16800</source>
+      <translation>A porta padrão do Aria2 RPC é 16800</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="220"/>
-        <source>启用 Aria2 RPC 兼容</source>
-        <translation>Habilitar compatibilidade Aria2 RPC</translation>
+      <location filename="../../view/pages/setting_page.py" line="230"/>
+      <source>令牌</source>
+      <translation>Token</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="220"/>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
-        <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
-        <translation>Compatível com o protocolo Aria2 JSON-RPC, pode receber links de download enviados por ferramentas externas</translation>
+      <location filename="../../view/pages/setting_page.py" line="231"/>
+      <source>若设置，客户端需传入 token 才可创建任务</source>
+      <translation>Se definido, o cliente precisa enviar o token para criar tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="225"/>
-        <source>监听端口</source>
-        <translation>Porta de escuta</translation>
+      <location filename="../../view/pages/setting_page.py" line="233"/>
+      <source>可选</source>
+      <translation>Opcional</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="92"/>
-        <source>系统默认</source>
-        <translation>Padrão do sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="237"/>
+      <source>模拟浏览器指纹</source>
+      <translation>Simular fingerprint do navegador</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="56"/>
-        <source>下载设置</source>
-        <translation>Configurações de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="238"/>
+      <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
+      <translation>Adicionar fingerprint TLS e cabeçalhos do navegador para tarefas recebidas via Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="57"/>
-        <source>网络设置</source>
-        <translation>Configurações de rede</translation>
+      <location filename="../../view/pages/setting_page.py" line="245"/>
+      <source>改变应用程序界面的缩放比例, 0% 为自动</source>
+      <translation>Alterar a escala da interface; 0% para automático</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="123"/>
-        <source>同名文件</source>
-        <translation>Arquivo com mesmo nome</translation>
+      <location filename="../../view/pages/setting_page.py" line="271"/>
+      <source>在 Dock 栏中显示程序</source>
+      <translation>Mostrar programa na Dock</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="124"/>
-        <source>下载目录中已有同名文件时的处理方式</source>
-        <translation>Como tratar quando já existe um arquivo com o mesmo nome no diretório de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="272"/>
+      <source>关闭后可通过菜单栏图标继续使用程序</source>
+      <translation>Após fechar, o programa pode ser usado através do ícone da barra de menu</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="125"/>
-        <source>保留两者</source>
-        <translation>Manter ambos</translation>
+      <location filename="../../view/pages/setting_page.py" line="276"/>
+      <source>在 Dock 图标上显示实时速度</source>
+      <translation>Mostrar velocidade em tempo real no ícone da Dock</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="125"/>
-        <source>覆盖</source>
-        <translation>Sobrescrever</translation>
+      <location filename="../../view/pages/setting_page.py" line="277"/>
+      <source>下载时在程序坞图标上叠加当前速度</source>
+      <translation>Sobrepor a velocidade atual no ícone da Dock durante o download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="125"/>
-        <source>询问</source>
-        <translation>Perguntar</translation>
+      <location filename="../../view/pages/setting_page.py" line="284"/>
+      <source>在菜单栏显示实时速度</source>
+      <translation>Mostrar velocidade em tempo real na barra de menu</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="126"/>
-        <source>自动移除缺失的任务</source>
-        <translation>Remover automaticamente tarefas ausentes</translation>
+      <location filename="../../view/pages/setting_page.py" line="285"/>
+      <source>下载时在菜单栏图标旁显示当前速度</source>
+      <translation>Exibir a velocidade atual ao lado do ícone da barra de menu durante o download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="127"/>
-        <source>文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务</source>
-        <translation>Quando arquivos forem excluídos, movidos ou o disco onde estão não estiver conectado, remover automaticamente as tarefas concluídas da lista</translation>
+      <location filename="../../view/pages/setting_page.py" line="289"/>
+      <source>语言</source>
+      <translation>Idioma</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="187"/>
-        <source>自动选择端口</source>
-        <translation>Selecionar porta automaticamente</translation>
+      <location filename="../../view/pages/setting_page.py" line="290"/>
+      <source>设置界面的首选语言</source>
+      <translation>Idioma preferido para a interface de configurações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="188"/>
-        <source>端口冲突时自动切换至可用候选端口</source>
-        <translation>Alternar automaticamente para uma porta candidata disponível em caso de conflito de porta</translation>
+      <location filename="../../view/pages/setting_page.py" line="291"/>
+      <source>使用系统设置</source>
+      <translation>Usar configurações do sistema</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="226"/>
-        <source>Aria2 RPC 默认端口为 16800</source>
-        <translation>A porta padrão do Aria2 RPC é 16800</translation>
+      <location filename="../../view/pages/setting_page.py" line="303"/>
+      <source>切换到用户模式</source>
+      <translation>Alternar para modo de usuário</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="230"/>
-        <source>令牌</source>
-        <translation>Token</translation>
+      <location filename="../../view/pages/setting_page.py" line="304"/>
+      <location filename="../../view/pages/setting_page.py" line="310"/>
+      <source>数据存储模式</source>
+      <translation>Modo de armazenamento de dados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="231"/>
-        <source>若设置，客户端需传入 token 才可创建任务</source>
-        <translation>Se definido, o cliente precisa enviar o token para criar tarefas</translation>
+      <location filename="../../view/pages/setting_page.py" line="305"/>
+      <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
+      <translation>Atualmente no modo Portable, dados salvos ao lado do programa: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="233"/>
-        <source>可选</source>
-        <translation>Opcional</translation>
+      <location filename="../../view/pages/setting_page.py" line="309"/>
+      <source>切换到 Portable 模式</source>
+      <translation>Alternar para modo Portable</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="237"/>
-        <source>模拟浏览器指纹</source>
-        <translation>Simular fingerprint do navegador</translation>
+      <location filename="../../view/pages/setting_page.py" line="311"/>
+      <source>当前为用户模式，数据保存在: {0}</source>
+      <translation>Atualmente no modo de usuário, dados salvos em: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="238"/>
-        <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
-        <translation>Adicionar fingerprint TLS e cabeçalhos do navegador para tarefas recebidas via Aria2 RPC</translation>
+      <location filename="../../view/pages/setting_page.py" line="322"/>
+      <source>命令行工具</source>
+      <translation>Ferramenta de linha de comando</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="245"/>
-        <source>改变应用程序界面的缩放比例, 0% 为自动</source>
-        <translation>Alterar a escala da interface; 0% para automático</translation>
+      <location filename="../../view/pages/setting_page.py" line="323"/>
+      <source>安装后可在终端中使用 ghd 命令添加和管理任务</source>
+      <translation>Após instalar, use o comando ghd no terminal para adicionar e gerenciar tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="271"/>
-        <source>在 Dock 栏中显示程序</source>
-        <translation>Mostrar programa na Dock</translation>
+      <location filename="../../view/pages/setting_page.py" line="381"/>
+      <source>在应用程序启动时检查更新</source>
+      <translation>Verificar atualizações ao iniciar o aplicativo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="272"/>
-        <source>关闭后可通过菜单栏图标继续使用程序</source>
-        <translation>Após fechar, o programa pode ser usado através do ícone da barra de menu</translation>
+      <location filename="../../view/pages/setting_page.py" line="382"/>
+      <source>新版本将更稳定，并具有更多功能</source>
+      <translation>Novas versões serão mais estáveis e terão mais recursos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="276"/>
-        <source>在 Dock 图标上显示实时速度</source>
-        <translation>Mostrar velocidade em tempo real no ícone da Dock</translation>
+      <location filename="../../view/pages/setting_page.py" line="331"/>
+      <source>关闭主窗口时</source>
+      <translation>Ao fechar a janela principal</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="277"/>
-        <source>下载时在程序坞图标上叠加当前速度</source>
-        <translation>Sobrepor a velocidade atual no ícone da Dock durante o download</translation>
+      <location filename="../../view/pages/setting_page.py" line="332"/>
+      <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
+      <translation>Definir se o programa continua em segundo plano ou sai ao fechar a janela principal</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="284"/>
-        <source>在菜单栏显示实时速度</source>
-        <translation>Mostrar velocidade em tempo real na barra de menu</translation>
+      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <source>关闭时询问</source>
+      <translation>Perguntar ao fechar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="285"/>
-        <source>下载时在菜单栏图标旁显示当前速度</source>
-        <translation>Exibir a velocidade atual ao lado do ícone da barra de menu durante o download</translation>
+      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <source>继续在后台运行</source>
+      <translation>Continuar em segundo plano</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="289"/>
-        <source>语言</source>
-        <translation>Idioma</translation>
+      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <source>退出程序</source>
+      <translation>Sair do programa</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="290"/>
-        <source>设置界面的首选语言</source>
-        <translation>Idioma preferido para a interface de configurações</translation>
+      <location filename="../../view/pages/setting_page.py" line="341"/>
+      <source>通知提示音</source>
+      <translation>Som de notificação</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="291"/>
-        <source>使用系统设置</source>
-        <translation>Usar configurações do sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="342"/>
+      <source>下载完成时播放提示音</source>
+      <translation>Tocar um som quando um download for concluído</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="304"/>
-        <source>切换到用户模式</source>
-        <translation>Alternar para modo de usuário</translation>
+      <location filename="../../view/pages/setting_page.py" line="366"/>
+      <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
+      <translation>Ajude a melhorar o Ghost Downloader com feedback ou consulte os registros para solucionar problemas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="305"/>
-        <location filename="../../view/pages/setting_page.py" line="311"/>
-        <source>数据存储模式</source>
-        <translation>Modo de armazenamento de dados</translation>
+      <location filename="../../view/pages/setting_page.py" line="372"/>
+      <source>查看详情</source>
+      <translation>Ver detalhes</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="306"/>
-        <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
-        <translation>Atualmente no modo Portable, dados salvos ao lado do programa: {0}</translation>
+      <location filename="../../view/pages/setting_page.py" line="372"/>
+      <source>功能包</source>
+      <translation>Pacote de funcionalidades</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="310"/>
-        <source>切换到 Portable 模式</source>
-        <translation>Alternar para modo Portable</translation>
+      <location filename="../../view/pages/setting_page.py" line="373"/>
+      <source>管理已安装的功能包</source>
+      <translation>Gerenciar pacotes de funcionalidades instalados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="312"/>
-        <source>当前为用户模式，数据保存在: {0}</source>
-        <translation>Atualmente no modo de usuário, dados salvos em: {0}</translation>
+      <location filename="../../view/pages/setting_page.py" line="503"/>
+      <source>正在端口 {} 上监听</source>
+      <translation>Escutando na porta {}</translation>
     </message>
     <message>
-        <source>新建任务时显示下载进度</source>
-        <translation type="vanished">Mostrar o progresso do download ao criar nova tarefa</translation>
+      <location filename="../../view/pages/setting_page.py" line="338"/>
+      <source>系统通知</source>
+      <translation>Notificação do sistema</translation>
     </message>
     <message>
-        <source>在屏幕右下角显示进度，可最小化到任务栏；需要通知方式为弹窗</source>
-        <translation type="vanished">Mostrar o progresso no canto inferior direito da tela; pode ser minimizada para a barra de tarefas; requer que o estilo de notificação seja pop-up</translation>
+      <location filename="../../view/pages/setting_page.py" line="315"/>
+      <source>新建任务的下载进度</source>
+      <translation>Progresso de download de novas tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
-        <source>命令行工具</source>
-        <translation>Ferramenta de linha de comando</translation>
+      <location filename="../../view/pages/setting_page.py" line="316"/>
+      <source>选择新建任务下载进度的显示方式</source>
+      <translation>Selecionar como exibir o progresso de download de novas tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="324"/>
-        <source>安装后可在终端中使用 ghd 命令添加和管理任务</source>
-        <translation>Após instalar, use o comando ghd no terminal para adicionar e gerenciar tarefas</translation>
+      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <source>不显示</source>
+      <translation>Não exibir</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="382"/>
-        <source>在应用程序启动时检查更新</source>
-        <translation>Verificar atualizações ao iniciar o aplicativo</translation>
+      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <source>通过弹窗显示</source>
+      <translation>Exibir via pop-up</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="383"/>
-        <source>新版本将更稳定，并具有更多功能</source>
-        <translation>Novas versões serão mais estáveis e terão mais recursos</translation>
+      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <source>显示于任务栏</source>
+      <translation>Exibir na barra de tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="332"/>
-        <source>关闭主窗口时</source>
-        <translation>Ao fechar a janela principal</translation>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
+      <source>通知方式</source>
+      <translation>Estilo de notificação</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
-        <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
-        <translation>Definir se o programa continua em segundo plano ou sai ao fechar a janela principal</translation>
+      <location filename="../../view/pages/setting_page.py" line="337"/>
+      <source>下载完成、磁盘空间不足等提示的显示方式</source>
+      <translation>Como exibir avisos como download concluído ou espaço em disco insuficiente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="334"/>
-        <source>关闭时询问</source>
-        <translation>Perguntar ao fechar</translation>
+      <location filename="../../view/pages/setting_page.py" line="338"/>
+      <source>弹窗</source>
+      <translation>Pop-up</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="334"/>
-        <source>继续在后台运行</source>
-        <translation>Continuar em segundo plano</translation>
+      <location filename="../../view/pages/setting_page.py" line="339"/>
+      <source>关闭</source>
+      <translation>Desligado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="334"/>
-        <source>退出程序</source>
-        <translation>Sair do programa</translation>
+      <location filename="../../view/pages/setting_page.py" line="348"/>
+      <source>复制链接后先询问</source>
+      <translation>Perguntar após copiar o link</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="342"/>
-        <source>通知提示音</source>
-        <translation>Som de notificação</translation>
+      <location filename="../../view/pages/setting_page.py" line="349"/>
+      <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
+      <translation>Ao fechar ou minimizar a janela principal, se ativado, primeiro exibir uma janela perguntando se deseja baixar; se desativado, abrir diretamente a janela principal.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
-        <source>下载完成时播放提示音</source>
-        <translation>Tocar um som quando um download for concluído</translation>
+      <location filename="../../view/pages/setting_page.py" line="533"/>
+      <source>卸载</source>
+      <translation>Desinstalar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
-        <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
-        <translation>Ajude a melhorar o Ghost Downloader com feedback ou consulte os registros para solucionar problemas</translation>
+      <location filename="../../view/pages/setting_page.py" line="533"/>
+      <source>安装</source>
+      <translation>Instalar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="373"/>
-        <source>查看详情</source>
-        <translation>Ver detalhes</translation>
+      <location filename="../../view/pages/setting_page.py" line="545"/>
+      <source>已卸载命令行工具</source>
+      <translation>Ferramenta de linha de comando desinstalada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="373"/>
-        <source>功能包</source>
-        <translation>Pacote de funcionalidades</translation>
+      <location filename="../../view/pages/setting_page.py" line="548"/>
+      <source>新打开的终端即可使用 ghd</source>
+      <translation>O ghd estará disponível em terminais abertos a partir de agora</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="374"/>
-        <source>管理已安装的功能包</source>
-        <translation>Gerenciar pacotes de funcionalidades instalados</translation>
+      <location filename="../../view/pages/setting_page.py" line="550"/>
+      <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
+      <translation>O ghd estará disponível em terminais abertos a partir de agora; se o comando não for encontrado, adicione ~/.local/bin ao PATH</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="504"/>
-        <source>正在端口 {} 上监听</source>
-        <translation>Escutando na porta {}</translation>
+      <location filename="../../view/pages/setting_page.py" line="551"/>
+      <source>已安装命令行工具</source>
+      <translation>Ferramenta de linha de comando instalada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
-        <source>系统通知</source>
-        <translation>Notificação do sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="557"/>
+      <source>卸载命令行工具失败</source>
+      <translation>Falha ao desinstalar a ferramenta de linha de comando</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="316"/>
-        <source>新建任务的下载进度</source>
-        <translation>Progresso de download de novas tarefas</translation>
+      <location filename="../../view/pages/setting_page.py" line="557"/>
+      <source>安装命令行工具失败</source>
+      <translation>Falha ao instalar a ferramenta de linha de comando</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="317"/>
-        <source>选择新建任务下载进度的显示方式</source>
-        <translation>Selecionar como exibir o progresso de download de novas tarefas</translation>
+      <location filename="../../view/pages/setting_page.py" line="565"/>
+      <source>用户模式</source>
+      <translation>Modo de usuário</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
-        <source>不显示</source>
-        <translation>Não exibir</translation>
+      <location filename="../../view/pages/setting_page.py" line="565"/>
+      <source>Portable 模式</source>
+      <translation>Modo Portátil</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
-        <source>通过弹窗显示</source>
-        <translation>Exibir via pop-up</translation>
+      <location filename="../../view/pages/setting_page.py" line="567"/>
+      <source>切换数据存储模式</source>
+      <translation>Alternar modo de armazenamento de dados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
-        <source>显示于任务栏</source>
-        <translation>Exibir na barra de tarefas</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="337"/>
-        <source>通知方式</source>
-        <translation>Estilo de notificação</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="338"/>
-        <source>下载完成、磁盘空间不足等提示的显示方式</source>
-        <translation>Como exibir avisos como download concluído ou espaço em disco insuficiente</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
-        <source>弹窗</source>
-        <translation>Pop-up</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="340"/>
-        <source>关闭</source>
-        <translation>Desligado</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="349"/>
-        <source>复制链接后先询问</source>
-        <translation>Perguntar após copiar o link</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="350"/>
-        <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
-        <translation>Ao fechar ou minimizar a janela principal, se ativado, primeiro exibir uma janela perguntando se deseja baixar; se desativado, abrir diretamente a janela principal.</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="534"/>
-        <source>卸载</source>
-        <translation>Desinstalar</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="534"/>
-        <source>安装</source>
-        <translation>Instalar</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="546"/>
-        <source>已卸载命令行工具</source>
-        <translation>Ferramenta de linha de comando desinstalada</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="549"/>
-        <source>新打开的终端即可使用 ghd</source>
-        <translation>O ghd estará disponível em terminais abertos a partir de agora</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="551"/>
-        <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
-        <translation>O ghd estará disponível em terminais abertos a partir de agora; se o comando não for encontrado, adicione ~/.local/bin ao PATH</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="552"/>
-        <source>已安装命令行工具</source>
-        <translation>Ferramenta de linha de comando instalada</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="558"/>
-        <source>卸载命令行工具失败</source>
-        <translation>Falha ao desinstalar a ferramenta de linha de comando</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="558"/>
-        <source>安装命令行工具失败</source>
-        <translation>Falha ao instalar a ferramenta de linha de comando</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="566"/>
-        <source>用户模式</source>
-        <translation>Modo de usuário</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="566"/>
-        <source>Portable 模式</source>
-        <translation>Modo Portátil</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="568"/>
-        <source>切换数据存储模式</source>
-        <translation>Alternar modo de armazenamento de dados</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="569"/>
-        <source>确定要切换到{0}吗？
+      <location filename="../../view/pages/setting_page.py" line="568"/>
+      <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
-        <translation>Tem certeza de que deseja alternar para {0}?
+      <translation>Tem certeza de que deseja alternar para {0}?
 
 Os dados serão copiados para o novo local e o programa será encerrado. Reabra manualmente.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="589"/>
-        <source>正在检查更新...</source>
-        <translation>Verificando atualizações...</translation>
+      <location filename="../../view/pages/setting_page.py" line="588"/>
+      <source>正在检查更新...</source>
+      <translation>Verificando atualizações...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="601"/>
-        <source>当前已是最新版本</source>
-        <translation>Você já está na versão mais recente</translation>
+      <location filename="../../view/pages/setting_page.py" line="600"/>
+      <source>当前已是最新版本</source>
+      <translation>Você já está na versão mais recente</translation>
     </message>
     <message>
-        <source>当前版本 {0}，最新版本 {1}</source>
-        <translation type="vanished">Versão atual {0}, versão mais recente {1}</translation>
+      <location filename="../../view/pages/setting_page.py" line="597"/>
+      <source>检查更新失败</source>
+      <translation>Falha ao verificar atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="598"/>
-        <source>检查更新失败</source>
-        <translation>Falha ao verificar atualizações</translation>
+      <location filename="../../view/pages/setting_page.py" line="597"/>
+      <source>无法获取最新版本信息</source>
+      <translation>Não foi possível obter informações da versão mais recente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="598"/>
-        <source>无法获取最新版本信息</source>
-        <translation>Não foi possível obter informações da versão mais recente</translation>
+      <location filename="../../view/pages/setting_page.py" line="613"/>
+      <source>搜索设置</source>
+      <translation>Buscar configurações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="614"/>
-        <source>搜索设置</source>
-        <translation>Buscar configurações</translation>
+      <location filename="../../view/pages/setting_page.py" line="296"/>
+      <source>开机启动</source>
+      <translation>Iniciar com o sistema</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="297"/>
-        <source>开机启动</source>
-        <translation>Iniciar com o sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="297"/>
+      <source>在系统启动时静默运行 Ghost Downloader</source>
+      <translation>Executar o Ghost Downloader silenciosamente ao iniciar o sistema</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="134"/>
-        <source>使用系统 DNS</source>
-        <translation>Usar DNS do sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="387"/>
+      <source>打开作者的个人空间</source>
+      <translation>Abrir o espaço pessoal do autor</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="135"/>
-        <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
-        <translation>Utilizar a resolução DNS do sistema operacional, compatível com ambientes de rede como TUN, VPN e proxy</translation>
+      <location filename="../../view/pages/setting_page.py" line="388"/>
+      <source>了解作者</source>
+      <translation>Conhecer o autor</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="298"/>
-        <source>在系统启动时静默运行 Ghost Downloader</source>
-        <translation>Executar o Ghost Downloader silenciosamente ao iniciar o sistema</translation>
+      <location filename="../../view/pages/setting_page.py" line="388"/>
+      <source>发现更多 {} 的作品</source>
+      <translation>Descobrir mais trabalhos de {}</translation>
     </message>
     <message>
-        <source>剪贴板监听</source>
-        <translation type="vanished">Monitoramento da área de transferência</translation>
+      <location filename="../../view/pages/setting_page.py" line="364"/>
+      <location filename="../../view/pages/setting_page.py" line="365"/>
+      <source>提供反馈</source>
+      <translation>Fornecer feedback</translation>
     </message>
     <message>
-        <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
-        <translation type="vanished">O monitor da área de transferência detectará automaticamente links na área de transferência e adicionará tarefas de download</translation>
+      <location filename="../../view/pages/setting_page.py" line="114"/>
+      <source>最小再分配大小</source>
+      <translation>Tamanho mínimo de redistribuição</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="388"/>
-        <source>打开作者的个人空间</source>
-        <translation>Abrir o espaço pessoal do autor</translation>
+      <location filename="../../view/pages/setting_page.py" line="368"/>
+      <source>查看日志</source>
+      <translation>Ver registro</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="389"/>
-        <source>了解作者</source>
-        <translation>Conhecer o autor</translation>
+      <location filename="../../view/pages/setting_page.py" line="376"/>
+      <location filename="../../view/pages/setting_page.py" line="588"/>
+      <source>检查更新</source>
+      <translation>Verificar atualizações</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="389"/>
-        <source>发现更多 {} 的作品</source>
-        <translation>Descobrir mais trabalhos de {}</translation>
+      <location filename="../../view/pages/setting_page.py" line="449"/>
+      <source>已配置</source>
+      <translation>Configurado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="365"/>
-        <location filename="../../view/pages/setting_page.py" line="366"/>
-        <source>提供反馈</source>
-        <translation>Fornecer feedback</translation>
+      <location filename="../../view/pages/setting_page.py" line="449"/>
+      <source>重启软件后生效</source>
+      <translation>Efetivo após reiniciar o software</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="114"/>
-        <source>最小再分配大小</source>
-        <translation>Tamanho mínimo de redistribuição</translation>
+      <location filename="../../view/pages/setting_page.py" line="457"/>
+      <source>已复制配对令牌</source>
+      <translation>Token de emparelhamento copiado</translation>
     </message>
     <message>
-        <source>注册 URL 协议</source>
-        <translation type="vanished">Registrar protocolo URL</translation>
+      <location filename="../../view/pages/setting_page.py" line="463"/>
+      <source>已重新生成配对令牌</source>
+      <translation>Token de emparelhamento regenerado</translation>
     </message>
     <message>
-        <source>注册 ghostdownloader:// 协议，允许浏览器扩展启动桌面端</source>
-        <translation type="vanished">Registrar o protocolo ghostdownloader://, permitindo que a extensão do navegador inicie o aplicativo desktop</translation>
+      <location filename="../../view/pages/setting_page.py" line="463"/>
+      <source>新令牌已复制到剪贴板</source>
+      <translation>Novo token copiado para a área de transferência</translation>
     </message>
     <message>
-        <source>通过提供反馈来帮助我们改进 Ghost Downloader</source>
-        <translation type="vanished">Ajude-nos a melhorar o Ghost Downloader fornecendo feedback</translation>
+      <location filename="../../view/pages/setting_page.py" line="478"/>
+      <source>解包失败</source>
+      <translation>Falha ao desempacotar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="369"/>
-        <source>查看日志</source>
-        <translation>Ver registro</translation>
+      <location filename="../../view/pages/setting_page.py" line="489"/>
+      <source>未连接</source>
+      <translation>Desconectado</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="377"/>
-        <location filename="../../view/pages/setting_page.py" line="589"/>
-        <source>检查更新</source>
-        <translation>Verificar atualizações</translation>
+      <location filename="../../view/pages/setting_page.py" line="491"/>
+      <source>已连接 v{} (桌面端自管理)</source>
+      <translation>Conectado v{} (autogerenciado pelo desktop)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="450"/>
-        <source>已配置</source>
-        <translation>Configurado</translation>
+      <location filename="../../view/pages/setting_page.py" line="493"/>
+      <source>已连接 v{} (商店安装)</source>
+      <translation>Conectado v{} (instalado pela loja)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="450"/>
-        <source>重启软件后生效</source>
-        <translation>Efetivo após reiniciar o software</translation>
+      <location filename="../../view/pages/setting_page.py" line="510"/>
+      <source>选择导出路径</source>
+      <translation>Selecionar caminho de exportação</translation>
     </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="458"/>
-        <source>已复制配对令牌</source>
-        <translation>Token de emparelhamento copiado</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="464"/>
-        <source>已重新生成配对令牌</source>
-        <translation>Token de emparelhamento regenerado</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="464"/>
-        <source>新令牌已复制到剪贴板</source>
-        <translation>Novo token copiado para a área de transferência</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="479"/>
-        <source>解包失败</source>
-        <translation>Falha ao desempacotar</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="490"/>
-        <source>未连接</source>
-        <translation>Desconectado</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="492"/>
-        <source>已连接 v{} (桌面端自管理)</source>
-        <translation>Conectado v{} (autogerenciado pelo desktop)</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="494"/>
-        <source>已连接 v{} (商店安装)</source>
-        <translation>Conectado v{} (instalado pela loja)</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="511"/>
-        <source>选择导出路径</source>
-        <translation>Selecionar caminho de exportação</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SideFileCard</name>
     <message>
-        <location filename="../../../features/arxiv_pack/cards.py" line="63"/>
-        <source>附属文件</source>
-        <translation>Arquivos auxiliares</translation>
+      <location filename="../../../features/arxiv_pack/cards.py" line="63"/>
+      <source>附属文件</source>
+      <translation>Arquivos auxiliares</translation>
     </message>
     <message>
-        <location filename="../../../features/arxiv_pack/cards.py" line="64"/>
-        <source>TeX 源码</source>
-        <translation>Código-fonte TeX</translation>
+      <location filename="../../../features/arxiv_pack/cards.py" line="64"/>
+      <source>TeX 源码</source>
+      <translation>Código-fonte TeX</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>StreamSelectCard</name>
     <message>
-        <location filename="../../../features/m3u8_pack/cards.py" line="119"/>
-        <source>默认（最佳）</source>
-        <translation>Padrão (melhor)</translation>
+      <location filename="../../../features/m3u8_pack/cards.py" line="189"/>
+      <source>默认（最佳）</source>
+      <translation>Padrão (melhor)</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
+    <name>SubtitleCard</name>
+    <message>
+      <location filename="../../../features/m3u8_pack/cards.py" line="72"/>
+      <source>字幕</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/m3u8_pack/cards.py" line="74"/>
+      <source>选择</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/m3u8_pack/cards.py" line="102"/>
+      <source>不下载</source>
+      <translation type="unfinished"/>
+    </message>
+  </context>
+  <context>
     <name>SubtitleSelectDialog</name>
     <message>
-        <location filename="../../view/dialogs/subtitle_select.py" line="19"/>
-        <source>选择字幕语言</source>
-        <translation>Selecionar idioma da legenda</translation>
+      <location filename="../../view/dialogs/subtitle_select.py" line="19"/>
+      <source>选择字幕语言</source>
+      <translation>Selecionar idioma da legenda</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/subtitle_select.py" line="22"/>
-        <source>全选</source>
-        <translation>Selecionar todos</translation>
+      <location filename="../../view/dialogs/subtitle_select.py" line="22"/>
+      <source>全选</source>
+      <translation>Selecionar todos</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/subtitle_select.py" line="23"/>
-        <source>全不选</source>
-        <translation>Desmarcar todos</translation>
+      <location filename="../../view/dialogs/subtitle_select.py" line="23"/>
+      <source>全不选</source>
+      <translation>Desmarcar todos</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/subtitle_select.py" line="35"/>
-        <source>确定</source>
-        <translation>OK</translation>
+      <location filename="../../view/dialogs/subtitle_select.py" line="35"/>
+      <source>确定</source>
+      <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/subtitle_select.py" line="36"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/subtitle_select.py" line="36"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/subtitle_select.py" line="81"/>
-        <source>{0}/{1} 种语言</source>
-        <translation>{0}/{1} idiomas</translation>
+      <location filename="../../view/dialogs/subtitle_select.py" line="81"/>
+      <source>{0}/{1} 种语言</source>
+      <translation>{0}/{1} idiomas</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SubworkerCountCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="125"/>
-        <source>预分配线程数</source>
-        <translation>Número de threads pré-alocadas</translation>
+      <location filename="../../view/components/option_cards.py" line="128"/>
+      <source>预分配线程数</source>
+      <translation>Número de threads pré-alocadas</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SwitchSettingCard</name>
     <message>
-        <location filename="../../view/components/category_settings.py" line="99"/>
-        <location filename="../../view/components/setting_cards.py" line="340"/>
-        <source>On</source>
-        <translation>Ligado</translation>
+      <location filename="../../view/components/category_settings.py" line="89"/>
+      <location filename="../../view/components/setting_cards.py" line="340"/>
+      <source>On</source>
+      <translation>Ligado</translation>
     </message>
     <message>
-        <location filename="../../view/components/category_settings.py" line="100"/>
-        <location filename="../../view/components/setting_cards.py" line="341"/>
-        <source>Off</source>
-        <translation>Desligado</translation>
+      <location filename="../../view/components/category_settings.py" line="90"/>
+      <location filename="../../view/components/setting_cards.py" line="341"/>
+      <source>Off</source>
+      <translation>Desligado</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>SystemTrayIcon</name>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="105"/>
-        <location filename="../../view/shell/tray.py" line="184"/>
-        <source>仪表盘</source>
-        <translation>Painel</translation>
+      <location filename="../../view/shell/mac_status_item.py" line="105"/>
+      <location filename="../../view/shell/tray.py" line="184"/>
+      <source>仪表盘</source>
+      <translation>Painel</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="106"/>
-        <location filename="../../view/shell/tray.py" line="186"/>
-        <source>新建任务</source>
-        <translation>Nova tarefa</translation>
+      <location filename="../../view/shell/mac_status_item.py" line="106"/>
+      <location filename="../../view/shell/tray.py" line="186"/>
+      <source>新建任务</source>
+      <translation>Nova tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="107"/>
-        <location filename="../../view/shell/tray.py" line="188"/>
-        <source>全部开始</source>
-        <translation>Iniciar tudo</translation>
+      <location filename="../../view/shell/mac_status_item.py" line="107"/>
+      <location filename="../../view/shell/tray.py" line="188"/>
+      <source>全部开始</source>
+      <translation>Iniciar tudo</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="108"/>
-        <location filename="../../view/shell/tray.py" line="190"/>
-        <source>全部暂停</source>
-        <translation>Pausar tudo</translation>
+      <location filename="../../view/shell/mac_status_item.py" line="108"/>
+      <location filename="../../view/shell/tray.py" line="190"/>
+      <source>全部暂停</source>
+      <translation>Pausar tudo</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="109"/>
-        <location filename="../../view/shell/tray.py" line="192"/>
-        <source>设置</source>
-        <translation>Configurações</translation>
+      <location filename="../../view/shell/mac_status_item.py" line="109"/>
+      <location filename="../../view/shell/tray.py" line="192"/>
+      <source>设置</source>
+      <translation>Configurações</translation>
     </message>
     <message>
-        <location filename="../../view/shell/mac_status_item.py" line="111"/>
-        <location filename="../../view/shell/tray.py" line="195"/>
-        <source>退出程序</source>
-        <translation>Sair do programa</translation>
+      <location filename="../../view/shell/mac_status_item.py" line="111"/>
+      <location filename="../../view/shell/tray.py" line="195"/>
+      <source>退出程序</source>
+      <translation>Sair do programa</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="85"/>
-        <source>暂停/继续</source>
-        <translation>Pausar/Continuar</translation>
+      <location filename="../../view/cards/task_cards.py" line="85"/>
+      <source>暂停/继续</source>
+      <translation>Pausar/Continuar</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="92"/>
-        <source>选择文件</source>
-        <translation>Selecionar arquivos</translation>
+      <location filename="../../view/cards/task_cards.py" line="92"/>
+      <source>选择文件</source>
+      <translation>Selecionar arquivos</translation>
     </message>
     <message>
-        <source>校验文件哈希</source>
-        <translation type="vanished">Verificar hash do arquivo</translation>
+      <location filename="../../view/cards/task_cards.py" line="132"/>
+      <source>计算校验值</source>
+      <translation>Calcular valor de verificação</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="132"/>
-        <source>计算校验值</source>
-        <translation>Calcular valor de verificação</translation>
+      <location filename="../../view/cards/task_cards.py" line="139"/>
+      <source>打开文件</source>
+      <translation>Abrir arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="139"/>
-        <source>打开文件</source>
-        <translation>Abrir arquivo</translation>
+      <location filename="../../view/cards/task_cards.py" line="145"/>
+      <source>打开文件夹</source>
+      <translation>Abrir pasta</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="145"/>
-        <source>打开文件夹</source>
-        <translation>Abrir pasta</translation>
+      <location filename="../../view/cards/task_cards.py" line="146"/>
+      <source>删除</source>
+      <translation>Excluir</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="146"/>
-        <source>删除</source>
-        <translation>Excluir</translation>
+      <location filename="../../view/cards/task_cards.py" line="316"/>
+      <source>文件缺失</source>
+      <translation>Arquivo ausente</translation>
     </message>
     <message>
-        <source>文件不存在</source>
-        <translation type="vanished">Arquivo não encontrado</translation>
+      <location filename="../../view/cards/task_cards.py" line="319"/>
+      <source>完成于 {}</source>
+      <translation>Concluído em {}</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="316"/>
-        <source>文件缺失</source>
-        <translation>Arquivo ausente</translation>
+      <location filename="../../view/cards/task_cards.py" line="322"/>
+      <source>任务已经完成</source>
+      <translation>Tarefa concluída</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="319"/>
-        <source>完成于 {}</source>
-        <translation>Concluído em {}</translation>
+      <location filename="../../view/cards/task_cards.py" line="332"/>
+      <source>下载过程中发生错误，请稍后重试</source>
+      <translation>Ocorreu um erro durante o download, tente novamente mais tarde</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="322"/>
-        <source>任务已经完成</source>
-        <translation>Tarefa concluída</translation>
+      <location filename="../../view/cards/task_cards.py" line="338"/>
+      <source>任务已经暂停</source>
+      <translation>Tarefa pausada</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="332"/>
-        <source>下载过程中发生错误，请稍后重试</source>
-        <translation>Ocorreu um erro durante o download, tente novamente mais tarde</translation>
+      <location filename="../../view/cards/task_cards.py" line="340"/>
+      <source>任务正在等待</source>
+      <translation>Tarefa aguardando</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="338"/>
-        <source>任务已经暂停</source>
-        <translation>Tarefa pausada</translation>
+      <location filename="../../view/cards/task_cards.py" line="390"/>
+      <source>删除任务</source>
+      <translation>Excluir tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="340"/>
-        <source>任务正在等待</source>
-        <translation>Tarefa aguardando</translation>
+      <location filename="../../view/cards/task_cards.py" line="390"/>
+      <source>确定要删除这个下载任务吗？</source>
+      <translation>Tem certeza de que deseja excluir esta tarefa de download?</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="390"/>
-        <source>删除任务</source>
-        <translation>Excluir tarefa</translation>
+      <location filename="../../view/cards/task_cards.py" line="391"/>
+      <source>同时删除已下载的文件</source>
+      <translation>Excluir também os arquivos baixados</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="390"/>
-        <source>确定要删除这个下载任务吗？</source>
-        <translation>Tem certeza de que deseja excluir esta tarefa de download?</translation>
+      <location filename="../../view/cards/task_cards.py" line="404"/>
+      <source>文件缺失，无法校验</source>
+      <translation>Arquivo ausente, impossível verificar</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="391"/>
-        <source>同时删除已下载的文件</source>
-        <translation>Excluir também os arquivos baixados</translation>
+      <location filename="../../view/cards/task_cards.py" line="407"/>
+      <source>更多</source>
+      <translation>Mais</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="404"/>
-        <source>文件缺失，无法校验</source>
-        <translation>Arquivo ausente, impossível verificar</translation>
+      <location filename="../../view/cards/task_cards.py" line="445"/>
+      <source>任务详情</source>
+      <translation>Detalhes da tarefa</translation>
     </message>
     <message>
-        <source>文件不存在，无法校验</source>
-        <translation type="vanished">Arquivo não encontrado, impossível verificar</translation>
+      <location filename="../../view/cards/task_cards.py" line="449"/>
+      <source>在单独弹窗中显示下载进度</source>
+      <translation>Exibir o progresso do download em um pop-up separado</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="407"/>
-        <source>更多</source>
-        <translation>Mais</translation>
+      <location filename="../../view/cards/task_cards.py" line="454"/>
+      <source>复制下载链接</source>
+      <translation>Copiar link de download</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="445"/>
-        <source>任务详情</source>
-        <translation>Detalhes da tarefa</translation>
+      <location filename="../../view/cards/task_cards.py" line="459"/>
+      <source>编辑任务参数...</source>
+      <translation>Editar parâmetros da tarefa...</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="449"/>
-        <source>在单独弹窗中显示下载进度</source>
-        <translation>Exibir o progresso do download em um pop-up separado</translation>
+      <location filename="../../view/cards/task_cards.py" line="463"/>
+      <source>移到最前</source>
+      <translation>Mover para o início</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="454"/>
-        <source>复制下载链接</source>
-        <translation>Copiar link de download</translation>
+      <location filename="../../view/cards/task_cards.py" line="467"/>
+      <source>重新下载</source>
+      <translation>Baixar novamente</translation>
     </message>
     <message>
-        <source>复制校验值</source>
-        <translation type="vanished">Copiar valor de verificação</translation>
+      <location filename="../../view/cards/task_cards.py" line="472"/>
+      <source>移动到分类</source>
+      <translation>Mover para categoria</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="459"/>
-        <source>编辑任务参数...</source>
-        <translation>Editar parâmetros da tarefa...</translation>
+      <location filename="../../view/cards/task_cards.py" line="474"/>
+      <source>未分类</source>
+      <translation>Sem categoria</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="463"/>
-        <source>移到最前</source>
-        <translation>Mover para o início</translation>
+      <location filename="../../../features/bittorrent_pack/cards.py" line="36"/>
+      <source>{0}/{1} Peers</source>
+      <translation>{0}/{1} Peers</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="467"/>
-        <source>重新下载</source>
-        <translation>Baixar novamente</translation>
+      <location filename="../../../features/bili_pack/cards.py" line="62"/>
+      <source>已选 {0}/{1}</source>
+      <translation>Selecionados {0}/{1}</translation>
     </message>
-    <message>
-        <location filename="../../view/cards/task_cards.py" line="472"/>
-        <source>移动到分类</source>
-        <translation>Mover para categoria</translation>
-    </message>
-    <message>
-        <location filename="../../view/cards/task_cards.py" line="474"/>
-        <source>未分类</source>
-        <translation>Sem categoria</translation>
-    </message>
-    <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="37"/>
-        <source>{0}/{1} Peers</source>
-        <translation>{0}/{1} Peers</translation>
-    </message>
-    <message>
-        <source>{0}/{1} 集</source>
-        <translation type="vanished">{0}/{1} episódios</translation>
-    </message>
-    <message>
-        <location filename="../../../features/bili_pack/cards.py" line="59"/>
-        <source>已选 {0}/{1}</source>
-        <translation>Selecionados {0}/{1}</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskCommandBarView</name>
     <message>
-        <location filename="../../view/pages/task_page.py" line="63"/>
-        <source>移到最前</source>
-        <translation>Mover para o início</translation>
+      <location filename="../../view/pages/task_page.py" line="63"/>
+      <source>移到最前</source>
+      <translation>Mover para o início</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="64"/>
-        <source>重新下载</source>
-        <translation>Baixar novamente</translation>
+      <location filename="../../view/pages/task_page.py" line="64"/>
+      <source>重新下载</source>
+      <translation>Baixar novamente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="65"/>
-        <source>删除</source>
-        <translation>Excluir</translation>
+      <location filename="../../view/pages/task_page.py" line="65"/>
+      <source>删除</source>
+      <translation>Excluir</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="66"/>
-        <source>复制链接</source>
-        <translation>Copiar link</translation>
+      <location filename="../../view/pages/task_page.py" line="66"/>
+      <source>复制链接</source>
+      <translation>Copiar link</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="67"/>
-        <source>移动到分类</source>
-        <translation>Mover para categoria</translation>
+      <location filename="../../view/pages/task_page.py" line="67"/>
+      <source>移动到分类</source>
+      <translation>Mover para categoria</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="68"/>
-        <source>全选</source>
-        <translation>Selecionar todos</translation>
+      <location filename="../../view/pages/task_page.py" line="68"/>
+      <source>全选</source>
+      <translation>Selecionar todos</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="69"/>
-        <source>选择缺失</source>
-        <translation>Selecionar ausentes</translation>
+      <location filename="../../view/pages/task_page.py" line="69"/>
+      <source>选择缺失</source>
+      <translation>Selecionar ausentes</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="70"/>
-        <source>反选</source>
-        <translation>Inverter seleção</translation>
+      <location filename="../../view/pages/task_page.py" line="70"/>
+      <source>反选</source>
+      <translation>Inverter seleção</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="71"/>
-        <source>取消全选</source>
-        <translation>Desmarcar todos</translation>
+      <location filename="../../view/pages/task_page.py" line="71"/>
+      <source>取消全选</source>
+      <translation>Desmarcar todos</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskDraftDialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="88"/>
-        <source>添加任务</source>
-        <translation>Adicionar tarefa</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="88"/>
+      <source>添加任务</source>
+      <translation>Adicionar tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="93"/>
-        <source>批量添加</source>
-        <translation>Adicionar em lote</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="93"/>
+      <source>批量添加</source>
+      <translation>Adicionar em lote</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="94"/>
-        <location filename="../../view/dialogs/task_draft.py" line="395"/>
-        <source>导入文件</source>
-        <translation>Importar arquivo</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="94"/>
+      <location filename="../../view/dialogs/task_draft.py" line="395"/>
+      <source>导入文件</source>
+      <translation>Importar arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="108"/>
-        <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
-        <translation>Ao adicionar vários links de download, certifique-se de que haja apenas um link por linha</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="108"/>
+      <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
+      <translation>Ao adicionar vários links de download, certifique-se de que haja apenas um link por linha</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="118"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="118"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="120"/>
-        <source>稍后下载</source>
-        <translation>Baixar depois</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="120"/>
+      <source>稍后下载</source>
+      <translation>Baixar depois</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="126"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="126"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <source>链接解析失败</source>
-        <translation type="vanished">Falha ao analisar o link</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="332"/>
+      <source>无法添加任务</source>
+      <translation>Não foi possível adicionar a tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="332"/>
-        <source>无法添加任务</source>
-        <translation>Não foi possível adicionar a tarefa</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="341"/>
+      <source>更改默认文件夹</source>
+      <translation>Alterar pasta padrão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="341"/>
-        <source>更改默认文件夹</source>
-        <translation>Alterar pasta padrão</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="347"/>
+      <source>选择默认下载文件夹</source>
+      <translation>Escolher pasta de download padrão</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="347"/>
-        <source>选择默认下载文件夹</source>
-        <translation>Escolher pasta de download padrão</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="390"/>
+      <source>所有可导入文件 ({0})</source>
+      <translation>Todos os arquivos importáveis ({0})</translation>
     </message>
-    <message>
-        <location filename="../../view/dialogs/task_draft.py" line="390"/>
-        <source>所有可导入文件 ({0})</source>
-        <translation>Todos os arquivos importáveis ({0})</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskDrawer</name>
     <message>
-        <location filename="../../view/dialogs/task_drawer.py" line="415"/>
-        <source>任务详情</source>
-        <translation>Detalhes da tarefa</translation>
+      <location filename="../../view/dialogs/task_drawer.py" line="415"/>
+      <source>任务详情</source>
+      <translation>Detalhes da tarefa</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../i18n.py" line="28"/>
-        <source>{name} 未安装，请在设置中安装</source>
-        <translation>{name} não está instalado, instale nas configurações</translation>
+      <location filename="../../i18n.py" line="59"/>
+      <source>{name} 未安装，请在设置中安装</source>
+      <translation>{name} não está instalado, instale nas configurações</translation>
     </message>
     <message>
-        <location filename="../../../features/http_pack/i18n.py" line="3"/>
-        <source>服务器返回了错误（{status}）</source>
-        <translation>O servidor retornou um erro ({status})</translation>
+      <location filename="../../../features/http_pack/i18n.py" line="3"/>
+      <source>服务器返回了错误（{status}）</source>
+      <translation>O servidor retornou um erro ({status})</translation>
     </message>
     <message>
-        <location filename="../../../features/http_pack/i18n.py" line="5"/>
-        <source>服务器拒绝了范围请求，状态码：{status}</source>
-        <translation>O servidor recusou a requisição de intervalo, código de status: {status}</translation>
+      <location filename="../../../features/http_pack/i18n.py" line="5"/>
+      <source>服务器拒绝了范围请求，状态码：{status}</source>
+      <translation>O servidor recusou a requisição de intervalo, código de status: {status}</translation>
     </message>
     <message>
-        <location filename="../../../features/http_pack/i18n.py" line="6"/>
-        <source>服务器返回的数据不完整</source>
-        <translation>Os dados retornados pelo servidor estão incompletos</translation>
+      <location filename="../../../features/http_pack/i18n.py" line="6"/>
+      <source>服务器返回的数据不完整</source>
+      <translation>Os dados retornados pelo servidor estão incompletos</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="7"/>
-        <location filename="../../../features/http_pack/i18n.py" line="4"/>
-        <source>磁盘空间不足</source>
-        <translation>Espaço em disco insuficiente</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="7"/>
+      <location filename="../../../features/http_pack/i18n.py" line="4"/>
+      <source>磁盘空间不足</source>
+      <translation>Espaço em disco insuficiente</translation>
     </message>
     <message>
-        <location filename="../../../features/ftp_pack/i18n.py" line="3"/>
-        <source>无法建立 FTP 连接</source>
-        <translation>Não foi possível estabelecer conexão FTP</translation>
+      <location filename="../../../features/ftp_pack/i18n.py" line="3"/>
+      <source>无法建立 FTP 连接</source>
+      <translation>Não foi possível estabelecer conexão FTP</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="11"/>
-        <source>进程异常退出（{code}）：{detail}</source>
-        <translation>Processo encerrado anormalmente ({code}): {detail}</translation>
+      <location filename="../../i18n.py" line="42"/>
+      <source>进程异常退出（{code}）：{detail}</source>
+      <translation>Processo encerrado anormalmente ({code}): {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="12"/>
-        <source>发生了意外错误：{detail}</source>
-        <translation>Ocorreu um erro inesperado: {detail}</translation>
+      <location filename="../../i18n.py" line="43"/>
+      <source>发生了意外错误：{detail}</source>
+      <translation>Ocorreu um erro inesperado: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/i18n.py" line="3"/>
-        <source>该种子已在下载中</source>
-        <translation>Este torrent já está em download</translation>
+      <location filename="../../i18n.py" line="44"/>
+      <source>不支持该链接</source>
+      <translation>Link não suportado</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/i18n.py" line="4"/>
-        <source>至少需要选择一个文件</source>
-        <translation>É necessário selecionar pelo menos um arquivo</translation>
+      <location filename="../../i18n.py" line="45"/>
+      <source>压缩包包含不安全路径：{path}</source>
+      <translation>O arquivo compactado contém um caminho inseguro: {path}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/i18n.py" line="5"/>
-        <source>BitTorrent 错误：{detail}</source>
-        <translation>Erro BitTorrent: {detail}</translation>
+      <location filename="../../i18n.py" line="46"/>
+      <source>压缩包未找到：{path}</source>
+      <translation>Arquivo compactado não encontrado: {path}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/i18n.py" line="6"/>
-        <source>BitTorrent 会话启动失败：{detail}</source>
-        <translation>Falha ao iniciar sessão BitTorrent: {detail}</translation>
+      <location filename="../../i18n.py" line="47"/>
+      <source>不支持的压缩格式：{name}</source>
+      <translation>Formato de compactação não suportado: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="13"/>
-        <source>不支持该链接</source>
-        <translation>Link não suportado</translation>
+      <location filename="../../i18n.py" line="48"/>
+      <source>解压后未找到可执行文件：{name}</source>
+      <translation>Arquivo executável não encontrado após extração: {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="14"/>
-        <source>压缩包包含不安全路径：{path}</source>
-        <translation>O arquivo compactado contém um caminho inseguro: {path}</translation>
+      <location filename="../../i18n.py" line="49"/>
+      <source>无法读取校验文件：{path}</source>
+      <translation>Não foi possível ler o arquivo de verificação: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="15"/>
-        <source>压缩包未找到：{path}</source>
-        <translation>Arquivo compactado não encontrado: {path}</translation>
+      <location filename="../../i18n.py" line="50"/>
+      <source>无法读取文件：{detail}</source>
+      <translation>Não foi possível ler o arquivo: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="16"/>
-        <source>不支持的压缩格式：{name}</source>
-        <translation>Formato de compactação não suportado: {name}</translation>
+      <location filename="../../i18n.py" line="51"/>
+      <source>无法写入文件夹 {folder}：{reason}</source>
+      <translation>Não foi possível gravar na pasta {folder}: {reason}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="17"/>
-        <source>解压后未找到可执行文件：{name}</source>
-        <translation>Arquivo executável não encontrado após extração: {name}</translation>
+      <location filename="../../i18n.py" line="52"/>
+      <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
+      <translation>Falha na verificação SHA256: esperado {expected}, obtido {actual}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="18"/>
-        <source>无法读取校验文件：{path}</source>
-        <translation>Não foi possível ler o arquivo de verificação: {path}</translation>
+      <location filename="../../i18n.py" line="53"/>
+      <source>下载的文件未找到：{path}</source>
+      <translation>Arquivo baixado não encontrado: {path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="19"/>
-        <source>无法读取文件：{detail}</source>
-        <translation>Não foi possível ler o arquivo: {detail}</translation>
+      <location filename="../../i18n.py" line="54"/>
+      <source>无法获取 {name} 的最新 release</source>
+      <translation>Não foi possível obter a versão mais recente de {name}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="20"/>
-        <source>无法写入文件夹 {folder}：{reason}</source>
-        <translation>Não foi possível gravar na pasta {folder}: {reason}</translation>
+      <location filename="../../i18n.py" line="55"/>
+      <source>无法获取 {name}/{branch}/{path}</source>
+      <translation>Não foi possível obter {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="21"/>
-        <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
-        <translation>Falha na verificação SHA256: esperado {expected}, obtido {actual}</translation>
+      <location filename="../../i18n.py" line="56"/>
+      <source>无法下载 {name}/{branch}/{path}</source>
+      <translation>Não foi possível baixar {name}/{branch}/{path}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="22"/>
-        <source>下载的文件未找到：{path}</source>
-        <translation>Arquivo baixado não encontrado: {path}</translation>
+      <location filename="../../i18n.py" line="57"/>
+      <source>无法下载 {name}/{tag}/{asset}</source>
+      <translation>Não foi possível baixar {name}/{tag}/{asset}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="23"/>
-        <source>无法获取 {name} 的最新 release</source>
-        <translation>Não foi possível obter a versão mais recente de {name}</translation>
+      <location filename="../../i18n.py" line="58"/>
+      <source>无法获取 PyPI 包信息: {package}</source>
+      <translation>Não foi possível obter informações do pacote PyPI: {package}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="24"/>
-        <source>无法获取 {name}/{branch}/{path}</source>
-        <translation>Não foi possível obter {name}/{branch}/{path}</translation>
+      <location filename="../../i18n.py" line="64"/>
+      <source>{path} 已被其他文件占用</source>
+      <translation>{path} já está ocupado por outro arquivo</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="25"/>
-        <source>无法下载 {name}/{branch}/{path}</source>
-        <translation>Não foi possível baixar {name}/{branch}/{path}</translation>
+      <location filename="../../i18n.py" line="65"/>
+      <source>未获得管理员授权</source>
+      <translation>A autorização de administrador não foi concedida</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="26"/>
-        <source>无法下载 {name}/{tag}/{asset}</source>
-        <translation>Não foi possível baixar {name}/{tag}/{asset}</translation>
+      <location filename="../../i18n.py" line="68"/>
+      <source>端口 {port} 被占用，请更换端口</source>
+      <translation>Porta {port} em uso, escolha outra</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="27"/>
-        <source>无法获取 PyPI 包信息: {package}</source>
-        <translation>Não foi possível obter informações do pacote PyPI: {package}</translation>
+      <location filename="../../i18n.py" line="69"/>
+      <source>没有权限监听端口 {port}，请更换端口</source>
+      <translation>Sem permissão para escutar na porta {port}, escolha outra porta</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="33"/>
-        <source>{path} 已被其他文件占用</source>
-        <translation>{path} já está ocupado por outro arquivo</translation>
+      <location filename="../../i18n.py" line="70"/>
+      <source>无法监听端口 {port}，详情见日志</source>
+      <translation>Não foi possível escutar na porta {port}, veja os detalhes no log</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="34"/>
-        <source>未获得管理员授权</source>
-        <translation>A autorização de administrador não foi concedida</translation>
+      <location filename="../../i18n.py" line="71"/>
+      <source>该链接不能用于更换</source>
+      <translation>Este link não pode ser usado para substituição</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="37"/>
-        <source>端口 {port} 被占用，请更换端口</source>
-        <translation>Porta {port} em uso, escolha outra</translation>
+      <location filename="../../i18n.py" line="72"/>
+      <source>新链接的内容与原任务不同，请重新添加任务</source>
+      <translation>O conteúdo do novo link é diferente do original da tarefa; adicione a tarefa novamente</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="38"/>
-        <source>没有权限监听端口 {port}，请更换端口</source>
-        <translation>Sem permissão para escutar na porta {port}, escolha outra porta</translation>
+      <location filename="../../../features/bittorrent_pack/i18n.py" line="3"/>
+      <source>该种子已在下载中</source>
+      <translation>Este torrent já está em download</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="39"/>
-        <source>无法监听端口 {port}，详情见日志</source>
-        <translation>Não foi possível escutar na porta {port}, veja os detalhes no log</translation>
+      <location filename="../../../features/bittorrent_pack/i18n.py" line="4"/>
+      <source>至少需要选择一个文件</source>
+      <translation>É necessário selecionar pelo menos um arquivo</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="40"/>
-        <source>该链接不能用于更换</source>
-        <translation>Este link não pode ser usado para substituição</translation>
+      <location filename="../../../features/bittorrent_pack/i18n.py" line="5"/>
+      <source>BitTorrent 错误：{detail}</source>
+      <translation>Erro BitTorrent: {detail}</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="41"/>
-        <source>新链接的内容与原任务不同，请重新添加任务</source>
-        <translation>O conteúdo do novo link é diferente do original da tarefa; adicione a tarefa novamente</translation>
+      <location filename="../../../features/bittorrent_pack/i18n.py" line="6"/>
+      <source>BitTorrent 会话启动失败：{detail}</source>
+      <translation>Falha ao iniciar sessão BitTorrent: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="3"/>
-        <source>ED2k 错误：{detail}</source>
-        <translation>Erro ED2k: {detail}</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="3"/>
+      <source>ED2k 错误：{detail}</source>
+      <translation>Erro ED2k: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="4"/>
-        <source>该 eD2k 链接已在下载中</source>
-        <translation>Este link eD2k já está em download</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="4"/>
+      <source>该 eD2k 链接已在下载中</source>
+      <translation>Este link eD2k já está em download</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="6"/>
-        <source>目标文件已被占用</source>
-        <translation>O arquivo de destino está em uso</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="6"/>
+      <source>目标文件已被占用</source>
+      <translation>O arquivo de destino está em uso</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="8"/>
-        <source>无法读写文件：{detail}</source>
-        <translation>Não foi possível ler/gravar o arquivo: {detail}</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="8"/>
+      <source>无法读写文件：{detail}</source>
+      <translation>Não foi possível ler/gravar o arquivo: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="9"/>
-        <source>{name} 版本过旧，请在设置中更新</source>
-        <translation>A versão do {name} está desatualizada, atualize nas configurações</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="9"/>
+      <source>{name} 版本过旧，请在设置中更新</source>
+      <translation>A versão do {name} está desatualizada, atualize nas configurações</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="10"/>
-        <source>{name} 启动失败：{detail}</source>
-        <translation>Falha ao iniciar {name}: {detail}</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="10"/>
+      <source>{name} 启动失败：{detail}</source>
+      <translation>Falha ao iniciar {name}: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="11"/>
-        <source>{name} 意外退出：{detail}</source>
-        <translation>{name} encerrou inesperadamente: {detail}</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="11"/>
+      <source>{name} 意外退出：{detail}</source>
+      <translation>{name} encerrou inesperadamente: {detail}</translation>
     </message>
     <message>
-        <source>该 eD2k 传输已存在于 daemon 中</source>
-        <translation type="vanished">Esta transferência eD2k já existe no daemon</translation>
+      <location filename="../../../features/ed2k_pack/i18n.py" line="5"/>
+      <source>不是有效的 eD2k 链接</source>
+      <translation>Não é um link eD2k válido</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/i18n.py" line="5"/>
-        <source>不是有效的 eD2k 链接</source>
-        <translation>Não é um link eD2k válido</translation>
+      <location filename="../../../features/ffmpeg_pack/i18n.py" line="3"/>
+      <source>FFmpeg 合并失败（{code}）：{detail}</source>
+      <translation>Falha na mesclagem do FFmpeg ({code}): {detail}</translation>
     </message>
     <message>
-        <source>不支持的 eD2k 链接格式</source>
-        <translation type="vanished">Formato de link eD2k não suportado</translation>
+      <location filename="../../../features/ffmpeg_pack/i18n.py" line="4"/>
+      <source>文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</source>
+      <translation>O arquivo não é um formato de mídia válido, pode estar protegido por DRM ou estar incompleto: {name}</translation>
     </message>
     <message>
-        <source>ED2kSession 未启动</source>
-        <translation type="vanished">Sessão ED2k não iniciada</translation>
+      <location filename="../../../features/ffmpeg_pack/i18n.py" line="5"/>
+      <source>当前平台暂不支持一键安装 FFmpeg: {platform}</source>
+      <translation>A instalação com um clique do FFmpeg não é suportada atualmente nesta plataforma: {platform}</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/i18n.py" line="3"/>
-        <source>FFmpeg 合并失败（{code}）：{detail}</source>
-        <translation>Falha na mesclagem do FFmpeg ({code}): {detail}</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="3"/>
+      <source>该视频在您所在地区不可用，请尝试配置代理（{detail}）</source>
+      <translation>Este vídeo não está disponível na sua região, tente configurar um proxy ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/i18n.py" line="4"/>
-        <source>文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</source>
-        <translation>O arquivo não é um formato de mídia válido, pode estar protegido por DRM ou estar incompleto: {name}</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="4"/>
+      <source>视频不可用，可能已被删除或设为私密（{detail}）</source>
+      <translation>Vídeo indisponível, pode ter sido removido ou definido como privado ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/i18n.py" line="5"/>
-        <source>当前平台暂不支持一键安装 FFmpeg: {platform}</source>
-        <translation>A instalação com um clique do FFmpeg não é suportada atualmente nesta plataforma: {platform}</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="5"/>
+      <source>私密视频，需要已授权账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+      <translation>Vídeo privado, é necessário o Cookie de uma conta autorizada. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="3"/>
-        <source>该视频在您所在地区不可用，请尝试配置代理（{detail}）</source>
-        <translation>Este vídeo não está disponível na sua região, tente configurar um proxy ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="6"/>
+      <source>会员专属视频，需要会员账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+      <translation>Vídeo exclusivo para membros, é necessário o Cookie de uma conta de membro. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="4"/>
-        <source>视频不可用，可能已被删除或设为私密（{detail}）</source>
-        <translation>Vídeo indisponível, pode ter sido removido ou definido como privado ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="7"/>
+      <source>年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+      <translation>Vídeo com restrição de idade, é necessário fazer login. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="5"/>
-        <source>私密视频，需要已授权账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
-        <translation>Vídeo privado, é necessário o Cookie de uma conta autorizada. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="8"/>
+      <source>YouTube 需要人机验证。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+      <translation>O YouTube requer verificação humana. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="6"/>
-        <source>会员专属视频，需要会员账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
-        <translation>Vídeo exclusivo para membros, é necessário o Cookie de uma conta de membro. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="9"/>
+      <source>请求的格式不可用，请稍后重试（{detail}）</source>
+      <translation>O formato solicitado não está disponível, tente novamente mais tarde ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="7"/>
-        <source>年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
-        <translation>Vídeo com restrição de idade, é necessário fazer login. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="10"/>
+      <source>下载被拒绝（403），链接可能已失效（{detail}）</source>
+      <translation>Download negado (403), o link pode ter expirado ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="8"/>
-        <source>YouTube 需要人机验证。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
-        <translation>O YouTube requer verificação humana. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
+      <source>视频信息提取失败：{detail}</source>
+      <translation>Falha ao extrair informações do vídeo: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="9"/>
-        <source>请求的格式不可用，请稍后重试（{detail}）</source>
-        <translation>O formato solicitado não está disponível, tente novamente mais tarde ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
+      <source>未找到可用的视频格式</source>
+      <translation>Nenhum formato de vídeo disponível encontrado</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="10"/>
-        <source>下载被拒绝（403），链接可能已失效（{detail}）</source>
-        <translation>Download negado (403), o link pode ter expirado ({detail})</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
+      <source>未找到 yt-dlp nightly tarball</source>
+      <translation>Não foi encontrado o tarball nightly do yt-dlp</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
-        <source>视频信息提取失败：{detail}</source>
-        <translation>Falha ao extrair informações do vídeo: {detail}</translation>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="14"/>
+      <source>FFmpeg 写入元数据失败（{code}）：{detail}</source>
+      <translation>Falha ao gravar metadados com FFmpeg ({code}): {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
-        <source>未找到可用的视频格式</source>
-        <translation>Nenhum formato de vídeo disponível encontrado</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="3"/>
+      <source>服务器拒绝了请求（403），链接可能已失效（{detail}）</source>
+      <translation>O servidor recusou a solicitação (403), o link pode ter expirado ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
-        <source>未找到 yt-dlp nightly tarball</source>
-        <translation>Não foi encontrado o tarball nightly do yt-dlp</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="4"/>
+      <source>资源不存在（404），链接可能已失效（{detail}）</source>
+      <translation>O recurso não existe (404), o link pode ter expirado ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/i18n.py" line="14"/>
-        <source>FFmpeg 写入元数据失败（{code}）：{detail}</source>
-        <translation>Falha ao gravar metadados com FFmpeg ({code}): {detail}</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="5"/>
+      <source>服务器返回了错误（{detail}）</source>
+      <translation>O servidor retornou um erro ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="3"/>
-        <source>服务器拒绝了请求（403），链接可能已失效（{detail}）</source>
-        <translation>O servidor recusou a solicitação (403), o link pode ter expirado ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="6"/>
+      <source>获取到的内容不是有效的播放列表，链接可能已失效（{detail}）</source>
+      <translation>O conteúdo obtido não é uma lista de reprodução válida, o link pode ter expirado ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="4"/>
-        <source>资源不存在（404），链接可能已失效（{detail}）</source>
-        <translation>O recurso não existe (404), o link pode ter expirado ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="7"/>
+      <source>缺少依赖程序（{detail}）</source>
+      <translation>Programa de dependência ausente ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="5"/>
-        <source>服务器返回了错误（{detail}）</source>
-        <translation>O servidor retornou um erro ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="8"/>
+      <source>无法解析域名，请检查网络连接（{detail}）</source>
+      <translation>Não foi possível resolver o domínio, verifique a conexão de rede ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="6"/>
-        <source>获取到的内容不是有效的播放列表，链接可能已失效（{detail}）</source>
-        <translation>O conteúdo obtido não é uma lista de reprodução válida, o link pode ter expirado ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="9"/>
+      <source>连接被拒绝，请检查网络连接（{detail}）</source>
+      <translation>Conexão recusada, verifique a conexão de rede ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="7"/>
-        <source>缺少依赖程序（{detail}）</source>
-        <translation>Programa de dependência ausente ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="10"/>
+      <source>连接超时，请检查网络连接（{detail}）</source>
+      <translation>Tempo de conexão esgotado, verifique a conexão de rede ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="8"/>
-        <source>无法解析域名，请检查网络连接（{detail}）</source>
-        <translation>Não foi possível resolver o domínio, verifique a conexão de rede ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="11"/>
+      <source>SSL 连接失败，请检查网络连接（{detail}）</source>
+      <translation>Falha na conexão SSL, verifique a conexão de rede ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="9"/>
-        <source>连接被拒绝，请检查网络连接（{detail}）</source>
-        <translation>Conexão recusada, verifique a conexão de rede ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="12"/>
+      <source>当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}</source>
+      <translation>A instalação com um clique do N_m3u8DL-RE não é suportada atualmente nesta plataforma: {platform}</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="10"/>
-        <source>连接超时，请检查网络连接（{detail}）</source>
-        <translation>Tempo de conexão esgotado, verifique a conexão de rede ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="13"/>
+      <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
+      <translation>Não foi encontrado um pacote de instalação do N_m3u8DL-RE adequado para {target}</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="11"/>
-        <source>SSL 连接失败，请检查网络连接（{detail}）</source>
-        <translation>Falha na conexão SSL, verifique a conexão de rede ({detail})</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="14"/>
+      <source>macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
+      <translation>O macOS impediu o acesso ao diretório de download, adicione o Ghost Downloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="12"/>
-        <source>当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}</source>
-        <translation>A instalação com um clique do N_m3u8DL-RE não é suportada atualmente nesta plataforma: {platform}</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="15"/>
+      <source>无权限访问下载目录：{folder}</source>
+      <translation>Sem permissão para acessar o diretório de download: {folder}</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="13"/>
-        <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
-        <translation>Não foi encontrado um pacote de instalação do N_m3u8DL-RE adequado para {target}</translation>
+      <location filename="../../../features/m3u8_pack/i18n.py" line="16"/>
+      <source>未找到输出文件：{detail}</source>
+      <translation>Arquivo de saída não encontrado: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="14"/>
-        <source>macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
-        <translation>O macOS impediu o acesso ao diretório de download, adicione o Ghost Downloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</translation>
+      <location filename="../../i18n.py" line="61"/>
+      <source>无法获取版本信息</source>
+      <translation>Não foi possível obter informações da versão</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="15"/>
-        <source>无权限访问下载目录：{folder}</source>
-        <translation>Sem permissão para acessar o diretório de download: {folder}</translation>
+      <location filename="../../i18n.py" line="62"/>
+      <source>校验失败</source>
+      <translation>Falha na verificação</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/i18n.py" line="16"/>
-        <source>未找到输出文件：{detail}</source>
-        <translation>Arquivo de saída não encontrado: {detail}</translation>
+      <location filename="../../i18n.py" line="63"/>
+      <source>当前平台无可用更新</source>
+      <translation>Nenhuma atualização disponível para a plataforma atual</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="30"/>
-        <source>无法获取版本信息</source>
-        <translation>Não foi possível obter informações da versão</translation>
+      <location filename="../../i18n.py" line="66"/>
+      <source>DMG 中未找到 .app</source>
+      <translation>Não foi encontrado .app no DMG</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="31"/>
-        <source>校验失败</source>
-        <translation>Falha na verificação</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="3"/>
+      <source>获取二维码失败</source>
+      <translation>Falha ao obter o código QR</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="32"/>
-        <source>当前平台无可用更新</source>
-        <translation>Nenhuma atualização disponível para a plataforma atual</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="4"/>
+      <source>二维码接口返回了不完整的数据</source>
+      <translation>A interface do código QR retornou dados incompletos</translation>
     </message>
     <message>
-        <location filename="../../i18n.py" line="35"/>
-        <source>DMG 中未找到 .app</source>
-        <translation>Não foi encontrado .app no DMG</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="5"/>
+      <source>登录成功，但未能提取到有效 Cookie</source>
+      <translation>Login bem-sucedido, mas não foi possível extrair um cookie válido</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="3"/>
-        <source>获取二维码失败</source>
-        <translation>Falha ao obter o código QR</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="7"/>
+      <source>获取验证码失败</source>
+      <translation>Falha ao obter código de verificação</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="4"/>
-        <source>二维码接口返回了不完整的数据</source>
-        <translation>A interface do código QR retornou dados incompletos</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="8"/>
+      <source>验证码接口返回了不完整的数据</source>
+      <translation>A interface do código de verificação retornou dados incompletos</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="5"/>
-        <source>登录成功，但未能提取到有效 Cookie</source>
-        <translation>Login bem-sucedido, mas não foi possível extrair um cookie válido</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="9"/>
+      <source>验证码发送失败</source>
+      <translation>Falha ao enviar código de verificação</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="7"/>
-        <source>获取验证码失败</source>
-        <translation>Falha ao obter código de verificação</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="10"/>
+      <source>登录失败</source>
+      <translation>Falha no login</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="8"/>
-        <source>验证码接口返回了不完整的数据</source>
-        <translation>A interface do código de verificação retornou dados incompletos</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="12"/>
+      <source>未获取到视频流地址</source>
+      <translation>Não foi possível obter o endereço do stream de vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="9"/>
-        <source>验证码发送失败</source>
-        <translation>Falha ao enviar código de verificação</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="13"/>
+      <source>字幕下载失败</source>
+      <translation>Falha ao baixar legendas</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="10"/>
-        <source>登录失败</source>
-        <translation>Falha no login</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="14"/>
+      <source>弹幕下载失败</source>
+      <translation>Falha ao baixar danmaku</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="12"/>
-        <source>未获取到视频流地址</source>
-        <translation>Não foi possível obter o endereço do stream de vídeo</translation>
+      <location filename="../../../features/bili_pack/i18n.py" line="15"/>
+      <source>Bilibili 拦截了弹幕请求（412 风控），请稍后再试</source>
+      <translation>O Bilibili bloqueou a solicitação de danmaku (controle de risco 412), tente novamente mais tarde</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="13"/>
-        <source>字幕下载失败</source>
-        <translation>Falha ao baixar legendas</translation>
+      <location filename="../../../features/huggingface_pack/i18n.py" line="3"/>
+      <source>无法解析 HuggingFace 链接</source>
+      <translation>Não foi possível analisar o link do HuggingFace</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="14"/>
-        <source>弹幕下载失败</source>
-        <translation>Falha ao baixar danmaku</translation>
+      <location filename="../../../features/huggingface_pack/i18n.py" line="4"/>
+      <source>无法访问仓库 {repo}（{status}）</source>
+      <translation>Não foi possível acessar o repositório {repo} ({status})</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/i18n.py" line="15"/>
-        <source>Bilibili 拦截了弹幕请求（412 风控），请稍后再试</source>
-        <translation>O Bilibili bloqueou a solicitação de danmaku (controle de risco 412), tente novamente mais tarde</translation>
+      <location filename="../../../features/huggingface_pack/i18n.py" line="5"/>
+      <source>仓库 {repo} 中没有 {path}</source>
+      <translation>Não há {path} no repositório {repo}</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/i18n.py" line="3"/>
-        <source>无法解析 HuggingFace 链接</source>
-        <translation>Não foi possível analisar o link do HuggingFace</translation>
+      <location filename="../../../features/huggingface_pack/i18n.py" line="6"/>
+      <source>该仓库需要授权，请在设置中填写 HuggingFace Access Token</source>
+      <translation>Este repositório requer autorização; preencha o HuggingFace Access Token nas configurações</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/i18n.py" line="4"/>
-        <source>无法访问仓库 {repo}（{status}）</source>
-        <translation>Não foi possível acessar o repositório {repo} ({status})</translation>
+      <location filename="../../../features/huggingface_pack/i18n.py" line="7"/>
+      <source>HuggingFace Access Token 无效或已过期，请在设置中更新</source>
+      <translation>O HuggingFace Access Token é inválido ou expirou; atualize-o nas configurações</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/i18n.py" line="5"/>
-        <source>仓库 {repo} 中没有 {path}</source>
-        <translation>Não há {path} no repositório {repo}</translation>
+      <location filename="../../../features/huggingface_pack/i18n.py" line="8"/>
+      <source>尚未获得该仓库的访问权限，请先在 {url} 申请；若已获批，请确认 Access Token 有读取 Gated Repo 的权限</source>
+      <translation>Você ainda não tem permissão de acesso a este repositório; solicite primeiro em {url}; se já aprovado, confirme se o Access Token tem permissão para ler Gated Repo</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/i18n.py" line="6"/>
-        <source>该仓库需要授权，请在设置中填写 HuggingFace Access Token</source>
-        <translation>Este repositório requer autorização; preencha o HuggingFace Access Token nas configurações</translation>
+      <location filename="../../../features/wrapped_link_pack/i18n.py" line="3"/>
+      <source>无法解析该链接</source>
+      <translation>Não foi possível analisar este link</translation>
     </message>
     <message>
-        <location filename="../../../features/huggingface_pack/i18n.py" line="7"/>
-        <source>HuggingFace Access Token 无效或已过期，请在设置中更新</source>
-        <translation>O HuggingFace Access Token é inválido ou expirou; atualize-o nas configurações</translation>
+      <location filename="../../../features/wrapped_link_pack/i18n.py" line="4"/>
+      <source>不支持多层包裹的链接</source>
+      <translation>Links com múltiplas camadas de encapsulamento não são suportados</translation>
     </message>
-    <message>
-        <location filename="../../../features/huggingface_pack/i18n.py" line="8"/>
-        <source>尚未获得该仓库的访问权限，请先在 {url} 申请；若已获批，请确认 Access Token 有读取 Gated Repo 的权限</source>
-        <translation>Você ainda não tem permissão de acesso a este repositório; solicite primeiro em {url}; se já aprovado, confirme se o Access Token tem permissão para ler Gated Repo</translation>
-    </message>
-    <message>
-        <location filename="../../../features/wrapped_link_pack/i18n.py" line="3"/>
-        <source>无法解析该链接</source>
-        <translation>Não foi possível analisar este link</translation>
-    </message>
-    <message>
-        <location filename="../../../features/wrapped_link_pack/i18n.py" line="4"/>
-        <source>不支持多层包裹的链接</source>
-        <translation>Links com múltiplas camadas de encapsulamento não são suportados</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskPage</name>
     <message>
-        <location filename="../../view/pages/task_page.py" line="168"/>
-        <source>全部开始</source>
-        <translation>Iniciar tudo</translation>
+      <location filename="../../view/pages/task_page.py" line="168"/>
+      <source>全部开始</source>
+      <translation>Iniciar tudo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="169"/>
-        <source>全部暂停</source>
-        <translation>Pausar tudo</translation>
+      <location filename="../../view/pages/task_page.py" line="169"/>
+      <source>全部暂停</source>
+      <translation>Pausar tudo</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="183"/>
-        <source>按名称排序</source>
-        <translation>Ordenar por nome</translation>
+      <location filename="../../view/pages/task_page.py" line="183"/>
+      <source>按名称排序</source>
+      <translation>Ordenar por nome</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="184"/>
-        <source>按大小排序</source>
-        <translation>Ordenar por tamanho</translation>
+      <location filename="../../view/pages/task_page.py" line="186"/>
+      <source>顺序</source>
+      <translation>Crescente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="185"/>
-        <source>按队列顺序</source>
-        <translation>Por ordem da fila</translation>
+      <location filename="../../view/pages/task_page.py" line="187"/>
+      <source>倒序</source>
+      <translation>Decrescente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="186"/>
-        <source>顺序</source>
-        <translation>Crescente</translation>
+      <location filename="../../view/pages/task_page.py" line="233"/>
+      <source>全部任务</source>
+      <translation>Todas as tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="187"/>
-        <source>倒序</source>
-        <translation>Decrescente</translation>
+      <location filename="../../view/pages/task_page.py" line="233"/>
+      <source>活动任务</source>
+      <translation>Tarefas ativas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="233"/>
-        <source>全部任务</source>
-        <translation>Todas as tarefas</translation>
+      <location filename="../../view/pages/task_page.py" line="233"/>
+      <source>完成任务</source>
+      <translation>Tarefas concluídas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="233"/>
-        <source>活动任务</source>
-        <translation>Tarefas ativas</translation>
+      <location filename="../../view/pages/task_page.py" line="164"/>
+      <location filename="../../view/pages/task_page.py" line="660"/>
+      <location filename="../../view/pages/task_page.py" line="672"/>
+      <source>暂无下载任务</source>
+      <translation>Nenhuma tarefa de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="233"/>
-        <source>完成任务</source>
-        <translation>Tarefas concluídas</translation>
+      <location filename="../../view/pages/task_page.py" line="247"/>
+      <source>限速（右键修改）</source>
+      <translation>Limite de velocidade (clique direito para modificar)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="247"/>
-        <source>限速（右键修改）</source>
-        <translation>Limite de velocidade (clique direito para modificar)</translation>
+      <location filename="../../view/pages/task_page.py" line="248"/>
+      <source>按分类筛选</source>
+      <translation>Filtrar por categoria</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="471"/>
-        <source>下载限速</source>
-        <translation>Limite de velocidade de download</translation>
+      <location filename="../../view/pages/task_page.py" line="245"/>
+      <source>选择任务</source>
+      <translation>Selecionar tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="782"/>
-        <source>校验失败</source>
-        <translation>Falha na verificação</translation>
+      <location filename="../../view/pages/task_page.py" line="181"/>
+      <source>按添加时间</source>
+      <translation>Por data de adição</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="879"/>
-        <source>无法移到回收站</source>
-        <translation>Não foi possível mover para a lixeira</translation>
+      <location filename="../../view/pages/task_page.py" line="182"/>
+      <source>按完成时间</source>
+      <translation>Por data de conclusão</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="880"/>
-        <source>旧文件已保留，新文件另存为 {0}</source>
-        <translation>Arquivo antigo mantido, novo arquivo salvo como {0}</translation>
+      <location filename="../../view/pages/task_page.py" line="184"/>
+      <source>按大小排序</source>
+      <translation>Ordenar por tamanho</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="888"/>
-        <source>无法修改任务</source>
-        <translation>Não foi possível editar a tarefa</translation>
+      <location filename="../../view/pages/task_page.py" line="185"/>
+      <source>按队列顺序</source>
+      <translation>Por ordem da fila</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="897"/>
-        <source>文件删除受限</source>
-        <translation>Exclusão de arquivo restrita</translation>
+      <location filename="../../view/pages/task_page.py" line="246"/>
+      <source>计划任务</source>
+      <translation>Tarefa programada</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="898"/>
-        <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
-        <translation>O macOS impediu a exclusão do arquivo, adicione o Ghost Downloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</translation>
+      <location filename="../../view/pages/task_page.py" line="361"/>
+      <source>搜索任务</source>
+      <translation>Buscar tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="903"/>
-        <source>前往设置</source>
-        <translation>Ir para Ajustes</translation>
+      <location filename="../../view/pages/task_page.py" line="471"/>
+      <source>下载限速</source>
+      <translation>Limite de velocidade de download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="164"/>
-        <location filename="../../view/pages/task_page.py" line="660"/>
-        <location filename="../../view/pages/task_page.py" line="672"/>
-        <source>暂无下载任务</source>
-        <translation>Nenhuma tarefa de download</translation>
+      <location filename="../../view/pages/task_page.py" line="555"/>
+      <source>删除任务</source>
+      <translation>Excluir tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="248"/>
-        <source>按分类筛选</source>
-        <translation>Filtrar por categoria</translation>
+      <location filename="../../view/pages/task_page.py" line="555"/>
+      <source>确定要删除选中的下载任务吗？</source>
+      <translation>Tem certeza de que deseja excluir as tarefas de download selecionadas?</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="245"/>
-        <source>选择任务</source>
-        <translation>Selecionar tarefas</translation>
+      <location filename="../../view/pages/task_page.py" line="556"/>
+      <source>同时删除已下载的文件</source>
+      <translation>Excluir também os arquivos baixados</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="181"/>
-        <source>按添加时间</source>
-        <translation>Por data de adição</translation>
+      <location filename="../../view/pages/task_page.py" line="662"/>
+      <source>没有匹配筛选条件的任务</source>
+      <translation>Nenhuma tarefa corresponde aos filtros</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="182"/>
-        <source>按完成时间</source>
-        <translation>Por data de conclusão</translation>
+      <location filename="../../view/pages/task_page.py" line="664"/>
+      <source>没有匹配的任务</source>
+      <translation>Nenhuma tarefa correspondente</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="246"/>
-        <source>计划任务</source>
-        <translation>Tarefa programada</translation>
+      <location filename="../../view/pages/task_page.py" line="666"/>
+      <source>该分类下暂无任务</source>
+      <translation>Nenhuma tarefa nesta categoria</translation>
     </message>
     <message>
-        <source>限速</source>
-        <translation type="vanished">Limite de velocidade</translation>
+      <location filename="../../view/pages/task_page.py" line="668"/>
+      <source>暂无活动任务</source>
+      <translation>Nenhuma tarefa ativa</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="361"/>
-        <source>搜索任务</source>
-        <translation>Buscar tarefas</translation>
+      <location filename="../../view/pages/task_page.py" line="670"/>
+      <source>暂无完成任务</source>
+      <translation>Nenhuma tarefa concluída</translation>
     </message>
     <message>
-        <source>磁盘空间不足</source>
-        <translation type="vanished">Espaço em disco insuficiente</translation>
+      <location filename="../../view/pages/task_page.py" line="782"/>
+      <source>校验失败</source>
+      <translation>Falha na verificação</translation>
     </message>
     <message>
-        <source>剩余 {}，需要 {}，任务未自动开始</source>
-        <translation type="vanished">Restam {}, necessário {}, tarefa não iniciada automaticamente</translation>
+      <location filename="../../view/pages/task_page.py" line="879"/>
+      <source>无法移到回收站</source>
+      <translation>Não foi possível mover para a lixeira</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="555"/>
-        <source>删除任务</source>
-        <translation>Excluir tarefa</translation>
+      <location filename="../../view/pages/task_page.py" line="880"/>
+      <source>旧文件已保留，新文件另存为 {0}</source>
+      <translation>Arquivo antigo mantido, novo arquivo salvo como {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="555"/>
-        <source>确定要删除选中的下载任务吗？</source>
-        <translation>Tem certeza de que deseja excluir as tarefas de download selecionadas?</translation>
+      <location filename="../../view/pages/task_page.py" line="888"/>
+      <source>无法修改任务</source>
+      <translation>Não foi possível editar a tarefa</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="556"/>
-        <source>同时删除已下载的文件</source>
-        <translation>Excluir também os arquivos baixados</translation>
+      <location filename="../../view/pages/task_page.py" line="897"/>
+      <source>文件删除受限</source>
+      <translation>Exclusão de arquivo restrita</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="662"/>
-        <source>没有匹配筛选条件的任务</source>
-        <translation>Nenhuma tarefa corresponde aos filtros</translation>
+      <location filename="../../view/pages/task_page.py" line="898"/>
+      <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
+      <translation>O macOS impediu a exclusão do arquivo, adicione o Ghost Downloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="664"/>
-        <source>没有匹配的任务</source>
-        <translation>Nenhuma tarefa correspondente</translation>
+      <location filename="../../view/pages/task_page.py" line="903"/>
+      <source>前往设置</source>
+      <translation>Ir para Ajustes</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="666"/>
-        <source>该分类下暂无任务</source>
-        <translation>Nenhuma tarefa nesta categoria</translation>
+      <location filename="../../view/pages/task_page.py" line="504"/>
+      <source>全部分类</source>
+      <translation>Todas as categorias</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="668"/>
-        <source>暂无活动任务</source>
-        <translation>Nenhuma tarefa ativa</translation>
+      <location filename="../../view/pages/task_page.py" line="579"/>
+      <source>未分类</source>
+      <translation>Sem categoria</translation>
     </message>
-    <message>
-        <location filename="../../view/pages/task_page.py" line="670"/>
-        <source>暂无完成任务</source>
-        <translation>Nenhuma tarefa concluída</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/task_page.py" line="504"/>
-        <source>全部分类</source>
-        <translation>Todas as categorias</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/task_page.py" line="579"/>
-        <source>未分类</source>
-        <translation>Sem categoria</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskPopup</name>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="22"/>
-        <source>{0} 秒</source>
-        <translation>{0} s</translation>
+      <location filename="../../view/shell/task_popup.py" line="22"/>
+      <source>{0} 秒</source>
+      <translation>{0} s</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="26"/>
-        <source>{0} 分 {1} 秒</source>
-        <translation>{0} min {1} s</translation>
+      <location filename="../../view/shell/task_popup.py" line="26"/>
+      <source>{0} 分 {1} 秒</source>
+      <translation>{0} min {1} s</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="27"/>
-        <source>{0} 分</source>
-        <translation>{0} min</translation>
+      <location filename="../../view/shell/task_popup.py" line="27"/>
+      <source>{0} 分</source>
+      <translation>{0} min</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="30"/>
-        <source>{0} 小时 {1} 分</source>
-        <translation>{0} h {1} min</translation>
+      <location filename="../../view/shell/task_popup.py" line="30"/>
+      <source>{0} 小时 {1} 分</source>
+      <translation>{0} h {1} min</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="31"/>
-        <source>{0} 小时</source>
-        <translation>{0} h</translation>
+      <location filename="../../view/shell/task_popup.py" line="31"/>
+      <source>{0} 小时</source>
+      <translation>{0} h</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="76"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../view/shell/task_popup.py" line="80"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="124"/>
-        <source>速度 {0}/s，剩余 {1}</source>
-        <translation>Velocidade {0}/s, restam {1}</translation>
+      <location filename="../../view/shell/task_popup.py" line="128"/>
+      <source>速度 {0}/s，剩余 {1}</source>
+      <translation>Velocidade {0}/s, restam {1}</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="127"/>
-        <source>速度 {0}/s</source>
-        <translation>Velocidade {0}/s</translation>
+      <location filename="../../view/shell/task_popup.py" line="131"/>
+      <source>速度 {0}/s</source>
+      <translation>Velocidade {0}/s</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="129"/>
-        <source>正在计算速度</source>
-        <translation>Calculando velocidade</translation>
+      <location filename="../../view/shell/task_popup.py" line="133"/>
+      <source>正在计算速度</source>
+      <translation>Calculando velocidade</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="131"/>
-        <source>任务已经暂停</source>
-        <translation>Tarefa pausada</translation>
+      <location filename="../../view/shell/task_popup.py" line="135"/>
+      <source>任务已经暂停</source>
+      <translation>Tarefa pausada</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="133"/>
-        <source>任务正在等待</source>
-        <translation>Tarefa aguardando</translation>
+      <location filename="../../view/shell/task_popup.py" line="137"/>
+      <source>任务正在等待</source>
+      <translation>Tarefa aguardando</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="135"/>
-        <source>已下载 {0}，共 {1}</source>
-        <translation>Baixado {0}, total {1}</translation>
+      <location filename="../../view/shell/task_popup.py" line="139"/>
+      <source>已下载 {0}，共 {1}</source>
+      <translation>Baixado {0}, total {1}</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="138"/>
-        <source>已下载 {0}</source>
-        <translation>Baixado {0}</translation>
+      <location filename="../../view/shell/task_popup.py" line="142"/>
+      <source>已下载 {0}</source>
+      <translation>Baixado {0}</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="147"/>
-        <source>继续</source>
-        <translation>Continuar</translation>
+      <location filename="../../view/shell/task_popup.py" line="151"/>
+      <source>继续</source>
+      <translation>Continuar</translation>
     </message>
     <message>
-        <location filename="../../view/shell/task_popup.py" line="147"/>
-        <source>暂停</source>
-        <translation>Pausar</translation>
+      <location filename="../../view/shell/task_popup.py" line="151"/>
+      <source>暂停</source>
+      <translation>Pausar</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TaskState</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="15"/>
-        <source>校验已有文件</source>
-        <translation>Verificar arquivos existentes</translation>
+      <location filename="../../../features/bittorrent_pack/android.py" line="32"/>
+      <source>校验已有文件</source>
+      <translation>Verificar arquivos existentes</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="16"/>
-        <source>检查续传状态</source>
-        <translation>Verificar status de continuação</translation>
+      <location filename="../../../features/bittorrent_pack/android.py" line="33"/>
+      <source>检查续传状态</source>
+      <translation>Verificar status de continuação</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="17"/>
-        <source>获取元数据</source>
-        <translation>Obter metadados</translation>
+      <location filename="../../../features/bittorrent_pack/android.py" line="34"/>
+      <source>获取元数据</source>
+      <translation>Obter metadados</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="18"/>
-        <source>分配文件中</source>
-        <translation>Alocando arquivos</translation>
+      <location filename="../../../features/bittorrent_pack/android.py" line="35"/>
+      <source>分配文件中</source>
+      <translation>Alocando arquivos</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="19"/>
-        <source>等待校验</source>
-        <translation>Aguardando verificação</translation>
+      <location filename="../../../features/bittorrent_pack/android.py" line="36"/>
+      <source>等待校验</source>
+      <translation>Aguardando verificação</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/android.py" line="25"/>
-        <location filename="../../../features/ed2k_pack/android.py" line="46"/>
-        <source>做种中</source>
-        <translation>Semeando</translation>
+      <location filename="../../../features/bittorrent_pack/android.py" line="42"/>
+      <location filename="../../../features/ed2k_pack/android.py" line="47"/>
+      <source>做种中</source>
+      <translation>Semeando</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/android.py" line="55"/>
-        <source>等待中</source>
-        <translation>Aguardando</translation>
+      <location filename="../../../features/m3u8_pack/android.py" line="67"/>
+      <source>等待中</source>
+      <translation>Aguardando</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/android.py" line="55"/>
-        <source>录制中</source>
-        <translation>Gravando</translation>
+      <location filename="../../../features/m3u8_pack/android.py" line="67"/>
+      <source>录制中</source>
+      <translation>Gravando</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TokenLineEdit</name>
     <message>
-        <location filename="../../view/components/token_line_edit.py" line="119"/>
-        <source>添加...</source>
-        <translation>Adicionar...</translation>
+      <location filename="../../view/components/token_line_edit.py" line="119"/>
+      <source>添加...</source>
+      <translation>Adicionar...</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TorrentCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="33"/>
-        <source>种子</source>
-        <translation>Torrent</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="33"/>
+      <source>种子</source>
+      <translation>Torrent</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="36"/>
-        <source>Info Hash v1</source>
-        <translation>Info Hash v1</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="36"/>
+      <source>Info Hash v1</source>
+      <translation>Info Hash v1</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="37"/>
-        <source>Info Hash v2</source>
-        <translation>Info Hash v2</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="37"/>
+      <source>Info Hash v2</source>
+      <translation>Info Hash v2</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="38"/>
-        <source>注释</source>
-        <translation>Comentário</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="38"/>
+      <source>注释</source>
+      <translation>Comentário</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="39"/>
-        <source>创建者</source>
-        <translation>Criador</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="39"/>
+      <source>创建者</source>
+      <translation>Criador</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="40"/>
-        <source>创建时间</source>
-        <translation>Data de criação</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="40"/>
+      <source>创建时间</source>
+      <translation>Data de criação</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="41"/>
-        <source>分块</source>
-        <translation>Partes</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="41"/>
+      <source>分块</source>
+      <translation>Partes</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="42"/>
-        <source>做种</source>
-        <translation>Semeando</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="42"/>
+      <source>做种</source>
+      <translation>Semeando</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="43"/>
-        <source>下载者</source>
-        <translation>Baixando</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="43"/>
+      <source>下载者</source>
+      <translation>Baixando</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="44"/>
-        <source>可用副本</source>
-        <translation>Cópias disponíveis</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="44"/>
+      <source>可用副本</source>
+      <translation>Cópias disponíveis</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="45"/>
-        <source>已上传</source>
-        <translation>Enviado</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="45"/>
+      <source>已上传</source>
+      <translation>Enviado</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="46"/>
-        <source>已下载</source>
-        <translation>Baixado</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="46"/>
+      <source>已下载</source>
+      <translation>Baixado</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="47"/>
-        <source>分享率</source>
-        <translation>Taxa de compartilhamento</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="47"/>
+      <source>分享率</source>
+      <translation>Taxa de compartilhamento</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="48"/>
-        <source>下次汇报</source>
-        <translation>Próximo anúncio</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="48"/>
+      <source>下次汇报</source>
+      <translation>Próximo anúncio</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="63"/>
-        <source>（私有）</source>
-        <translation>(Privado)</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="63"/>
+      <source>（私有）</source>
+      <translation>(Privado)</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="86"/>
-        <source>{0}，已做种 {1}</source>
-        <translation>{0}, semeado {1}</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="86"/>
+      <source>{0}，已做种 {1}</source>
+      <translation>{0}, semeado {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="90"/>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="91"/>
-        <source>已连接 {0}，共 {1}</source>
-        <translation>Conectado {0}, total {1}</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="90"/>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="91"/>
+      <source>已连接 {0}，共 {1}</source>
+      <translation>Conectado {0}, total {1}</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TrackBar</name>
     <message>
-        <location filename="../../view/components/track_bar.py" line="96"/>
-        <source>视频</source>
-        <translation>Vídeos</translation>
+      <location filename="../../view/components/track_bar.py" line="96"/>
+      <source>视频</source>
+      <translation>Vídeos</translation>
     </message>
     <message>
-        <location filename="../../view/components/track_bar.py" line="98"/>
-        <source>音频</source>
-        <translation>Áudio</translation>
+      <location filename="../../view/components/track_bar.py" line="98"/>
+      <source>音频</source>
+      <translation>Áudio</translation>
     </message>
     <message>
-        <location filename="../../view/components/track_bar.py" line="100"/>
-        <source>字幕</source>
-        <translation>Legendas</translation>
+      <location filename="../../view/components/track_bar.py" line="100"/>
+      <source>字幕</source>
+      <translation>Legendas</translation>
     </message>
     <message>
-        <location filename="../../view/components/track_bar.py" line="102"/>
-        <source>封面</source>
-        <translation>Capa</translation>
+      <location filename="../../view/components/track_bar.py" line="102"/>
+      <source>封面</source>
+      <translation>Capa</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>TrackerCard</name>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="100"/>
-        <source>Tracker</source>
-        <translation>Tracker</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="100"/>
+      <source>Tracker</source>
+      <translation>Tracker</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
-        <source>地址</source>
-        <translation>Endereço</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
+      <source>地址</source>
+      <translation>Endereço</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
-        <source>状态</source>
-        <translation>Status</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
+      <source>状态</source>
+      <translation>Status</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
-        <source>做种</source>
-        <translation>Semeando</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
+      <source>做种</source>
+      <translation>Semeando</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
-        <source>下载</source>
-        <translation>Baixar</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
+      <source>下载</source>
+      <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
-        <source>Peer</source>
-        <translation>Peer</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
+      <source>Peer</source>
+      <translation>Peer</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="106"/>
-        <source>任务运行时显示</source>
-        <translation>Exibir durante a execução da tarefa</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="106"/>
+      <source>任务运行时显示</source>
+      <translation>Exibir durante a execução da tarefa</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="129"/>
-        <source>工作中</source>
-        <translation>Trabalhando</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="129"/>
+      <source>工作中</source>
+      <translation>Trabalhando</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="130"/>
-        <source>更新中</source>
-        <translation>Atualizando</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="130"/>
+      <source>更新中</source>
+      <translation>Atualizando</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="131"/>
-        <source>未联系</source>
-        <translation>Não contatado</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="131"/>
+      <source>未联系</source>
+      <translation>Não contatado</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="132"/>
-        <source>出错</source>
-        <translation>Erro</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="132"/>
+      <source>出错</source>
+      <translation>Erro</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="133"/>
-        <source>已禁用</source>
-        <translation>Desativado</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="133"/>
+      <source>已禁用</source>
+      <translation>Desativado</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/detail_cards.py" line="135"/>
-        <source>{0}：{1}</source>
-        <translation>{0}: {1}</translation>
+      <location filename="../../../features/bittorrent_pack/detail_cards.py" line="135"/>
+      <source>{0}：{1}</source>
+      <translation>{0}: {1}</translation>
     </message>
-</context>
-<context>
-    <name>UniversalTaskCard</name>
-    <message>
-        <source>任务已经完成</source>
-        <translation type="vanished">Tarefa concluída</translation>
-    </message>
-    <message>
-        <source>任务已经暂停</source>
-        <translation type="vanished">Tarefa pausada</translation>
-    </message>
-    <message>
-        <source>任务正在等待</source>
-        <translation type="vanished">Tarefa aguardando</translation>
-    </message>
-    <message>
-        <source>下载过程中发生错误，请稍后重试</source>
-        <translation type="vanished">Ocorreu um erro durante o download, tente novamente mais tarde</translation>
-    </message>
-    <message>
-        <source>校验文件哈希</source>
-        <translation type="vanished">Verificar hash do arquivo</translation>
-    </message>
-    <message>
-        <source>打开文件</source>
-        <translation type="vanished">Abrir arquivo</translation>
-    </message>
-    <message>
-        <source>打开文件夹</source>
-        <translation type="vanished">Abrir pasta</translation>
-    </message>
-    <message>
-        <source>文件不存在</source>
-        <translation type="vanished">Arquivo não encontrado</translation>
-    </message>
-    <message>
-        <source>完成于 {}</source>
-        <translation type="vanished">Concluído em {}</translation>
-    </message>
-    <message>
-        <source>删除任务</source>
-        <translation type="vanished">Excluir tarefa</translation>
-    </message>
-    <message>
-        <source>确定要删除这个下载任务吗？</source>
-        <translation type="vanished">Tem certeza de que deseja excluir esta tarefa de download?</translation>
-    </message>
-    <message>
-        <source>同时删除已下载的文件</source>
-        <translation type="vanished">Excluir também os arquivos baixados</translation>
-    </message>
-    <message>
-        <source>文件不存在，无法校验</source>
-        <translation type="vanished">Arquivo não encontrado, impossível verificar</translation>
-    </message>
-    <message>
-        <source>复制校验值</source>
-        <translation type="vanished">Copiar valor de verificação</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>UrlEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="237"/>
-        <source>下载链接</source>
-        <translation>Link de download</translation>
+      <location filename="../../view/components/option_cards.py" line="240"/>
+      <source>下载链接</source>
+      <translation>Link de download</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>VideoSelectDialog</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="107"/>
-        <source>选择视频</source>
-        <translation>Selecionar vídeo</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="111"/>
+      <source>选择视频</source>
+      <translation>Selecionar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="110"/>
-        <source>全选</source>
-        <translation>Selecionar todos</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="114"/>
+      <source>全选</source>
+      <translation>Selecionar todos</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="111"/>
-        <source>全不选</source>
-        <translation>Desmarcar todos</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="115"/>
+      <source>全不选</source>
+      <translation>Desmarcar todos</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="112"/>
-        <source>反选</source>
-        <translation>Inverter seleção</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="116"/>
+      <source>反选</source>
+      <translation>Inverter seleção</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="124"/>
-        <source>确定</source>
-        <translation>OK</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="128"/>
+      <source>确定</source>
+      <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="125"/>
-        <source>取消</source>
-        <translation>Cancelar</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="129"/>
+      <source>取消</source>
+      <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="132"/>
-        <source>标题</source>
-        <translation>Título</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="136"/>
+      <source>标题</source>
+      <translation>Título</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="132"/>
-        <source>时长</source>
-        <translation>Duração</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="136"/>
+      <source>时长</source>
+      <translation>Duração</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="132"/>
-        <source>开始</source>
-        <translation>Início</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="136"/>
+      <source>开始</source>
+      <translation>Início</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="132"/>
-        <source>结束</source>
-        <translation>Fim</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="136"/>
+      <source>结束</source>
+      <translation>Fim</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="209"/>
-        <source>{0}/{1} 个视频</source>
-        <translation>{0}/{1} vídeos</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="213"/>
+      <source>{0}/{1} 个视频</source>
+      <translation>{0}/{1} vídeos</translation>
     </message>
-</context>
-<context>
-    <name>WebTrackerCard</name>
-    <message>
-        <source>Web Tracker</source>
-        <translation type="vanished">Web Tracker</translation>
-    </message>
-    <message>
-        <source>管理</source>
-        <translation type="vanished">Gerenciar</translation>
-    </message>
-    <message>
-        <source>{0} 个源 · 共 {1} 条缓存</source>
-        <translation type="vanished">{0} fontes · total {1} caches</translation>
-    </message>
-    <message>
-        <source>刷新缓存</source>
-        <translation type="vanished">Atualizar cache</translation>
-    </message>
-    <message>
-        <source>正在刷新 Web Tracker</source>
-        <translation type="vanished">Atualizando Web Tracker</translation>
-    </message>
-    <message>
-        <source>正在拉取 {0} 个源...</source>
-        <translation type="vanished">Obtendo {0} fontes...</translation>
-    </message>
-    <message>
-        <source>已刷新 {0}/{1} 个源，共 {2} 条 Tracker</source>
-        <translation type="vanished">{0}/{1} fontes atualizadas, total de {2} trackers</translation>
-    </message>
-    <message>
-        <source>刷新失败: {0}</source>
-        <translation type="vanished">Falha ao atualizar: {0}</translation>
-    </message>
-</context>
-<context>
-    <name>WebTrackerDialog</name>
-    <message>
-        <source>Tracker 源</source>
-        <translation type="vanished">Fontes Tracker</translation>
-    </message>
-    <message>
-        <source>添加</source>
-        <translation type="vanished">Adicionar</translation>
-    </message>
-    <message>
-        <source>自定义 Tracker</source>
-        <translation type="vanished">Tracker personalizado</translation>
-    </message>
-    <message>
-        <source>保存并刷新</source>
-        <translation type="vanished">Salvar e atualizar</translation>
-    </message>
-    <message>
-        <source>取消</source>
-        <translation type="vanished">Cancelar</translation>
-    </message>
-    <message>
-        <source>每行一个 tracker URL，不会被源刷新覆盖</source>
-        <translation type="vanished">Uma URL de tracker por linha, não será sobrescrita pela atualização das fontes</translation>
-    </message>
-    <message>
-        <source>源地址无效</source>
-        <translation type="vanished">Endereço da fonte inválido</translation>
-    </message>
-    <message>
-        <source>请输入有效的 HTTP/HTTPS 地址</source>
-        <translation type="vanished">Insira um endereço HTTP/HTTPS válido</translation>
-    </message>
-</context>
-<context>
-    <name>WebTrackerSourceCard</name>
-    <message>
-        <source>未拉取</source>
-        <translation type="vanished">Não obtido</translation>
-    </message>
-    <message>
-        <source>{0} 条</source>
-        <translation type="vanished">{0} itens</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>WelcomePage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="280"/>
-        <source>欢迎使用 Ghost Downloader</source>
-        <translation>Bem-vindo ao Ghost Downloader</translation>
+      <location filename="../../view/windows/oobe_window.py" line="280"/>
+      <source>欢迎使用 Ghost Downloader</source>
+      <translation>Bem-vindo ao Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="284"/>
-        <source>快速、智能的下载管理器。
+      <location filename="../../view/windows/oobe_window.py" line="284"/>
+      <source>快速、智能的下载管理器。
 接下来的几步将帮助你完成基本配置。</source>
-        <translation>Um gerenciador de downloads rápido e inteligente.
+      <translation>Um gerenciador de downloads rápido e inteligente.
 As próximas etapas ajudarão você a concluir a configuração básica.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="289"/>
-        <source>开始配置</source>
-        <translation>Iniciar configuração</translation>
+      <location filename="../../view/windows/oobe_window.py" line="289"/>
+      <source>开始配置</source>
+      <translation>Iniciar configuração</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>WrappedLinkPack</name>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
-        <source>迅雷</source>
-        <translation>Thunder</translation>
+      <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
+      <source>迅雷</source>
+      <translation>Thunder</translation>
     </message>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
-        <source>快车</source>
-        <translation>FlashGet</translation>
+      <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
+      <source>快车</source>
+      <translation>FlashGet</translation>
     </message>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
-        <source>QQ 旋风</source>
-        <translation>QQ Xuanfeng</translation>
+      <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
+      <source>QQ 旋风</source>
+      <translation>QQ Xuanfeng</translation>
     </message>
     <message>
-        <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
-        <source>迅雷、快车、QQ 旋风链接</source>
-        <translation>Links do Thunder, FlashGet e QQ Xuanfeng</translation>
+      <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
+      <source>迅雷、快车、QQ 旋风链接</source>
+      <translation>Links do Thunder, FlashGet e QQ Xuanfeng</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>YouTubePack</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/pack.py" line="70"/>
-        <source>YouTube 视频</source>
-        <translation>Vídeos do YouTube</translation>
+      <location filename="../../../features/yt_dlp_pack/pack.py" line="71"/>
+      <source>YouTube 视频</source>
+      <translation>Vídeos do YouTube</translation>
     </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>YtDlpConfig</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="92"/>
-        <source>YouTube 下载</source>
-        <translation>Download do YouTube</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="92"/>
+      <source>YouTube 下载</source>
+      <translation>Download do YouTube</translation>
     </message>
     <message>
-        <source>yt-dlp 安装目录</source>
-        <translation type="vanished">Diretório de instalação do yt-dlp</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="100"/>
+      <source>运行环境安装目录</source>
+      <translation>Diretório de instalação do ambiente de execução</translation>
     </message>
     <message>
-        <source>并行分片数</source>
-        <translation type="vanished">Número de segmentos paralelos</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="112"/>
+      <source>优先 MP4 格式</source>
+      <translation>Priorizar formato MP4</translation>
     </message>
     <message>
-        <source>同时下载的视频分片数量，越高越快但可能被限流</source>
-        <translation type="vanished">Número de segmentos de vídeo baixados simultaneamente; quanto maior, mais rápido, mas pode ser limitado</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="113"/>
+      <source>优先选择 H.264/MP4 编码，避免输出 WebM/MKV</source>
+      <translation>Priorizar codificação H.264/MP4 para evitar saída WebM/MKV</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="100"/>
-        <source>运行环境安装目录</source>
-        <translation>Diretório de instalação do ambiente de execução</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="120"/>
+      <source>下载完成后将标题、作者等信息嵌入文件</source>
+      <translation>Após o download, incorporar título, autor, etc. no arquivo</translation>
     </message>
     <message>
-        <source>登录浏览器</source>
-        <translation type="vanished">Navegador de login</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="127"/>
+      <source>下载完成后将章节标记嵌入文件</source>
+      <translation>Após o download, incorporar marcadores de capítulos no arquivo</translation>
     </message>
     <message>
-        <source>从指定浏览器读取 YouTube 登录状态，用于下载需要登录的内容</source>
-        <translation type="vanished">Ler o estado de login do YouTube do navegador especificado para baixar conteúdo que requer login</translation>
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="23"/>
+      <source>YouTube Cookie</source>
+      <translation>Cookie do YouTube</translation>
     </message>
     <message>
-        <source>不使用</source>
-        <translation type="vanished">Não usar</translation>
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="28"/>
+      <source>导入</source>
+      <translation>Importar</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="112"/>
-        <source>优先 MP4 格式</source>
-        <translation>Priorizar formato MP4</translation>
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="33"/>
+      <source>清除 Cookie</source>
+      <translation>Limpar cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="113"/>
-        <source>优先选择 H.264/MP4 编码，避免输出 WebM/MKV</source>
-        <translation>Priorizar codificação H.264/MP4 para evitar saída WebM/MKV</translation>
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="51"/>
+      <source>已导入</source>
+      <translation>Importado</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="120"/>
-        <source>下载完成后将标题、作者等信息嵌入文件</source>
-        <translation>Após o download, incorporar título, autor, etc. no arquivo</translation>
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="52"/>
+      <source>下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入</source>
+      <translation>Para baixar conteúdo que requer login, é necessário um Cookie; recomendamos a importação automática através da extensão do navegador</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="127"/>
-        <source>下载完成后将章节标记嵌入文件</source>
-        <translation>Após o download, incorporar marcadores de capítulos no arquivo</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="18"/>
-        <source>YouTube Cookie</source>
-        <translation>Cookie do YouTube</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="23"/>
-        <source>导入</source>
-        <translation>Importar</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="28"/>
-        <source>清除 Cookie</source>
-        <translation>Limpar cookie</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="46"/>
-        <source>已导入</source>
-        <translation>Importado</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="47"/>
-        <source>下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入</source>
-        <translation>Para baixar conteúdo que requer login, é necessário um Cookie; recomendamos a importação automática através da extensão do navegador</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="70"/>
-        <source>安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="75"/>
+      <source>安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。
 如需手动导入：打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中找到任意请求，复制其 Cookie 请求头的值并粘贴到下方。</source>
-        <translation>Após instalar a extensão do navegador, as informações de login serão enviadas automaticamente ao baixar vídeos do YouTube, sem necessidade de operação manual.
+      <translation>Após instalar a extensão do navegador, as informações de login serão enviadas automaticamente ao baixar vídeos do YouTube, sem necessidade de operação manual.
 Para importação manual: abra o YouTube e faça login, pressione F12 para abrir as ferramentas do desenvolvedor, na guia Network, encontre qualquer requisição, copie o valor do cabeçalho Cookie e cole abaixo.</translation>
     </message>
     <message>
-        <source>粘贴 Cookie 用于下载需要登录的内容</source>
-        <translation type="vanished">Cole o cookie para baixar conteúdo que requer login</translation>
+      <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="70"/>
+      <source>导入 YouTube Cookie</source>
+      <translation>Importar cookie do YouTube</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/setting_cards.py" line="65"/>
-        <source>导入 YouTube Cookie</source>
-        <translation>Importar cookie do YouTube</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="126"/>
+      <source>嵌入章节</source>
+      <translation>Incorporar capítulos</translation>
     </message>
     <message>
-        <source>打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中找到任意请求，复制其 Cookie 请求头的值并粘贴到下方</source>
-        <translation type="vanished">Abra o YouTube e faça login, pressione F12 para abrir as ferramentas do desenvolvedor, na aba Network encontre qualquer requisição, copie o valor do cabeçalho Cookie e cole abaixo</translation>
+      <location filename="../../../features/yt_dlp_pack/config.py" line="119"/>
+      <source>嵌入元数据</source>
+      <translation>Incorporar metadados</translation>
     </message>
-    <message>
-        <source>嵌入缩略图</source>
-        <translation type="vanished">Incorporar miniatura</translation>
-    </message>
-    <message>
-        <source>下载完成后通过 FFmpeg 将封面嵌入文件</source>
-        <translation type="vanished">Incorporar a capa no arquivo usando FFmpeg após o download</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="126"/>
-        <source>嵌入章节</source>
-        <translation>Incorporar capítulos</translation>
-    </message>
-    <message>
-        <source>下载完成后通过 FFmpeg 将章节标记嵌入文件</source>
-        <translation type="vanished">Incorporar marcadores de capítulo no arquivo usando FFmpeg após o download</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="119"/>
-        <source>嵌入元数据</source>
-        <translation>Incorporar metadados</translation>
-    </message>
-    <message>
-        <source>下载完成后通过 FFmpeg 将标题、作者等信息嵌入文件</source>
-        <translation type="vanished">Incorporar informações como título e autor no arquivo usando FFmpeg após o download</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>YtDlpDraftCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="257"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="273"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="440"/>
-        <source>最佳画质</source>
-        <translation>Melhor qualidade</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="249"/>
+      <source>音频语言</source>
+      <translation>Idioma do áudio</translation>
     </message>
     <message>
-        <source>选择字幕</source>
-        <translation type="vanished">Selecionar legenda</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
+      <source>最佳画质</source>
+      <translation>Melhor qualidade</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="252"/>
-        <source>音频语言</source>
-        <translation>Idioma do áudio</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
+      <source>最佳音质</source>
+      <translation>Melhor áudio</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="258"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="274"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="441"/>
-        <source>最佳音质</source>
-        <translation>Melhor áudio</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
+      <source>自动</source>
+      <translation>Automático</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="264"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="448"/>
-        <source>自动</source>
-        <translation>Automático</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="278"/>
+      <source>截取片段</source>
+      <translation>Recortar segmento</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="281"/>
-        <source>截取片段</source>
-        <translation>Recortar segmento</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="296"/>
+      <source>选择视频</source>
+      <translation>Selecionar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="299"/>
-        <source>选择视频</source>
-        <translation>Selecionar vídeo</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="395"/>
+      <source>选择音频语言</source>
+      <translation>Selecionar idioma do áudio</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="398"/>
-        <source>选择音频语言</source>
-        <translation>Selecionar idioma do áudio</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="573"/>
+      <source>未找到播放列表</source>
+      <translation>Lista de reprodução não encontrada</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="576"/>
-        <source>未找到播放列表</source>
-        <translation>Lista de reprodução não encontrada</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="578"/>
+      <source>加载播放列表失败</source>
+      <translation>Falha ao carregar lista de reprodução</translation>
     </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="581"/>
-        <source>加载播放列表失败</source>
-        <translation>Falha ao carregar lista de reprodução</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>YtDlpTaskCard</name>
     <message>
-        <source>选择视频</source>
-        <translation type="vanished">Selecionar vídeo</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="53"/>
+      <source>{0} 个视频 · {1}</source>
+      <translation>{0} vídeos · {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="49"/>
-        <source>{0} 个视频 · {1}</source>
-        <translation>{0} vídeos · {1}</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="38"/>
+      <source>提取信息</source>
+      <translation>Extrair informações</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="34"/>
-        <source>提取信息</source>
-        <translation>Extrair informações</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="40"/>
+      <source>下载视频</source>
+      <translation>Baixar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="36"/>
-        <source>下载视频</source>
-        <translation>Baixar vídeo</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="40"/>
+      <source>下载音频</source>
+      <translation>Baixar áudio</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="36"/>
-        <source>下载音频</source>
-        <translation>Baixar áudio</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="42"/>
+      <source>合并</source>
+      <translation>Mesclar</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="38"/>
-        <source>合并</source>
-        <translation>Mesclar</translation>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="44"/>
+      <source>下载字幕</source>
+      <translation>Baixar legenda</translation>
     </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="40"/>
-        <source>下载字幕</source>
-        <translation>Baixar legenda</translation>
-    </message>
-</context>
-<context>
-    <name>card</name>
-    <message>
-        <source>安装任务已创建</source>
-        <translation type="vanished">Tarefa de instalação criada</translation>
-    </message>
-    <message>
-        <source>请前往任务页查看安装进度</source>
-        <translation type="vanished">Vá para a página de tarefas para ver o progresso da instalação</translation>
-    </message>
-</context>
-<context>
-    <name>parent</name>
-    <message>
-        <source>未找到适配的安装包</source>
-        <translation type="vanished">Pacote de instalação compatível não encontrado</translation>
-    </message>
-    <message>
-        <source>请在版本详情中手动选择</source>
-        <translation type="vanished">Selecione manualmente nos detalhes da versão</translation>
-    </message>
-    <message>
-        <source>创建下载任务失败</source>
-        <translation type="vanished">Falha ao criar tarefa de download</translation>
-    </message>
-</context>
-<context>
+  </context>
+  <context>
     <name>self._dialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="46"/>
-        <source>添加任务</source>
-        <translation>Adicionar tarefa</translation>
+      <location filename="../../view/dialogs/task_draft.py" line="46"/>
+      <source>添加任务</source>
+      <translation>Adicionar tarefa</translation>
     </message>
-</context>
+  </context>
 </TS>

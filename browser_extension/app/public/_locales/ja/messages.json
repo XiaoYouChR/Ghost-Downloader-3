@@ -77,7 +77,17 @@
     "message": "ダークテーマ"
   },
   "dashSegmentsCount": {
-    "message": "$1 個の DASH セグメント $2"
+    "message": "$1 個の DASH セグメント $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "deepSearch": {
     "message": "詳細検索"
@@ -86,7 +96,13 @@
     "message": "ページのリクエストリソースを詳細に分析"
   },
   "desktopVersionInfo": {
-    "message": "デスクトップ版 $1"
+    "message": "デスクトップ版 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
   },
   "disconnected": {
     "message": "未接続"
@@ -236,7 +252,13 @@
     "message": "リソースの送信に失敗しました"
   },
   "errorStrategyException": {
-    "message": "戦略例外: $1"
+    "message": "戦略例外: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
   },
   "errorSwitchMediaFailed": {
     "message": "メディアの切り替えに失敗しました"
@@ -248,7 +270,13 @@
     "message": "タスク操作に失敗しました"
   },
   "errorUnknownCommand": {
-    "message": "不明なコマンド: $1"
+    "message": "不明なコマンド: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
   },
   "errorUnknownDownloadType": {
     "message": "不明なダウンロードリクエストタイプです"
@@ -266,7 +294,13 @@
     "message": "Ghost Downloader for Browser"
   },
   "extensionVersionInfo": {
-    "message": "拡張機能バージョン $1"
+    "message": "拡張機能バージョン $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
   },
   "failed": {
     "message": "失敗"
@@ -316,16 +350,38 @@
     "message": "一般"
   },
   "hlsSegmentsCount": {
-    "message": "$1 個の HLS セグメント $2"
+    "message": "$1 個の HLS セグメント $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "imagesProcessed": {
-    "message": "$1 枚の画像を処理しました"
+    "message": "$1 枚の画像を処理しました",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
   },
   "imagesSent": {
     "message": "画像を送信しました"
   },
   "installMethodInfo": {
-    "message": "インストール方法 $1"
+    "message": "インストール方法 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
   },
   "installTypeDevelopment": {
     "message": "デスクトップ版自己管理"
@@ -361,7 +417,13 @@
     "message": "選択を反転"
   },
   "itemCount": {
-    "message": "$1 項目"
+    "message": "$1 項目",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
   },
   "launchDesktop": {
     "message": "デスクトップ版を起動"
@@ -484,7 +546,17 @@
     "message": "ペアリング待ち"
   },
   "pendingQueueBadge": {
-    "message": "$1 · $2 待ち"
+    "message": "$1 · $2 待ち",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
   },
   "pictureInPicture": {
     "message": "ピクチャインピクチャ"
@@ -578,10 +650,22 @@
     "message": "メディアを選択してください"
   },
   "selectResourceLabel": {
-    "message": "$1 を選択"
+    "message": "$1 を選択",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
   },
   "sendCount": {
-    "message": "送信 ($1)"
+    "message": "送信 ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "sendCurrentMediaToGhostDownloader": {
     "message": "現在のメディアを Ghost Downloader に送信"
@@ -648,7 +732,17 @@
     "message": "動画トラック"
   },
   "waitedTimeout": {
-    "message": "$1（$2 秒待機済み）"
+    "message": "$1（$2 秒待機済み）",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
   },
   "waiting": {
     "message": "待機中"
@@ -753,7 +847,13 @@
     "message": "削除済みのタスクを削除"
   },
   "errorRemoveTasksFailed": {
-    "message": "$1 個のタスクの削除に失敗しました"
+    "message": "$1 個のタスクの削除に失敗しました",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "mediaButtonStyle": {
     "message": "メディアボタンのスタイル"

@@ -77,7 +77,17 @@
     "message": "Dark"
   },
   "dashSegmentsCount": {
-    "message": "$1 DASH segments $2"
+    "message": "$1 DASH segments $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "deepSearch": {
     "message": "Deep Search"
@@ -86,7 +96,13 @@
     "message": "Deeply analyze page requested resources"
   },
   "desktopVersionInfo": {
-    "message": "Desktop $1"
+    "message": "Desktop $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
   },
   "disconnected": {
     "message": "Disconnected"
@@ -236,7 +252,13 @@
     "message": "Failed to send resource"
   },
   "errorStrategyException": {
-    "message": "Strategy exception: $1"
+    "message": "Strategy exception: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
   },
   "errorSwitchMediaFailed": {
     "message": "Switch media failed"
@@ -248,7 +270,13 @@
     "message": "Task action failed"
   },
   "errorUnknownCommand": {
-    "message": "Unknown command: $1"
+    "message": "Unknown command: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
   },
   "errorUnknownDownloadType": {
     "message": "Unknown download request type"
@@ -266,7 +294,13 @@
     "message": "Ghost Downloader for Browser"
   },
   "extensionVersionInfo": {
-    "message": "Extension version $1"
+    "message": "Extension version $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
   },
   "failed": {
     "message": "Failed"
@@ -316,16 +350,38 @@
     "message": "General"
   },
   "hlsSegmentsCount": {
-    "message": "$1 HLS segments $2"
+    "message": "$1 HLS segments $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "imagesProcessed": {
-    "message": "$1 images processed"
+    "message": "$1 images processed",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
   },
   "imagesSent": {
     "message": "Images sent"
   },
   "installMethodInfo": {
-    "message": "Install method $1"
+    "message": "Install method $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
   },
   "installTypeDevelopment": {
     "message": "Self-managed desktop"
@@ -361,7 +417,13 @@
     "message": "Invert Selection"
   },
   "itemCount": {
-    "message": "$1 items"
+    "message": "$1 items",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
   },
   "launchDesktop": {
     "message": "Launch Desktop"
@@ -484,7 +546,17 @@
     "message": "Pairing"
   },
   "pendingQueueBadge": {
-    "message": "$1 · $2 queued"
+    "message": "$1 · $2 queued",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
   },
   "pictureInPicture": {
     "message": "Picture-in-Picture"
@@ -578,10 +650,22 @@
     "message": "Select media"
   },
   "selectResourceLabel": {
-    "message": "Select $1"
+    "message": "Select $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
   },
   "sendCount": {
-    "message": "Send ($1)"
+    "message": "Send ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "sendCurrentMediaToGhostDownloader": {
     "message": "Send current media to Ghost Downloader"
@@ -648,7 +732,17 @@
     "message": "Video Track"
   },
   "waitedTimeout": {
-    "message": "$1 (waited $2s)"
+    "message": "$1 (waited $2s)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
   },
   "waiting": {
     "message": "Waiting"

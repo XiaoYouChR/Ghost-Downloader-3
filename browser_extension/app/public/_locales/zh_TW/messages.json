@@ -77,7 +77,17 @@
     "message": "深色"
   },
   "dashSegmentsCount": {
-    "message": "$1 個 DASH 分片 $2"
+    "message": "$1 個 DASH 分片 $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "deepSearch": {
     "message": "深度搜尋"
@@ -86,7 +96,13 @@
     "message": "深入分析頁面請求資源"
   },
   "desktopVersionInfo": {
-    "message": "桌面端 $1"
+    "message": "桌面端 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
   },
   "disconnected": {
     "message": "未連線"
@@ -236,7 +252,13 @@
     "message": "傳送資源失敗"
   },
   "errorStrategyException": {
-    "message": "策略異常: $1"
+    "message": "策略異常: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
   },
   "errorSwitchMediaFailed": {
     "message": "切換媒體失敗"
@@ -248,7 +270,13 @@
     "message": "任務操作失敗"
   },
   "errorUnknownCommand": {
-    "message": "未知命令: $1"
+    "message": "未知命令: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
   },
   "errorUnknownDownloadType": {
     "message": "未知的下載請求類型"
@@ -266,7 +294,13 @@
     "message": "Ghost Downloader for Browser"
   },
   "extensionVersionInfo": {
-    "message": "擴充功能版本 $1"
+    "message": "擴充功能版本 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
   },
   "failed": {
     "message": "失敗"
@@ -316,16 +350,38 @@
     "message": "一般"
   },
   "hlsSegmentsCount": {
-    "message": "$1 個 HLS 分片 $2"
+    "message": "$1 個 HLS 分片 $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "imagesProcessed": {
-    "message": "已處理 $1 張圖片"
+    "message": "已處理 $1 張圖片",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
   },
   "imagesSent": {
     "message": "圖片已傳送"
   },
   "installMethodInfo": {
-    "message": "安裝方式 $1"
+    "message": "安裝方式 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
   },
   "installTypeDevelopment": {
     "message": "桌面端自行管理"
@@ -361,7 +417,13 @@
     "message": "反向選取"
   },
   "itemCount": {
-    "message": "$1 項"
+    "message": "$1 項",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
   },
   "launchDesktop": {
     "message": "啟動桌面端"
@@ -484,7 +546,17 @@
     "message": "等待配對"
   },
   "pendingQueueBadge": {
-    "message": "$1 · $2 排隊"
+    "message": "$1 · $2 排隊",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
   },
   "pictureInPicture": {
     "message": "子母畫面"
@@ -578,10 +650,22 @@
     "message": "請選取媒體"
   },
   "selectResourceLabel": {
-    "message": "選取 $1"
+    "message": "選取 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
   },
   "sendCount": {
-    "message": "傳送 ($1)"
+    "message": "傳送 ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "sendCurrentMediaToGhostDownloader": {
     "message": "傳送目前媒體到 Ghost Downloader"
@@ -648,7 +732,17 @@
     "message": "視訊軌"
   },
   "waitedTimeout": {
-    "message": "$1（已等待 $2s）"
+    "message": "$1（已等待 $2s）",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
   },
   "waiting": {
     "message": "等待中"
@@ -753,7 +847,13 @@
     "message": "移除缺失的任務"
   },
   "errorRemoveTasksFailed": {
-    "message": "$1 個任務移除失敗"
+    "message": "$1 個任務移除失敗",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "mediaButtonStyle": {
     "message": "媒體按鈕樣式"

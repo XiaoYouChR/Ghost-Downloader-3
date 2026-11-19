@@ -153,18 +153,27 @@ ghd wait tsk_0123
   <tbody>
     <tr>
       <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/44dde418af0da7d664fff23b96622e40.png" />
+        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/8543b6654f23235a06e06daaede0dea7.jpg" />
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>14249 words</b></sub>
+        <sub><b>255883 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/Havokdan"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/12607851/medium/a1ec7e6a771c303892d82c92015a3641_default.png" />
+          <br />
+          <sub><b>Daniel Neves</b></sub>
+          <br />
+          <sub><b>(Havokdan)</b></sub></a>
+        <br />
+        <sub><b>4443 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
           <br />
           <sub><b>i0ntempest</b></sub></a>
         <br />
-        <sub><b>1988 words</b></sub>
+        <sub><b>2139 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
@@ -172,6 +181,15 @@ ghd wait tsk_0123
           <sub><b>ReM2812</b></sub></a>
         <br />
         <sub><b>1010 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/s0990"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/14938059/medium/c8029e289a5b05e7d8a92c07163323d8.png" />
+          <br />
+          <sub><b>Kay Xue學昀楷</b></sub>
+          <br />
+          <sub><b>(s0990)</b></sub></a>
+        <br />
+        <sub><b>602 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />
