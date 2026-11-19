@@ -564,6 +564,7 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
         <source>未运行</source>
         <translation type="unfinished"></translation>
