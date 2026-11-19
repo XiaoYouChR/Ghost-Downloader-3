@@ -188,7 +188,7 @@
     <message>
         <location filename="../../view/windows/oobe_window.py" line="665"/>
         <source>复制下载链接时由本程序接管</source>
-        <translation>Take over when download links are copied</translation>
+        <translation>Take over and handle copied download links</translation>
     </message>
     <message>
         <location filename="../../view/windows/oobe_window.py" line="669"/>
@@ -1868,7 +1868,7 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
     <message>
         <location filename="../../view/components/setting_cards.py" line="331"/>
         <source>剪贴板监听</source>
-        <translation>Monitor Clipboard</translation>
+        <translation>Clipboard Monitoring</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="332"/>
@@ -5898,12 +5898,13 @@ caused by file operations or possible disk disconnections</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>下载完成时播放提示音</source>
-        <translation>Play a sound when a download completes</translation>
+        <translation>Play a sound on download completion</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
-        <translation>Help improve Ghost Downloader by providing feedback, or view logs to troubleshoot issues</translation>
+        <translation>Help improve Ghost Downloader by providing feedback,
+or view logs to troubleshoot issues</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="373"/>
@@ -5928,7 +5929,7 @@ caused by file operations or possible disk disconnections</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="339"/>
         <source>系统通知</source>
-        <translation>System Notification</translation>
+        <translation>System notification</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="316"/>
@@ -5943,7 +5944,7 @@ caused by file operations or possible disk disconnections</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="318"/>
         <source>不显示</source>
-        <translation>Don&apos;t show</translation>
+        <translation>Hidden</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="318"/>
@@ -5973,17 +5974,18 @@ caused by file operations or possible disk disconnections</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="340"/>
         <source>关闭</source>
-        <translation>Off</translation>
+        <translation>Disabled</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="349"/>
         <source>复制链接后先询问</source>
-        <translation>Ask after copying a link</translation>
+        <translation>Prompt on link copy</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="350"/>
         <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
-        <translation>When the main window is closed or minimized, show a popup asking whether to download if enabled; otherwise, open the main window directly.</translation>
+        <translation>If enabled, when the main window is closed or minimized, show a popup prompting for download;
+otherwise, open the main app window directly</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="534"/>
@@ -7297,6 +7299,31 @@ System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
 </context>
 <context>
     <name>TaskPopup</name>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="22"/>
+        <source>{0} 秒</source>
+        <translation>{0} s</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="26"/>
+        <source>{0} 分 {1} 秒</source>
+        <translation>{0} min {1} s</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="27"/>
+        <source>{0} 分</source>
+        <translation>{0} min</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="30"/>
+        <source>{0} 小时 {1} 分</source>
+        <translation>{0} h {1} min</translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="31"/>
+        <source>{0} 小时</source>
+        <translation>{0} h</translation>
+    </message>
     <message>
         <location filename="../../view/shell/task_popup.py" line="76"/>
         <source>取消</source>

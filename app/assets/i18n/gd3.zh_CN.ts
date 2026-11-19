@@ -5668,6 +5668,31 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>TaskPopup</name>
     <message>
+        <location filename="../../view/shell/task_popup.py" line="22"/>
+        <source>{0} 秒</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="26"/>
+        <source>{0} 分 {1} 秒</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="27"/>
+        <source>{0} 分</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="30"/>
+        <source>{0} 小时 {1} 分</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/shell/task_popup.py" line="31"/>
+        <source>{0} 小时</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../view/shell/task_popup.py" line="76"/>
         <source>取消</source>
         <translation type="unfinished"></translation>
