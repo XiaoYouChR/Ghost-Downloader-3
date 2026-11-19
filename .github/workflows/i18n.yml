@@ -1,12 +1,6 @@
 name: i18n
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "app/**/*.py"
-      - "features/**/*.py"
-      - "browser_extension/app/public/_locales/zh_CN/messages.json"
   schedule:
     - cron: "0 2 * * 1"
   workflow_dispatch:
@@ -78,7 +72,6 @@ jobs:
           (cd android && crowdin upload translations -l en-US --no-progress)
 
       - name: Download translations
-        if: github.event_name != 'push'
         run: |
           languages=$(python scripts/list_i18n_languages.py)
           crowdin download $languages --no-progress
@@ -86,7 +79,6 @@ jobs:
           python scripts/sync_i18n_res.py
 
       - name: Update Crowdin contributors
-        if: github.event_name != 'push'
         uses: andrii-bodnar/action-crowdin-contributors@v3
         with:
           files: |
@@ -98,7 +90,6 @@ jobs:
           min_words_contributed: 100
 
       - name: Create translation pull request
-        if: github.event_name != 'push'
         uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/crowdin-translations
@@ -115,7 +106,6 @@ jobs:
             README_zh.md
 
       - name: Create Android translation pull request
-        if: github.event_name != 'push'
         uses: peter-evans/create-pull-request@v8
         with:
           path: android
