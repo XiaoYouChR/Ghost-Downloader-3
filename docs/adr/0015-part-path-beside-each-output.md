@@ -2,7 +2,7 @@
 
 Step 原地写入它的最终路径 `p`（Placeholder 本身），`p` 的未完成数据放在同级的 `{p}.ghd`：
 只需进度记录时是文件（HTTP、FTP），还有中间文件时是文件夹（合并前的音视频、m3u8 分片），同一个 Task 中两者不同时出现。
-基类只知道这一条规则：创建 Placeholder 时删除旁边残留的 `{p}.ghd`；Task 完成后删除成品的 `{p}.ghd`（进度记录由写它的 pack 删除）；Task 被移除时删除未完成 Step 的输出和全部 `{p}.ghd`；"删除文件"只决定已完成的成品。
+基类只知道这一条规则：创建 Placeholder 时删除旁边残留的 `{p}.ghd`；Task 完成后删除成品的 `{p}.ghd`（进度记录由写它的 pack 删除）；Task 被移除时删除全部 `{p}.ghd` 和空的 Placeholder；已下载的内容无论是否完成，都只由"删除文件"决定。
 记录格式仍是 pack 知识。
 
 ## Considered Options

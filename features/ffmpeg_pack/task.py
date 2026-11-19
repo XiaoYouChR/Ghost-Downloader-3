@@ -218,6 +218,7 @@ class FFmpegStep(TaskStep):
 
     @property
     def outputPath(self) -> str:
+        # 不合并时视频 Step 直接写入成品，本 Step 不运行，不能占用成品路径
         if isinstance(self.task, FFmpegTask) and not (self.task.hasAudio or self.task.isTrimmed):
             return ""
         return self.task.outputPath
