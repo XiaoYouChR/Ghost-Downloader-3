@@ -164,6 +164,70 @@ async def test_add_task_with_aria2_options(aria2, engine, pack, downloadFolder):
     assert options.headers == {"Cookie": "a=b", "User-Agent": "from-header", "Referer": "http://test/"}
 
 
+@pytest.mark.parametrize("out", [
+    "总文件夹/子文件夹/a.zip",
+    "总文件夹\\子文件夹\\a.zip",
+    "/总文件夹/./子文件夹/a.zip",
+])
+async def test_add_task_with_nested_out_creates_subfolders(aria2, engine, downloadFolder, out):
+    result = await aria2.request("aria2.addUri", [["http://test/f.zip"], {"out": out}])
+    await waitUntil(lambda: addedNames(engine) == ["a.zip"])
+
+    assert isGid(result["result"])
+    [task] = engine.taskService.tasks
+    expectedFolder = downloadFolder / "总文件夹" / "子文件夹"
+    assert task.outputFolder == expectedFolder
+    assert (expectedFolder / "a.zip").exists()
+
+
+async def test_add_task_with_relative_dir_resolves_under_default_folder(aria2, engine, downloadFolder):
+    result = await aria2.request("aria2.addUri", [
+        ["http://test/ep1.mp4"],
+        {"dir": "网盘/剧集", "out": "第1集/ep1.mp4"},
+    ])
+    await waitUntil(lambda: addedNames(engine) == ["ep1.mp4"])
+
+    assert isGid(result["result"])
+    [task] = engine.taskService.tasks
+    expectedFolder = downloadFolder / "网盘" / "剧集" / "第1集"
+    assert task.outputFolder == expectedFolder
+    assert (expectedFolder / "ep1.mp4").exists()
+
+
+async def test_add_task_with_trailing_slash_out_uses_parsed_name(aria2, engine, downloadFolder):
+    result = await aria2.request("aria2.addUri", [["http://test/f.zip"], {"out": "总文件夹/子文件夹/"}])
+    await waitUntil(lambda: addedNames(engine) == ["f.zip"])
+
+    assert isGid(result["result"])
+    [task] = engine.taskService.tasks
+    assert task.outputFolder == downloadFolder / "总文件夹" / "子文件夹"
+
+
+async def test_add_task_sanitizes_unsafe_folder_segments_in_out(aria2, engine, downloadFolder):
+    result = await aria2.request("aria2.addUri", [["http://test/a.mp4"], {"out": "电影: 2026/CON/a.mp4"}])
+    await waitUntil(lambda: addedNames(engine) == ["a.mp4"])
+
+    assert isGid(result["result"])
+    [task] = engine.taskService.tasks
+    expectedFolder = downloadFolder / "电影_ 2026" / "_CON"
+    assert task.outputFolder == expectedFolder
+    assert (expectedFolder / "a.mp4").exists()
+
+
+@pytest.mark.parametrize("badOut", [
+    "../escape.zip",
+    "a/../../escape.zip",
+    "a/..",
+    "C:/escape.zip",
+    "C:escape.zip",
+])
+async def test_add_task_rejects_traversal_or_drive_in_out(aria2, engine, badOut):
+    result = await aria2.request("aria2.addUri", [["http://test/f.zip"], {"out": badOut}])
+
+    assert result["error"]["code"] == 1
+    assert engine.taskService.tasks == []
+
+
 async def test_add_goes_to_draft_when_drafting_is_on(aria2, engine):
     cfg.set(cfg.shouldDraftTakenDownload, True)
     drafted = []

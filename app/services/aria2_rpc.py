@@ -4,7 +4,7 @@ import asyncio
 import json
 from dataclasses import dataclass
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from secrets import token_hex
 from typing import TYPE_CHECKING, Any
 
@@ -13,6 +13,7 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import VERSION
 from app.models.task import TaskError, TaskOptions, toTaskError
+from app.platform.filesystem import toSafeFilename
 from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
 
@@ -102,6 +103,36 @@ def toHeaders(options: dict) -> dict[str, str]:
     if (referer := toText(options, "referer")) and "referer" not in names:
         headers["Referer"] = referer
     return headers
+
+
+def parseTarget(options: dict, defaultFolder: Path) -> tuple[Path, str]:
+    directory = toText(options, "dir")
+    if directory:
+        path = Path(directory)
+        folder = path if path.is_absolute() else defaultFolder / path
+    else:
+        folder = defaultFolder
+
+    out = toText(options, "out")
+    if not out:
+        return folder, ""
+
+    stripped = out.lstrip("/\\")
+    rawParts = [part for part in stripped.replace("\\", "/").split("/") if part] if stripped else []
+    if not rawParts:
+        return folder, ""
+    if PureWindowsPath(stripped).drive or any(part == ".." for part in rawParts):
+        raise RpcError("Invalid out path.")
+
+    isFolderOnly = out.endswith(("/", "\\")) or rawParts[-1] == "."
+    parts = [part for part in rawParts if part != "."]
+    if not parts:
+        return folder, ""
+
+    folderParts, name = (parts, "") if isFolderOnly else (parts[:-1], parts[-1])
+    for part in folderParts:
+        folder = folder / toSafeFilename(part, fallback="_")
+    return folder, name
 
 
 class Aria2RpcService:
@@ -231,17 +262,17 @@ class Aria2RpcService:
         if not isinstance(options, dict):
             raise RpcError("The parameter at 1 has wrong type.")
 
-        directory = toText(options, "dir")
+        outputFolder, name = parseTarget(options, Path(cfg.downloadFolder.value))
         taskOptions = TaskOptions(
             url=uris[0],
             headers=toHeaders(options),
-            outputFolder=Path(directory or cfg.downloadFolder.value),
+            outputFolder=outputFolder,
             clientProfile="" if cfg.aria2RpcEmulateFingerprint.value else "raw",
         )
         self._coroutineRunner.submit(
             self._parse(taskOptions),
             done=self._onTaskParsed, failed=self._onTaskParseFailed,
-            name=toText(options, "out"), url=uris[0],
+            name=name, url=uris[0],
         )
         return token_hex(8)
 
