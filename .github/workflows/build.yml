@@ -642,7 +642,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y desktop-file-utils libegl1-mesa-dev libzstd1
+          sudo apt-get install -y desktop-file-utils libegl1-mesa-dev libzstd1 libxcb-cursor0
           uv python install 3.13
           uv sync
 
@@ -739,6 +739,9 @@ jobs:
           cp -R "$DIST_DIR"/. "$DEB_ROOT$INSTALL_DIR/"
           cp -R "$DIST_DIR"/. "$APPDIR/usr/lib/$PACKAGE_NAME/"
           cp /usr/lib/*/libzstd.so.1 "$APPDIR/usr/lib/$PACKAGE_NAME/"
+          # #311: minimal Debian/Ubuntu installs lack libxcb-cursor0, which Qt's xcb
+          # platform plugin needs from Qt 6.5 onward; bundle it like libzstd above.
+          cp /usr/lib/*/libxcb-cursor.so.0 "$APPDIR/usr/lib/$PACKAGE_NAME/"
 
           ln -s "$INSTALL_DIR/Ghost-Downloader-3.bin" "$DEB_ROOT/usr/bin/$PACKAGE_NAME"
           ln -s "../lib/$PACKAGE_NAME/Ghost-Downloader-3.bin" "$APPDIR/usr/bin/$PACKAGE_NAME"
