@@ -1,120 +1,120 @@
 {
   "app": {
-    "version": "4.5.8",
+    "version": "4.5.9",
     "patches": {
       "Windows-x86_64": {
-        "from": "4.5.4",
-        "file": "patch-Windows-x86_64-4.5.4-to-4.5.8.hdiff",
-        "sha256": "51ce989302c67d3ddc56d114196858313895687939efaf7c22567ff608670a05",
-        "size": 6179548
+        "from": "4.5.8",
+        "file": "patch-Windows-x86_64-4.5.8-to-4.5.9.hdiff",
+        "sha256": "be1c4f852b97b8569a44c0c6e91f53f78af465c5dffd55ee3b1b3b52569730e7",
+        "size": 6681061
       },
       "Windows-arm64": {
-        "from": "4.5.4",
-        "file": "patch-Windows-arm64-4.5.4-to-4.5.8.hdiff",
-        "sha256": "4c6b59e7e15e0449b1401adb7acb6f0872b16e0bc6d94e17e95396957e20139c",
-        "size": 16296660
+        "from": "4.5.8",
+        "file": "patch-Windows-arm64-4.5.8-to-4.5.9.hdiff",
+        "sha256": "b25ffeb7301a5c1b11554ab84ea73a5910e48d1aac9efbe250f61c6115db29b7",
+        "size": 5832424
       },
       "macOS-arm64": {
-        "from": "4.5.4",
-        "file": "patch-macOS-arm64-4.5.4-to-4.5.8.hdiff",
-        "sha256": "805528e2ad941bbdd5879436dea1dd3d69038a5f2e2bb2a0baf096ef92e607e5",
-        "size": 11853206
+        "from": "4.5.8",
+        "file": "patch-macOS-arm64-4.5.8-to-4.5.9.hdiff",
+        "sha256": "c9bd97766876704af626bb225663bc56dbdab57b3e3ac802e24928f29256e5f0",
+        "size": 8714344
       },
       "macOS-x86_64": {
-        "from": "4.5.4",
-        "file": "patch-macOS-x86_64-4.5.4-to-4.5.8.hdiff",
-        "sha256": "8f2475844ce743a795fed8ae28fc3bf3a50598a64c61bf95e067281df98171eb",
-        "size": 10569359
+        "from": "4.5.8",
+        "file": "patch-macOS-x86_64-4.5.8-to-4.5.9.hdiff",
+        "sha256": "b82c32a326dab0b1dc5fa35a59ca1d41853b97f2801a4ed35f32dbd6bd432be1",
+        "size": 8184042
       }
     },
     "full": {
       "Windows-x86_64": {
-        "file": "Ghost-Downloader-v4.5.8-Windows-x86_64.zip",
-        "sha256": "c8dacdc4bd48ed80e0d8184b7f93e5ad4cb946dd8a098c485890e14ca59721d6",
-        "size": 46389631
+        "file": "Ghost-Downloader-v4.5.9-Windows-x86_64.zip",
+        "sha256": "bfd57a917f1e4c4eb56fbe00cf936a35d445c91058da45cdb19d0f64f396335b",
+        "size": 46567695
       },
       "Windows-arm64": {
-        "file": "Ghost-Downloader-v4.5.8-Windows-arm64.zip",
-        "sha256": "0be8f54db962b4205d8162ed75bb307931cbb77082d7e6b654711cdcbf0a58a6",
-        "size": 40152359
+        "file": "Ghost-Downloader-v4.5.9-Windows-arm64.zip",
+        "sha256": "ac26a1357947be419881978d979506533105721c81236e4c51f297284f8b5889",
+        "size": 40328675
       },
       "macOS-arm64": {
-        "file": "Ghost-Downloader-v4.5.8-macOS-arm64.dmg",
-        "sha256": "88133706c977b7b39a6c62283722bb96a4a4620a3e652009dd5cfb73a3807e38",
-        "size": 66689219
+        "file": "Ghost-Downloader-v4.5.9-macOS-arm64.dmg",
+        "sha256": "21ceb6ad8bee1f7f240c89db30653b1e4929ac1bfdfb4178c7d9ef9d6e4cac32",
+        "size": 66890523
       },
       "macOS-x86_64": {
-        "file": "Ghost-Downloader-v4.5.8-macOS-x86_64.dmg",
-        "sha256": "39cc7fb178e0bb445b85423bf42338f5ff5021c23a22377f7621580fcc77071e",
-        "size": 70942796
+        "file": "Ghost-Downloader-v4.5.9-macOS-x86_64.dmg",
+        "sha256": "23e162fdc583168d90a25dc584d37feb1de99b981e49e98e04c918a06760d682",
+        "size": 71167516
       }
     }
   },
   "packs": {
     "bili_pack": {
-      "version": "1.4.0",
+      "version": "1.4.1",
       "file": "bili_pack.zip",
-      "sha256": "aefe0cc87382d7ab4159345f9054a08e98225e159fa5aae3c750abf07ab5f9a1",
+      "sha256": "d8eecc7c284e478485db0ef424e03ca61dcd0ce1ce6acdf9317d52a6dbe7245e",
       "gdMinVersion": "4.5.0"
     },
     "bittorrent_pack": {
-      "version": "1.3.1",
+      "version": "1.4.0",
       "file": "bittorrent_pack.zip",
-      "sha256": "688cd3df0a5172cc631c156e6acfbff94950104a8b9ec58904acb219182cca70",
+      "sha256": "cb934b70849b97f3efa37a629c536778881fa1f437b90c842ab7571c9b8b01b3",
       "gdMinVersion": "4.5.0"
     },
     "ed2k_pack": {
-      "version": "2.1.0",
+      "version": "2.1.1",
       "file": "ed2k_pack.zip",
-      "sha256": "07119a61e7043d262e50da6ce492ada872a91321f278081b02f2bdb7efac1c2e",
+      "sha256": "72e020a4b9423fa921e1aa8bbaeb3f1cde898dd9579b820c15b1ccd0d13337de",
       "gdMinVersion": "4.5.0"
     },
     "ffmpeg_pack": {
-      "version": "1.2.1",
+      "version": "1.2.2",
       "file": "ffmpeg_pack.zip",
-      "sha256": "fd995f16a1ab3bafe9c35d83ac64d9e065f9760c1481c9ffeb9c63a206f322c3",
+      "sha256": "bb487dd8012422afbf1381c421cb16624d1e79576e4fe3ebbb59078f3072ce40",
       "gdMinVersion": "4.5.0"
     },
     "ftp_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "ftp_pack.zip",
-      "sha256": "01484275fdd49ee7fa4959f82ed616866c18a2c89d71c59c97509f91b5626e7e",
+      "sha256": "7311241e767d84408946838be134cc56c2c496a49b3cd8217ac1575ad9502f34",
       "gdMinVersion": "4.5.0"
     },
     "github_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "github_pack.zip",
-      "sha256": "53d7345dbf3fd8d86a701db7b8bb79680ff408f97f0d8a020cbd548cdf1d3a9b",
+      "sha256": "95c266525a5c38904d75f43c77fcb96c589312f4fa31647a0a074760aa53b66e",
       "gdMinVersion": "4.5.0"
     },
     "http_pack": {
-      "version": "1.2.1",
+      "version": "1.2.2",
       "file": "http_pack.zip",
-      "sha256": "84a6502b116d86b0429ffd24e3ceb4a49aaa9d082b01e19fb89e4447be631b54",
+      "sha256": "d1246db0f805cdacd2d01e10c803b545623d9c4b8d06bb3973074bb87b8c3e70",
       "gdMinVersion": "4.5.0"
     },
     "huggingface_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "huggingface_pack.zip",
-      "sha256": "4724d3b554b199b8d8bc70437977646b1ec067bbd7e3973bc55ca6f7339aeca1",
+      "sha256": "263fef9421578560513314f6eb0895910b608e97c19ab275108fd8044fe00f82",
       "gdMinVersion": "4.5.0"
     },
     "m3u8_pack": {
-      "version": "1.2.2",
+      "version": "1.3.0",
       "file": "m3u8_pack.zip",
-      "sha256": "1989bf7113cf58b8b468b7a09278e037de6b5eb117351e2d6b063b7ba129e7c4",
+      "sha256": "b76ed67adbbb4ce66a6d1452a5766a7cff12ed262ebbad5c5aaa2b591f915fe1",
       "gdMinVersion": "4.5.0"
     },
     "yt_dlp_pack": {
-      "version": "1.4.0",
+      "version": "1.4.1",
       "file": "yt_dlp_pack.zip",
-      "sha256": "0aa2229afe6757455f63a286088f63e5f7a9a790adf32232e8a9c2cfd80ba391",
+      "sha256": "61c04cdef4a75d0dc4c897938e6110a0c97062b565c048877fdc15aef26809a7",
       "gdMinVersion": "4.5.0"
     },
     "arxiv_pack": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "file": "arxiv_pack.zip",
-      "sha256": "40be138f3cd519202548aba9213c75fe77104852bf9fec1a4e565356c0e66724",
+      "sha256": "39ef16049d9770faac7853b6c7e41ad243fb72b25d0f063efd21ab5518fa2800",
       "gdMinVersion": "4.5.0"
     },
     "wrapped_link_pack": {
@@ -124,9 +124,9 @@
       "gdMinVersion": "4.5.2"
     },
     "zip_pack": {
-      "version": "1.1.1",
+      "version": "1.1.2",
       "file": "zip_pack.zip",
-      "sha256": "3f4331ca3ee55f4418a3779a232a1e83684386199e17194c76e6a84db570a33e",
+      "sha256": "efa62c8a5ca073439894d65efb559a87549b0d29c40b51b91bec98f723c3f579",
       "gdMinVersion": "4.5.0"
     }
   }
