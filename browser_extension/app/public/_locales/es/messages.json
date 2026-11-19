@@ -77,7 +77,17 @@
     "message": "Oscuro"
   },
   "dashSegmentsCount": {
-    "message": "$1 segmentos DASH $2"
+    "message": "$1 segmentos DASH $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "deepSearch": {
     "message": "Búsqueda profunda"
@@ -86,7 +96,13 @@
     "message": "Analiza en profundidad los recursos solicitados por la página"
   },
   "desktopVersionInfo": {
-    "message": "Versión de escritorio $1"
+    "message": "Versión de escritorio $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
   },
   "disconnected": {
     "message": "No conectado"
@@ -236,7 +252,13 @@
     "message": "Fallo al enviar recurso"
   },
   "errorStrategyException": {
-    "message": "Excepción de estrategia: $1"
+    "message": "Excepción de estrategia: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
   },
   "errorSwitchMediaFailed": {
     "message": "Fallo al cambiar de medio"
@@ -248,7 +270,13 @@
     "message": "Fallo en la acción de la tarea"
   },
   "errorUnknownCommand": {
-    "message": "Comando desconocido: $1"
+    "message": "Comando desconocido: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
   },
   "errorUnknownDownloadType": {
     "message": "Tipo de solicitud de descarga desconocido"
@@ -266,7 +294,13 @@
     "message": "Ghost Downloader para navegador"
   },
   "extensionVersionInfo": {
-    "message": "Versión de la extensión $1"
+    "message": "Versión de la extensión $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
   },
   "failed": {
     "message": "Fallido"
@@ -316,16 +350,38 @@
     "message": "General"
   },
   "hlsSegmentsCount": {
-    "message": "$1 segmentos HLS $2"
+    "message": "$1 segmentos HLS $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
   },
   "imagesProcessed": {
-    "message": "$1 imágenes procesadas"
+    "message": "$1 imágenes procesadas",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
   },
   "imagesSent": {
     "message": "Imágenes enviadas"
   },
   "installMethodInfo": {
-    "message": "Método de instalación $1"
+    "message": "Método de instalación $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
   },
   "installTypeDevelopment": {
     "message": "Autogestionado por el escritorio"
@@ -361,7 +417,13 @@
     "message": "Invertir selección"
   },
   "itemCount": {
-    "message": "$1 elementos"
+    "message": "$1 elementos",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
   },
   "launchDesktop": {
     "message": "Iniciar escritorio"
@@ -484,7 +546,17 @@
     "message": "Emparejamiento pendiente"
   },
   "pendingQueueBadge": {
-    "message": "$1 · $2 en cola"
+    "message": "$1 · $2 en cola",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
   },
   "pictureInPicture": {
     "message": "Imagen sobre imagen"
@@ -578,10 +650,22 @@
     "message": "Por favor, selecciona un medio"
   },
   "selectResourceLabel": {
-    "message": "Seleccionar $1"
+    "message": "Seleccionar $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
   },
   "sendCount": {
-    "message": "Enviar ($1)"
+    "message": "Enviar ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "sendCurrentMediaToGhostDownloader": {
     "message": "Enviar medio actual a Ghost Downloader"
@@ -648,7 +732,17 @@
     "message": "Pista de vídeo"
   },
   "waitedTimeout": {
-    "message": "$1 (esperado $2 s)"
+    "message": "$1 (esperado $2 s)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
   },
   "waiting": {
     "message": "Esperando"
@@ -753,7 +847,13 @@
     "message": "Eliminar tareas con archivos eliminados"
   },
   "errorRemoveTasksFailed": {
-    "message": "Fallo al eliminar $1 tareas"
+    "message": "Fallo al eliminar $1 tareas",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "mediaButtonStyle": {
     "message": "Estilo del botón de medios"
