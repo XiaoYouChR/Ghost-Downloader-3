@@ -4,7 +4,7 @@ import time
 from collections.abc import Awaitable, Callable
 from urllib.parse import urlsplit
 
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -24,6 +24,7 @@ from qfluentwidgets import (
 from app.bootstrap_list import BootstrapList, SubscriptionStatus
 from app.config.cfg import ConfigItem, cfg
 from app.view.components.editors import AutoSizingEdit
+from app.view.components.scroll_area import ScrollArea
 
 FAILURE_NOTICE_AGE = 7 * 86400
 CARD_HEIGHT = 70
@@ -189,11 +190,13 @@ class BootstrapListDialog(MessageBoxBase):
         self._sourcesItem = sourcesItem
         self._customItem = customItem
         self._statuses = {s.url: s for s in bootstrapList.statuses()}
+        self._statusTexts = [toStatusText(s) for s in (None, *self._statuses.values())]
         self._rows: list[SubscriptionRow] = []
         self.sourceHeaderLabel = SubtitleLabel(self.tr("订阅地址"), self.widget)
         self.restoreButton = PushButton(self.tr("恢复默认"), self.widget)
         self.addButton = PrimaryPushButton(FluentIcon.ADD, self.tr("添加"), self.widget)
-        self.rowContainer = QWidget(self.widget)
+        self.scrollArea = ScrollArea(self.widget)
+        self.rowContainer = QWidget(self.scrollArea)
         self.customLabel = SubtitleLabel(self.tr("自定义条目"), self.widget)
         self.customEdit = AutoSizingEdit(self.widget)
         self.sourceHeaderLayout = QHBoxLayout()
@@ -224,15 +227,20 @@ class BootstrapListDialog(MessageBoxBase):
 
         self.rowLayout.setContentsMargins(0, 0, 0, 0)
         self.rowLayout.setSpacing(8)
+        self.rowLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.scrollArea.setWidget(self.rowContainer)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.enableTransparentBackground()
 
         self.viewLayout.addLayout(self.sourceHeaderLayout)
-        self.viewLayout.addWidget(self.rowContainer)
+        self.viewLayout.addWidget(self.scrollArea)
         self.viewLayout.addSpacing(8)
         self.viewLayout.addWidget(self.customLabel)
         self.viewLayout.addWidget(self.customEdit)
 
     def _bind(self):
-        self.addButton.clicked.connect(lambda: self._addRow(""))
+        self.addButton.clicked.connect(self._onAddClicked)
         self.restoreButton.clicked.connect(self._onRestoreClicked)
 
     def validate(self) -> bool:
@@ -240,6 +248,7 @@ class BootstrapListDialog(MessageBoxBase):
             if not isSubscriptionUrl(row.url):
                 InfoBar.error(self.tr("订阅地址无效"), self.tr("请输入有效的 HTTP/HTTPS 地址"), parent=self)
                 row.urlEdit.setFocus()
+                self.scrollArea.scrollTo(row.y())
                 return False
         cfg.set(self._sourcesItem, list(dict.fromkeys(row.url for row in self._rows)))
         if self._customItem is not None:
@@ -247,12 +256,21 @@ class BootstrapListDialog(MessageBoxBase):
             cfg.set(self._customItem, "\n".join(line for line in lines if line))
         return True
 
-    def _addRow(self, url: str):
+    def _addRow(self, url: str) -> SubscriptionRow:
         status = self._statuses.get(url)
         row = SubscriptionRow(url, toStatusText(status), self._onRowRemoved, self.rowContainer)
         row.statusLabel.setToolTip(status.error if status is not None else "")
+        row.statusLabel.setFixedWidth(max(map(row.statusLabel.fontMetrics().horizontalAdvance, self._statusTexts)))
         self.rowLayout.addWidget(row)
         self._rows.append(row)
+        return row
+
+    def _onAddClicked(self):
+        row = self._addRow("")
+        row.show()
+        row.urlEdit.setFocus()
+        self.rowContainer.adjustSize()
+        self.scrollArea.scrollTo(row.y())
 
     def _onRowRemoved(self, row: SubscriptionRow):
         self._rows.remove(row)
