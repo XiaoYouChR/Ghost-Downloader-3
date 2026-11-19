@@ -280,3 +280,14 @@ async def test_open_and_close_leave_no_process(engine):
 
     assert not isEngineAlive(executable)
     assert len(engine.kelpies) == 2
+
+
+async def test_run_closes_session_after_idle(engine, monkeypatch):
+    import ed2k_pack.session as sessionModule
+
+    monkeypatch.setattr(sessionModule, "IDLE_CLOSE_DELAY", 0.05)
+    executable = engine.folder / "bin" / "kelpie"
+    await runUntilProgress(buildTask(engine.folder))
+    assert isEngineAlive(executable)
+
+    await waitUntil(lambda: not isEngineAlive(executable) and ed2kSession.network is None, timeout=5)

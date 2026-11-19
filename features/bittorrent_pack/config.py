@@ -54,15 +54,39 @@ class BitTorrentConfig(PackConfig):
     webTrackerCustomList = ConfigItem("BitTorrent", "WebTrackerCustomList", "")
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
-        from qfluentwidgets import ComboBoxSettingCard, FluentIcon, RangeSettingCard, SwitchSettingCard
+        from qfluentwidgets import ComboBoxSettingCard, FluentIcon, PushSettingCard, RangeSettingCard, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SpinBoxSettingCard
         from app.view.components.bootstrap_list import BootstrapListCard
+        from .session import SessionState, btSession
         from .trackers import trackerList
 
         btGroup = CollapsibleSettingCardGroup(self.tr("BitTorrent 下载"), "bittorrent", parent)
 
+        stopCard = PushSettingCard(self.tr("停止"), FluentIcon.CLOSE, self.tr("停止 BitTorrent 会话"), "", btGroup)
+        stopContent = {
+            SessionState.STOPPED: self.tr("未运行"),
+            SessionState.BUSY: self.tr("有 BT 任务正在下载或做种，结束后才能停止"),
+            SessionState.IDLE: self.tr("空闲 5 分钟后自动停止，开始任务时会自动启动"),
+        }
+
+        def refreshStopCard() -> None:
+            stopCard.button.setEnabled(btSession.state == SessionState.IDLE)
+            stopCard.setContent(stopContent[btSession.state])
+
+        stopCard.clicked.connect(lambda: self.submit(btSession.stop()))
+        btSession.stateChanged.connect(refreshStopCard, owner=stopCard)
+        refreshStopCard()
+
+        trackerListCard = BootstrapListCard(
+            FluentIcon.GLOBE, self.tr("Tracker 列表"), trackerList,
+            self.webTrackerSources, self.submit, btGroup,
+            customItem=self.webTrackerCustomList, probeNetworkText=self._probeDhtText,
+        )
+        btSession.stateChanged.connect(trackerListCard.probeNetwork, owner=trackerListCard)
+
         cards = [
+            stopCard,
             SpinBoxSettingCard(FluentIcon.GLOBE, self.tr("监听端口"),
                 self.tr("0 表示交给系统自动分配可用端口"), "", self.listenPort, btGroup, 1),
             SpinBoxSettingCard(FluentIcon.HISTORY, self.tr("元数据超时"),
@@ -101,9 +125,7 @@ class BitTorrentConfig(PackConfig):
             SwitchSettingCard(FluentIcon.SYNC, self.tr("自动更新订阅"),
                 self.tr("每天在后台更新一次 Tracker 列表"),
                 self.autoRefreshWebTrackers, btGroup),
-            BootstrapListCard(FluentIcon.GLOBE, self.tr("Tracker 列表"), trackerList,
-                self.webTrackerSources, self.submit, btGroup,
-                customItem=self.webTrackerCustomList, probeNetworkText=self._probeDhtText),
+            trackerListCard,
         ]
         btGroup.addSettingCards(cards)
         return [btGroup]

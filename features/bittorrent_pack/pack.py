@@ -24,6 +24,7 @@ from .trackers import mergedTrackers, trackerList
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
+    from app.models.pack import PackServices
     from app.view.cards.draft_cards import DraftCard
     from app.view.cards.task_cards import TaskCard
     from app.view.components.option_cards import OptionCard
@@ -138,6 +139,10 @@ class BitTorrentPack(FeaturePack):
     proxySchemes = PROXY_SCHEMES
     parsers = [TorrentParser]
 
+    def __init__(self, services: PackServices) -> None:
+        super().__init__(services)
+        btSession.setPost(services.coroutineRunner.post)
+
     def taskCardClass(self, task: Task) -> type[TaskCard] | None:
         from .cards import BTTaskCard
         return BTTaskCard
@@ -169,7 +174,6 @@ class BitTorrentPack(FeaturePack):
         return [UriScheme("magnet", "Magnet")]
 
     async def activate(self) -> None:
-        btSession.open()
         refreshTrackerListIfStale()
 
     async def deactivate(self) -> None:

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
-from contextlib import suppress
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
+from enum import StrEnum
 from pathlib import Path
 from tempfile import gettempdir
 from urllib.parse import urlsplit
@@ -15,6 +16,7 @@ from app.config.cfg import cfg, proxy
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR
 from app.models.task import TaskError
+from app.signal import Signal
 
 from .config import bittorrentConfig
 from .swarm import PeerInfo, SwarmInfo, TrackerInfo, toPeers, toSourceTrackers, toSwarmInfo, toTracker
@@ -45,6 +47,13 @@ ERROR_ALERTS = (
 )
 
 RESUME_SAVE_INTERVAL = 30
+IDLE_CLOSE_DELAY = 300.0
+
+
+class SessionState(StrEnum):
+    STOPPED = "stopped"
+    IDLE = "idle"
+    BUSY = "busy"
 
 LIVE_SETTINGS = (
     bittorrentConfig.listenPort,
@@ -201,10 +210,15 @@ class ActiveTorrent:
 
 
 class BTSession:
+    stateChanged = Signal()
 
-    def __init__(self):
+    def __init__(self, *, idleTimeout: float = IDLE_CLOSE_DELAY):
+        self._post: Callable[[Callable[[], object]], None] = lambda fn: fn()
+        self._idleTimeout = idleTimeout
         self._session: lt.session | None = None
         self._poller: asyncio.Task | None = None
+        self._idleTimer: asyncio.TimerHandle | None = None
+        self._busyCount = 0
         self._active: dict[str, ActiveTorrent] = {}
         self._metadataWaiters: dict[int, tuple[lt.torrent_handle, asyncio.Future]] = {}
         self._resumeCache: dict[str, bytes] = {}
@@ -212,15 +226,18 @@ class BTSession:
 
     # ── public interface ──
 
-    def open(self) -> None:
-        if self._session is not None:
-            return
-        params = loadDhtState()
-        params.settings = buildSettings()
-        self._session = lt.session(params)
-        self._poller = asyncio.get_running_loop().create_task(self._supervise())
-        for item in LIVE_SETTINGS:
-            item.valueChanged.connect(self._onSettingsChanged)
+    @property
+    def state(self) -> SessionState:
+        if self._session is None:
+            return SessionState.STOPPED
+        return SessionState.BUSY if self._busyCount > 0 else SessionState.IDLE
+
+    def setPost(self, post: Callable[[Callable[[], object]], None]) -> None:
+        self._post = post
+
+    async def stop(self) -> None:
+        if self.state == SessionState.IDLE:
+            await self.close()
 
     async def run(self, taskId: str, params: TorrentParams,
                   onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
@@ -236,35 +253,35 @@ class BTSession:
     async def _run(self, taskId: str, params: TorrentParams,
                    onProgress: Callable[[TorrentProgress], None] | None,
                    isDone: Callable[[TorrentProgress], bool]) -> bytes:
-        handle = self._addTorrent(params)
+        with self._hold():
+            handle = self._addTorrent(params)
+            handle.resume()
+            handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
+            if bittorrentConfig.enableDht.value:
+                handle.force_dht_announce()
 
-        handle.resume()
-        handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
-        if bittorrentConfig.enableDht.value:
-            handle.force_dht_announce()
+            done = asyncio.get_running_loop().create_future()
+            entry = ActiveTorrent(
+                handle=handle, done=done, onProgress=onProgress, isDone=isDone,
+                seedBase=params.seedingTimeSeconds,
+            )
+            self._active[taskId] = entry
 
-        done = asyncio.get_running_loop().create_future()
-        entry = ActiveTorrent(
-            handle=handle, done=done, onProgress=onProgress, isDone=isDone,
-            seedBase=params.seedingTimeSeconds,
-        )
-        self._active[taskId] = entry
-
-        cancelled = False
-        try:
-            await done
-        except asyncio.CancelledError:
-            cancelled = True
-            raise
-        finally:
-            if cancelled:
-                self._active.pop(taskId, None)
-                if self._session is not None:
-                    with suppress(Exception):
-                        self._session.remove_torrent(handle)
-            else:
-                await self._saveResumeAndRemove(entry)
-                self._active.pop(taskId, None)
+            cancelled = False
+            try:
+                await done
+            except asyncio.CancelledError:
+                cancelled = True
+                raise
+            finally:
+                if cancelled:
+                    self._active.pop(taskId, None)
+                    if self._session is not None:
+                        with suppress(Exception):
+                            self._session.remove_torrent(handle)
+                else:
+                    await self._saveResumeAndRemove(entry)
+                    self._active.pop(taskId, None)
 
         return self._resumeCache.pop(taskId, b"")
 
@@ -280,32 +297,34 @@ class BTSession:
         params.storage_mode = lt.storage_mode_t.storage_mode_sparse
         params.flags |= lt.torrent_flags.default_dont_download
 
-        hashes = params.info_hashes if params.ti is None else params.ti.info_hashes()
-        if hashes.has_v1() and self._session.find_torrent(hashes.v1).is_valid():
-            raise TaskError("该种子已在下载中")
-        if hashes.has_v2() and self._session.find_torrent(hashes.v2).is_valid():
-            raise TaskError("该种子已在下载中")
+        with self._hold():
+            hashes = params.info_hashes if params.ti is None else params.ti.info_hashes()
+            if hashes.has_v1() and self._session.find_torrent(hashes.v1).is_valid():
+                raise TaskError("该种子已在下载中")
+            if hashes.has_v2() and self._session.find_torrent(hashes.v2).is_valid():
+                raise TaskError("该种子已在下载中")
 
-        handle = self._session.add_torrent(params)
-        handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
-        if bittorrentConfig.enableDht.value:
-            handle.force_dht_announce()
+            handle = self._session.add_torrent(params)
+            handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
+            if bittorrentConfig.enableDht.value:
+                handle.force_dht_announce()
 
-        waiter: asyncio.Future[lt.torrent_info] = asyncio.get_running_loop().create_future()
-        self._metadataWaiters[id(handle)] = (handle, waiter)
+            waiter: asyncio.Future[lt.torrent_info] = asyncio.get_running_loop().create_future()
+            self._metadataWaiters[id(handle)] = (handle, waiter)
 
-        try:
-            ti = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
-            torrent = lt.add_torrent_params()
-            torrent.ti = ti
-            torrent.trackers = magnetTrackers
-            return lt.bencode(lt.write_torrent_file(torrent, lt.write_flags.allow_missing_piece_layer))
-        except asyncio.TimeoutError:
-            raise TimeoutError("等待 magnet 元数据超时")
-        finally:
-            self._metadataWaiters.pop(id(handle), None)
-            with suppress(Exception):
-                self._session.remove_torrent(handle)
+            try:
+                ti = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
+                torrent = lt.add_torrent_params()
+                torrent.ti = ti
+                torrent.trackers = magnetTrackers
+                return lt.bencode(lt.write_torrent_file(torrent, lt.write_flags.allow_missing_piece_layer))
+            except asyncio.TimeoutError:
+                raise TimeoutError("等待 magnet 元数据超时")
+            finally:
+                self._metadataWaiters.pop(id(handle), None)
+                if self._session is not None:
+                    with suppress(Exception):
+                        self._session.remove_torrent(handle)
 
     async def probeDhtNodes(self) -> int | None:
         if self._session is None or not self._session.is_dht_running():
@@ -376,12 +395,51 @@ class BTSession:
                 self._session.remove_torrent(handle)
         self._metadataWaiters.clear()
 
-        if self._poller is not None:
-            self._poller.cancel()
-            with suppress(asyncio.CancelledError):
-                await self._poller
-            self._poller = None
+        self._cancelIdleTimer()
         self._session = None
+        if self._statsWaiter is not None and not self._statsWaiter.done():
+            self._statsWaiter.set_result(None)
+        self._statsWaiter = None
+        poller, self._poller = self._poller, None
+        self._post(self.stateChanged.emit)
+        if poller is not None:
+            poller.cancel()
+            with suppress(asyncio.CancelledError):
+                await poller
+
+    # ── lifecycle ──
+
+    @contextmanager
+    def _hold(self) -> Iterator[None]:
+        if self._session is None:
+            params = loadDhtState()
+            params.settings = buildSettings()
+            self._session = lt.session(params)
+            self._poller = asyncio.get_running_loop().create_task(self._supervise())
+            for item in LIVE_SETTINGS:
+                item.valueChanged.connect(self._onSettingsChanged)
+        self._busyCount += 1
+        if self._busyCount == 1:
+            self._cancelIdleTimer()
+            self._post(self.stateChanged.emit)
+        try:
+            yield
+        finally:
+            self._busyCount -= 1
+            if self._busyCount == 0 and self._session is not None:
+                self._startIdleTimer()
+                self._post(self.stateChanged.emit)
+
+    def _startIdleTimer(self) -> None:
+        self._cancelIdleTimer()
+        self._idleTimer = asyncio.get_running_loop().call_later(
+            self._idleTimeout, lambda: asyncio.ensure_future(self.stop()),
+        )
+
+    def _cancelIdleTimer(self) -> None:
+        if self._idleTimer is not None:
+            self._idleTimer.cancel()
+            self._idleTimer = None
 
     # ── torrent management ──
 
@@ -434,8 +492,9 @@ class BTSession:
                 lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
             )
         except Exception:
-            with suppress(Exception):
-                self._session.remove_torrent(entry.handle)
+            if self._session is not None:
+                with suppress(Exception):
+                    self._session.remove_torrent(entry.handle)
             return
 
         entry.resumeWaiter = asyncio.get_running_loop().create_future()
@@ -445,8 +504,9 @@ class BTSession:
             logger.warning("等待 BitTorrent resume 数据超时")
         finally:
             entry.resumeWaiter = None
-            with suppress(Exception):
-                self._session.remove_torrent(entry.handle)
+            if self._session is not None:
+                with suppress(Exception):
+                    self._session.remove_torrent(entry.handle)
 
     # ── poll loop ──
 

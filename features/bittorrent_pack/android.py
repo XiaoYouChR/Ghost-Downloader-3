@@ -7,9 +7,26 @@ from app.i18n import N
 from app.models.task import TaskStatus
 
 if TYPE_CHECKING:
+    from app.signal import Signal
+    from .pack import BitTorrentPack
     from .task import BTTask
 
 UI_CLASS = "com.xychr.ghostdownloader.features.bittorrent_pack.BitTorrentUi"
+
+
+def init(pack: BitTorrentPack) -> dict[str, Signal]:
+    from .session import btSession
+    return {"sessionState": btSession.stateChanged}
+
+
+def sessionState() -> str:
+    from .session import btSession
+    return btSession.state.value
+
+
+async def stop() -> None:
+    from .session import btSession
+    await btSession.stop()
 
 STATE_TEXT = {
     "checking_files": N("TaskState", "校验已有文件"),

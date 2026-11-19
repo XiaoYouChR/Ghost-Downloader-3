@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from .task import ED2kTask
 
 
+IDLE_CLOSE_DELAY = 300.0
+
 LIVE_SETTINGS = (
     cfg.isSpeedLimitEnabled, cfg.speedLimitation,
     ed2kConfig.uploadRateLimit, ed2kConfig.enableKad, ed2kConfig.enableUpnp, cfg.proxyServer,
@@ -48,6 +50,7 @@ class ED2kSession:
         self._network: Network | None = None
         self._openRunCount = 0
         self._stopping: asyncio.Task[None] | None = None
+        self._idleTimer: asyncio.TimerHandle | None = None
         self._removals: set[asyncio.Task] = set()
 
     def open(
@@ -80,6 +83,7 @@ class ED2kSession:
             raise TaskError("{name} 未安装，请在设置中安装", name=kelpieRuntime.name)
         start = self._kelpie.runSeed if isSeed else self._kelpie.runDownload
         self._openRunCount += 1
+        self._refreshIdleTimer()
         self._runner.post(self.runsChanged.emit)
         try:
             if self._stopping is not None:
@@ -92,6 +96,7 @@ class ED2kSession:
         finally:
             self._progresses.pop(task.taskId, None)
             self._openRunCount -= 1
+            self._refreshIdleTimer()
             self._runner.post(self.runsChanged.emit)
 
     def delete(self, task: ED2kTask) -> None:
@@ -103,17 +108,22 @@ class ED2kSession:
         async def remove():
             removal = asyncio.current_task()
             self._removals.add(removal)
+            self._refreshIdleTimer()
             try:
                 if self._stopping is not None:
                     await asyncio.shield(self._stopping)
                 await kelpie.remove(hash)
             finally:
                 self._removals.discard(removal)
+                self._refreshIdleTimer()
 
         self._runner.submit(remove())
 
     async def stop(self) -> None:
-        if not self.isIdle or self._stopping is not None:
+        if self._idleTimer is not None:
+            self._idleTimer.cancel()
+            self._idleTimer = None
+        if not self.isIdle or self._removals or self._stopping is not None or self._kelpie is None:
             return
         self._stopping = asyncio.ensure_future(self._kelpie.close())
         try:
@@ -122,6 +132,9 @@ class ED2kSession:
             self._stopping = None
 
     async def close(self) -> None:
+        if self._idleTimer is not None:
+            self._idleTimer.cancel()
+            self._idleTimer = None
         kelpie, self._kelpie = self._kelpie, None
         if kelpie is None:
             return
@@ -131,6 +144,15 @@ class ED2kSession:
             await asyncio.wait(self._removals)
         await kelpie.close()
 
+    def _refreshIdleTimer(self) -> None:
+        if self._idleTimer is not None:
+            self._idleTimer.cancel()
+            self._idleTimer = None
+        if self._network is not None and self.isIdle and not self._removals:
+            self._idleTimer = asyncio.get_running_loop().call_later(
+                IDLE_CLOSE_DELAY, lambda: asyncio.ensure_future(self.stop()),
+            )
+
     async def _record(self, taskId: str, transfer: Run) -> AsyncIterator[Progress]:
         async for progress in transfer:
             self._progresses[taskId] = progress
@@ -138,6 +160,8 @@ class ED2kSession:
 
     def _onNetwork(self, network: Network | None) -> None:
         self._network = network
+        if network is None or self._idleTimer is None:
+            self._refreshIdleTimer()
         self._runner.post(self.networkChanged.emit)
 
     def _onSettingsChanged(self, *_) -> None:

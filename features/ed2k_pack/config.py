@@ -75,7 +75,7 @@ class ED2kConfig(PackConfig):
                 return self.tr("未运行")
             if not ed2kSession.isIdle:
                 return self.tr("有 eD2k 任务正在下载或做种，结束后才能终止")
-            return self.tr("开始 eD2k 任务时会自动重新启动")
+            return self.tr("空闲 5 分钟后自动终止，开始 eD2k 任务时会自动重新启动")
 
         stopCard = PushSettingCard(
             self.tr("终止"), FluentIcon.CLOSE, self.tr("终止 Kelpie 进程"), toStopCardContent(), group,
