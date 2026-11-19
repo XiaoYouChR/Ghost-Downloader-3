@@ -44,6 +44,18 @@ def toStreamOptions(streams: list[dict]) -> list[dict[str, str]]:
     return options
 
 
+def draftFields(task: M3U8Task) -> dict:
+    from .task import subtitleChoices
+    return {
+        "subtitles": [{"key": key, "label": label} for key, label in subtitleChoices(task)],
+        "subtitleLanguages": list(task.subtitleLanguages),
+    }
+
+
+def setSubtitles(task: M3U8Task, languages: str) -> None:
+    task.setOptions({"subtitleLanguages": [language for language in languages.split(",") if language]})
+
+
 def taskFields(task: M3U8Task) -> dict:
     if not task.isLive:
         return {}

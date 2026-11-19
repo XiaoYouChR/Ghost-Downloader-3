@@ -11,10 +11,11 @@ from ffmpeg_pack.pack import FFmpegPack
 from http_pack.pack import HttpPack
 from http_pack.task import HttpTask
 from m3u8_pack.pack import M3U8Pack
-from m3u8_pack.task import M3U8Task
+from m3u8_pack.task import M3U8Task, subtitleChoices
 from tests.helpers import buildRangeHandler
 
 VIMEO_SAMPLE = Path(__file__).parents[1] / "samples" / "vimeo_playlist.json"
+X_MASTER_SAMPLE = Path(__file__).parents[1] / "samples" / "x_master.m3u8"
 PLAYLIST = b"#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:10,\nseg0.ts\n#EXT-X-ENDLIST\n"
 
 
@@ -67,3 +68,33 @@ async def test_parse_vimeo_playlist_adds_stream(features, startServer):
     assert isinstance(task, M3U8Task)
     assert not task.isLive
     assert sorted(stream["height"] for stream in task.streams) == [240, 360, 540, 720, 1080, 1440, 2160]
+
+
+async def startXMaster(startServer) -> str:
+    master = buildTypedHandler(X_MASTER_SAMPLE.read_bytes(), "application/vnd.apple.mpegurl")
+    variant = buildTypedHandler(PLAYLIST, "application/vnd.apple.mpegurl")
+
+    async def handle(request: web.Request) -> web.Response:
+        return await (master if request.path == "/master.m3u8" else variant)(request)
+
+    return (await startServer(handle)).removesuffix("/file") + "/master.m3u8"
+
+
+def namesIn(folder: Path) -> list[str]:
+    return sorted(p.name for p in folder.iterdir())
+
+
+async def test_parse_master_offers_subtitles_unselected(features, startServer):
+    task = await features.parse(TaskOptions(url=await startXMaster(startServer)))
+
+    assert subtitleChoices(task) == [("zh", "zh (auto-generated)")]
+    assert task.subtitleLanguages == []
+
+
+async def test_add_with_subtitle_holds_side_file(engine, features, startServer, downloadFolder):
+    task = await features.parse(TaskOptions(url=await startXMaster(startServer)))
+    task.setOptions({"subtitleLanguages": ["zh"]})
+
+    engine.taskService.add(task, autoStart=False)
+
+    assert namesIn(downloadFolder) == ["master.mp4", "master.zh.srt"]

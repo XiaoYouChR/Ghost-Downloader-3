@@ -19,7 +19,7 @@ from app.models.pack import FeaturePack, TaskParser, FileType
 from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
-from .task import M3U8Task, M3U8TaskStep
+from .task import M3U8SubtitleStep, M3U8Task, M3U8TaskStep
 from .vimeo import buildVimeoFiles, matchVimeoPlaylist
 
 if TYPE_CHECKING:
@@ -174,8 +174,7 @@ class M3U8Parser(TaskParser):
             streams=streams,
         )
 
-        step = M3U8TaskStep(
-            stepIndex=1,
+        stepOptions = dict(
             headers=headers,
 
             threadCount=m3u8Config.threadCount.value,
@@ -205,8 +204,37 @@ class M3U8Parser(TaskParser):
             liveWaitTime=m3u8Config.liveWaitTime.value,
             liveTakeCount=m3u8Config.liveTakeCount.value,
         )
-        task.addStep(step)
+        task.addStep(M3U8TaskStep(stepIndex=1, **stepOptions))
+        if not isLive:
+            for index, (language, subtitleName) in enumerate(self._parseSubtitles(body, manifestType), start=2):
+                task.addStep(M3U8SubtitleStep(stepIndex=index, language=language, name=subtitleName, **stepOptions))
         return task
+
+    def _parseSubtitles(self, body: str, manifestType: str) -> list[tuple[str, str]]:
+        """每种语言取清单中的第一路字幕，返回 (language, name)；language 缺失时以 name 区分。"""
+        try:
+            if manifestType == "mpd":
+                mpd = MPEGDASHParser.parse(body)
+                renditions = [
+                    (adaptationSet.lang or "", adaptationSet.lang or "")
+                    for period in mpd.periods[:1] for adaptationSet in period.adaptation_sets
+                    if (adaptationSet.content_type or "").lower() == "text"
+                    or (adaptationSet.mime_type or "").lower().startswith(("text/", "application/ttml"))
+                ]
+            else:
+                renditions = [
+                    (media.language or "", media.name or "")
+                    for media in m3u8.loads(body).media if (media.type or "").upper() == "SUBTITLES"
+                ]
+        except Exception as e:
+            logger.warning("枚举字幕失败: {}", repr(e))
+            return []
+        subtitles: dict[str, tuple[str, str]] = {}
+        for language, subtitleName in renditions:
+            key = language or subtitleName
+            if key and key not in subtitles:
+                subtitles[key] = (language, subtitleName)
+        return list(subtitles.values())
 
     def _parseStreams(self, body: str, manifestType: str) -> list[dict]:
         try:
@@ -316,8 +344,8 @@ class M3U8Pack(FeaturePack):
 
     def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import HeadersEditCard, OutputFolderCard
-        from .cards import RecordLimitCard, DecryptionKeyCard, MuxImportCard
-        from .task import M3U8TaskStep
+        from .cards import RecordLimitCard, DecryptionKeyCard, MuxImportCard, SubtitleCard
+        from .task import M3U8TaskStep, subtitleChoices
 
         step = task.steps[0] if task.steps else None
         if not isinstance(step, M3U8TaskStep):
@@ -329,6 +357,8 @@ class M3U8Pack(FeaturePack):
         ]
         if task.isLive:
             cards.append(RecordLimitCard(parent, initial=step.recordLimit))
+        if subtitleChoices(task):
+            cards.append(SubtitleCard(parent, task=task))
         cards.append(DecryptionKeyCard(parent, keys=step.decryptionKeys, keyTextFile=step.decryptionKeyFile))
         cards.append(MuxImportCard(parent, initial=step.muxImports))
         return cards

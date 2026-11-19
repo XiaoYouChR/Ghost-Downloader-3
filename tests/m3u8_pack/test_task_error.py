@@ -168,3 +168,28 @@ def test_parse_unhandled_exception():
     )
     error = parseError(output, 1)
     assert error.params["detail"] == "something went wrong"
+
+
+def test_parse_mux_failure_despite_zero_exit():
+    """N_m3u8DL-RE 0.6.0-beta 混流失败仍以 0 退出，留下的纯视频轨不能当成品。"""
+    output = (
+        "20:18:50.025 WARN : v.zh.srt"
+        "20:18:50.025 WARN : Muxing to v.MUX.mp4"
+        "20:18:50.053 WARN : [sost#0:4 @ 00000202c7921e80] Unknown encoder 'mov_text'"
+        "20:18:50.053 WARN : Error opening output files: Encoder not found"
+        "20:18:50.056 ERROR: Mux failed"
+        "20:18:50.056 ERROR: Failed"
+    )
+    error = parseError(output, 0)
+    assert "合并音视频失败" in error.message
+    assert error.params["detail"] == "Error opening output files: Encoder not found"
+
+
+def test_parse_success_returns_none():
+    output = (
+        "19:18:15.692 WARN : Muxing to v.MUX.mp4"
+        "19:18:15.730 WARN : Cleaning files..."
+        "19:18:15.731 WARN : Rename to v.mp4"
+        "19:18:15.736 INFO : Done"
+    )
+    assert parseError(output, 0) is None

@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
-    BodyLabel, ComboBox, CompactSpinBox, FluentIcon, PrimaryToolButton, ToolTipFilter, TransparentToolButton,
+    BodyLabel, ComboBox, CompactSpinBox, FluentIcon, IconWidget, PrimaryToolButton, PushButton, ToolTipFilter,
+    TransparentToolButton,
 )
 
 from app.format import toReadableSize
@@ -16,6 +17,9 @@ from app.view.cards.task_cards import (
 )
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.option_cards import OptionCard
+from app.view.components.track_bar import TrackButton
+from app.view.dialogs.subtitle_select import SubtitleSelectDialog
+from .task import subtitleChoices
 
 if TYPE_CHECKING:
     from .task import M3U8Task
@@ -23,7 +27,86 @@ if TYPE_CHECKING:
 
 
 class M3U8DraftCard(DraftCard):
-    pass
+
+    def _initWidget(self) -> None:
+        super()._initWidget()
+        self.subtitleButton = TrackButton(FluentIcon.LANGUAGE, self)
+        self.subtitleButton.setToolTip(self.tr("字幕"))
+        self.subtitleButton.setChecked(bool(self.task.subtitleLanguages))
+        self.subtitleButton.setVisible(bool(subtitleChoices(self.task)))
+
+    def _initLayout(self) -> None:
+        super()._initLayout()
+        self.layout().addWidget(self.subtitleButton)
+
+    def _bind(self) -> None:
+        super()._bind()
+        self.subtitleButton.clicked.connect(self._onSubtitleClicked)
+
+    def _onSubtitleClicked(self) -> None:
+        dialog = SubtitleSelectDialog(subtitleChoices(self.task), self.task.subtitleLanguages, self.window())
+        try:
+            if dialog.exec():
+                selected = dialog.selectedLanguages()
+                self.task.setOptions({"subtitleLanguages": selected})
+                self.subtitleButton.setChecked(bool(selected))
+                self._refreshConflictIcon()
+        finally:
+            dialog.deleteLater()
+
+
+class SubtitleCard(OptionCard):
+
+    def __init__(self, parent: QWidget | None = None, *, task: M3U8Task) -> None:
+        super().__init__(parent)
+        self._task = task
+        self._selected = list(task.subtitleLanguages)
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self.setFixedHeight(50)
+        self.iconWidget = IconWidget(FluentIcon.LANGUAGE, self)
+        self.iconWidget.setFixedSize(16, 16)
+        self.titleLabel = BodyLabel(self.tr("字幕"), self)
+        self.summaryLabel = BodyLabel(self)
+        self.chooseButton = PushButton(self.tr("选择"), self)
+        self._refreshSummary()
+
+    def _initLayout(self) -> None:
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(24, 5, 24, 5)
+        layout.setSpacing(15)
+        layout.addWidget(self.iconWidget)
+        layout.addWidget(self.titleLabel)
+        layout.addStretch(1)
+        layout.addWidget(self.summaryLabel)
+        layout.addWidget(self.chooseButton)
+
+    def _bind(self) -> None:
+        self.chooseButton.clicked.connect(self._onChooseClicked)
+
+    def _onChooseClicked(self) -> None:
+        dialog = SubtitleSelectDialog(subtitleChoices(self._task), self._selected, self.window())
+        try:
+            if dialog.exec():
+                self._selected = dialog.selectedLanguages()
+                self._refreshSummary()
+        finally:
+            dialog.deleteLater()
+
+    def _refreshSummary(self) -> None:
+        labels = dict(subtitleChoices(self._task))
+        names = [labels.get(language, language) for language in self._selected]
+        self.summaryLabel.setText(", ".join(names) if names else self.tr("不下载"))
+
+    def options(self) -> dict[str, list[str]]:
+        return {"subtitleLanguages": self._selected}
+
+    def reset(self) -> None:
+        self._selected = []
+        self._refreshSummary()
 
 
 def toM3u8SizeText(task: M3U8Task, speed: int, received: int) -> str | None:

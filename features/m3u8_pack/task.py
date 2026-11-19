@@ -13,8 +13,8 @@ from loguru import logger
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.format import toBytes
-from app.models.task import Task, TaskError, TaskStep, TaskStatus
-from app.platform.filesystem import toPosixPath
+from app.models.task import Task, TaskError, TaskStep, TaskStatus, deletePlaceholder
+from app.platform.filesystem import deletePath, toPosixPath, toSafeFilename
 from .config import m3u8Runtime
 from .vimeo import buildVimeoFiles, matchVimeoPlaylist
 
@@ -62,12 +62,27 @@ ERROR_HINTS = (
 LOG_LINE_PATTERN = re.compile(
     r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(WARN|ERROR)\s*:\s*(.*)"
 )
+LOG_PREFIX_PATTERN = re.compile(r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(?:INFO|WARN|ERROR)\s*:\s*")
+MUX_FAILED_PATTERN = re.compile(r"\d{2}:\d{2}:\d{2}\.\d{3}\s+ERROR\s*:\s*Mux failed")
 UNHANDLED_PATTERN = re.compile(
     r"Unhandled exception:\s*\S+:\s*(.*)"
 )
 
 
-def parseError(output: str, returncode: int) -> TaskError:
+def toBool(value: bool) -> str:
+    return "true" if value else "false"
+
+
+def parseError(output: str, returncode: int) -> TaskError | None:
+    """输出表明失败时返回 TaskError，成功时返回 None。"""
+    # N_m3u8DL-RE 0.6.0-beta 混流失败仍以 0 退出
+    muxFailure = MUX_FAILED_PATTERN.search(output)
+    if muxFailure:
+        lines = [line.strip() for line in LOG_PREFIX_PATTERN.split(output[:muxFailure.start()]) if line.strip()]
+        return TaskError("合并音视频失败（{detail}）", detail=lines[-1] if lines else "")
+    if returncode == 0:
+        return None
+
     lowered = output.lower()
     for needle, message in ERROR_HINTS:
         if needle in lowered:
@@ -102,6 +117,7 @@ class M3U8Task(Task):
     manifestType: str = "m3u8"
     isLive: bool = False
     streams: list[dict] = field(default_factory=list)
+    subtitleLanguages: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -116,6 +132,31 @@ class M3U8Task(Task):
                     step.speed = 0
                     step.error = None
             self.updateStatus()
+
+    def isStepSelected(self, step: TaskStep, selectedIndexes: set[int]) -> bool:
+        if isinstance(step, M3U8SubtitleStep):
+            return step.key in self.subtitleLanguages
+        return True
+
+    def setOptions(self, options: dict) -> None:
+        previousPaths = [(step, step.outputPath) for step in self.steps]
+        super().setOptions(options)
+        if "subtitleLanguages" in options:
+            self.subtitleLanguages = list(options["subtitleLanguages"])
+        for step, previousPath in previousPaths:
+            if step.status == TaskStatus.COMPLETED or bool(previousPath) == bool(step.outputPath):
+                continue
+            if previousPath:
+                # 取消未下完的字幕时不留半截文件
+                step.reset()
+                deletePath(Path(previousPath))
+            else:
+                self.completedAt = 0
+        self.updateStatus()
+
+
+def subtitleChoices(task: M3U8Task) -> list[tuple[str, str]]:
+    return [(step.key, step.name or step.key) for step in task.steps if isinstance(step, M3U8SubtitleStep)]
 
 
 @dataclass(kw_only=True)
@@ -166,8 +207,12 @@ class M3U8TaskStep(TaskStep):
         return toPosixPath(self.task.outputFolder / self.task.name)
 
     @property
+    def _saveFolder(self) -> Path:
+        return self.task.partPath
+
+    @property
     def _tempFolder(self) -> str:
-        return toPosixPath(self.task.partPath / "tmp")
+        return toPosixPath(self._saveFolder / "tmp")
 
     @property
     def _saveName(self) -> str:
@@ -208,12 +253,50 @@ class M3U8TaskStep(TaskStep):
         return toPosixPath(folder / "master.m3u8")
 
     def _buildCommand(self, source: str) -> list[str]:
-        def toBool(v: bool) -> str:
-            return "true" if v else "false"
+        args = [source, *self._buildTransferArgs()]
 
+        if self.shouldSelectAllAudioSubtitle:
+            args.append(f"--select-video={self.selectVideo or 'best'}")
+            args.append("--select-audio=all")
+        elif self.selectVideo:
+            args.append(f"--select-video={self.selectVideo}")
+            args.append(f"--auto-select={toBool(self.shouldAutoSelect)}")
+        else:
+            args.append(f"--auto-select={toBool(self.shouldAutoSelect)}")
+        # 精简 FFmpeg 没有字幕编码器，字幕混进成品必然失败；点播字幕由 M3U8SubtitleStep 作为 Side File 下载
+        args.append("--drop-subtitle=for=all")
+
+        if self.task.isLive:
+            args.append("--live-real-time-merge=true")
+            args.append(f"--live-keep-segments={toBool(self.shouldKeepLiveSegments)}")
+            args.append(f"--live-pipe-mux={toBool(self.shouldUseLivePipeMux)}")
+            if self.shouldFixLiveVtt:
+                args.append("--live-fix-vtt-by-audio=true")
+            if self.liveWaitTime > 0:
+                args.append(f"--live-wait-time={self.liveWaitTime}")
+            if self.liveTakeCount > 0:
+                args.append(f"--live-take-count={self.liveTakeCount}")
+            if self.recordLimit:
+                args.append(f"--live-record-limit={self.recordLimit}")
+        elif self.customMuxAfterDone:
+            args.append(f"--mux-after-done={self.customMuxAfterDone}")
+        else:
+            from ffmpeg_pack.config import ffmpegRuntime
+            ffmpegPath = ffmpegRuntime.path()
+            muxOption = f"format={self.outputFormat}:muxer=ffmpeg"
+            if ffmpegPath:
+                muxOption += f":bin_path={ffmpegPath}"
+            args.append(f"--mux-after-done={muxOption}")
+
+        for imp in self.muxImports:
+            text = imp.strip()
+            if text:
+                args.append(f"--mux-import={text}")
+        return args
+
+    def _buildTransferArgs(self) -> list[str]:
         args = [
-            source,
-            f"--save-dir={toPosixPath(self.task.partPath)}",
+            f"--save-dir={toPosixPath(self._saveFolder)}",
             f"--save-name={self._saveName}",
             f"--tmp-dir={self._tempFolder}",
             f"--thread-count={self.threadCount}",
@@ -230,16 +313,6 @@ class M3U8TaskStep(TaskStep):
             "--no-ansi-color=true",
             "--disable-update-check=true",
         ]
-
-        if self.shouldSelectAllAudioSubtitle:
-            args.append(f"--select-video={self.selectVideo or 'best'}")
-            args.append("--select-audio=all")
-            args.append("--select-subtitle=all")
-        elif self.selectVideo:
-            args.append(f"--select-video={self.selectVideo}")
-            args.append(f"--auto-select={toBool(self.shouldAutoSelect)}")
-        else:
-            args.append(f"--auto-select={toBool(self.shouldAutoSelect)}")
 
         if self.maxSpeed > 0:
             args.append(f"--max-speed={self.maxSpeed}{self.speedUnit}")
@@ -273,31 +346,6 @@ class M3U8TaskStep(TaskStep):
                 args.append(f"--key={text}")
         if self.decryptionKeyFile:
             args.append(f"--key-text-file={toPosixPath(Path(self.decryptionKeyFile))}")
-
-        if self.task.isLive:
-            args.append("--live-real-time-merge=true")
-            args.append(f"--live-keep-segments={toBool(self.shouldKeepLiveSegments)}")
-            args.append(f"--live-pipe-mux={toBool(self.shouldUseLivePipeMux)}")
-            if self.shouldFixLiveVtt:
-                args.append("--live-fix-vtt-by-audio=true")
-            if self.liveWaitTime > 0:
-                args.append(f"--live-wait-time={self.liveWaitTime}")
-            if self.liveTakeCount > 0:
-                args.append(f"--live-take-count={self.liveTakeCount}")
-            if self.recordLimit:
-                args.append(f"--live-record-limit={self.recordLimit}")
-        elif self.customMuxAfterDone:
-            args.append(f"--mux-after-done={self.customMuxAfterDone}")
-        else:
-            muxOption = f"format={self.outputFormat}:muxer=ffmpeg"
-            if ffmpegPath:
-                muxOption += f":bin_path={ffmpegPath}"
-            args.append(f"--mux-after-done={muxOption}")
-
-        for imp in self.muxImports:
-            text = imp.strip()
-            if text:
-                args.append(f"--mux-import={text}")
 
         for name, value in self.headers.items():
             text = value.strip()
@@ -427,11 +475,12 @@ class M3U8TaskStep(TaskStep):
             await self._process.wait()
             await outputTask
 
-            if self._process.returncode != 0 and not self._stopping:
-                output = getattr(self, "_processOutput", "")
+            output = getattr(self, "_processOutput", "")
+            error = parseError(output, self._process.returncode)
+            if error is not None and not self._stopping:
                 if output:
                     logger.warning("N_m3u8DL-RE output:\n{}", output[-8192:])
-                raise parseError(output, self._process.returncode)
+                raise error
 
             if not self._findOutputFile():
                 raise TaskError(
@@ -456,3 +505,39 @@ class M3U8TaskStep(TaskStep):
             else:
                 self.setStatus(TaskStatus.PAUSED)
             raise
+
+
+@dataclass(kw_only=True)
+class M3U8SubtitleStep(M3U8TaskStep):
+    """清单中的一路字幕，作为 Side File 由 N_m3u8DL-RE 单独下载。"""
+    language: str = ""
+    name: str = ""
+
+    @property
+    def key(self) -> str:
+        return self.language or self.name
+
+    @property
+    def outputPath(self) -> str:
+        if self.key not in self.task.subtitleLanguages:
+            return ""
+        suffix = f"{toSafeFilename(self.key, fallback='subtitle')}.{self.subtitleFormat.lower()}"
+        return str(self.task.toSidePath(None, suffix))
+
+    @property
+    def _saveFolder(self) -> Path:
+        return self.task.partPath / f"subtitle{self.stepIndex}"
+
+    def _buildCommand(self, source: str) -> list[str]:
+        selector = f'lang="^{re.escape(self.language)}$"' if self.language else f'name="^{re.escape(self.name)}$"'
+        return [source, *self._buildTransferArgs(), "--sub-only", f"--select-subtitle={selector}:for=best"]
+
+    def _findOutputFile(self) -> bool:
+        target = Path(self.outputPath)
+        found = next((c for c in self._saveFolder.glob("*") if c.is_file() and c.suffix.lower() == target.suffix), None)
+        if found is None:
+            # 清单里的字幕已下架时只少一个 Side File，不算任务失败
+            deletePlaceholder(target)
+            return True
+        os.replace(found, target)
+        return True
