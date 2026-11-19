@@ -370,6 +370,14 @@ _Avoid_: 发版、打包、release（指 App）
 用户最近一次填写的自定义地址独立保存，切换到其他模式再切回时仍在。
 _Avoid_: 与 Proxy Site 混淆
 
+**Headers Preset**:
+可复用的默认 HTTP 请求头集合。当前选中的一份在新建 Task 时作为初始请求头拷贝进 Task；修改或删除预设不影响已有 Task。
+_Avoid_: 默认请求头、header template
+
+**Identity Preset**:
+按域名通配规则为请求匹配客户端指纹与 User-Agent 的预设。启用时按主机名自动生效，也可在 Task 选项中显式指定。
+_Avoid_: Identity Rule、client preset、UA 规则
+
 ### GitHub 加速
 
 **Proxy Site**:

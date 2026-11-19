@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any, TYPE_CHECKING
 from uuid import uuid4
 
-from app.signal import Signal
-
 from app.config.cfg import cfg
+from app.i18n import N
+from app.signal import Signal
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 CATEGORY_PRESETS: list[dict[str, Any]] = [
     {
         "categoryId": "cat_video",
-        "name": "视频",
+        "name": N("Categories", "视频"),
         "icon": "VIDEO",
         "folder": "{default}/Video",
         "extensions": [
@@ -27,7 +27,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_audio",
-        "name": "音频",
+        "name": N("Categories", "音频"),
         "icon": "MUSIC",
         "folder": "{default}/Audio",
         "extensions": [
@@ -37,7 +37,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_image",
-        "name": "图片",
+        "name": N("Categories", "图片"),
         "icon": "PHOTO",
         "folder": "{default}/Images",
         "extensions": [
@@ -47,7 +47,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_subtitle",
-        "name": "字幕",
+        "name": N("Categories", "字幕"),
         "icon": "CHAT",
         "folder": "{default}/Subtitles",
         "extensions": [
@@ -57,7 +57,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_document",
-        "name": "文档",
+        "name": N("Categories", "文档"),
         "icon": "DOCUMENT",
         "folder": "{default}/Documents",
         "extensions": [
@@ -68,7 +68,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_archive",
-        "name": "压缩包",
+        "name": N("Categories", "压缩包"),
         "icon": "ZIP_FOLDER",
         "folder": "{default}/Archives",
         "extensions": [
@@ -80,7 +80,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_program",
-        "name": "程序",
+        "name": N("Categories", "程序"),
         "icon": "APPLICATION",
         "folder": "{default}/Programs",
         "extensions": [
@@ -91,7 +91,7 @@ CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_other",
-        "name": "其他",
+        "name": N("Categories", "其他"),
         "icon": "HELP",
         "extensions": [],
     },

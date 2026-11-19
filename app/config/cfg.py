@@ -10,6 +10,7 @@ from urllib.request import getproxies
 
 from app.config.serializers import PathSerializer
 from app.config.paths import APP_DATA_DIR, DOWNLOAD_DIR
+from app.i18n import N
 from qfluentwidgets import (
     QConfig,
     ConfigItem,
@@ -245,7 +246,7 @@ class HeadersPresetListValidator(ConfigValidator):
 
     def correct(self, value) -> list:
         presets = [i for i in value if self._isValid(i)] if isinstance(value, list) else []
-        return presets or [{"name": "默认", "headers": dict(BASE_HEADERS)}]
+        return presets or [{"name": N("Presets", "默认"), "headers": dict(BASE_HEADERS)}]
 
 
 class Config(QConfig):
@@ -375,7 +376,7 @@ class Config(QConfig):
     )
     identityPresets = ConfigItem(
         "Network", "IdentityPresets",
-        [{"name": "百度网盘客户端", "clientProfile": "raw",
+        [{"name": N("Presets", "百度网盘客户端"), "clientProfile": "raw",
           "userAgent": "pan.baidu.com", "hosts": ["*.pcs.baidu.com"],
           "isEnabled": True}],
         IdentityPresetListValidator(), JsonConfigSerializer(list, list),

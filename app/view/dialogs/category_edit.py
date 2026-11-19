@@ -8,6 +8,7 @@ from qfluentwidgets import (
     SubtitleLabel, ToolButton, ToolTipFilter,
 )
 
+from app.i18n import N
 from app.services.category_service import Category
 from app.view.components.category_settings import toCategoryName
 from app.view.components.token_line_edit import TokenLineEdit
@@ -91,7 +92,7 @@ class CategoryEditDialog(MessageBoxBase):
             self.folderEdit.setText(selected)
 
     def category(self) -> Category:
-        name = self.nameEdit.text().strip() or "未命名分类"
+        name = self.nameEdit.text().strip() or N("Categories", "未命名分类")
         extensions = [
             ext for token in self.extensionsEdit.tokens()
             if (ext := token.strip().lstrip(".").lower())

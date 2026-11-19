@@ -183,7 +183,7 @@ class ClientProfileCard(OptionCard):
         if presets:
             menu.addSeparator()
             for preset in presets:
-                action = Action(preset["name"], self)
+                action = Action(QCoreApplication.translate("Presets", preset["name"]), self)
                 action.triggered.connect(
                     lambda _=False, p=preset: self._onPickPreset(p))
                 menu.addAction(action)
@@ -217,7 +217,7 @@ class ClientProfileCard(OptionCard):
     def _onPickPreset(self, preset: dict) -> None:
         self._value = preset["clientProfile"]
         self._userAgent = preset["userAgent"]
-        self.button.setText(preset["name"])
+        self.button.setText(QCoreApplication.translate("Presets", preset["name"]))
 
     def _presetLabelFor(self, clientProfile: str, userAgent: str) -> str:
         if not userAgent:
@@ -225,7 +225,7 @@ class ClientProfileCard(OptionCard):
         from app.config.cfg import cfg
         for preset in cfg.identityPresets.value:
             if preset["clientProfile"] == clientProfile and preset["userAgent"] == userAgent:
-                return preset["name"]
+                return QCoreApplication.translate("Presets", preset["name"])
         return ""
 
 

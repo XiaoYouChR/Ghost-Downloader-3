@@ -493,7 +493,8 @@ class PresetRowWidget(QWidget):
         self._preset = preset
 
         self.iconWidget = IconWidget(FluentIcon.VPN, self)
-        self.nameLabel = StrongBodyLabel(preset.get("name", ""), self)
+        self.nameLabel = StrongBodyLabel(
+            QCoreApplication.translate("Presets", preset.get("name", "")), self)
         self.descLayout = QHBoxLayout()
         self.switchButton = SwitchButton(self)
         self.editButton = PrimaryToolButton(FluentIcon.EDIT, self)
@@ -706,7 +707,8 @@ class IdentitySettingCard(CollapsibleSettingCard):
         presets = list(cfg.identityPresets.value)
         if index < 0 or index >= len(presets):
             return
-        name = presets[index].get("name", self.tr("未命名预设"))
+        rawName = presets[index].get("name", "")
+        name = QCoreApplication.translate("Presets", rawName) if rawName else self.tr("未命名预设")
         dialog = MessageBox(
             self.tr("删除预设"),
             self.tr("确定要删除 {0} 吗？").format(name),
@@ -737,7 +739,8 @@ class HeadersPresetRow(QWidget):
         self._onEdit = onEdit
         self._onRemove = onRemove
 
-        self.radioButton = RadioButton(preset["name"], self)
+        self.radioButton = RadioButton(
+            QCoreApplication.translate("Presets", preset["name"]), self)
         self.countLabel = CaptionLabel(
             self.tr("{0} 条标头").format(len(preset["headers"])), self)
         self.editButton = PrimaryToolButton(FluentIcon.EDIT, self)
@@ -821,7 +824,7 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
             self._rowWidgets.append(row)
 
         self.viewLayout.addWidget(self.buttonContainer)
-        self.choiceLabel.setText(presets[current]["name"])
+        self.choiceLabel.setText(QCoreApplication.translate("Presets", presets[current]["name"]))
 
     def _onPick(self, index: int) -> None:
         cfg.set(cfg.currentHeadersPreset, index)
@@ -851,7 +854,8 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
     def _onRemoveClicked(self, index: int) -> None:
         from qfluentwidgets import MessageBox
         presets = list(cfg.headersPresets.value)
-        name = presets[index].get("name", self.tr("未命名预设"))
+        rawName = presets[index].get("name", "")
+        name = QCoreApplication.translate("Presets", rawName) if rawName else self.tr("未命名预设")
         dialog = MessageBox(
             self.tr("删除预设"),
             self.tr("确定要删除 {0} 吗？").format(name),
@@ -876,7 +880,7 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
         for i, r in enumerate(self._rowWidgets):
             r.radioButton.setChecked(i == newCurrent)
             r.removeButton.setEnabled(canRemove)
-        self.choiceLabel.setText(presets[newCurrent]["name"])
+        self.choiceLabel.setText(QCoreApplication.translate("Presets", presets[newCurrent]["name"]))
 
 
 class SelectFileCard(SettingCard):

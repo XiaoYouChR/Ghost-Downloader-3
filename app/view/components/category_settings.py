@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N, QCoreApplication, Signal
+from PySide6.QtCore import QCoreApplication, Signal
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, FluentIcon, IconWidget, IndicatorPosition,
@@ -11,16 +11,6 @@ from app.config.cfg import cfg
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.services.category_service import Category
-
-N("Categories", "视频")
-N("Categories", "音频")
-N("Categories", "图片")
-N("Categories", "字幕")
-N("Categories", "文档")
-N("Categories", "压缩包")
-N("Categories", "程序")
-N("Categories", "其他")
-N("Categories", "未命名分类")
 
 
 def toCategoryName(category: Category) -> str:

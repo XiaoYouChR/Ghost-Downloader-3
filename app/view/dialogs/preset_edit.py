@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import (
     BodyLabel, DropDownPushButton, FluentIcon, InfoBar, LineEdit,
@@ -70,7 +71,7 @@ class PresetEditDialog(MessageBoxBase):
         self._refreshProfileLabel()
         if self._preset is None:
             return
-        self.nameEdit.setText(self._preset.get("name", ""))
+        self.nameEdit.setText(QCoreApplication.translate("Presets", self._preset.get("name", "")))
         self.hostsEdit.setTokens(self._preset.get("hosts", []))
         self.uaEdit.setText(self._preset.get("userAgent", ""))
 
@@ -111,8 +112,11 @@ class PresetEditDialog(MessageBoxBase):
         return False
 
     def preset(self) -> dict:
+        name = self.nameEdit.text().strip() or self.tr("未命名预设")
+        if self._preset and name == QCoreApplication.translate("Presets", self._preset.get("name", "")):
+            name = self._preset["name"]
         result = {
-            "name": self.nameEdit.text().strip() or self.tr("未命名预设"),
+            "name": name,
             "clientProfile": self._profileValue,
             "userAgent": self.uaEdit.text().strip(),
             "hosts": self.hostsEdit.tokens(),

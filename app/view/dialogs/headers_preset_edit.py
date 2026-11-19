@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import InfoBar, LineEdit, MessageBoxBase
 
@@ -13,6 +13,7 @@ class HeadersPresetEditDialog(MessageBoxBase):
 
     def __init__(self, parent=None, *, preset: dict):
         super().__init__(parent)
+        self._preset = preset
         self.nameEdit = LineEdit(self)
         self.editor = HeadersEditor(self, defaults=BASE_HEADERS)
         self.scrollArea = ScrollArea(self.widget)
@@ -26,7 +27,7 @@ class HeadersPresetEditDialog(MessageBoxBase):
         self.yesButton.setText(self.tr("确定"))
         self.cancelButton.setText(self.tr("取消"))
         self.nameEdit.setPlaceholderText(self.tr("预设名称"))
-        self.nameEdit.setText(preset["name"])
+        self.nameEdit.setText(QCoreApplication.translate("Presets", preset["name"]))
         self.editor.setHeaders(preset["headers"])
 
     def _initLayout(self) -> None:
@@ -56,7 +57,10 @@ class HeadersPresetEditDialog(MessageBoxBase):
         super().done(code)
 
     def preset(self) -> dict:
+        name = self.nameEdit.text().strip() or self.tr("未命名预设")
+        if name == QCoreApplication.translate("Presets", self._preset["name"]):
+            name = self._preset["name"]
         return {
-            "name": self.nameEdit.text().strip() or self.tr("未命名预设"),
+            "name": name,
             "headers": self.editor.headers(),
         }

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from app.config.cfg import ConfigItem, OptionsConfigItem, OptionsValidator
+from app.i18n import N
 from app.models.pack import PackConfig
 
 if TYPE_CHECKING:
@@ -13,10 +14,10 @@ if TYPE_CHECKING:
 QUALITY_VALUES = [16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]
 QUALITY_LABELS = [
     "360P", "480P", "720P", "720P60", "1080P", "1080P+",
-    "1080P60", "4K", "HDR", "杜比视界", "8K",
+    "1080P60", "4K", "HDR", N("BilibiliConfig", "杜比视界"), "8K",
 ]
 AUDIO_QUALITY_VALUES = [30216, 30232, 30280, 30250, 30251]
-AUDIO_QUALITY_LABELS = ["64K", "132K", "192K", "杜比全景声", "Hi-Res"]
+AUDIO_QUALITY_LABELS = ["64K", "132K", "192K", N("BilibiliConfig", "杜比全景声"), "Hi-Res"]
 
 
 class BilibiliConfig(PackConfig):
@@ -45,10 +46,10 @@ class BilibiliConfig(PackConfig):
             BilibiliLoginSettingCard(self._account, group),
             ComboBoxSettingCard(self.defaultQuality, FluentIcon.VIDEO, self.tr("默认画质"),
                                 self.tr("选择偏好的视频画质"),
-                                texts=QUALITY_LABELS, parent=group),
+                                texts=[self.tr(x) for x in QUALITY_LABELS], parent=group),
             ComboBoxSettingCard(self.defaultAudioQuality, FluentIcon.MUSIC, self.tr("默认音质"),
                                 self.tr("选择偏好的音质"),
-                                texts=AUDIO_QUALITY_LABELS, parent=group),
+                                texts=[self.tr(x) for x in AUDIO_QUALITY_LABELS], parent=group),
             ComboBoxSettingCard(self.defaultDanmaku, FluentIcon.CHAT, self.tr("默认弹幕"),
                                 self.tr("选择默认下载的弹幕格式"),
                                 texts=[self.tr("不下载"), "ASS", "XML"], parent=group),
