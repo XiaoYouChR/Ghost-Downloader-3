@@ -38,31 +38,6 @@ BASE_HEADERS = {
     "upgrade-insecure-requests": "1",
 }
 
-class Language(Enum):
-    CHINESE_SIMPLIFIED = "zh_CN"
-    CHINESE_TRADITIONAL = "zh_TW"
-    CANTONESE = "yue_HK"
-    ENGLISH_UNITED_STATES = "en_US"
-    JAPANESE = "ja_JP"
-    RUSSIAN = "ru_RU"
-    PORTUGUESE_BRAZIL = "pt_BR"
-    SPANISH = "es_ES"
-    AUTO = "Auto"
-
-
-# 语言的展示标签，AUTO 由视图层翻译
-LANGUAGE_TEXTS = {
-    Language.CHINESE_SIMPLIFIED: "简体中文 (中国大陆)",
-    Language.CHINESE_TRADITIONAL: "正體中文 (台灣)",
-    Language.CANTONESE: "粤语 (香港)",
-    Language.ENGLISH_UNITED_STATES: "English (US)",
-    Language.JAPANESE: "日本語 (日本)",
-    Language.RUSSIAN: "Русский (Россия)",
-    Language.PORTUGUESE_BRAZIL: "Português (Brasil)",
-    Language.SPANISH: "Español (España)",
-}
-
-
 class CloseMode(Enum):
     ASK = "Ask"
     BACKGROUND = "Background"
@@ -130,15 +105,12 @@ class GeometrySerializer(ConfigSerializer):
             return (0, 0, 0, 0)
 
 
-class LanguageSerializer(ConfigSerializer):
-    def serialize(self, language):
-        return language.value
-
-    def deserialize(self, value: str):
-        try:
-            return Language(value)
-        except ValueError:
-            return Language.AUTO
+class LanguageConfigItem(ConfigItem):
+    # 语言列表要等 resources.rcc 注册后才读得到，加载配置时无法校验
+    @property
+    def options(self) -> list[str]:
+        from app.i18n import loadLanguages
+        return ["Auto", *loadLanguages()]
 
 
 class ThemeSerializer(ConfigSerializer):
@@ -328,10 +300,7 @@ class Config(QConfig):
         shouldShowDockIcon = ConfigItem("Personalization", "ShowDockIcon", True, BoolValidator())
         shouldShowDockSpeed = ConfigItem("Personalization", "ShowDockSpeed", True, BoolValidator())
         shouldShowMenuBarSpeed = ConfigItem("Personalization", "ShowMenuBarSpeed", True, BoolValidator())
-    language = OptionsConfigItem(
-        "Personalization", "Language", Language.AUTO,
-        OptionsValidator(Language), LanguageSerializer(), restart=True,
-    )
+    language = LanguageConfigItem("Personalization", "Language", "Auto", restart=True)
 
     # 软件
     shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())

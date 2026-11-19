@@ -12,38 +12,16 @@ I18N_DIR = REPO / "app" / "assets" / "i18n"
 BROWSER_I18N_DIR = REPO / "browser_extension" / "app" / "public" / "_locales"
 
 ANDROID_RES_DIR = REPO / "android" / "app" / "src" / "main" / "res"
-ANDROID_SOURCE_FILES = [
-    "strings.xml",
-    "strings_identity.xml",
-    "strings_settings.xml",
-    "strings_settings_edit.xml",
-    "strings_settings_flow.xml",
-    "strings_task_bar.xml",
-    "strings_tasks.xml",
-]
-ANDROID_LOCALE_FOLDERS = {
-    "en_US": "values-en",
-    "ja_JP": "values-ja",
-    "ru_RU": "values-ru",
-    "zh_TW": "values-zh-rTW",
-    "zh_HK": "values-zh-rHK",
-    "pt_BR": "values-pt-rBR",
-    "es_ES": "values-es",
-}
+ANDROID_FOLDER = "values-en"
+ANDROID_GENERATED_FILES = {"strings_engine.xml", "strings_fallback.xml"}
 
-API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-API_URL = "https://api.deepseek.com/chat/completions"
-MODEL = "deepseek-v4-pro"
+BASE_URL = os.environ.get("TRANSLATE_BASE_URL", "").rstrip("/")
+MODEL = os.environ.get("TRANSLATE_MODEL", "")
+API_KEY = os.environ.get("TRANSLATE_API_KEY", "")
 
-LOCALES = {
-    "en_US": "English (United States)",
-    "ja_JP": "日本語 (Japanese)",
-    "ru_RU": "Русский (Russian)",
-    "zh_HK": "繁體中文 (Hong Kong)",
-    "zh_TW": "繁體中文 (Taiwan)",
-    "pt_BR": "Português (Brasil)",
-    "es_ES": "Español (España)",
-}
+LOCALE = "en_US"
+LOCALE_NAME = "English (United States)"
+BROWSER_LOCALE = "en"
 
 SYSTEM_PROMPT_DESKTOP = """\
 将下载管理器 Ghost Downloader 3 的 UI 文本从简体中文翻译为 {locale_name}。
@@ -135,7 +113,7 @@ def fetchTranslation(system: str, user: str) -> str:
         "reasoning_effort": "low",
     }
     req = Request(
-        API_URL,
+        f"{BASE_URL}/chat/completions",
         data=json.dumps(payload).encode(),
         headers={
             "Content-Type": "application/json",
@@ -222,22 +200,6 @@ def translateLocale(locale: str, localeName: str) -> None:
     print(f"[{locale}] {status}: {count}/{len(unfinished)} filled")
 
 
-def checkLocales(locales: dict[str, str]) -> int:
-    total = 0
-    for locale in locales:
-        tsPath = I18N_DIR / f"gd3.{locale}.ts"
-        if not tsPath.exists():
-            print(f"  {locale}: .ts not found")
-            continue
-        _, _, unfinished = parseTs(tsPath)
-        total += len(unfinished)
-        if unfinished:
-            print(f"  {locale}: {len(unfinished)} unfinished")
-        else:
-            print(f"  {locale}: up to date")
-    return total
-
-
 def parseBrowserMessages(path: Path) -> dict[str, dict]:
     if not path.exists():
         return {}
@@ -281,20 +243,9 @@ def parseBrowserResponse(text: str) -> dict[str, str]:
     return translations
 
 
-BROWSER_LOCALE_MAP = {
-    "en_US": "en_US",
-    "ja_JP": "ja",
-    "ru_RU": "ru",
-    "zh_HK": "zh_HK",
-    "zh_TW": "zh_TW",
-    "pt_BR": "pt_BR",
-}
-
-
 def translateBrowserLocale(locale: str, localeName: str) -> None:
-    chromeLocale = BROWSER_LOCALE_MAP.get(locale, locale)
     sourceDir = BROWSER_I18N_DIR / "zh_CN"
-    targetDir = BROWSER_I18N_DIR / chromeLocale
+    targetDir = BROWSER_I18N_DIR / BROWSER_LOCALE
 
     source = parseBrowserMessages(sourceDir / "messages.json")
     if not source:
@@ -334,24 +285,6 @@ def translateBrowserLocale(locale: str, localeName: str) -> None:
     missed = len(untranslated) - filled
     status = "done" if missed == 0 else f"done ({missed} missed)"
     print(f"[browser:{locale}] {status}: {filled}/{len(untranslated)} filled")
-
-
-def checkBrowserLocales(locales: dict[str, str]) -> int:
-    total = 0
-    source = parseBrowserMessages(BROWSER_I18N_DIR / "zh_CN" / "messages.json")
-    if not source:
-        print("  browser: source messages.json not found")
-        return 0
-    for locale in locales:
-        chromeLocale = BROWSER_LOCALE_MAP.get(locale, locale)
-        existing = parseBrowserMessages(BROWSER_I18N_DIR / chromeLocale / "messages.json")
-        missing = len(set(source) - set(existing))
-        total += missing
-        if missing > 0:
-            print(f"  browser:{locale}: {missing} untranslated")
-        else:
-            print(f"  browser:{locale}: up to date")
-    return total
 
 
 def parseAndroidStrings(path: Path) -> dict[str, str]:
@@ -417,19 +350,16 @@ def escapeAndroidXml(text: str) -> str:
 
 
 def translateAndroidLocale(locale: str, localeName: str) -> None:
-    folder = ANDROID_LOCALE_FOLDERS.get(locale)
-    if not folder:
-        print(f"[android:{locale}] No folder mapping")
-        return
-
     sourceDir = ANDROID_RES_DIR / "values"
-    localeDir = ANDROID_RES_DIR / folder
+    localeDir = ANDROID_RES_DIR / ANDROID_FOLDER
+    sourceFiles = [path.name for path in sorted(sourceDir.glob("strings*.xml"))
+                   if path.name not in ANDROID_GENERATED_FILES]
 
     allSource: dict[str, tuple[str, str]] = {}
     allExisting: dict[str, tuple[str, str]] = {}
     untranslated: dict[str, tuple[str, str]] = {}
 
-    for fname in ANDROID_SOURCE_FILES:
+    for fname in sourceFiles:
         source = parseAndroidStrings(sourceDir / fname)
         existing = parseAndroidStrings(localeDir / fname)
         for name, text in source.items():
@@ -462,7 +392,7 @@ def translateAndroidLocale(locale: str, localeName: str) -> None:
             filled += 1
 
     localeDir.mkdir(parents=True, exist_ok=True)
-    for fname in ANDROID_SOURCE_FILES:
+    for fname in sourceFiles:
         source = parseAndroidStrings(sourceDir / fname)
         existing = parseAndroidStrings(localeDir / fname)
         newTranslations = fileEntries.get(fname, {})
@@ -482,77 +412,24 @@ def translateAndroidLocale(locale: str, localeName: str) -> None:
     print(f"[android:{locale}] {status}: {filled}/{len(untranslated)} filled")
 
 
-def checkAndroidLocales(locales: dict[str, str]) -> int:
-    total = 0
-    sourceDir = ANDROID_RES_DIR / "values"
-    for locale in locales:
-        folder = ANDROID_LOCALE_FOLDERS.get(locale)
-        if not folder:
-            continue
-        localeDir = ANDROID_RES_DIR / folder
-        missing = 0
-        for fname in ANDROID_SOURCE_FILES:
-            source = parseAndroidStrings(sourceDir / fname)
-            existing = parseAndroidStrings(localeDir / fname)
-            missing += len(set(source) - set(existing))
-        total += missing
-        if missing > 0:
-            print(f"  android:{locale}: {missing} untranslated")
-        else:
-            print(f"  android:{locale}: up to date")
-    return total
-
-
 def main() -> int:
-    args = sys.argv[1:]
-    check = "--check" in args
-    browser = "--browser" in args
-    android = "--android" in args
-    targets = [a for a in args if not a.startswith("-")]
-
-    if targets:
-        invalid = [t for t in targets if t not in LOCALES]
-        if invalid:
-            print(f"Unknown locales: {', '.join(invalid)}", file=sys.stderr)
-            print(f"Available: {', '.join(LOCALES)}", file=sys.stderr)
-            return 1
-        locales = {k: LOCALES[k] for k in targets}
-    else:
-        locales = LOCALES
-
-    if check:
-        if android:
-            total = checkAndroidLocales(locales)
-        elif browser:
-            total = checkBrowserLocales(locales)
-        else:
-            total = checkLocales(locales)
-        return 0 if total == 0 else 2
-
-    if not API_KEY:
-        print("Set DEEPSEEK_API_KEY environment variable", file=sys.stderr)
+    if not (BASE_URL and MODEL and API_KEY):
+        print("Set TRANSLATE_BASE_URL, TRANSLATE_MODEL and TRANSLATE_API_KEY", file=sys.stderr)
         return 1
 
-    if android:
-        translateFn = translateAndroidLocale
-    elif browser:
-        translateFn = translateBrowserLocale
-    else:
-        translateFn = translateLocale
+    translateFns = [translateLocale, translateBrowserLocale]
+    if ANDROID_RES_DIR.exists():
+        translateFns.append(translateAndroidLocale)
 
     failed = False
-    with ThreadPoolExecutor(max_workers=len(locales)) as pool:
-        futures = {
-            pool.submit(translateFn, loc, name): loc
-            for loc, name in locales.items()
-        }
+    with ThreadPoolExecutor(max_workers=len(translateFns)) as pool:
+        futures = {pool.submit(fn, LOCALE, LOCALE_NAME): fn.__name__ for fn in translateFns}
         for fut in as_completed(futures):
-            loc = futures[fut]
             try:
                 fut.result()
             except Exception as exc:
                 failed = True
-                print(f"[{loc}] ERROR: {exc}", file=sys.stderr)
+                print(f"[{futures[fut]}] ERROR: {exc}", file=sys.stderr)
 
     return 1 if failed else 0
 

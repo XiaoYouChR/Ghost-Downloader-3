@@ -1,0 +1,130 @@
+name: i18n
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**/*.py"
+      - "features/**/*.py"
+      - "browser_extension/app/public/_locales/zh_CN/messages.json"
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: OpenAI 兼容接口的 Base URL
+        required: false
+      model:
+        description: 模型名
+        required: false
+      api_key:
+        description: API Key
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: i18n
+  cancel-in-progress: false
+
+env:
+  CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+  CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mask API key
+        if: inputs.api_key != ''
+        run: echo "::add-mask::${{ inputs.api_key }}"
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Ghost-Downloader-Android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          path: android
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install tools
+        run: |
+          pip install --timeout=300 "pyside6~=6.10.3"
+          npm install -g @crowdin/cli@5
+
+      - name: Upload sources
+        run: |
+          python scripts/sync_i18n_res.py
+          crowdin upload sources --no-progress
+          (cd android && crowdin upload sources --no-progress)
+
+      - name: Machine translate English
+        if: inputs.api_key != ''
+        env:
+          TRANSLATE_BASE_URL: ${{ inputs.base_url }}
+          TRANSLATE_MODEL: ${{ inputs.model }}
+          TRANSLATE_API_KEY: ${{ inputs.api_key }}
+        run: |
+          crowdin download -l en-US --no-progress
+          (cd android && crowdin download -l en-US --no-progress)
+          python scripts/translate_i18n.py
+          crowdin upload translations -l en-US --no-progress
+          (cd android && crowdin upload translations -l en-US --no-progress)
+
+      - name: Download translations
+        if: github.event_name != 'push'
+        run: |
+          languages=$(python scripts/list_i18n_languages.py)
+          crowdin download $languages --no-progress
+          (cd android && crowdin download $languages --no-progress)
+          python scripts/sync_i18n_res.py
+
+      - name: Update Crowdin contributors
+        if: github.event_name != 'push'
+        uses: andrii-bodnar/action-crowdin-contributors@v3
+        with:
+          files: |
+            README.md
+            README_zh.md
+          contributors_per_line: 8
+          max_contributors: 32
+          image_size: 64
+          min_words_contributed: 100
+
+      - name: Create translation pull request
+        if: github.event_name != 'push'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/crowdin-translations
+          delete-branch: true
+          title: "chore(i18n): 同步 Crowdin 译文"
+          commit-message: "chore(i18n): 同步 Crowdin 译文"
+          body: 由 i18n workflow 从 Crowdin 下载译文后自动生成。
+          add-paths: |
+            app/assets/i18n/*
+            app/assets/resources.qrc
+            app/assets/resources.rcc
+            browser_extension/app/public/_locales/**
+            README.md
+            README_zh.md
+
+      - name: Create Android translation pull request
+        if: github.event_name != 'push'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          path: android
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          branch: chore/crowdin-translations
+          delete-branch: true
+          title: "chore(i18n): 同步 Crowdin 译文"
+          commit-message: "chore(i18n): 同步 Crowdin 译文"
+          body: 由公开仓库的 i18n workflow 从 Crowdin 下载译文后自动生成。
+          add-paths: |
+            app/src/main/res/values*/strings*.xml
+            app/src/main/java/com/xychr/ghostdownloader/i18n/EngineStrings.kt

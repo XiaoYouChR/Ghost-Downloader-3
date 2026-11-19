@@ -81,6 +81,14 @@ https://github.com/user-attachments/assets/c1e21cdd-4454-4df3-b55a-6bc010709c74
 </p>
 
 <!-- COMMAND LINE -->
+## 翻译
+
+Ghost Downloader 的翻译统一在 [Crowdin](https://gdi18n.xychr.com) 上进行，请勿提交修改翻译文件的 PR。
+
+- 如果 Crowdin 上还没有你的语言，请在 [Discussions](https://github.com/XiaoYouChR/Ghost-Downloader-3/discussions/categories/翻译-translations) 中申请。
+- 原文为简体中文。英文译文经 [@i0ntempest](https://github.com/i0ntempest) 人工校对，可在 Crowdin 编辑器的 **Other Languages** 面板中参考。
+- 新语言的桌面端翻译完成 60% 后即会加入应用，尚未翻译的内容以英文显示。
+
 ## 命令行
 
 在 **设置 -> 命令行工具** 中安装 `ghd` 后即可使用。
@@ -139,9 +147,6 @@ ghd wait tsk_0123
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 ## 翻译贡献者
-
-> [!TIP]
-> 如果你想为 Ghost Downloader 贡献翻译，欢迎前往 Crowdin 项目页: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
 
 <!-- CROWDIN-CONTRIBUTORS-START -->
 <table>

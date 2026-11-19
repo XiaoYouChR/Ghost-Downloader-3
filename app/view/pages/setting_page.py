@@ -13,8 +13,8 @@ from qfluentwidgets import (
 
 from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
 
-from app.config.cfg import NoticeStyle, canShowPopup, cfg, LANGUAGE_TEXTS
-from app.i18n import toLocalizedError
+from app.config.cfg import NoticeStyle, canShowPopup, cfg
+from app.i18n import toLanguageText, toLocalizedError
 from app.models.task import toTaskError
 from app.services.port_listener import ListenStatus
 from app.config.constants import (
@@ -288,8 +288,7 @@ class SettingPage(QWidget):
         personalCards.append(
             ComboBoxSettingCard(cfg.language, FluentIcon.LANGUAGE, self.tr("语言"),
                                 self.tr("设置界面的首选语言"),
-                                texts=[LANGUAGE_TEXTS.get(lang, self.tr("使用系统设置"))
-                                       for lang in cfg.language.options]),
+                                texts=[self.tr("使用系统设置"), *map(toLanguageText, cfg.language.options[1:])]),
         )
         self.personalGroup.addSettingCards(personalCards)
 

@@ -20,8 +20,8 @@ from qfluentwidgets import (
 from qfluentwidgets import MSFluentTitleBar
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
-from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.i18n import toLocalizedError
+from app.config.cfg import cfg
+from app.i18n import toLanguageText, toLocalizedError
 from app.models.task import toTaskError
 from app.platform.desktop import openChromiumUrl, revealInFolder
 from app.platform.file_association import registerUrlScheme, unregisterUrlScheme
@@ -332,8 +332,7 @@ class BasicSettingsPage(QWidget):
 
         self.langCombo = ComboBox(self)
         self.langCombo.setMinimumWidth(200)
-        for lang in cfg.language.options:
-            self.langCombo.addItem(LANGUAGE_TEXTS.get(lang, self.tr("使用系统设置")))
+        self.langCombo.addItems([self.tr("使用系统设置"), *map(toLanguageText, cfg.language.options[1:])])
         self.langCombo.setCurrentIndex(cfg.language.options.index(cfg.language.value))
 
         self.browseButton = PushButton(self.tr("浏览..."), self)

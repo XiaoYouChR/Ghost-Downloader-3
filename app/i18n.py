@@ -2,6 +2,37 @@ def N(context, text):
     return text
 
 
+# 只放 Qt 本地名称不合适的语言
+LANGUAGE_TEXTS = {
+    "zh_CN": "简体中文 (中国大陆)",
+    "zh_TW": "正體中文 (台灣)",
+    "yue_HK": "粤语 (香港)",
+    "en_US": "English (US)",
+    "ja_JP": "日本語 (日本)",
+    "ru_RU": "Русский (Россия)",
+    "pt_BR": "Português (Brasil)",
+    "es_ES": "Español (España)",
+    "id_ID": "Bahasa Indonesia",
+}
+
+
+def loadLanguages() -> list[str]:
+    from PySide6.QtCore import QDir
+    names = QDir(":/i18n").entryList(["gd3.*_*.qm"])
+    codes = sorted(name.removeprefix("gd3.").removesuffix(".qm") for name in names)
+    # 粤语的设置值是 yue_HK，文件却叫 zh_HK
+    return ["yue_HK" if code == "zh_HK" else code for code in codes]
+
+
+def toLanguageText(code: str) -> str:
+    if code in LANGUAGE_TEXTS:
+        return LANGUAGE_TEXTS[code]
+    from PySide6.QtCore import QLocale
+    locale = QLocale(code)
+    name = locale.nativeLanguageName()
+    return f"{name[:1].upper()}{name[1:]} ({locale.nativeTerritoryName()})"
+
+
 def toLocalizedError(error) -> str:
     from PySide6.QtCore import QCoreApplication
     text = QCoreApplication.translate("TaskErrors", error.message) or error.message

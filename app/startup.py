@@ -20,18 +20,22 @@ def loadResources(application: Application) -> None:
 
 
 def loadTranslators(application: Application) -> None:
-    from PySide6.QtCore import QLocale, QTranslator
+    from PySide6.QtCore import QLocale, QTranslator, Qt
     from app.config.cfg import cfg
 
     translator = QTranslator(application)
+    if cfg.language.value not in cfg.language.options:
+        cfg.language.value = "Auto"
 
     def setLocale():
-        localeName = cfg.language.value.value
+        localeName = cfg.language.value
         locale = QLocale() if localeName == "Auto" else QLocale(localeName)
         application.removeTranslator(translator)
+        application.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         if locale.name() != "zh_CN":
             if translator.load(locale, "gd3", ".", ":/i18n") or translator.load("gd3.en_US", ":/i18n"):
                 application.installTranslator(translator)
+                application.setLayoutDirection(QLocale(translator.language()).textDirection())
 
     setLocale()
     cfg.language.valueChanged.connect(setLocale)

@@ -86,7 +86,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
 
     from PySide6.QtCore import QLocale
     from app.platform.desktop import buildFontFamilies
-    localeName = cfg.language.value.value
+    localeName = cfg.language.value
     locale = QLocale() if localeName == "Auto" else QLocale(localeName)
     cfg.set(cfg.fontFamilies, buildFontFamilies(locale, application.font().defaultFamily()), save=False)
     application.setQuitOnLastWindowClosed(False)

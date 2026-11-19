@@ -80,6 +80,14 @@ https://github.com/user-attachments/assets/d97dc8c9-f320-4645-8dcd-0d9dc4cf2eab
 </p>
 
 <!-- COMMAND LINE -->
+## Translation
+
+We translate Ghost Downloader on [Crowdin](https://gdi18n.xychr.com). Do not send pull requests that change translation files.
+
+- Your language is not on Crowdin? Request it in [Discussions](https://github.com/XiaoYouChR/Ghost-Downloader-3/discussions/categories/翻译-translations).
+- The source text is Simplified Chinese. [@i0ntempest](https://github.com/i0ntempest) reviews the English translation by hand. To see it, open the **Other Languages** panel in the Crowdin editor.
+- A new language goes into the app when 60% of the desktop text is translated. Text that is not translated shows in English.
+
 ## Command Line
 
 Install `ghd` from **Settings -> Command Line Tool**.
@@ -138,9 +146,6 @@ Thanks to all contributors who have participated in this project!
 [![Contributors](https://contrib.rocks/image?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 ## Translation Contributors
-
-> [!TIP]
-> If you'd like to help translate Ghost Downloader, welcome to join the Crowdin project: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
 
 <!-- CROWDIN-CONTRIBUTORS-START -->
 <table>

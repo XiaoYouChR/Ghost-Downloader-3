@@ -1,0 +1,15 @@
+title: "[Language] "
+body:
+- type: markdown
+  attributes:
+    value: |
+      译文只在 [Crowdin](https://gdi18n.xychr.com) 上修改，请不要上传 `.ts`、`messages.json` 等翻译文件。如果你的语言已经在 Crowdin 上，直接去翻译即可，不必申请。
+      Translations are edited on [Crowdin](https://gdi18n.xychr.com) only, so please don't attach `.ts`, `messages.json` or other translation files. If your language is already on Crowdin, just start translating there; no request is needed.
+
+- type: input
+  id: language
+  attributes:
+    label: 语言 / Language
+    description: 例如 Turkish (Türkçe) / e.g. Turkish (Türkçe)
+  validations:
+    required: true
