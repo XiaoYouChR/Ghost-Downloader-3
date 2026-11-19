@@ -2,47 +2,40 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import QAbstractAnimation, QByteArray, QEasingCurve, QEvent, QPropertyAnimation, Qt
-import qfluentwidgets
+from PySide6.QtCore import QAbstractAnimation, QEvent, Qt
+
+if sys.platform == "darwin":
+    from qfluentwidgets import ScrollArea as FluentScrollArea
+else:
+    from qfluentwidgets import SmoothScrollArea as FluentScrollArea
 
 
-class ScrollArea(qfluentwidgets.ScrollArea if sys.platform == "darwin" else qfluentwidgets.SmoothScrollArea):
+class ScrollArea(FluentScrollArea):
 
     def __init__(self, parent=None):
-        self._viewport = None
         super().__init__(parent)
-        self._viewport = self.viewport()
-        bar = self.scrollDelagate.vScrollBar if sys.platform == "darwin" else self.delegate.vScrollBar
-        self._vBar = bar
-        self._scrollAnim = QPropertyAnimation(bar, QByteArray(b"val"), self)
-        self._scrollAnim.setDuration(250)
-        self._scrollAnim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        bar.sliderPressed.connect(self._scrollAnim.stop)
-        self._viewport.installEventFilter(self)
+        if sys.platform == "darwin":
+            self._smoothBar = self.scrollDelagate.vScrollBar
+            self.viewport().installEventFilter(self)
+        else:
+            self._smoothBar = self.delegate.vScrollBar
 
-    @property
-    def isScrolling(self) -> bool:
-        return self._scrollAnim.state() == QAbstractAnimation.State.Running
+    def scrollTo(self, y: int) -> None:
+        self._smoothBar.ani.stop()
+        self._smoothBar.scrollTo(y)
 
-    def scrollTo(self, y: int, *, animate: bool = True) -> None:
-        bar = self.verticalScrollBar()
-        target = max(bar.minimum(), min(bar.maximum(), y))
-        self._scrollAnim.stop()
-        self._vBar.ani.stop()
-        self._vBar.resetValue(target)
-        if not animate or target == bar.value():
-            bar.setValue(target)
-            return
-        self._scrollAnim.setStartValue(bar.value())
-        self._scrollAnim.setEndValue(target)
-        self._scrollAnim.start()
+    def scrollTarget(self) -> int:
+        ani = self._smoothBar.ani
+        if ani.state() == QAbstractAnimation.State.Running:
+            return ani.endValue()
+        return self._smoothBar.value()
 
-    def eventFilter(self, obj, event) -> bool:
-        if event.type() == QEvent.Type.Wheel and obj is self._viewport:
-            self._scrollAnim.stop()
-        return super().eventFilter(obj, event)
-
-    if sys.platform != "darwin":
+    if sys.platform == "darwin":
+        def eventFilter(self, obj, event) -> bool:
+            if event.type() == QEvent.Type.Wheel and obj is self.viewport():
+                self._smoothBar.ani.stop()
+            return super().eventFilter(obj, event)
+    else:
         def enableTransparentBackground(self) -> None:
             self.setStyleSheet("QScrollArea{border: none; background: transparent}")
             self.viewport().setStyleSheet("background: transparent")

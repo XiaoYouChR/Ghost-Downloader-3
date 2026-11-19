@@ -334,7 +334,7 @@ class SettingGroupNav(ListWidget):
         self._targetArea = targetArea
         self._partnerBar = targetArea.verticalScrollBar()
         self._connected: set[CollapsibleSettingCardGroup] = set()
-        self._lockedGroup: CollapsibleSettingCardGroup | None = None
+        self._jumpGroup: CollapsibleSettingCardGroup | None = None
 
         self._initWidget()
         self._initLayout()
@@ -362,8 +362,8 @@ class SettingGroupNav(ListWidget):
         for i in range(self.count()):
             item = self.item(i)
             item.setHidden(item.data(Qt.ItemDataRole.UserRole).isHidden())
-        if self._lockedGroup is not None and self._lockedGroup.isHidden():
-            self._lockedGroup = None
+        if self._jumpGroup is not None and self._jumpGroup.isHidden():
+            self._jumpGroup = None
         self._refreshActive()
 
     def _rebuild(self, groups: list[CollapsibleSettingCardGroup]) -> None:
@@ -390,17 +390,16 @@ class SettingGroupNav(ListWidget):
         group: CollapsibleSettingCardGroup = item.data(Qt.ItemDataRole.UserRole)
         group.setCollapsed(False, animate=False)
         self._targetArea.widget().adjustSize()
-        want = max(0, group.y() - PAGE_MARGIN)
-        maxVal = self._partnerBar.maximum()
-        self._lockedGroup = group if want > maxVal else None
+        self._jumpGroup = group
         self._selectRow(self.row(item))
-        self._targetArea.scrollTo(min(maxVal, want))
+        self._targetArea.scrollTo(group.y() - PAGE_MARGIN)
+
+    def _scrollValueOf(self, group: CollapsibleSettingCardGroup) -> int:
+        return max(0, min(self._partnerBar.maximum(), group.y() - PAGE_MARGIN))
 
     def _refreshActive(self, *_) -> None:
-        if self._targetArea.isScrolling:
-            return
-        if self._lockedGroup is not None and self._partnerBar.value() < self._partnerBar.maximum() - 2:
-            self._lockedGroup = None
+        if self._jumpGroup is not None and self._targetArea.scrollTarget() != self._scrollValueOf(self._jumpGroup):
+            self._jumpGroup = None
         visible = [
             (i, g) for i in range(self.count())
             if not (g := self.item(i).data(Qt.ItemDataRole.UserRole)).isHidden()
@@ -409,9 +408,9 @@ class SettingGroupNav(ListWidget):
             if self.selectionModel().hasSelection():
                 self.clearSelection()
             return
-        if self._lockedGroup is not None:
+        if self._jumpGroup is not None:
             for row, g in visible:
-                if g is self._lockedGroup:
+                if g is self._jumpGroup:
                     self._selectRow(row)
                     return
         anchorY = self._partnerBar.value() + PAGE_MARGIN + 24
