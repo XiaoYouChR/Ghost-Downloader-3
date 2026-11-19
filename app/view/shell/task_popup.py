@@ -161,12 +161,7 @@ class TaskPopup(Popup):
             self.refresh()
 
     def _onMinimizeClicked(self) -> None:
-        if sys.platform != "win32":
-            self.showMinimized()
-            return
-        from app.platform.taskbar import minimizeWithoutActivating
-        pos = self._targetPos
-        minimizeWithoutActivating(int(self.winId()), pos.x(), pos.y(), self.width(), self.height())
+        self.showMinimized()
 
     def _onToggleClicked(self) -> None:
         if self._task.status == TaskStatus.PAUSED:
