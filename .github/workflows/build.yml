@@ -657,11 +657,69 @@ jobs:
           uv python install 3.13
           uv sync
 
+      - name: Resolve fcitx5-qt plugin cache key
+        id: fcitx5_meta
+        run: |
+          PYSIDE6_VERSION=$(uv run --no-sync python -c "import PySide6; print(PySide6.__version__)")
+          FCITX5_QT_TAG=$(uv run --no-sync scripts/build_fcitx5_plugin.py --print-tag)
+          echo "pyside6_version=$PYSIDE6_VERSION" >> "$GITHUB_OUTPUT"
+          echo "fcitx5_qt_tag=$FCITX5_QT_TAG" >> "$GITHUB_OUTPUT"
+          echo "PySide6=$PYSIDE6_VERSION fcitx5-qt=$FCITX5_QT_TAG"
+
+      - name: Cache fcitx5-qt plugin
+        id: fcitx5_cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/fcitx5-qt-plugin
+          key: fcitx5-qt-plugin-${{ matrix.architecture }}-${{ steps.fcitx5_meta.outputs.pyside6_version }}-${{ steps.fcitx5_meta.outputs.fcitx5_qt_tag }}
+
+      - name: Build fcitx5-qt plugin
+        if: ${{ steps.fcitx5_cache.outputs.cache-hit != 'true' }}
+        run: |
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            pkg-config \
+            extra-cmake-modules \
+            libxkbcommon-dev \
+            libxcb1-dev \
+            libx11-dev \
+            libwayland-dev \
+            libgl-dev \
+            patchelf
+          uv run --no-sync scripts/build_fcitx5_plugin.py \
+            --qt-version "${{ steps.fcitx5_meta.outputs.pyside6_version }}" \
+            --arch "${{ matrix.architecture }}" \
+            --tag "${{ steps.fcitx5_meta.outputs.fcitx5_qt_tag }}" \
+            --output-dir ~/.cache/fcitx5-qt-plugin
+
+      - name: Install fcitx5-qt plugin into PySide6
+        run: |
+          PLUGIN_DIR=$(uv run --no-sync python -c "import PySide6, pathlib; print(pathlib.Path(PySide6.__file__).parent / 'Qt/plugins/platforminputcontexts')")
+          cp ~/.cache/fcitx5-qt-plugin/libfcitx5platforminputcontextplugin.so "$PLUGIN_DIR/"
+
       - name: Build with Nuitka
         run: |
           echo "VERSION=${{ needs.prepare.outputs.version }}" >> "$GITHUB_ENV"
           uv run scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
+
+      - name: Verify Linux input method plugins
+        run: |
+          IM_DIR="dist/Ghost-Downloader-3.dist/PySide6/qt-plugins/platforminputcontexts"
+          test -f "$IM_DIR/libfcitx5platforminputcontextplugin.so"
+          test -f "$IM_DIR/libibusplatforminputcontextplugin.so"
+          test -f "$IM_DIR/libcomposeplatforminputcontextplugin.so"
+          test ! -f "$IM_DIR/libqtvirtualkeyboardplugin.so"
+          for plugin in "$IM_DIR"/*.so; do
+            echo "Checking $plugin"
+            LDD_OUT=$(ldd "$plugin")
+            echo "$LDD_OUT"
+            if grep -q "not found" <<< "$LDD_OUT"; then
+              echo "::error::Missing shared library dependency in $plugin"
+              exit 1
+            fi
+          done
 
       - name: Build .deb and .AppImage
         run: |
