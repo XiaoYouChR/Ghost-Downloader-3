@@ -7,7 +7,6 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 from loguru import logger
 
@@ -102,7 +101,7 @@ class M3U8Task(Task):
     canEdit = True
     manifestType: str = "m3u8"
     isLive: bool = False
-    streams: list[dict[str, Any]] = field(default_factory=list)
+    streams: list[dict] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -121,7 +120,6 @@ class M3U8Task(Task):
 
 @dataclass(kw_only=True)
 class M3U8TaskStep(TaskStep):
-    _task: M3U8Task = field(repr=False, init=False)
     headers: dict[str, str] = field(default_factory=dict)
     threadCount: int = 8
     retryCount: int = 3
@@ -160,10 +158,6 @@ class M3U8TaskStep(TaskStep):
     liveTotal: str = ""
 
     @property
-    def task(self) -> M3U8Task:
-        return self._task
-
-    @property
     def canPause(self) -> bool:
         return not self.task.isLive
 
@@ -179,7 +173,7 @@ class M3U8TaskStep(TaskStep):
     def _saveName(self) -> str:
         return Path(self.task.name).stem
 
-    def setOptions(self, options: dict[str, Any]) -> None:
+    def setOptions(self, options: dict) -> None:
         if "headers" in options:
             self.headers = options["headers"]
         if "selectVideo" in options:
@@ -352,7 +346,7 @@ class M3U8TaskStep(TaskStep):
             self.liveStatus = recordMatch.group(3)
             self.speed = 0 if recordMatch.group(4) == "-" else toBytes(recordMatch.group(5), recordMatch.group(6))
 
-    async def _readOutput(self, stream: asyncio.StreamReader) -> None:
+    async def _readOutput(self, stream: asyncio.StreamReader):
         rawChunks = []
         buffer = ""
         while True:
@@ -401,7 +395,7 @@ class M3U8TaskStep(TaskStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         self._stopping = False
         self._process = None

@@ -32,7 +32,7 @@ class GitHubProxySiteCard(SettingCard):
         self._initLayout()
         self._bind()
 
-    def _initWidget(self) -> None:
+    def _initWidget(self):
         self.comboBox.setMinimumWidth(260)
         self.customSiteEdit.setPlaceholderText("https://example.com/")
         self.customSiteEdit.setClearButtonEnabled(True)
@@ -50,7 +50,7 @@ class GitHubProxySiteCard(SettingCard):
         self.customSiteEdit.setText(githubConfig.customSite.value)
         self.customSiteEdit.setVisible(currentSite == CUSTOM_SITE_KEY)
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         self.hBoxLayout.addWidget(self.comboBox)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.customSiteEdit)
@@ -58,7 +58,7 @@ class GitHubProxySiteCard(SettingCard):
         self.hBoxLayout.addWidget(self.refreshButton)
         self.hBoxLayout.addSpacing(16)
 
-    def _bind(self) -> None:
+    def _bind(self):
         self.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
         self.customSiteEdit.editingFinished.connect(self._onCustomSiteEditingFinished)
         self.refreshButton.clicked.connect(self.refreshLatencies)
@@ -72,7 +72,7 @@ class GitHubProxySiteCard(SettingCard):
             return self.tr("超时")
         return f"{latency} ms"
 
-    def _refreshLatencyLabels(self) -> None:
+    def _refreshLatencyLabels(self):
         for i, site in enumerate(GITHUB_PROXY_SITES, start=1):
             displayName = urlparse(site).netloc or site.rstrip("/")
             tag = self._latencyTag(self._latencies.get(site))
@@ -85,14 +85,14 @@ class GitHubProxySiteCard(SettingCard):
         customLabel = f"{self.tr('自定义')} ({tag})" if tag else self.tr("自定义")
         self.comboBox.setItemText(SITE_OPTIONS.index(CUSTOM_SITE_KEY), customLabel)
 
-    def _onCurrentIndexChanged(self, index: int) -> None:
+    def _onCurrentIndexChanged(self, index: int):
         from app.config.cfg import cfg
         if index < 0:
             return
         cfg.set(githubConfig.selectedSite, SITE_OPTIONS[index])
         self.customSiteEdit.setVisible(SITE_OPTIONS[index] == CUSTOM_SITE_KEY)
 
-    def _onCustomSiteEditingFinished(self) -> None:
+    def _onCustomSiteEditingFinished(self):
         from app.config.cfg import cfg
         cfg.set(githubConfig.customSite, self.customSiteEdit.text().strip())
 
@@ -109,13 +109,13 @@ class GitHubProxySiteCard(SettingCard):
             owner=self,
         )
 
-    def _onLatenciesDone(self, latencies: dict[str, int]) -> None:
+    def _onLatenciesDone(self, latencies: dict[str, int]):
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
         self._latencies.update(latencies)
         self._refreshLatencyLabels()
 
-    def _onLatenciesFailed(self, error: BaseException) -> None:
+    def _onLatenciesFailed(self, error):
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
 

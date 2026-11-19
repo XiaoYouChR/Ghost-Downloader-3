@@ -58,17 +58,12 @@ ED2K_PEERS_FIELD = FieldSpec("peers", FluentIcon.INFO, {
 
 
 class ED2kTaskCard(TaskCard):
-    _task: ED2kTask
     infoFields = [
         SPEED_FIELD, ED2K_UPLOAD_FIELD, ETA_FIELD, SIZE_FIELD,
         ED2K_PEERS_FIELD,
     ]
 
-    @property
-    def task(self) -> ED2kTask:
-        return self._task
-
-    def _refreshForStatus(self, task: ED2kTask) -> None:
+    def _refreshForStatus(self, task: ED2kTask):
         super()._refreshForStatus(task)
         if self._isFileMissing:
             return

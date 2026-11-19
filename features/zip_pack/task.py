@@ -6,10 +6,9 @@ import shutil
 import zipfile
 from collections.abc import Awaitable, Callable, Iterable
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import cast
 
 from app.models.task import Task, TaskError, TaskFile, TaskStatus, TaskStep, deletePlaceholder
 from app.platform.filesystem import deletePath, splitStemExt
@@ -29,17 +28,16 @@ class ZipTask(Task):
     packId: str = "zip"
     canEdit = True
     fileType = ZipEntry
-    files: list[ZipEntry] = field(default_factory=list)
     tailOffset: int = 0
     metadataEncoding: str = ""
 
     @property
     def archiveStep(self) -> HttpTaskStep:
-        return cast(HttpTaskStep, self.steps[0])
+        return self.steps[0]
 
     @property
     def extractStep(self) -> ZipExtractStep:
-        return cast(ZipExtractStep, self.steps[1])
+        return self.steps[1]
 
     @property
     def isWhole(self) -> bool:
@@ -135,11 +133,6 @@ def extractFile(archive: zipfile.ZipFile, innerPath: str, path: Path) -> None:
 
 @dataclass(kw_only=True)
 class ZipExtractStep(TaskStep):
-    _task: ZipTask = field(repr=False, init=False)
-
-    @property
-    def task(self) -> ZipTask:
-        return self._task
 
     async def run(
         self,

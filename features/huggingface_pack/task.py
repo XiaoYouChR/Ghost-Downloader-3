@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 from app.client import buildClient
@@ -67,11 +67,6 @@ class HuggingFaceFile(TaskFile):
 
 @dataclass(kw_only=True)
 class HuggingFaceStep(HttpTaskStep):
-    _task: HuggingFaceTask = field(repr=False, init=False)
-
-    @property
-    def task(self) -> HuggingFaceTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -95,7 +90,7 @@ class HuggingFaceStep(HttpTaskStep):
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> HuggingFaceStep:
         from app.config.cfg import cfg
-        hfFile: HuggingFaceFile = file  # type: ignore[assignment]
+        hfFile: HuggingFaceFile = file
         return cls(
             stepIndex=file.index + 1,
             url=hfFile.downloadUrl,
@@ -111,7 +106,6 @@ class HuggingFaceTask(Task):
     packId: str = "huggingface"
     canEdit = True
     fileType = HuggingFaceFile
-    files: list[HuggingFaceFile] = field(default_factory=list)
     repoId: str = ""
     repoType: str = "model"
     revision: str = "main"
@@ -135,7 +129,7 @@ class HuggingFaceTask(Task):
         waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         # 按当前设置刷新 Step，修改 Token 或 Mirror Site 后重试即可生效
-        steps = [s for s in self.pendingSteps() if isinstance(s, HuggingFaceStep)]
+        steps = list(self.pendingSteps())
         if steps:
             token = huggingFaceConfig.accessToken.value
             site = await probeSite(steps[0].url, token)

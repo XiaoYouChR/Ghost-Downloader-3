@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from base64 import b64decode
 from pathlib import Path
-from typing import Any
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N, Qt, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QPixmap
@@ -31,7 +30,6 @@ from qfluentwidgets import (
 from app.client import buildClient
 from app.config.cfg import cfg
 from app.models.pack import FeaturePack, PackPage
-from app.models.task import Task
 
 from app.view.components.scroll_area import ScrollArea
 
@@ -39,7 +37,7 @@ CATALOG_API = "https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicro
 CONTENT_MARGIN = 16
 
 
-async def fetchCatalog() -> list[dict[str, Any]]:
+async def fetchCatalog() -> list[dict]:
     client = buildClient()
     try:
         response = await client.get(CATALOG_API)
@@ -68,10 +66,10 @@ class CatalogPage(PackPage, ScrollArea):
         self._bind()
         self._loadCatalog()
 
-    def _initWidget(self) -> None:
+    def _initWidget(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         self._layout.setSpacing(8)
         self._layout.setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN)
         self._layout.addWidget(self._loadingWidget, 1, Qt.AlignmentFlag.AlignCenter)
@@ -80,10 +78,10 @@ class CatalogPage(PackPage, ScrollArea):
         self.setWidgetResizable(True)
         self.enableTransparentBackground()
 
-    def _bind(self) -> None:
+    def _bind(self):
         self._loadingWidget.retryRequested.connect(self._loadCatalog)
 
-    def _loadCatalog(self) -> None:
+    def _loadCatalog(self):
         self._loadingWidget.setLoading()
         self._pack.submit(
             fetchCatalog(),
@@ -91,7 +89,7 @@ class CatalogPage(PackPage, ScrollArea):
             owner=self,
         )
 
-    def _onCatalogLoaded(self, items: list[dict[str, Any]]) -> None:
+    def _onCatalogLoaded(self, items: list[dict]):
         for card in self._cards:
             self._layout.removeWidget(card)
             card.deleteLater()
@@ -109,10 +107,10 @@ class CatalogPage(PackPage, ScrollArea):
 
         self._layout.addStretch(1)
 
-    def _onCatalogFailed(self, error: Exception) -> None:
+    def _onCatalogFailed(self, error: str):
         self._loadingWidget.setError(self.tr("加载失败，请检查网络后重试\n") + str(error))
 
-    def _onDownloadRequested(self, items: list[dict[str, Any]]) -> None:
+    def _onDownloadRequested(self, items: list[dict]):
         CatalogDownloadDialog(self._pack, self.window(), items).exec()
 
 
@@ -161,9 +159,9 @@ class LoadingWidget(QWidget):
 class CatalogCard(SimpleCardWidget):
     downloadRequested = Signal(list)
 
-    def __init__(self, item: dict[str, Any], parent: QWidget | None = None) -> None:
+    def __init__(self, item: dict, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._catalogItems: list[dict[str, Any]] = item["List"]
+        self._catalogItems: list[dict] = item["List"]
         self._videoUrl: str = item["Video"]
         self.setFixedHeight(91)
 
@@ -190,7 +188,7 @@ class CatalogCard(SimpleCardWidget):
         self._initLayout()
         self._bind()
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         textLayout = QVBoxLayout()
         textLayout.setSpacing(0)
         textLayout.addWidget(self._titleLabel)
@@ -203,11 +201,11 @@ class CatalogCard(SimpleCardWidget):
         mainLayout.addWidget(self._downloadButton)
         mainLayout.addWidget(self._videoButton)
 
-    def _bind(self) -> None:
+    def _bind(self):
         self._downloadButton.clicked.connect(self._onDownloadClicked)
         self._videoButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self._videoUrl)))
 
-    def _onDownloadClicked(self) -> None:
+    def _onDownloadClicked(self):
         self.downloadRequested.emit(self._catalogItems)
 
 
@@ -216,7 +214,7 @@ class CatalogDownloadDialog(MessageBoxBase):
         self,
         pack: JackYaoPack,
         parent: QWidget | None = None,
-        catalogItems: list[dict[str, Any]] | None = None,
+        catalogItems: list[dict] | None = None,
     ) -> None:
         self._pack = pack
         from app.view.components.card_groups import OptionCardGroup
@@ -261,7 +259,7 @@ class CatalogDownloadDialog(MessageBoxBase):
         self.yesButton.clicked.disconnect()
         self.yesButton.clicked.connect(self._onStartClicked)
 
-    def _onStartClicked(self) -> None:
+    def _onStartClicked(self):
         from qfluentwidgets import InfoBar, InfoBarPosition
         from app.models.task import ResourceTaskOptions
 
@@ -271,12 +269,12 @@ class CatalogDownloadDialog(MessageBoxBase):
         window = self.window()
         failedTitle = self.tr("下载失败")
 
-        def onParsed(task: Task) -> None:
+        def onParsed(task):
             for step in task.steps:
                 step.setOptions(options)
             self._pack.addTask(task)
 
-        def onFailed(error: Exception) -> None:
+        def onFailed(error):
             InfoBar.error(failedTitle, str(error), duration=-1,
                           position=InfoBarPosition.BOTTOM_RIGHT, parent=window)
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.config.cfg import cfg
@@ -16,6 +15,7 @@ from app.services.speed_meter import SpeedMeter
 from app.services.task_service import NameConflictChoice, TaskService
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from PySide6.QtCore import QFileSystemWatcher
     from app.services.coroutine_runner import CoroutineRunner
 

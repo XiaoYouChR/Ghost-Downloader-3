@@ -78,9 +78,9 @@ class PortListener:
         coroutineRunner: CoroutineRunner,
         handle: Handle,
         *,
-        isEnabled: ConfigItem[bool],
+        isEnabled: ConfigItem,
         port: RangeConfigItem,
-        shouldAutoSelect: ConfigItem[bool] | None = None,
+        shouldAutoSelect: ConfigItem | None = None,
         fallbackPorts: tuple[int, ...] = (),
     ) -> None:
         self._coroutineRunner = coroutineRunner

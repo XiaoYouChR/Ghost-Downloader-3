@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import urllib.parse
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 ALL_DASH_STREAMS = 4048
 
 
-def toStreamUrl(s: dict[str, Any]) -> str:
+def toStreamUrl(s: dict) -> str:
     url = s.get("baseUrl") or s.get("base_url") or ""
     if url:
         return url
@@ -26,7 +26,7 @@ def toStreamUrl(s: dict[str, Any]) -> str:
     return ""
 
 
-def buildSize(stream: dict[str, Any] | None, duration: int) -> int:
+def buildSize(stream: dict | None, duration: int) -> int:
     if not stream or duration <= 0:
         return 0
     return int(stream.get("bandwidth") or 0) * duration // 8
@@ -123,7 +123,7 @@ async def fetchPlayurl(
     *,
     qn: int,
     headers: dict[str, str],
-    signParams: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    signParams: Callable[[dict], dict] | None = None,
     audioQn: int,
 ) -> tuple[list[int], list[str], int]:
     if signParams is None:
@@ -183,7 +183,7 @@ async def fetchBuvid(client: wreq.Client) -> str:
         return ""
 
 
-async def fetchSubtitles(client: wreq.Client, page: BiliPage) -> list[dict[str, Any]]:
+async def fetchSubtitles(client: wreq.Client, page: BiliPage) -> list[dict]:
     try:
         params: dict = {"cid": page.cid}
         if page.bvid:

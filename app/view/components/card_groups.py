@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QSize, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
+from PySide6.QtGui import QColor, QFont, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
 from qfluentwidgets import CaptionLabel, FluentIcon, ToolTipFilter, TransparentToolButton, setFont, isDarkTheme
 
@@ -195,8 +195,8 @@ class OptionCardGroup(TitledCardGroup):
         self._cards.insert(index, card)
         self.scrollLayout.insertWidget(index, card, alignment=Qt.AlignmentFlag.AlignTop)
 
-    def options(self) -> dict[str, Any]:
-        result: dict[str, Any] = {}
+    def options(self) -> dict:
+        result: dict = {}
         for card in self._cards:
             result.update(card.options())
         return result

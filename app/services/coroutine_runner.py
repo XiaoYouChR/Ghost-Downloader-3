@@ -28,16 +28,16 @@ class CoroutineRunner:
         self._pending: dict[str, tuple] = {}
         self._running: dict[str, asyncio.Task] = {}
 
-    def _run(self) -> None:
+    def _run(self):
         self._loop.run_forever()
         self._loop.close()
 
     def start(self) -> None:
         self._thread.start()
 
-    def submit[T](
+    def submit(
         self,
-        work: Coroutine[object, object, T],
+        work: Coroutine,
         done: Callable[..., object] | None = None,
         failed: Callable[..., object] | None = None,
         *args: object,
@@ -85,7 +85,7 @@ class CoroutineRunner:
         self._pending.pop(workId, None)
         task = self._running.pop(workId, None)
         if task is not None:
-            def scheduleCancel() -> None:
+            def scheduleCancel():
                 if finished is not None:
                     task.add_done_callback(lambda _: self.post(finished))
                 task.cancel()
@@ -96,7 +96,7 @@ class CoroutineRunner:
         return False
 
     def post(self, callback: Callable[..., object], *args: object, **kwargs: object) -> None:
-        def wrapper() -> None:
+        def wrapper():
             try:
                 callback(*args, **kwargs)
             except Exception as e:
@@ -104,12 +104,12 @@ class CoroutineRunner:
 
         self._dispatcher(wrapper)
 
-    def _guard(self, owner: QObject, callback: Callable[..., object] | None) -> Callable[..., None] | None:
+    def _guard(self, owner, callback: Callable) -> Callable | None:
         if callback is None:
             return None
         isAlive = self._isAlive
 
-        def guarded(*args: object, **kwargs: object) -> None:
+        def guarded(*args, **kwargs):
             if isAlive is None or isAlive(owner):
                 callback(*args, **kwargs)
 

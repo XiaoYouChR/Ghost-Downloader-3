@@ -10,7 +10,6 @@ from contextlib import suppress
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
-from typing import Any
 
 from loguru import logger
 from wreq import HeaderMap
@@ -132,7 +131,7 @@ class HttpTaskStep(TaskStep):
         """可从任意线程调用，读循环在下一个数据块或读超时时收尾。"""
         self.isFinishing = True
 
-    def setOptions(self, options: dict[str, Any]) -> None:
+    def setOptions(self, options: dict) -> None:
         if "headers" in options:
             self.headers = options["headers"]
         if "clientProfile" in options:

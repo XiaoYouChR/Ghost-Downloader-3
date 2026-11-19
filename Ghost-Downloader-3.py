@@ -9,16 +9,14 @@ from typing import TYPE_CHECKING
 from app.config.paths import APP_DATA_DIR
 
 if TYPE_CHECKING:
-    from types import TracebackType
     from desktop_notifier.common import Notification
-    from app.models.task import Task, TaskError, TaskOptions
+    from app.models.task import Task
     from app.platform.application import Application
     from app.platform.instance import PrimaryInstance
     from app.services.browser_service import PairRequest
-    from app.services.update_service import UpdateInfo
 
 
-def _exceptionHook(exceptionType: type[BaseException], value: BaseException, tb: TracebackType | None) -> None:
+def _exceptionHook(exceptionType, value, tb):
     from loguru import logger
     info = (exceptionType, value, tb)
     logger.opt(exception=info).error("Unhandled application exception")
@@ -79,7 +77,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     from app.startup import loadResources, setupThemeColor, createEngine, deleteBackupDir, deleteLegacyAppIdFiles, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
 
-    def exceptionHook(exceptionType: type[BaseException], value: BaseException, tb: TracebackType | None) -> None:
+    def exceptionHook(exceptionType, value, tb):
         _exceptionHook(exceptionType, value, tb)
         message = "".join(traceback.format_exception(exceptionType, value, tb)).rstrip()
         signalBus.exceptionCaught.emit(message)
@@ -134,11 +132,11 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
 
     window: MainWindow | None = None
 
-    def emptyWorkingSetIfIdle() -> None:
+    def emptyWorkingSetIfIdle():
         if window is None and taskService.runningCount() == 0:
             emptyWorkingSet()
 
-    def onWindowDestroyed() -> None:
+    def onWindowDestroyed():
         nonlocal window
         window = None
         emptyWorkingSetIfIdle()
@@ -157,12 +155,12 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         raiseWindow(window)
         return window
 
-    def onTaskDraftRequested(tasks: list[TaskOptions], error: TaskError | None) -> None:
+    def onTaskDraftRequested(tasks, error):
         if window is None:
             createWindow().setupPacks()
         window.addTasks(tasks, error)
 
-    def onExtensionUpdated(version: str) -> None:
+    def onExtensionUpdated(version):
         from qfluentwidgets import InfoBar, InfoBarPosition
         w = show()
         InfoBar.success(w.tr("浏览器扩展已更新"), f"v{version}",
@@ -182,7 +180,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         engine.start()
 
         oobe = OobeWindow(browserService, engine.browserListener, coroutineRunner, featureService, engine.runtimeStatusService)
-        def onOobePairRequestChanged(request: PairRequest | None) -> None:
+        def onOobePairRequestChanged(request):
             if request is not None:
                 oobe.onPairRequested(request)
 
@@ -363,7 +361,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         signalBus.activationRequested.connect(show)
 
     from app.services.update_service import UpdateState
-    def onUpdateChanged(info: UpdateInfo) -> None:
+    def onUpdateChanged(info):
         if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
             show().onUpdateAvailable(info)
         elif info.targetId != "app" and info.state == UpdateState.AVAILABLE:
@@ -381,7 +379,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     updateService.changed.connect(onUpdateChanged)
     checkUpdateAtStartup(updateService)
 
-    def onAboutToQuit() -> None:
+    def onAboutToQuit():
         engine.stop()
         updateService.apply()
         coroutineRunner.stop()

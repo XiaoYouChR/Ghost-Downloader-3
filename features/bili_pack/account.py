@@ -5,7 +5,7 @@ import time
 import urllib.parse
 from functools import reduce
 from hashlib import md5
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qsl, urlparse
 
 from app.client import buildClient
@@ -73,7 +73,7 @@ def toCookie(raw: str) -> str:
     return "; ".join(f"{n}={parts[n]}" for n in ordered + extra)
 
 
-def toMixinKey(data: dict[str, Any]) -> str:
+def toMixinKey(data: dict) -> str:
     wbiImg = data.get("wbi_img") or {}
     imgUrl = str(wbiImg.get("img_url") or "")
     subUrl = str(wbiImg.get("sub_url") or "")
@@ -85,7 +85,7 @@ def toMixinKey(data: dict[str, Any]) -> str:
     return reduce(lambda s, i: s + orig[i], MIXIN_KEY_ENC_TAB, "")[:32]
 
 
-def signWbiParams(params: dict[str, Any], mixinKey: str) -> dict[str, Any]:
+def signWbiParams(params: dict, mixinKey: str) -> dict:
     if not mixinKey:
         return params
     params["wts"] = round(time.time())
@@ -141,11 +141,11 @@ class BilibiliAccount:
     def vip(self) -> str:
         return self._vip
 
-    def _updateWbiKeys(self, data: dict[str, Any]) -> None:
+    def _updateWbiKeys(self, data: dict) -> None:
         if key := toMixinKey(data):
             self._mixinKey = key
 
-    def signParams(self, params: dict[str, Any]) -> dict[str, Any]:
+    def signParams(self, params: dict) -> dict:
         return signWbiParams(params, self._mixinKey)
 
     # ── QR login (wreq via coroutineRunner) ──
@@ -212,7 +212,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    def _onQrLoginDone(self, cookie: str | None) -> None:
+    def _onQrLoginDone(self, cookie: str | None):
         self._qrWorkId = ""
         if cookie is None:
             return
@@ -222,7 +222,7 @@ class BilibiliAccount:
         else:
             self.qrStateChanged.emit(QR_LOGIN_FAILED, "登录成功，但未能提取到有效 Cookie")
 
-    def _onQrLoginFailed(self, error: Exception) -> None:
+    def _onQrLoginFailed(self, error):
         self._qrWorkId = ""
         self.qrStateChanged.emit(QR_LOGIN_FAILED, str(error))
 
@@ -235,7 +235,7 @@ class BilibiliAccount:
         cookie = toCookie(cookie)
         oldCookie = self.cookie
         if oldCookie and oldCookie != cookie:
-            def onDone(_: object) -> None:
+            def onDone(_):
                 cfg.set(bilibiliConfig.userCookie, cookie)
                 self.accountChanged.emit()
                 if cookie:
@@ -291,7 +291,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def _fetchAccountInfo(self) -> dict[str, Any]:
+    async def _fetchAccountInfo(self) -> dict:
         cookie = self.cookie
         if not cookie:
             return {"isLoggedIn": False, "uname": ""}
@@ -332,7 +332,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    def _onLogoutDone(self, shouldClear: bool) -> None:
+    def _onLogoutDone(self, shouldClear: bool):
         if shouldClear:
             from app.config.cfg import cfg
             cfg.set(bilibiliConfig.userCookie, "")
@@ -341,10 +341,10 @@ class BilibiliAccount:
             self._vip = ""
             self.accountChanged.emit()
 
-    def _onLogoutFailed(self, error: Exception) -> None:
+    def _onLogoutFailed(self, error: str):
         self.accountChanged.emit()
 
-    def _onAccountInfoDone(self, result: dict[str, Any]) -> None:
+    def _onAccountInfoDone(self, result: dict):
         self._username = result.get("uname", "")
         self._mid = result.get("mid", "")
         self._vip = result.get("vip", "")
@@ -375,7 +375,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def fetchCountries(self) -> dict[str, Any]:
+    async def fetchCountries(self) -> dict:
         client = buildClient()
         try:
             response = await client.get(COUNTRY_LIST_API)
@@ -393,7 +393,7 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    async def _fetchZone(self, client: wreq.Client) -> int:
+    async def _fetchZone(self, client) -> int:
         try:
             response = await client.get(ZONE_API)
             response.raise_for_status()

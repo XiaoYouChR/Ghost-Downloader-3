@@ -7,17 +7,19 @@ from wreq.redirect import Policy
 
 from app.client import buildClient
 from app.i18n import N
-from app.models.pack import FeaturePack, PackServices, TaskParser
+from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
 from .config import bilibiliConfig
-from .parse import BiliUrl, buildFavoritePages, buildPages, matchFavoriteVideo, matchShortUrl, parseBiliUrl, toHttps
+from .parse import buildFavoritePages, buildPages, matchFavoriteVideo, matchShortUrl, parseBiliUrl, toHttps
 from .stream import buildSize, fetchPlayurl, toStreamUrl
 from .task import BiliPage, BilibiliTask
 
 if TYPE_CHECKING:
     import wreq
+    from app.models.pack import PackServices
+    from .parse import BiliUrl
     from PySide6.QtWidgets import QWidget
     from app.view.cards.draft_cards import DraftCard
     from app.view.cards.task_cards import TaskCard
@@ -25,7 +27,6 @@ if TYPE_CHECKING:
 
 
 class BilibiliParser(TaskParser):
-    pack: BilibiliPack
     priority = 50
 
     def match(self, options: TaskOptions) -> bool:
@@ -157,8 +158,8 @@ async def fetchRedirectUrl(client: wreq.Client, url: str) -> str:
 
 
 async def fetchFavorite(client: wreq.Client, favoriteId: int) -> tuple[list[BiliPage], str, str]:
-    medias: list[dict[str, Any]] = []
-    info: dict[str, Any] = {}
+    medias: list[dict] = []
+    info: dict = {}
     pageNumber = 1
     while True:
         data = await fetchApi(
@@ -172,7 +173,7 @@ async def fetchFavorite(client: wreq.Client, favoriteId: int) -> tuple[list[Bili
             break
         pageNumber += 1
 
-    pageLists: dict[str, list[dict[str, Any]]] = {}
+    pageLists: dict[str, list[dict]] = {}
     for media in filter(matchFavoriteVideo, medias):
         hasFirstCid = bool((media.get("ugc") or {}).get("first_cid"))
         if int(media.get("page") or 1) > 1 or not hasFirstCid:
@@ -197,7 +198,7 @@ async def fetchApi(client: wreq.Client, url: str) -> Any:
     return payload.get("data")
 
 
-async def fetchView(client: wreq.Client, biliUrl: BiliUrl) -> dict[str, Any]:
+async def fetchView(client: wreq.Client, biliUrl: BiliUrl) -> dict:
     videoId = biliUrl.videoId
     if not videoId and biliUrl.seasonId:
         listUrl = (

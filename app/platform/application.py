@@ -13,10 +13,7 @@ from loguru import logger
 from app.config.constants import DESKTOP_ID
 
 if TYPE_CHECKING:
-    from types import FrameType
-    from app.view.dialogs.name_conflict import NameConflictPrompt
     from app.view.shell.clipboard_listener import ClipboardListener
-    from app.view.shell.mac_status_item import MacStatusItem
 
 
 class Application(QApplication):
@@ -31,8 +28,6 @@ class Application(QApplication):
             self.setDesktopFileName(DESKTOP_ID)
         self.isFileDragActive: bool = False
         self.clipboardListener: ClipboardListener | None = None
-        self.nameConflictPrompt: NameConflictPrompt | None = None
-        self.statusItem: MacStatusItem | None = None
         signal(SIGINT, self._onInterrupt)
 
     def event(self, e: QEvent) -> bool:
@@ -45,6 +40,6 @@ class Application(QApplication):
             self.systemPaletteChanged.emit()
         return super().event(e)
 
-    def _onInterrupt(self, _signum: int, _frame: FrameType | None) -> None:
+    def _onInterrupt(self, _signum, _frame) -> None:
         logger.error("KeyboardInterrupt, quitting")
         self.quit()

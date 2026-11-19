@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 from app.models.task import Task, TaskError, TaskFile, TaskStep, TaskStatus, SpecialFileSize, deletePlaceholder
 
@@ -159,10 +158,10 @@ class BiliPage(TaskFile):
     endTime: int = 0
     headers: dict[str, str] = field(default_factory=dict)
     subworkerCount: int = 8
-    subtitles: list[dict[str, Any]] = field(default_factory=list)
+    subtitles: list[dict] = field(default_factory=list)
     _duration: int = field(default=0, repr=False)
-    _videoStreams: list[dict[str, Any]] = field(default_factory=list, repr=False)
-    _audioStreams: list[dict[str, Any]] = field(default_factory=list, repr=False)
+    _videoStreams: list[dict] = field(default_factory=list, repr=False)
+    _audioStreams: list[dict] = field(default_factory=list, repr=False)
 
 
 @dataclass(kw_only=True, eq=False)
@@ -170,7 +169,6 @@ class BilibiliTask(Task):
     packId: str = "bili"
     canEdit = True
     fileType = BiliPage
-    files: list[BiliPage] = field(default_factory=list)
     coverUrl: str = ""
     coverSize: int = 0
     isVideoEnabled: bool = True
@@ -464,11 +462,6 @@ class BilibiliTask(Task):
 
 @dataclass(kw_only=True)
 class BilibiliCoverStep(HttpTaskStep):
-    _task: BilibiliTask = field(repr=False, init=False)
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -477,13 +470,8 @@ class BilibiliCoverStep(HttpTaskStep):
 
 @dataclass(kw_only=True)
 class BilibiliVideoStep(FFmpegResourceStep):
-    _task: BilibiliTask = field(repr=False, init=False)
     role: str = "video"
     fileIndex: int = 0
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -496,7 +484,7 @@ class BilibiliVideoStep(FFmpegResourceStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         page = pageByIndex(self.task, self.fileIndex)
         if page and not page.videoUrl:
@@ -525,13 +513,8 @@ class BilibiliVideoStep(FFmpegResourceStep):
 
 @dataclass(kw_only=True)
 class BilibiliAudioStep(FFmpegResourceStep):
-    _task: BilibiliTask = field(repr=False, init=False)
     role: str = "audio"
     fileIndex: int = 0
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -544,7 +527,7 @@ class BilibiliAudioStep(FFmpegResourceStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         page = pageByIndex(self.task, self.fileIndex)
         if page and not page.audioUrl:
@@ -573,12 +556,7 @@ class BilibiliAudioStep(FFmpegResourceStep):
 
 @dataclass(kw_only=True)
 class BilibiliMergeStep(FFmpegStep):
-    _task: BilibiliTask = field(repr=False, init=False)
     fileIndex: int = 0
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -602,7 +580,7 @@ class BilibiliMergeStep(FFmpegStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         sources = [p for p in (self._videoPath, self._audioPath) if p.exists()]
         if not sources:
@@ -620,14 +598,9 @@ class BilibiliMergeStep(FFmpegStep):
 
 @dataclass(kw_only=True)
 class BilibiliSubtitleStep(TaskStep):
-    _task: BilibiliTask = field(repr=False, init=False)
     canPause = False
     fileIndex: int = 0
     language: str = ""
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -636,7 +609,7 @@ class BilibiliSubtitleStep(TaskStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         from app.client import buildClient
 
@@ -696,14 +669,9 @@ class BilibiliSubtitleStep(TaskStep):
 
 @dataclass(kw_only=True)
 class BilibiliDanmakuStep(TaskStep):
-    _task: BilibiliTask = field(repr=False, init=False)
     canPause = False
     fileIndex: int = 0
     format: str = "ass"
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -712,7 +680,7 @@ class BilibiliDanmakuStep(TaskStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         from .danmaku import fetchDanmaku, toAss, toXml
 

@@ -129,7 +129,7 @@ class HuggingFaceMirrorSiteCard(SettingCard):
         self._latencies.update(latencies)
         self._refreshLatencyLabels()
 
-    def _onLatenciesFailed(self, error: BaseException) -> None:
+    def _onLatenciesFailed(self, error) -> None:
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
 

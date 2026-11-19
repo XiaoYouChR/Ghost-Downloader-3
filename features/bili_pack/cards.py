@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from collections import namedtuple
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidget
+from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView
 from qfluentwidgets import (
     BodyLabel, FluentIcon, MessageBoxBase,
     PrimaryPushButton, PushButton, SubtitleLabel,
@@ -21,9 +22,11 @@ from app.view.components.track_bar import MenuTrackButton, TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .task import (
-    BiliPage, BilibiliTask, DANMAKU_OPTIONS, audioTiers, currentAudioTier, currentVideoTier,
-    setEpisodeTitle, setPagePart, setTimeRanges, subtitleChoices, videoTiers,
+    BilibiliTask, DANMAKU_OPTIONS, audioTiers, currentAudioTier, currentVideoTier, setEpisodeTitle, setPagePart, setTimeRanges, subtitleChoices, videoTiers,
 )
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 StoryboardData = namedtuple("StoryboardData", ["sheets", "timestamps", "columns", "rows"])
 
@@ -142,7 +145,7 @@ class SelectDialog(MessageBoxBase):
             else:
                 parent.setCheckState(Qt.CheckState.Unchecked)
 
-    def _addLeaf(self, parent: QStandardItem | None, page: BiliPage, label: str) -> None:
+    def _addLeaf(self, parent: QStandardItem | None, page, label: str) -> None:
         nameItem = QStandardItem(label)
         nameItem.setCheckable(True)
         nameItem.setEditable(True)
@@ -440,11 +443,6 @@ class SelectDialog(MessageBoxBase):
 
 
 class BilibiliDraftCard(MultiFileDraftCard):
-    _task: BilibiliTask
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     def _initWidget(self) -> None:
         self._isSizeEstimated = False
@@ -750,12 +748,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
 
 
 class BilibiliTaskCard(MultiFileTaskCard):
-    _task: BilibiliTask
     fileSelectDialog = SelectDialog
-
-    @property
-    def task(self) -> BilibiliTask:
-        return self._task
 
     def _refreshForStatus(self, task: BilibiliTask) -> None:
         super()._refreshForStatus(task)

@@ -25,7 +25,7 @@ def loadTranslators(application: Application) -> None:
 
     translator = QTranslator(application)
 
-    def setLocale() -> None:
+    def setLocale():
         localeName = cfg.language.value.value
         locale = QLocale() if localeName == "Auto" else QLocale(localeName)
         application.removeTranslator(translator)

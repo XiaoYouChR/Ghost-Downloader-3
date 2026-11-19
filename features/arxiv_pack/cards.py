@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from typing import TYPE_CHECKING
+
+from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import BodyLabel, CheckBox, FluentIcon, IconWidget
 
 from app.format import toReadableSize
@@ -10,13 +12,11 @@ from app.view.components.track_bar import TrackButton
 from .config import arxivConfig
 from .task import ArxivTask
 
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
 
 class ArxivDraftCard(DraftCard):
-    _task: ArxivTask
-
-    @property
-    def task(self) -> ArxivTask:
-        return self._task
 
     def _initWidget(self) -> None:
         super()._initWidget()

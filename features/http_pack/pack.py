@@ -6,7 +6,7 @@ from email.message import Message
 from email.utils import collapse_rfc2231_value
 from mimetypes import guess_extension
 from time import time_ns
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from urllib.parse import unquote, urlparse, parse_qs
 
 from loguru import logger
@@ -176,14 +176,8 @@ async def probe(options: TaskOptions) -> RemoteFile:
     )
 
 
-def buildStep[S: HttpTaskStep](
-    stepType: type[S],
-    stepIndex: int,
-    url: str,
-    options: TaskOptions,
-    file: RemoteFile | None = None,
-    **kwargs: Any,
-) -> S:
+def buildStep(stepType: type[HttpTaskStep], stepIndex: int, url: str, options: TaskOptions,
+              file: RemoteFile | None = None, **kwargs) -> HttpTaskStep:
     fields = {
         "stepIndex": stepIndex,
         "url": url,

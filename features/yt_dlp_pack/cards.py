@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QStandardItem, QStandardItemModel
@@ -12,7 +13,7 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.models.task import TaskStatus, TaskStep
+from app.models.task import TaskStatus
 from app.platform.filesystem import toSafeFilename
 from app.view.cards.draft_cards import DraftCard
 from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, SPEED_FIELD, ETA_FIELD
@@ -27,6 +28,9 @@ from .task import (
 
 
 from .choices import buildVideoTiers, buildAudioTiers, buildSubtitleChoices, buildAudioLanguageChoices
+
+if TYPE_CHECKING:
+    from app.models.task import TaskStep
 
 
 def toStepLabel(step: TaskStep) -> str:
@@ -216,9 +220,7 @@ class VideoSelectDialog(MessageBoxBase):
             if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
         }
 
-    def updateTimeRanges(self, files: list[YouTubeFile] | None) -> None:
-        if not files:
-            return
+    def updateTimeRanges(self, files) -> None:
         for row in range(self.treeModel.rowCount()):
             fileIndex = self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
             startText = self.treeModel.item(row, COL_START).text() if self.treeModel.item(row, COL_START) else ""
@@ -231,11 +233,6 @@ class VideoSelectDialog(MessageBoxBase):
 
 
 class YtDlpDraftCard(DraftCard):
-    _task: YouTubeTask
-
-    @property
-    def task(self) -> YouTubeTask:
-        return self._task
 
     def _initWidget(self) -> None:
         super()._initWidget()
@@ -582,14 +579,9 @@ class YtDlpDraftCard(DraftCard):
 
 
 class YtDlpTaskCard(MultiFileTaskCard):
-    _task: YouTubeTask
     fileSelectDialog = VideoSelectDialog
     infoFields = [SPEED_FIELD, ETA_FIELD, YTDLP_SIZE_FIELD]
     nameFormats = {TaskStatus.RUNNING: toYtDlpNameText}
-
-    @property
-    def task(self) -> YouTubeTask:
-        return self._task
 
     def _onSelectFilesClicked(self) -> None:
         dialog = VideoSelectDialog(self._task, self.window())

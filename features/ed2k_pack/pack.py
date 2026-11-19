@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from app.config.paths import APP_DATA_DIR
 from app.i18n import N
-from app.models.pack import BinaryRuntime, FeaturePack, PackServices, TaskParser, UriScheme
+from app.models.pack import FeaturePack, TaskParser, UriScheme
 from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, kelpieRuntime
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
     from app.view.cards.task_cards import TaskCard
     from app.view.dialogs.task_drawer import DetailCard
+    from app.models.pack import BinaryRuntime, PackServices
 
 
 def createKelpie(onNetwork: Callable[[Network | None], None]) -> Kelpie:
@@ -66,7 +67,7 @@ class ED2kPack(FeaturePack):
         from .cards import ED2kTaskCard
         return ED2kTaskCard
 
-    def detailCards(self, task: ED2kTask, parent: QWidget | None = None) -> list[DetailCard]:
+    def detailCards(self, task: Task, parent: QWidget | None = None) -> list[DetailCard]:
         from .detail_cards import ED2kCard, ED2kSourceCard
         return [ED2kCard(task, parent), ED2kSourceCard(task, parent)]
 

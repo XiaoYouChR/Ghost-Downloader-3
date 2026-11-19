@@ -46,11 +46,10 @@ class UriScheme:
 
 class TaskParser:
     priority: int = 100
-    pack: FeaturePack
+    pack: FeaturePack | None = None
 
     def __init__(self, pack: FeaturePack | None = None) -> None:
-        if pack is not None:
-            self.pack = pack
+        self.pack = pack
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError
@@ -65,8 +64,8 @@ class TaskParser:
 class PackConfig:
     createRuntimeCard: Callable[[BinaryRuntime, QWidget | None], RuntimeCard] | None = None
     submit: Callable[..., str] | None = None
-    associateFileTypes: ConfigItem[bool] | None = None
-    associateUriSchemes: ConfigItem[bool] | None = None
+    associateFileTypes: ConfigItem | None = None
+    associateUriSchemes: ConfigItem | None = None
     _items: dict[str, ConfigItem] = {}
 
     def __init_subclass__(cls, **kwargs):

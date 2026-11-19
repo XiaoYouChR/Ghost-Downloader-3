@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse, parse_qs, quote
 
 from app.i18n import N
-from app.models.pack import BinaryRuntime, FeaturePack, PackServices, TaskParser
+from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
 from loguru import logger
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.view.cards.draft_cards import DraftCard
     from app.view.cards.task_cards import TaskCard
     from app.view.components.option_cards import OptionCard
+    from app.models.pack import BinaryRuntime, PackServices
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 

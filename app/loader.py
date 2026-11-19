@@ -75,7 +75,7 @@ def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
     ordered: list[PackManifest] = []
     skipped: set[str] = set()
 
-    def visit(name: str) -> None:
+    def visit(name: str):
         if name in visited:
             return
         if name in skipped:

@@ -1,13 +1,18 @@
 """yt-dlp 的设置卡片（View）。config.py 只留配置数据。"""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import QCoreApplication, Qt
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import (
     CaptionLabel, FluentIcon, PushButton, SettingCard, ToolButton, ToolTipFilter,
 )
 
 from .config import clearCookies, hasCookieFile, saveCookies
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 
 class CookieSettingCard(SettingCard):

@@ -108,7 +108,7 @@ class BitTorrentConfig(PackConfig):
         btGroup.addSettingCards(cards)
         return [btGroup]
 
-    async def _probeDhtText(self) -> tuple[str, dict[str, int]]:
+    async def _probeDhtText(self) -> tuple[str, dict]:
         from .session import btSession
         nodes = await btSession.probeDhtNodes()
         return ("", {}) if nodes is None else (N("BootstrapList", "DHT 节点 {nodes}"), {"nodes": nodes})

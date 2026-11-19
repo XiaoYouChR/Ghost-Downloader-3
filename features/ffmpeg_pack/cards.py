@@ -7,7 +7,6 @@ from app.format import toReadableSize
 from app.view.cards.draft_cards import DraftCard
 from app.view.components.range_slider import RangeSlider
 from app.view.components.track_bar import TrackButton
-from .task import FFmpegTask
 
 
 def parseTimeInput(text: str) -> int:
@@ -26,11 +25,6 @@ def parseTimeInput(text: str) -> int:
 
 
 class FFmpegDraftCard(DraftCard):
-    _task: FFmpegTask
-
-    @property
-    def task(self) -> FFmpegTask:
-        return self._task
 
     def _initWidget(self) -> None:
         super()._initWidget()

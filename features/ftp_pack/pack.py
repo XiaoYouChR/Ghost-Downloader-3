@@ -149,7 +149,7 @@ class FtpPack(FeaturePack):
     def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
         step = task.steps[0] if task.steps else None
-        if not isinstance(step, FtpStep):
+        if step is None:
             return []
         return [
             OutputFolderCard(parent, initial=task.outputFolder),

@@ -4,7 +4,7 @@ import asyncio
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, unquote, urlparse
 
 import m3u8
@@ -15,7 +15,7 @@ from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.i18n import N
 
-from app.models.pack import BinaryRuntime, FeaturePack, PackServices, TaskParser, FileType
+from app.models.pack import FeaturePack, TaskParser, FileType
 from app.models.task import PageTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from app.view.cards.draft_cards import DraftCard
     from app.view.cards.task_cards import TaskCard
     from app.view.components.option_cards import OptionCard
+    from app.models.pack import BinaryRuntime, PackServices
 
 
 MEDIA_SUFFIXES = {
@@ -207,7 +208,7 @@ class M3U8Parser(TaskParser):
         task.addStep(step)
         return task
 
-    def _parseStreams(self, body: str, manifestType: str) -> list[dict[str, Any]]:
+    def _parseStreams(self, body: str, manifestType: str) -> list[dict]:
         try:
             if manifestType == "mpd":
                 return self._mpdStreams(body)
@@ -216,7 +217,7 @@ class M3U8Parser(TaskParser):
             logger.warning("枚举可选视频流失败: {}", repr(e))
             return []
 
-    def _hlsStreams(self, body: str) -> list[dict[str, Any]]:
+    def _hlsStreams(self, body: str) -> list[dict]:
         playlist = m3u8.loads(body)
         streams = []
         for variant in playlist.playlists:
@@ -232,7 +233,7 @@ class M3U8Parser(TaskParser):
             })
         return streams
 
-    def _mpdStreams(self, body: str) -> list[dict[str, Any]]:
+    def _mpdStreams(self, body: str) -> list[dict]:
         mpd = MPEGDASHParser.parse(body)
         if not mpd.periods:
             return []
@@ -292,7 +293,7 @@ class M3U8Pack(FeaturePack):
     def runtimes(self) -> list[BinaryRuntime]:
         return [m3u8Runtime]
 
-    def optionCards(self, task: M3U8Task, parent: QWidget | None = None) -> list[OptionCard]:
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import HeadersEditCard, OutputFolderCard
         from .cards import StreamSelectCard, RecordLimitCard, DecryptionKeyCard, MuxImportCard
         from .task import M3U8TaskStep
@@ -313,7 +314,7 @@ class M3U8Pack(FeaturePack):
         cards.append(MuxImportCard(parent, initial=step.muxImports))
         return cards
 
-    def editCards(self, task: M3U8Task, parent: QWidget | None = None) -> list[OptionCard]:
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from app.view.components.option_cards import HeadersEditCard, OutputFolderCard
         from .cards import RecordLimitCard, DecryptionKeyCard, MuxImportCard
         from .task import M3U8TaskStep

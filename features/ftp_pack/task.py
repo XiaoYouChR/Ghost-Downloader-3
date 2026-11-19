@@ -6,10 +6,9 @@ import ssl
 from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from struct import pack, unpack
-from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
 import aioftp
@@ -132,11 +131,6 @@ class FtpStep(TaskStep):
     canUseRangeRequests: bool = False
     isAccelerated: bool = False
     subworkerCount: int = 8
-    _task: FtpTask = field(repr=False, init=False)
-
-    @property
-    def task(self) -> FtpTask:
-        return self._task
 
     @property
     def canPause(self) -> bool:
@@ -150,7 +144,7 @@ class FtpStep(TaskStep):
     def recordPath(self) -> Path:
         return Path(f"{self.outputPath}.ghd")
 
-    def setOptions(self, options: dict[str, Any]) -> None:
+    def setOptions(self, options: dict) -> None:
         if "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
@@ -161,7 +155,7 @@ class FtpStep(TaskStep):
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> FtpStep:
-        ftpFile = cast(FtpFile, file)
+        ftpFile: FtpFile = file
         return cls(
             stepIndex=file.index + 1,
             fileIndex=file.index,
@@ -314,11 +308,7 @@ class FtpStep(TaskStep):
             if recordFile is not None:
                 recordFile.close()
 
-    def _closeTransfer(
-        self,
-        client: aioftp.Client | None,
-        stream: aioftp.DataConnectionThrottleStreamIO | None,
-    ) -> None:
+    def _closeTransfer(self, client: aioftp.Client | None, stream):
         with suppress(Exception):
             if stream is not None:
                 stream.close()
@@ -415,14 +405,14 @@ class FtpStep(TaskStep):
 
             self._reassignSubworker()
 
-    def _startSubworkerTask(self, subworker: FtpSubworker) -> None:
+    def _startSubworkerTask(self, subworker: FtpSubworker):
         if self._stopping:
             return
         task = asyncio.create_task(self._runSubworker(subworker, self._fd))
         self._subworkerTasks.add(task)
         task.add_done_callback(self._subworkerTasks.discard)
 
-    async def _stopSubworkerTasks(self) -> None:
+    async def _stopSubworkerTasks(self):
         if self._stopping:
             return
         self._stopping = True
@@ -512,7 +502,6 @@ class FtpTask(Task):
     packId: str = "ftp"
     canEdit = True
     fileType = FtpFile
-    files: list[FtpFile] = field(default_factory=list)
     connectionInfo: FtpConnectionInfo
     sourceType: str = "file"
 

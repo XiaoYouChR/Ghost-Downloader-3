@@ -28,7 +28,6 @@ class BTTask(Task):
     canEdit = True
     canSeed = True
     fileType = BTFile
-    files: list[BTFile] = field(default_factory=list)
     sourceType: str = "torrent"
     torrentData: str = ""
     resumeData: str = ""
@@ -161,16 +160,11 @@ class BTTask(Task):
 
 @dataclass(kw_only=True)
 class BTTaskStep(TaskStep):
-    _task: BTTask = field(repr=False, init=False)
-
-    @property
-    def task(self) -> BTTask:
-        return self._task
 
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         from .session import btSession, TorrentProgress
 
@@ -179,7 +173,7 @@ class BTTaskStep(TaskStep):
         if task.countSelected <= 0:
             raise TaskError("至少需要选择一个文件")
 
-        def onProgress(p: TorrentProgress) -> None:
+        def onProgress(p: TorrentProgress):
             task.updateStats(p)
             if p.totalWanted > 0:
                 task.fileSize = p.totalWanted
@@ -219,12 +213,7 @@ class BTTaskStep(TaskStep):
 
 @dataclass(kw_only=True)
 class BTTorrentFileStep(TaskStep):
-    _task: BTTask = field(repr=False, init=False)
     canPause = False
-
-    @property
-    def task(self) -> BTTask:
-        return self._task
 
     @property
     def outputPath(self) -> str:
@@ -233,6 +222,6 @@ class BTTorrentFileStep(TaskStep):
     async def run(
         self,
         reportSpeed: Callable[[int], None],
-        waitForSpeedLimit: Callable[[int], Awaitable[None]],
+        waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
         Path(self.outputPath).write_bytes(b64decode(self.task.torrentData))

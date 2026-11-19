@@ -8,7 +8,7 @@ from enum import auto, IntEnum
 from pathlib import Path
 from time import time
 from collections.abc import Awaitable, Callable, Iterable
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -62,7 +62,7 @@ class TaskError(Exception):
     def __str__(self) -> str:
         return self.message.format_map(self.params) if self.params else self.message
 
-    def toDict(self) -> dict[str, Any]:
+    def toDict(self) -> dict:
         return {"message": self.message, "params": {k: str(v) for k, v in self.params.items()}}
 
 
@@ -157,9 +157,8 @@ class TaskStep:
     receivedBytes: int = 0
     speed: int = 0
     error: TaskError | None = field(default=None, repr=False, init=False)
-    _task: Task = field(repr=False, init=False)
 
-    def _bindTask(self, task: Task) -> None:
+    def _bindTask(self, task: Task):
         self._task = task
 
     @property
@@ -197,7 +196,7 @@ class TaskStep:
         if hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def setOptions(self, options: dict[str, Any]) -> None:
+    def setOptions(self, options: dict) -> None:
         pass
 
     async def run(
@@ -215,12 +214,12 @@ class TaskStep:
     def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
         raise NotImplementedError
 
-    def toDict(self) -> dict[str, Any]:
+    def toDict(self) -> dict:
         from app.models.serialization import toDict
         return toDict(self)
 
     @classmethod
-    def fromDict(cls, data: Any) -> Self:
+    def fromDict(cls, data) -> TaskStep:
         from app.models.serialization import fromDict
         return fromDict(data, cls)
 
@@ -328,7 +327,7 @@ class Task:
     def setName(self, name: str) -> None:
         self.name = toSafeFilename(name, fallback=self.name or "download")
 
-    def setOptions(self, options: dict[str, Any]) -> None:
+    def setOptions(self, options: dict) -> None:
         newFolder = options.get("outputFolder")
         if isinstance(newFolder, (str, Path)):
             self.outputFolder = Path(newFolder)
@@ -513,12 +512,12 @@ class Task:
     async def runSeeding(self, isManual: bool) -> None:
         raise NotImplementedError
 
-    def toDict(self) -> dict[str, Any]:
+    def toDict(self) -> dict:
         from app.models.serialization import toDict
         return toDict(self)
 
     @classmethod
-    def fromDict(cls, data: Any) -> Self:
+    def fromDict(cls, data) -> Task:
         from app.models.serialization import fromDict
         return fromDict(data, cls)
 

@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
 
 
-def toDraftOptions(pairs: list[tuple[str, str]], **params: Any) -> list[dict[str, Any]]:
+def toDraftOptions(pairs: list[tuple[str, str]], **params: Any) -> list[dict]:
     return [{"key": key, "label": label, "params": params} for key, label in pairs]
 
 
-def draftFields(task: YouTubeTask) -> dict[str, Any]:
+def draftFields(task: YouTubeTask) -> dict:
     info = getattr(task, "_mediaInfo", {})
     hasInfo = bool(info.get("formats"))
     subtitles, _ = buildSubtitleChoices(info, "{auto}")
@@ -136,14 +136,14 @@ def fileFields(task: YouTubeTask) -> dict[int, dict[str, int]]:
     }
 
 
-def applyFileEdits(task: YouTubeTask, edits: dict[str, Any]) -> None:
+def applyFileEdits(task: YouTubeTask, edits: dict) -> None:
     trim = {int(i): (v[0], v[1]) for i, v in (edits.get("trim") or {}).items()}
     for file in task.files or []:
         if file.index in trim:
             file.startTime, file.endTime = trim[file.index]
 
 
-def buildPreview(info: dict[str, Any]) -> dict[str, Any]:
+def buildPreview(info: dict) -> dict:
     candidates = [f for f in info.get("formats") or []
                   if f.get("format_note") == "storyboard" and f.get("columns") and f.get("rows")]
     fmt = max(candidates, key=lambda f: f.get("width") or 0, default=None)
@@ -168,7 +168,7 @@ def buildPreview(info: dict[str, Any]) -> dict[str, Any]:
     return {"sheets": sheets, "headers": fmt.get("http_headers") or info.get("http_headers") or {}}
 
 
-async def probePreview(task: YouTubeTask) -> dict[str, Any]:
+async def probePreview(task: YouTubeTask) -> dict:
     return buildPreview(getattr(task, "_mediaInfo", {}))
 
 

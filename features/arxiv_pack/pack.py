@@ -155,5 +155,4 @@ class ArxivPack(FeaturePack):
 
     def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         from .cards import SideFileCard
-        arxivTask: ArxivTask = task  # type: ignore[assignment]
-        return [*self.optionCards(task, parent), SideFileCard(parent, task=arxivTask)]
+        return [*self.optionCards(task, parent), SideFileCard(parent, task=task)]

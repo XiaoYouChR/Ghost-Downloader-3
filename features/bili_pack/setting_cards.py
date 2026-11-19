@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout
 
 from qfluentwidgets import (
     BodyLabel,
@@ -22,6 +22,7 @@ from qfluentwidgets import (
 
 if TYPE_CHECKING:
     from .account import BilibiliAccount
+    from PySide6.QtWidgets import QWidget
 
 
 def toQrPixmap(content: str, size: int = 240) -> QPixmap:
@@ -73,13 +74,13 @@ class ScanLoginDialog(MessageBoxBase):
         self._bind()
         self.reloadQrCode()
 
-    def _initWidget(self) -> None:
+    def _initWidget(self):
         self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.statusLabel.setWordWrap(True)
         self.tipLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.tipLabel.setWordWrap(True)
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         buttonLayout = QHBoxLayout()
         buttonLayout.setSpacing(12)
         buttonLayout.addWidget(self.refreshButton)
@@ -95,7 +96,7 @@ class ScanLoginDialog(MessageBoxBase):
         self.viewLayout.addSpacing(6)
         self.viewLayout.addLayout(buttonLayout)
 
-    def _bind(self) -> None:
+    def _bind(self):
         self.refreshButton.clicked.connect(self.reloadQrCode)
         self.openBrowserButton.clicked.connect(self._onOpenBrowser)
         self._account.qrStateChanged.connect(self._onQrState, owner=self)
@@ -108,7 +109,7 @@ class ScanLoginDialog(MessageBoxBase):
         self._loginUrl = ""
         self._account.startQrLogin()
 
-    def _onQrState(self, statusCode: int, text: str) -> None:
+    def _onQrState(self, statusCode: int, text: str):
         from .account import QR_EXPIRED, QR_LOGIN_SUCCESS, QR_UNSCANNED, QR_SCANNED
         if statusCode == QR_LOGIN_SUCCESS:
             self.statusLabel.setText(self.tr("登录成功，正在导入 Cookie..."))
@@ -130,7 +131,7 @@ class ScanLoginDialog(MessageBoxBase):
                 QCoreApplication.translate("TaskErrors", text) if text else str(statusCode)
             )
 
-    def _onOpenBrowser(self) -> None:
+    def _onOpenBrowser(self):
         if self._loginUrl:
             QDesktopServices.openUrl(QUrl(self._loginUrl))
 
@@ -175,7 +176,7 @@ class BilibiliLoginSettingCard(SettingCard):
         self._bind()
         self.refreshLoginInfo()
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         self.hBoxLayout.addWidget(self.scanButton, 0)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.editButton, 0)
@@ -183,7 +184,7 @@ class BilibiliLoginSettingCard(SettingCard):
         self.hBoxLayout.addWidget(self.logoutButton, 0)
         self.hBoxLayout.addSpacing(16)
 
-    def _bind(self) -> None:
+    def _bind(self):
         self.scanButton.clicked.connect(self._onScanLogin)
         self.editButton.clicked.connect(self._onEditCookie)
         self.logoutButton.clicked.connect(self._onLogout)
@@ -203,12 +204,12 @@ class BilibiliLoginSettingCard(SettingCard):
         self.editButton.setEnabled(True)
         self.logoutButton.setEnabled(self._account.isLoggedIn)
 
-    def _onScanLogin(self) -> None:
+    def _onScanLogin(self):
         dialog = ScanLoginDialog(self._account, self.window())
         dialog.exec()
         dialog.deleteLater()
 
-    def _onEditCookie(self) -> None:
+    def _onEditCookie(self):
         from .account import toCookie
         dialog = EditCookieDialog(self.window(), self._account.cookie)
         if not dialog.exec():
@@ -223,7 +224,7 @@ class BilibiliLoginSettingCard(SettingCard):
 
         self._account.setCookie(newCookie)
 
-    def _onLogout(self) -> None:
+    def _onLogout(self):
         self.scanButton.setEnabled(False)
         self.editButton.setEnabled(False)
         self.logoutButton.setEnabled(False)

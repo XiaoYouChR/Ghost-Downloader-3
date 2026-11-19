@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .task import FtpStep, FtpTask
+    from .task import FtpTask
 
 
-def editFields(task: FtpTask) -> dict[str, Any]:
-    step: FtpStep = task.steps[0]  # type: ignore[assignment]
-    return {"subworkerCount": step.subworkerCount}
+def editFields(task: FtpTask) -> dict:
+    return {"subworkerCount": task.steps[0].subworkerCount}

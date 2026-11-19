@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     BodyLabel, ComboBox, CompactSpinBox, FluentIcon, PrimaryToolButton, ToolTipFilter, TransparentToolButton,
 )
@@ -19,14 +19,11 @@ from app.view.components.option_cards import OptionCard
 
 if TYPE_CHECKING:
     from .task import M3U8Task
+    from PySide6.QtWidgets import QWidget
 
 
 class M3U8DraftCard(DraftCard):
-    _task: M3U8Task
-
-    @property
-    def task(self) -> M3U8Task:
-        return self._task
+    pass
 
 
 def toM3u8SizeText(task: M3U8Task, speed: int, received: int) -> str | None:
@@ -44,12 +41,7 @@ M3U8_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toM3u8SizeText})
 
 
 class M3U8TaskCard(TaskCard):
-    _task: M3U8Task
     infoFields = [SPEED_FIELD, ETA_FIELD, M3U8_SIZE_FIELD]
-
-    @property
-    def task(self) -> M3U8Task:
-        return self._task
 
 
 def toLiveEtaText(task: M3U8Task, speed: int, received: int) -> str:
@@ -80,13 +72,8 @@ LIVE_TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, "停止并定案", Pr
 
 
 class M3U8LiveTaskCard(TaskCard):
-    _task: M3U8Task
     infoFields = [SPEED_FIELD, LIVE_ETA_FIELD, LIVE_SIZE_FIELD]
     buttons = [LIVE_TOGGLE_BUTTON if b.name == "toggle" else b for b in TaskCard.buttons]
-
-    @property
-    def task(self) -> M3U8Task:
-        return self._task
 
     def _onToggleClicked(self) -> None:
         if self._task.status == TaskStatus.RUNNING:
@@ -98,14 +85,14 @@ class M3U8LiveTaskCard(TaskCard):
             self._taskService.start(self._task)
             self.refresh()
 
-    def _refreshForStatus(self, task: M3U8Task) -> None:
+    def _refreshForStatus(self, task) -> None:
         super()._refreshForStatus(task)
         if task.status == TaskStatus.COMPLETED and not self._isFileMissing:
             self._setStatus(self.tr("录制已结束"))
 
 
 class StreamSelectCard(OptionCard):
-    def __init__(self, parent: QWidget | None = None, *, streams: list[dict[str, Any]], initial: str = "") -> None:
+    def __init__(self, parent: QWidget | None = None, *, streams: list[dict], initial: str = "") -> None:
         super().__init__(parent)
         self._streams = streams
         self._initial = initial
@@ -114,7 +101,7 @@ class StreamSelectCard(OptionCard):
         self._initWidget()
         self._initLayout()
 
-    def _initWidget(self) -> None:
+    def _initWidget(self):
         self.comboBox.setMinimumWidth(220)
         self.comboBox.addItem(self.tr("默认（最佳）"), userData="")
         selectedIndex = 0
@@ -136,7 +123,7 @@ class StreamSelectCard(OptionCard):
                 selectedIndex = index
         self.comboBox.setCurrentIndex(selectedIndex)
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 8, 16, 8)
         layout.addWidget(self.comboBox)
@@ -157,7 +144,7 @@ class RecordLimitCard(OptionCard):
         self._initWidget()
         self._initLayout()
 
-    def _initWidget(self) -> None:
+    def _initWidget(self):
         self.hourSpinBox.setRange(0, 99)
         self.minuteSpinBox.setRange(0, 59)
         self.secondSpinBox.setRange(0, 59)
@@ -172,7 +159,7 @@ class RecordLimitCard(OptionCard):
             except ValueError:
                 pass
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 8, 16, 8)
         layout.addWidget(self.hourSpinBox)
@@ -201,14 +188,14 @@ class DecryptionKeyCard(OptionCard):
         self._initLayout()
         self._bind()
 
-    def _initWidget(self, keys: list[str]) -> None:
+    def _initWidget(self, keys: list):
         self.keyFileButton.setToolTip(self.tr("选择 KEY 文本文件"))
         self.keyFileButton.installEventFilter(ToolTipFilter(self.keyFileButton))
         self.keysEdit.setPlaceholderText("KID1:KEY1\nKID2:KEY2")
         self.keysEdit.setPlainText("\n".join(keys))
         self.keyFileLabel.setText(Path(self._keyTextFile).name if self._keyTextFile else "")
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         titleRow = QHBoxLayout()
         titleRow.setSpacing(15)
         titleRow.addWidget(self.titleLabel)
@@ -222,10 +209,10 @@ class DecryptionKeyCard(OptionCard):
         layout.addLayout(titleRow)
         layout.addWidget(self.keysEdit)
 
-    def _bind(self) -> None:
+    def _bind(self):
         self.keyFileButton.clicked.connect(self._onChooseKeyFile)
 
-    def _onChooseKeyFile(self) -> None:
+    def _onChooseKeyFile(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr("选择 KEY 文本文件"))
         if not path:
             return
@@ -246,11 +233,11 @@ class MuxImportCard(OptionCard):
         self._initWidget(initial or [])
         self._initLayout()
 
-    def _initWidget(self, imports: list[str]) -> None:
+    def _initWidget(self, imports: list):
         self.importEdit.setPlaceholderText('path="aud.m4a":lang=eng:name="Audio"')
         self.importEdit.setPlainText("\n".join(imports))
 
-    def _initLayout(self) -> None:
+    def _initLayout(self):
         titleRow = QHBoxLayout()
         titleRow.setSpacing(15)
         titleRow.addWidget(self.titleLabel)

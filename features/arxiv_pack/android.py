@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from http_pack.android import editFields as editHttpFields
 
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 UI_CLASS = "com.xychr.ghostdownloader.features.arxiv_pack.ArxivUi"
 
 
-def editFields(task: ArxivTask) -> dict[str, Any]:
+def editFields(task: ArxivTask) -> dict:
     fields = {**editHttpFields(task), "isBibtexEnabled": task.isBibtexEnabled}
     del fields["url"]
     if task.hasSource:
@@ -18,7 +18,7 @@ def editFields(task: ArxivTask) -> dict[str, Any]:
     return fields
 
 
-def draftFields(task: ArxivTask) -> dict[str, Any]:
+def draftFields(task: ArxivTask) -> dict:
     return {
         "hasSource": task.hasSource,
         "isSourceEnabled": task.isSourceEnabled,

@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from app.view.cards.task_cards import TaskCard
     from app.view.components.option_cards import OptionCard
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-    from app.view.components.setting_cards import RuntimeCard
     from app.view.dialogs.edit_task import LiveEditDialog
     from app.view.dialogs.task_drawer import DetailCard
 
@@ -65,7 +64,7 @@ class FeatureService:
             self.register(pack)
 
     def activate(self) -> None:
-        async def activateAll() -> None:
+        async def activateAll():
             for pack in self._packs:
                 await pack.activate()
 
@@ -171,7 +170,7 @@ class FeatureService:
 
     # ── RuntimeCard factory ──
 
-    def _createRuntimeCard(self, runtime: BinaryRuntime, parent: QWidget | None) -> RuntimeCard:
+    def _createRuntimeCard(self, runtime, parent):
         from app.view.components.setting_cards import RuntimeCard
         return RuntimeCard(self._runtimeStatusService, runtime, parent)
 

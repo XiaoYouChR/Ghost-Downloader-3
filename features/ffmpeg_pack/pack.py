@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from app.models.pack import BinaryRuntime, FeaturePack, TaskParser
+from app.models.pack import FeaturePack, TaskParser
 from app.models.task import (
     MergeTaskOptions,
     RemoteFile,
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from app.view.cards.draft_cards import DraftCard
     from app.view.cards.task_cards import TaskCard
     from app.view.components.option_cards import OptionCard
+    from app.models.pack import BinaryRuntime
 
 VIDEO_EXTENSIONS = {".mp4", ".m4v", ".mov", ".webm"}
 VIDEO_CONTENT_TYPES = {"video/mp4", "video/x-m4v", "video/quicktime", "video/webm"}
@@ -47,9 +48,6 @@ class MergeParser(TaskParser):
         return isinstance(options, MergeTaskOptions)
 
     async def parse(self, options: TaskOptions) -> Task:
-        assert isinstance(options, MergeTaskOptions)
-        assert options.video is not None and options.audio is not None
-
         videoFile = await resolveResourceFile(options.video)
         audioFile = await resolveResourceFile(options.audio)
 
@@ -150,7 +148,6 @@ class VideoParser(TaskParser):
 
     async def parse(self, options: TaskOptions) -> Task:
         file = options.file
-        assert file is not None
         probed = await probeContainerIndex(
             options.url,
             file.fileSize,
@@ -219,6 +216,6 @@ class FFmpegPack(FeaturePack):
         return buildOptionCards(task, parent)
 
     def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
-        if isinstance(task, FFmpegTask) and task.hasAudio:
+        if task.hasAudio:
             return buildOptionCards(task, parent)
         return buildEditCards(task, parent)

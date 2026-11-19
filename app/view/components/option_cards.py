@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, Qt
-from PySide6.QtGui import QColor, QPainter, QPaintEvent
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, IconWidget, LineEdit, RoundMenu, Slider,
@@ -13,6 +13,9 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import cfg, currentHeaders
+
+if TYPE_CHECKING:
+    from PySide6.QtGui import QPaintEvent
 
 PROFILE_FAMILY_LABELS = {
     "chrome": "Chrome", "edge": "Edge",
@@ -73,7 +76,7 @@ def buildProfileMenu(parent: QWidget, onPick: Callable[[str], None], *, includeA
 
 class OptionCard(QWidget):
 
-    def options(self) -> dict[str, Any]:
+    def options(self) -> dict:
         return {}
 
     def reset(self) -> None:
