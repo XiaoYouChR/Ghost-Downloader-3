@@ -156,7 +156,7 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>255883 words</b></sub>
+        <sub><b>323770 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Havokdan"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/12607851/medium/a1ec7e6a771c303892d82c92015a3641_default.png" />
@@ -172,7 +172,7 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>i0ntempest</b></sub></a>
         <br />
-        <sub><b>2139 words</b></sub>
+        <sub><b>2155 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
@@ -189,6 +189,24 @@ Thanks to all contributors who have participated in this project!
           <sub><b>(s0990)</b></sub></a>
         <br />
         <sub><b>602 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/mediaket"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/13669331/medium/ebf8aaccc9d72ed7690ac8aa7e116d8e.jpg" />
+          <br />
+          <sub><b>R. KETFI</b></sub>
+          <br />
+          <sub><b>(mediaket)</b></sub></a>
+        <br />
+        <sub><b>245 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/ryuuDre"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/18000817/medium/27dc57e2949e8cebf51ef86794abc1f3.png" />
+          <br />
+          <sub><b>Ryuu</b></sub>
+          <br />
+          <sub><b>(ryuuDre)</b></sub></a>
+        <br />
+        <sub><b>179 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />

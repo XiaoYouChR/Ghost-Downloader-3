@@ -16,7 +16,7 @@
     <message>
       <location filename="../../view/windows/oobe_window.py" line="664"/>
       <source>复制下载链接时由本程序接管</source>
-      <translation type="unfinished"/>
+      <translation>يعترض هذا البرنامَج روابط التنزيل عند نسخها</translation>
     </message>
     <message>
       <location filename="../../view/windows/oobe_window.py" line="668"/>
@@ -143,27 +143,27 @@
     <message>
       <location filename="../../view/components/setting_cards.py" line="404"/>
       <source>、</source>
-      <translation type="unfinished"/>
+      <translation>،</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="385"/>
       <source>文件与协议关联</source>
-      <translation type="unfinished"/>
+      <translation>ربط المستندات بالاتفاقيات</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="386"/>
       <source>选择交给 Ghost Downloader 打开的本地文件类型与链接协议</source>
-      <translation type="unfinished"/>
+      <translation>اختر نوع المِلَفّ المحلي وبروتوكول الربط الذي سيتم فتحه بواسطة برنامَج Ghost Downloader</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="406"/>
       <source>关联 {0}（{1}）</source>
-      <translation type="unfinished"/>
+      <translation>ربط {0} ({1})</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="413"/>
       <source>关联 {0} 链接（{1}）</source>
-      <translation type="unfinished"/>
+      <translation>ربط رابط {0} ({1})</translation>
     </message>
   </context>
   <context>
@@ -305,7 +305,8 @@
       <location filename="../../view/dialogs/batch_url.py" line="112"/>
       <source>http://example.com/img/[001-100].jpg
 http://example.com/{mp4,mkv}/video</source>
-      <translation type="unfinished"/>
+      <translation>http://example.com/img/[001-100].jpg
+http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/batch_url.py" line="116"/>
@@ -341,12 +342,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="17"/>
       <source>杜比视界</source>
-      <translation type="unfinished"/>
+      <translation>دولبي فيجن</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="20"/>
       <source>杜比全景声</source>
-      <translation type="unfinished"/>
+      <translation>دولبي أتموس</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="44"/>
@@ -376,17 +377,17 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="53"/>
       <source>默认弹幕</source>
-      <translation type="unfinished"/>
+      <translation>الدانماكو الافتراضي</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="54"/>
       <source>选择默认下载的弹幕格式</source>
-      <translation type="unfinished"/>
+      <translation>اختر تنسيق الدانماكو الافتراضي للتنزيل</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="55"/>
       <source>不下载</source>
-      <translation type="unfinished"/>
+      <translation>عدم التنزيل</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="56"/>
@@ -422,9 +423,10 @@ http://example.com/{mp4,mkv}/video</source>
       <translation>أفضل صوت</translation>
     </message>
     <message>
+      <location filename="../../../features/bili_pack/android.py" line="142"/>
       <location filename="../../../features/bili_pack/cards.py" line="468"/>
       <source>弹幕</source>
-      <translation type="unfinished"/>
+      <translation>دانماكو</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/cards.py" line="475"/>
@@ -442,7 +444,8 @@ http://example.com/{mp4,mkv}/video</source>
       <translation>اختيار الفيديو</translation>
     </message>
     <message>
-      <location filename="../../../features/bili_pack/task.py" line="87"/>
+      <location filename="../../../features/bili_pack/android.py" line="151"/>
+      <location filename="../../../features/bili_pack/cards.py" line="463"/>
       <source>（自动生成）</source>
       <translation>(يُنشأ تلقائيًا)</translation>
     </message>
@@ -512,7 +515,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="188"/>
       <source>eD2k / eMule</source>
-      <translation type="unfinished"/>
+      <translation>eD2k / eMule</translation>
     </message>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="189"/>
@@ -560,27 +563,28 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <source>停止</source>
-      <translation type="unfinished"/>
+      <translation>إيقاف</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <source>停止 BitTorrent 会话</source>
-      <translation type="unfinished"/>
+      <translation>إيقاف جلسة BitTorrent</translation>
     </message>
     <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
       <source>未运行</source>
-      <translation type="unfinished"/>
+      <translation>غير مشغّل</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
       <source>有 BT 任务正在下载或做种，结束后才能停止</source>
-      <translation type="unfinished"/>
+      <translation>هناك مهام BT قيد التنزيل أو التوزيع، لا يمكن الإيقاف إلا بعد انتهائها</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
       <source>空闲 5 分钟后自动停止，开始任务时会自动启动</source>
-      <translation type="unfinished"/>
+      <translation>يتوقف تلقائيًا بعد 5 دقائق من الخمول، ويبدأ تلقائيًا عند بدء المهام</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
@@ -680,37 +684,37 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
       <source>启用 uTP</source>
-      <translation type="unfinished"/>
+      <translation>تفعيل uTP</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
       <source>使用 uTP 传输协议控制拥塞，关闭后仅使用 TCP</source>
-      <translation type="unfinished"/>
+      <translation>استخدام بروتوكول النقل uTP للتحكم في الازدحام، وعند الإيقاف يُستخدم TCP فقط</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="119"/>
       <source>协议加密</source>
-      <translation type="unfinished"/>
+      <translation>تشفير البروتوكول</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="120"/>
       <source>混淆对等连接流量特征，减少被运营商识别和限速</source>
-      <translation type="unfinished"/>
+      <translation>إخفاء خصائص حركة اتصالات الأقران لتقليل تعرّف مزوّد الخدمة عليها وتقييد سرعتها</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
       <source>允许加密</source>
-      <translation type="unfinished"/>
+      <translation>السماح بالتشفير</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
       <source>强制加密</source>
-      <translation type="unfinished"/>
+      <translation>فرض التشفير</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
       <source>禁用加密</source>
-      <translation type="unfinished"/>
+      <translation>تعطيل التشفير</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="122"/>
@@ -1273,7 +1277,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/components/category_settings.py" line="75"/>
       <source>下载分类</source>
-      <translation type="unfinished"/>
+      <translation>فئات التنزيل</translation>
     </message>
     <message>
       <location filename="../../view/components/category_settings.py" line="76"/>
@@ -1362,7 +1366,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/components/setting_cards.py" line="332"/>
       <source>自动检测剪贴板中的下载链接</source>
-      <translation type="unfinished"/>
+      <translation>الكشف التلقائي عن روابط التنزيل في الحافظة</translation>
     </message>
   </context>
   <context>
@@ -1449,7 +1453,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/ed2k_pack/detail_cards.py" line="67"/>
       <source>eD2k</source>
-      <translation type="unfinished"/>
+      <translation>eD2k</translation>
     </message>
     <message>
       <location filename="../../../features/ed2k_pack/detail_cards.py" line="69"/>
@@ -1532,7 +1536,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="78"/>
       <source>空闲 5 分钟后自动终止，开始 eD2k 任务时会自动重新启动</source>
-      <translation type="unfinished"/>
+      <translation>يُنهى تلقائيًا بعد 5 دقائق من الخمول، ويُعاد تشغيله تلقائيًا عند بدء مهام eD2k</translation>
     </message>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="81"/>
@@ -1907,7 +1911,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/ffmpeg_pack/config.py" line="49"/>
       <source>FFmpeg</source>
-      <translation type="unfinished"/>
+      <translation>FFmpeg</translation>
     </message>
     <message>
       <location filename="../../../features/ffmpeg_pack/config.py" line="52"/>
@@ -2333,7 +2337,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/http_pack/cards.py" line="123"/>
       <source>停止并定案</source>
-      <translation type="unfinished"/>
+      <translation>إيقاف وإتمام نهائي</translation>
     </message>
   </context>
   <context>
@@ -2695,12 +2699,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="134"/>
       <source>下载全部音轨</source>
-      <translation type="unfinished"/>
+      <translation>تنزيل جميع مسارات الصوت</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="135"/>
       <source>默认拉取全部音频轨道</source>
-      <translation type="unfinished"/>
+      <translation>جلب جميع مسارات الصوت افتراضيًا</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="118"/>
@@ -2808,7 +2812,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="34"/>
       <source>字幕</source>
-      <translation type="unfinished"/>
+      <translation>ترجمة</translation>
     </message>
   </context>
   <context>
@@ -3119,7 +3123,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../platform/desktop_notification.py" line="91"/>
       <source>大小 {0}，保存于 {1}</source>
-      <translation type="unfinished"/>
+      <translation>الحجم {0}، محفوظ في {1}</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="95"/>
@@ -3140,7 +3144,8 @@ http://example.com/{mp4,mkv}/video</source>
       <location filename="../../platform/desktop_notification.py" line="110"/>
       <source>任务未自动开始
 剩余 {0}，需要 {1}</source>
-      <translation type="unfinished"/>
+      <translation>لم تبدأ المهمة تلقائيًا
+المتبقي {0}، المطلوب {1}</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="122"/>
@@ -3150,52 +3155,52 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../platform/desktop_notification.py" line="135"/>
       <source>下载失败</source>
-      <translation type="unfinished"/>
+      <translation>فشل التنزيل</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="146"/>
       <source>等 {0} 个链接</source>
-      <translation type="unfinished"/>
+      <translation>و{0} روابط</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="148"/>
       <source>检测到下载链接</source>
-      <translation type="unfinished"/>
+      <translation>تم اكتشاف رابط تنزيل</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="151"/>
       <source>下载</source>
-      <translation type="unfinished"/>
+      <translation>تنزيل</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="152"/>
       <source>忽略</source>
-      <translation type="unfinished"/>
+      <translation>تجاهل</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="159"/>
       <source>浏览器扩展</source>
-      <translation type="unfinished"/>
+      <translation>إضافة المتصفح</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="160"/>
       <source>未知</source>
-      <translation type="unfinished"/>
+      <translation>غير معروف</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="162"/>
       <source>浏览器扩展配对请求</source>
-      <translation type="unfinished"/>
+      <translation>طلب اقتران إضافة المتصفح</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="164"/>
       <source>{0} {1} 请求连接</source>
-      <translation type="unfinished"/>
+      <translation>{0} {1} يطلب الاتصال</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="165"/>
       <source>来源: {0}</source>
-      <translation type="unfinished"/>
+      <translation>المصدر: {0}</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="166"/>
@@ -3205,12 +3210,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../platform/desktop_notification.py" line="169"/>
       <source>允许配对</source>
-      <translation type="unfinished"/>
+      <translation>السماح بالاقتران</translation>
     </message>
     <message>
       <location filename="../../platform/desktop_notification.py" line="170"/>
       <source>拒绝</source>
-      <translation type="unfinished"/>
+      <translation>رفض</translation>
     </message>
   </context>
   <context>
@@ -3262,17 +3267,17 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="101"/>
       <source>功能包已更新</source>
-      <translation type="unfinished"/>
+      <translation>تم تحديث حزمة الميزات</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="101"/>
       <source>重启软件后生效</source>
-      <translation type="unfinished"/>
+      <translation>يسري بعد إعادة تشغيل البرنامج</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="120"/>
       <source>辅助组件</source>
-      <translation type="unfinished"/>
+      <translation>المكونات المساعدة</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="97"/>
@@ -3293,17 +3298,17 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="64"/>
       <source>更新中…</source>
-      <translation type="unfinished"/>
+      <translation>جارٍ التحديث…</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="65"/>
       <source>重启后生效</source>
-      <translation type="unfinished"/>
+      <translation>يسري بعد إعادة التشغيل</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/pack_info.py" line="66"/>
       <source>更新失败</source>
-      <translation type="unfinished"/>
+      <translation>فشل التحديث</translation>
     </message>
   </context>
   <context>
@@ -3452,7 +3457,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/dialogs/preset_edit.py" line="64"/>
       <source>User-Agent</source>
-      <translation type="unfinished"/>
+      <translation>User-Agent</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/preset_edit.py" line="81"/>
@@ -3509,12 +3514,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../config/cfg.py" line="221"/>
       <source>默认</source>
-      <translation type="unfinished"/>
+      <translation>افتراضي</translation>
     </message>
     <message>
       <location filename="../../config/cfg.py" line="348"/>
       <source>百度网盘客户端</source>
-      <translation type="unfinished"/>
+      <translation>عميل Baidu Netdisk</translation>
     </message>
   </context>
   <context>
@@ -3585,7 +3590,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/components/setting_cards.py" line="300"/>
       <source>、</source>
-      <translation type="unfinished"/>
+      <translation>،</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="302"/>
@@ -4233,12 +4238,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/pages/setting_page.py" line="56"/>
       <source>下载设置</source>
-      <translation type="unfinished"/>
+      <translation>إعدادات التنزيل</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="57"/>
       <source>网络设置</source>
-      <translation type="unfinished"/>
+      <translation>إعدادات الشبكة</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="123"/>
@@ -4439,12 +4444,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/pages/setting_page.py" line="341"/>
       <source>通知提示音</source>
-      <translation type="unfinished"/>
+      <translation>نغمة الإشعار</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="342"/>
       <source>下载完成时播放提示音</source>
-      <translation type="unfinished"/>
+      <translation>تشغيل نغمة تنبيه عند اكتمال التنزيل</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="366"/>
@@ -4474,62 +4479,62 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/pages/setting_page.py" line="338"/>
       <source>系统通知</source>
-      <translation type="unfinished"/>
+      <translation>إشعارات النظام</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="315"/>
       <source>新建任务的下载进度</source>
-      <translation type="unfinished"/>
+      <translation>تقدم تنزيل المهام الجديدة</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="316"/>
       <source>选择新建任务下载进度的显示方式</source>
-      <translation type="unfinished"/>
+      <translation>اختر طريقة عرض تقدم تنزيل المهام الجديدة</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="317"/>
       <source>不显示</source>
-      <translation type="unfinished"/>
+      <translation>عدم العرض</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="317"/>
       <source>通过弹窗显示</source>
-      <translation type="unfinished"/>
+      <translation>العرض عبر نافذة منبثقة</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="317"/>
       <source>显示于任务栏</source>
-      <translation type="unfinished"/>
+      <translation>العرض في شريط المهام</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>通知方式</source>
-      <translation type="unfinished"/>
+      <translation>طريقة الإشعار</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="337"/>
       <source>下载完成、磁盘空间不足等提示的显示方式</source>
-      <translation type="unfinished"/>
+      <translation>طريقة عرض التنبيهات مثل اكتمال التنزيل ونفاد مساحة القرص</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="338"/>
       <source>弹窗</source>
-      <translation type="unfinished"/>
+      <translation>نافذة منبثقة</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="339"/>
       <source>关闭</source>
-      <translation type="unfinished"/>
+      <translation>إيقاف</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="348"/>
       <source>复制链接后先询问</source>
-      <translation type="unfinished"/>
+      <translation>السؤال أولًا بعد نسخ الرابط</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="349"/>
       <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
-      <translation type="unfinished"/>
+      <translation>عند إغلاق النافذة الرئيسية أو تصغيرها: عند التفعيل تظهر نافذة تسأل أولًا عما إذا كان سيتم التنزيل، وعند الإيقاف تُفتح النافذة الرئيسية مباشرة.</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="533"/>
@@ -4734,6 +4739,7 @@ http://example.com/{mp4,mkv}/video</source>
   <context>
     <name>StreamSelectCard</name>
     <message>
+      <location filename="../../../features/m3u8_pack/android.py" line="34"/>
       <location filename="../../../features/m3u8_pack/cards.py" line="189"/>
       <source>默认（最佳）</source>
       <translation>افتراضي (الأفضل)</translation>
@@ -4744,17 +4750,17 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="72"/>
       <source>字幕</source>
-      <translation type="unfinished"/>
+      <translation>ترجمة</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="74"/>
       <source>选择</source>
-      <translation type="unfinished"/>
+      <translation>اختيار</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="102"/>
       <source>不下载</source>
-      <translation type="unfinished"/>
+      <translation>عدم التنزيل</translation>
     </message>
   </context>
   <context>
@@ -4947,7 +4953,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/cards/task_cards.py" line="449"/>
       <source>在单独弹窗中显示下载进度</source>
-      <translation type="unfinished"/>
+      <translation>عرض تقدم التنزيل في نافذة منبثقة منفصلة</translation>
     </message>
     <message>
       <location filename="../../view/cards/task_cards.py" line="454"/>
@@ -5151,7 +5157,7 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../i18n.py" line="44"/>
       <source>不支持该链接</source>
-      <translation type="unfinished"/>
+      <translation>هذا الرابط غير مدعوم</translation>
     </message>
     <message>
       <location filename="../../i18n.py" line="45"/>
@@ -5531,12 +5537,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bili_pack/i18n.py" line="14"/>
       <source>弹幕下载失败</source>
-      <translation type="unfinished"/>
+      <translation>فشل تنزيل الدانماكو</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/i18n.py" line="15"/>
       <source>Bilibili 拦截了弹幕请求（412 风控），请稍后再试</source>
-      <translation type="unfinished"/>
+      <translation>اعترض Bilibili طلب الدانماكو (تحكم 412)، يرجى المحاولة لاحقًا</translation>
     </message>
     <message>
       <location filename="../../../features/huggingface_pack/i18n.py" line="3"/>
@@ -5769,77 +5775,77 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../view/shell/task_popup.py" line="22"/>
       <source>{0} 秒</source>
-      <translation type="unfinished"/>
+      <translation>{0} ثانية</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="26"/>
       <source>{0} 分 {1} 秒</source>
-      <translation type="unfinished"/>
+      <translation>{0} دقيقة {1} ثانية</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="27"/>
       <source>{0} 分</source>
-      <translation type="unfinished"/>
+      <translation>{0} دقيقة</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="30"/>
       <source>{0} 小时 {1} 分</source>
-      <translation type="unfinished"/>
+      <translation>{0} ساعة {1} دقيقة</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="31"/>
       <source>{0} 小时</source>
-      <translation type="unfinished"/>
+      <translation>{0} ساعة</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="80"/>
       <source>取消</source>
-      <translation type="unfinished"/>
+      <translation>إلغاء</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="128"/>
       <source>速度 {0}/s，剩余 {1}</source>
-      <translation type="unfinished"/>
+      <translation>السرعة {0}/ث، المتبقي {1}</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="131"/>
       <source>速度 {0}/s</source>
-      <translation type="unfinished"/>
+      <translation>السرعة {0}/ث</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="133"/>
       <source>正在计算速度</source>
-      <translation type="unfinished"/>
+      <translation>جارٍ حساب السرعة</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="135"/>
       <source>任务已经暂停</source>
-      <translation type="unfinished"/>
+      <translation>تم إيقاف المهمة مؤقتًا</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="137"/>
       <source>任务正在等待</source>
-      <translation type="unfinished"/>
+      <translation>المهمة في الانتظار</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="139"/>
       <source>已下载 {0}，共 {1}</source>
-      <translation type="unfinished"/>
+      <translation>تم تنزيل {0}، الإجمالي {1}</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="142"/>
       <source>已下载 {0}</source>
-      <translation type="unfinished"/>
+      <translation>تم تنزيل {0}</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="151"/>
       <source>继续</source>
-      <translation type="unfinished"/>
+      <translation>استئناف</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="151"/>
       <source>暂停</source>
-      <translation type="unfinished"/>
+      <translation>إيقاف مؤقت</translation>
     </message>
   </context>
   <context>
@@ -5904,12 +5910,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="36"/>
       <source>Info Hash v1</source>
-      <translation type="unfinished"/>
+      <translation>Info Hash v1</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="37"/>
       <source>Info Hash v2</source>
-      <translation type="unfinished"/>
+      <translation>Info Hash v2</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="38"/>
@@ -5987,11 +5993,15 @@ http://example.com/{mp4,mkv}/video</source>
     <name>TrackBar</name>
     <message>
       <location filename="../../view/components/track_bar.py" line="96"/>
+      <location filename="../../../features/bili_pack/android.py" line="128"/>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="35"/>
       <source>视频</source>
       <translation>فيديو</translation>
     </message>
     <message>
       <location filename="../../view/components/track_bar.py" line="98"/>
+      <location filename="../../../features/bili_pack/android.py" line="135"/>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="42"/>
       <source>音频</source>
       <translation>صوت</translation>
     </message>
@@ -6165,17 +6175,17 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/wrapped_link_pack/pack.py" line="61"/>
       <source>迅雷</source>
-      <translation type="unfinished"/>
+      <translation>Xunlei</translation>
     </message>
     <message>
       <location filename="../../../features/wrapped_link_pack/pack.py" line="62"/>
       <source>快车</source>
-      <translation type="unfinished"/>
+      <translation>FlashGet</translation>
     </message>
     <message>
       <location filename="../../../features/wrapped_link_pack/pack.py" line="63"/>
       <source>QQ 旋风</source>
-      <translation type="unfinished"/>
+      <translation>QQ Xuanfeng</translation>
     </message>
     <message>
       <location filename="../../../features/wrapped_link_pack/pack.py" line="55"/>
@@ -6274,11 +6284,13 @@ http://example.com/{mp4,mkv}/video</source>
   <context>
     <name>YtDlpDraftCard</name>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="49"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="249"/>
       <source>音频语言</source>
       <translation>لغة الصوت</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="37"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
@@ -6286,6 +6298,7 @@ http://example.com/{mp4,mkv}/video</source>
       <translation>أفضل جودة</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="44"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
@@ -6293,6 +6306,7 @@ http://example.com/{mp4,mkv}/video</source>
       <translation>أفضل صوت</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="58"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
       <source>自动</source>

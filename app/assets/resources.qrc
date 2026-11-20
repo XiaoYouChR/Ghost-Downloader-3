@@ -16,9 +16,14 @@
 
   <qresource prefix="i18n">
     <file alias="gd3.ar_SA.qm">i18n/gd3.ar_SA.qm</file>
+    <file alias="gd3.de_DE.qm">i18n/gd3.de_DE.qm</file>
     <file alias="gd3.en_US.qm">i18n/gd3.en_US.qm</file>
     <file alias="gd3.es_ES.qm">i18n/gd3.es_ES.qm</file>
+    <file alias="gd3.fr_FR.qm">i18n/gd3.fr_FR.qm</file>
+    <file alias="gd3.id_ID.qm">i18n/gd3.id_ID.qm</file>
+    <file alias="gd3.it_IT.qm">i18n/gd3.it_IT.qm</file>
     <file alias="gd3.ja_JP.qm">i18n/gd3.ja_JP.qm</file>
+    <file alias="gd3.ko_KR.qm">i18n/gd3.ko_KR.qm</file>
     <file alias="gd3.ms_MY.qm">i18n/gd3.ms_MY.qm</file>
     <file alias="gd3.pt_BR.qm">i18n/gd3.pt_BR.qm</file>
     <file alias="gd3.ru_RU.qm">i18n/gd3.ru_RU.qm</file>
@@ -27,9 +32,14 @@
     <file alias="gd3.zh_HK.qm">i18n/gd3.zh_HK.qm</file>
     <file alias="gd3.zh_TW.qm">i18n/gd3.zh_TW.qm</file>
     <file alias="gd3.ar.qm">i18n/gd3.ar_SA.qm</file>
+    <file alias="gd3.de.qm">i18n/gd3.de_DE.qm</file>
     <file alias="gd3.en.qm">i18n/gd3.en_US.qm</file>
     <file alias="gd3.es.qm">i18n/gd3.es_ES.qm</file>
+    <file alias="gd3.fr.qm">i18n/gd3.fr_FR.qm</file>
+    <file alias="gd3.id.qm">i18n/gd3.id_ID.qm</file>
+    <file alias="gd3.it.qm">i18n/gd3.it_IT.qm</file>
     <file alias="gd3.ja.qm">i18n/gd3.ja_JP.qm</file>
+    <file alias="gd3.ko.qm">i18n/gd3.ko_KR.qm</file>
     <file alias="gd3.ms.qm">i18n/gd3.ms_MY.qm</file>
     <file alias="gd3.pt.qm">i18n/gd3.pt_BR.qm</file>
     <file alias="gd3.ru.qm">i18n/gd3.ru_RU.qm</file>
