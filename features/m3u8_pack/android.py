@@ -31,7 +31,7 @@ def optionFields(task: M3U8Task) -> dict:
 
 
 def toStreamOptions(streams: list[dict]) -> list[dict[str, str]]:
-    options = [{"key": "", "label": "默认（最佳）"}]
+    options = [{"key": "", "label": N("StreamSelectCard", "默认（最佳）")}]
     for stream in streams:
         width, height = stream.get("width", 0), stream.get("height", 0)
         details = [v for v in (stream.get("codecs") or "",

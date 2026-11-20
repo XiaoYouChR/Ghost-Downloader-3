@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from app.i18n import N
+
 from .choices import buildAudioLanguageChoices, buildAudioTiers, buildSubtitleChoices, buildVideoTiers
 from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist, parseLanguages
 
@@ -30,21 +32,21 @@ def draftFields(task: YouTubeTask) -> dict:
         "controls": [
             {
                 "id": "video",
-                "title": "视频",
+                "title": N("TrackBar", "视频"),
                 "value": str(task.maxVideoHeight) if task.isVideoEnabled else "",
-                "options": toDraftOptions(videoTiers, best="最佳画质"),
+                "options": toDraftOptions(videoTiers, best=N("YtDlpDraftCard", "最佳画质")),
                 "isOptional": task.isAudioEnabled,
             },
             {
                 "id": "audio",
-                "title": "音频",
+                "title": N("TrackBar", "音频"),
                 "value": str(task.maxAudioBitrate) if task.isAudioEnabled else "",
-                "options": toDraftOptions(audioTiers, best="最佳音质"),
+                "options": toDraftOptions(audioTiers, best=N("YtDlpDraftCard", "最佳音质")),
                 "isOptional": task.isVideoEnabled,
             },
             {
                 "id": "language",
-                "title": "音频语言",
+                "title": N("YtDlpDraftCard", "音频语言"),
                 "value": task.audioLanguages if task.isAudioEnabled else "",
                 "options": toDraftOptions(buildAudioLanguageChoices(info)),
                 "isMultiple": True,
@@ -53,7 +55,7 @@ def draftFields(task: YouTubeTask) -> dict:
         ],
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
-        "subtitles": toDraftOptions(subtitles, auto="自动"),
+        "subtitles": toDraftOptions(subtitles, auto=N("YtDlpDraftCard", "自动")),
         "subtitleLanguages": [s for s in task.subtitleLanguages.split(",") if s],
         "duration": int(info.get("duration") or 0) if not task.isPlaylist else 0,
         "startTime": page.startTime if page else 0,

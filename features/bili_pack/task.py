@@ -7,7 +7,6 @@ from pathlib import Path
 from app.models.task import Task, TaskError, TaskFile, TaskStep, TaskStatus, SpecialFileSize, deletePlaceholder
 
 from app.platform.filesystem import toSafeFilename
-from app.i18n import N
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.container import buildTimeSuffix
 from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep
@@ -73,7 +72,7 @@ def currentAudioTier(task: BilibiliTask) -> str:
     )
 
 
-def subtitleChoices(task: BilibiliTask) -> list[tuple[str, str]]:
+def subtitleChoices(task: BilibiliTask, automaticLabel: str) -> list[tuple[str, str]]:
     seen = set()
     choices = []
     for page in task.files or []:
@@ -84,7 +83,7 @@ def subtitleChoices(task: BilibiliTask) -> list[tuple[str, str]]:
             seen.add(lan)
             label = sub.get("lan_doc", lan)
             if sub.get("isAi"):
-                label += N("BilibiliDraftCard", "（自动生成）")
+                label += automaticLabel
             choices.append((lan, label))
     return choices
 

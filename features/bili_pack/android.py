@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from app.i18n import N
 
 from .account import (
     QR_EXPIRED,
@@ -97,8 +99,8 @@ def fileGroups(task: BilibiliTask) -> dict[int, list[str]]:
     }
 
 
-def toDraftOptions(pairs: list[tuple[str, str]]) -> list[dict[str, str]]:
-    return [{"key": key, "label": label} for key, label in pairs]
+def toDraftOptions(pairs: list[tuple[str, str]], **params: Any) -> list[dict]:
+    return [{"key": key, "label": label, "params": params} for key, label in pairs]
 
 
 def activeTracks(task: BilibiliTask) -> set[str]:
@@ -123,21 +125,21 @@ def draftFields(task: BilibiliTask) -> dict:
         "controls": [
             {
                 "id": "video",
-                "title": "视频",
+                "title": N("TrackBar", "视频"),
                 "value": currentVideoTier(task) if task.isVideoEnabled else "",
                 "options": toDraftOptions(videoTiers(task)),
                 "isOptional": bool(tracks - {"video"}),
             },
             {
                 "id": "audio",
-                "title": "音频",
+                "title": N("TrackBar", "音频"),
                 "value": currentAudioTier(task) if task.isAudioEnabled else "",
                 "options": toDraftOptions(audioTiers(task)),
                 "isOptional": bool(tracks - {"audio"}),
             },
             {
                 "id": "danmaku",
-                "title": "弹幕",
+                "title": N("BilibiliDraftCard", "弹幕"),
                 "value": task.danmakuFormat,
                 "options": toDraftOptions(DANMAKU_OPTIONS),
                 "isOptional": bool(tracks - {"danmaku"}),
@@ -145,7 +147,9 @@ def draftFields(task: BilibiliTask) -> dict:
         ],
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
-        "subtitles": toDraftOptions(subtitleChoices(task)) if task.hasMedia else [],
+        "subtitles": toDraftOptions(
+            subtitleChoices(task, "{auto}"), auto=N("BilibiliDraftCard", "（自动生成）"),
+        ) if task.hasMedia else [],
         "subtitleLanguages": list(task.subtitleLanguages),
         "duration": page._duration if page else 0,
         "startTime": page.startTime if page else 0,

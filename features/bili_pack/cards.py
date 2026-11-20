@@ -460,7 +460,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
             self._trackBar.audioButton.setTrackEnabled(False)
             self._trackBar.audioButton.setChecked(False)
 
-        self._subtitleChoices = subtitleChoices(task)
+        self._subtitleChoices = subtitleChoices(task, self.tr("（自动生成）"))
         self._trackBar.subtitleButton.setTrackEnabled(bool(self._subtitleChoices))
         self._trackBar.coverButton.setTrackEnabled(bool(self._task.coverUrl))
 
