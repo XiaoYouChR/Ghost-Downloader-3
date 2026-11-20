@@ -245,8 +245,9 @@ def buildAndroidFallbackStrings(locales: list[str]) -> None:
 
 def buildResources() -> None:
     # 格式 2 起记录文件修改时间，CI 每次 checkout 都会让 .rcc 变化
+    # Linux 版 rcc 默认用 zstd，但格式 1 读不出 zstd 条目，v4.5.9 因此丢了译文
     subprocess.run([
-        findTool("pyside6-rcc"), "--binary", "--format-version", "1",
+        findTool("pyside6-rcc"), "--binary", "--format-version", "1", "--compress-algo", "zlib",
         "-o", RESOURCES_RCC.as_posix(),
         QRC_PATH.as_posix(),
     ], cwd=REPO, check=True)
