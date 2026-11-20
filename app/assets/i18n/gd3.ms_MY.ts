@@ -305,7 +305,8 @@
       <location filename="../../view/dialogs/batch_url.py" line="112"/>
       <source>http://example.com/img/[001-100].jpg
 http://example.com/{mp4,mkv}/video</source>
-      <translation type="unfinished"/>
+      <translation>http://example.com/img/[001-100].jpg
+http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/batch_url.py" line="116"/>
@@ -341,12 +342,12 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="17"/>
       <source>杜比视界</source>
-      <translation type="unfinished"/>
+      <translation>Dolby Vision</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="20"/>
       <source>杜比全景声</source>
-      <translation type="unfinished"/>
+      <translation>Dolby Atmos</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="44"/>
@@ -422,6 +423,7 @@ http://example.com/{mp4,mkv}/video</source>
       <translation>Kualiti Terbaik</translation>
     </message>
     <message>
+      <location filename="../../../features/bili_pack/android.py" line="142"/>
       <location filename="../../../features/bili_pack/cards.py" line="468"/>
       <source>弹幕</source>
       <translation>Danmaku</translation>
@@ -442,7 +444,8 @@ http://example.com/{mp4,mkv}/video</source>
       <translation>Pilih Video</translation>
     </message>
     <message>
-      <location filename="../../../features/bili_pack/task.py" line="87"/>
+      <location filename="../../../features/bili_pack/android.py" line="151"/>
+      <location filename="../../../features/bili_pack/cards.py" line="463"/>
       <source>（自动生成）</source>
       <translation>(Dijana secara automatik)</translation>
     </message>
@@ -560,27 +563,28 @@ http://example.com/{mp4,mkv}/video</source>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <source>停止</source>
-      <translation type="unfinished"/>
+      <translation>Hentikan</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <source>停止 BitTorrent 会话</source>
-      <translation type="unfinished"/>
+      <translation>Hentikan Sesi BitTorrent</translation>
     </message>
     <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
       <source>未运行</source>
-      <translation type="unfinished"/>
+      <translation>Tidak berjalan</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
       <source>有 BT 任务正在下载或做种，结束后才能停止</source>
-      <translation type="unfinished"/>
+      <translation>Terdapat tugasan BT yang sedang dimuat turun atau disemai; ia mesti selesai sebelum dihentikan</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
       <source>空闲 5 分钟后自动停止，开始任务时会自动启动</source>
-      <translation type="unfinished"/>
+      <translation>Berhenti secara automatik selepas 5 minit tidak aktif; akan bermula secara automatik apabila tugasan dimulakan</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
@@ -1450,7 +1454,7 @@ Anda boleh mengubah suai pilihan dalam Tetapan pada bila-bila masa.</translation
     <message>
       <location filename="../../../features/ed2k_pack/detail_cards.py" line="67"/>
       <source>eD2k</source>
-      <translation type="unfinished"/>
+      <translation>eD2k</translation>
     </message>
     <message>
       <location filename="../../../features/ed2k_pack/detail_cards.py" line="69"/>
@@ -1533,7 +1537,7 @@ Anda boleh mengubah suai pilihan dalam Tetapan pada bila-bila masa.</translation
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="78"/>
       <source>空闲 5 分钟后自动终止，开始 eD2k 任务时会自动重新启动</source>
-      <translation type="unfinished"/>
+      <translation>Tamat secara automatik selepas 5 minit tidak aktif; akan bermula semula secara automatik apabila tugasan eD2k dimulakan</translation>
     </message>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="81"/>
@@ -1908,7 +1912,7 @@ Anda boleh mengubah suai pilihan dalam Tetapan pada bila-bila masa.</translation
     <message>
       <location filename="../../../features/ffmpeg_pack/config.py" line="49"/>
       <source>FFmpeg</source>
-      <translation type="unfinished"/>
+      <translation>FFmpeg</translation>
     </message>
     <message>
       <location filename="../../../features/ffmpeg_pack/config.py" line="52"/>
@@ -2234,7 +2238,7 @@ Anda boleh mengubah suai pilihan dalam Tetapan pada bila-bila masa.</translation
 Hanya arahan cURL pertama diimport
 
 User-Agent dan sec-ch-ua diabaikan apabila profil klien didayakan;
-pilih &quot;Tiada Emulasi&quot; untuk menghantar seperti asal</translation>
+pilih "Tiada Emulasi" untuk menghantar seperti asal</translation>
     </message>
   </context>
   <context>
@@ -2696,12 +2700,12 @@ pilih &quot;Tiada Emulasi&quot; untuk menghantar seperti asal</translation>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="134"/>
       <source>下载全部音轨</source>
-      <translation type="unfinished"/>
+      <translation>Muat Turun Semua Trek Audio</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="135"/>
       <source>默认拉取全部音频轨道</source>
-      <translation type="unfinished"/>
+      <translation>Tarik semua trek audio secara lalai</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="118"/>
@@ -2809,7 +2813,7 @@ pilih &quot;Tiada Emulasi&quot; untuk menghantar seperti asal</translation>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="34"/>
       <source>字幕</source>
-      <translation type="unfinished"/>
+      <translation>Sari Kata</translation>
     </message>
   </context>
   <context>
@@ -3313,7 +3317,7 @@ Hanya benarkan permintaan ini jika anda telah meminta &quot;Ganding Automatik&qu
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="140"/>
       <source>Peer</source>
-      <translation type="unfinished"/>
+      <translation>Rakan Sebaya</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="144"/>
@@ -3454,7 +3458,7 @@ Bendera {2}  Kemajuan {3}</translation>
     <message>
       <location filename="../../view/dialogs/preset_edit.py" line="64"/>
       <source>User-Agent</source>
-      <translation type="unfinished"/>
+      <translation>User-Agent</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/preset_edit.py" line="81"/>
@@ -3511,12 +3515,12 @@ Kad liar: *.pcs.baidu.com (memadankan semua subdomain)</translation>
     <message>
       <location filename="../../config/cfg.py" line="221"/>
       <source>默认</source>
-      <translation type="unfinished"/>
+      <translation>Lalai</translation>
     </message>
     <message>
       <location filename="../../config/cfg.py" line="348"/>
       <source>百度网盘客户端</source>
-      <translation type="unfinished"/>
+      <translation>Klien Baidu Netdisk</translation>
     </message>
   </context>
   <context>
@@ -4741,6 +4745,7 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
   <context>
     <name>StreamSelectCard</name>
     <message>
+      <location filename="../../../features/m3u8_pack/android.py" line="34"/>
       <location filename="../../../features/m3u8_pack/cards.py" line="189"/>
       <source>默认（最佳）</source>
       <translation>Lalai (Terbaik)</translation>
@@ -4751,17 +4756,17 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="72"/>
       <source>字幕</source>
-      <translation type="unfinished"/>
+      <translation>Sari Kata</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="74"/>
       <source>选择</source>
-      <translation type="unfinished"/>
+      <translation>Pilih</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="102"/>
       <source>不下载</source>
-      <translation type="unfinished"/>
+      <translation>Langkau</translation>
     </message>
   </context>
   <context>
@@ -5777,27 +5782,27 @@ Tetapan Sistem &gt; Privasi &amp; Keselamatan &gt; Akses Cakera Penuh</translati
     <message>
       <location filename="../../view/shell/task_popup.py" line="22"/>
       <source>{0} 秒</source>
-      <translation type="unfinished"/>
+      <translation>{0} saat</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="26"/>
       <source>{0} 分 {1} 秒</source>
-      <translation type="unfinished"/>
+      <translation>{0} minit {1} saat</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="27"/>
       <source>{0} 分</source>
-      <translation type="unfinished"/>
+      <translation>{0} minit</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="30"/>
       <source>{0} 小时 {1} 分</source>
-      <translation type="unfinished"/>
+      <translation>{0} jam {1} minit</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="31"/>
       <source>{0} 小时</source>
-      <translation type="unfinished"/>
+      <translation>{0} jam</translation>
     </message>
     <message>
       <location filename="../../view/shell/task_popup.py" line="80"/>
@@ -5912,12 +5917,12 @@ Tetapan Sistem &gt; Privasi &amp; Keselamatan &gt; Akses Cakera Penuh</translati
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="36"/>
       <source>Info Hash v1</source>
-      <translation type="unfinished"/>
+      <translation>Info Hash v1</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="37"/>
       <source>Info Hash v2</source>
-      <translation type="unfinished"/>
+      <translation>Info Hash v2</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="38"/>
@@ -5995,11 +6000,15 @@ Tetapan Sistem &gt; Privasi &amp; Keselamatan &gt; Akses Cakera Penuh</translati
     <name>TrackBar</name>
     <message>
       <location filename="../../view/components/track_bar.py" line="96"/>
+      <location filename="../../../features/bili_pack/android.py" line="128"/>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="35"/>
       <source>视频</source>
       <translation>Video</translation>
     </message>
     <message>
       <location filename="../../view/components/track_bar.py" line="98"/>
+      <location filename="../../../features/bili_pack/android.py" line="135"/>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="42"/>
       <source>音频</source>
       <translation>Audio</translation>
     </message>
@@ -6044,7 +6053,7 @@ Tetapan Sistem &gt; Privasi &amp; Keselamatan &gt; Akses Cakera Penuh</translati
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="104"/>
       <source>Peer</source>
-      <translation type="unfinished"/>
+      <translation>Rakan Sebaya</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/detail_cards.py" line="106"/>
@@ -6282,11 +6291,13 @@ Untuk import manual: Buka YouTube dan log masuk, tekan F12 untuk membuka Alat Pe
   <context>
     <name>YtDlpDraftCard</name>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="49"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="249"/>
       <source>音频语言</source>
       <translation>Bahasa Audio</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="37"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
@@ -6294,6 +6305,7 @@ Untuk import manual: Buka YouTube dan log masuk, tekan F12 untuk membuka Alat Pe
       <translation>Kualiti Terbaik</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="44"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
@@ -6301,6 +6313,7 @@ Untuk import manual: Buka YouTube dan log masuk, tekan F12 untuk membuka Alat Pe
       <translation>Kualiti Terbaik</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="58"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
       <source>自动</source>

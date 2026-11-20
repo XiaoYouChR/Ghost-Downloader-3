@@ -342,12 +342,12 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="17"/>
       <source>杜比视界</source>
-      <translation type="unfinished"/>
+      <translation>Dolby Vision</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="20"/>
       <source>杜比全景声</source>
-      <translation type="unfinished"/>
+      <translation>Dolby Atmos</translation>
     </message>
     <message>
       <location filename="../../../features/bili_pack/config.py" line="44"/>
@@ -423,6 +423,7 @@ http://example.com/{mp4,mkv}/video</translation>
       <translation>Mejor audio</translation>
     </message>
     <message>
+      <location filename="../../../features/bili_pack/android.py" line="142"/>
       <location filename="../../../features/bili_pack/cards.py" line="468"/>
       <source>弹幕</source>
       <translation>Danmaku</translation>
@@ -443,7 +444,8 @@ http://example.com/{mp4,mkv}/video</translation>
       <translation>Seleccionar Video</translation>
     </message>
     <message>
-      <location filename="../../../features/bili_pack/task.py" line="87"/>
+      <location filename="../../../features/bili_pack/android.py" line="151"/>
+      <location filename="../../../features/bili_pack/cards.py" line="463"/>
       <source>（自动生成）</source>
       <translation>(Generado automáticamente)</translation>
     </message>
@@ -561,27 +563,28 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <source>停止</source>
-      <translation type="unfinished"/>
+      <translation>Detener</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <source>停止 BitTorrent 会话</source>
-      <translation type="unfinished"/>
+      <translation>Detener sesión de BitTorrent</translation>
     </message>
     <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
       <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
       <source>未运行</source>
-      <translation type="unfinished"/>
+      <translation>No está en ejecución</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
       <source>有 BT 任务正在下载或做种，结束后才能停止</source>
-      <translation type="unfinished"/>
+      <translation>Hay tareas BT descargando o compartiendo; finalícelas para poder detener</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
       <source>空闲 5 分钟后自动停止，开始任务时会自动启动</source>
-      <translation type="unfinished"/>
+      <translation>Detener automáticamente tras 5 minutos de inactividad; se iniciará automáticamente al iniciar una tarea</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
@@ -1533,7 +1536,7 @@ You can adjust all options in Ajustes at any time.</translation>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="78"/>
       <source>空闲 5 分钟后自动终止，开始 eD2k 任务时会自动重新启动</source>
-      <translation type="unfinished"/>
+      <translation>Terminar automáticamente tras 5 minutos de inactividad; se reiniciará automáticamente al iniciar una tarea eD2k</translation>
     </message>
     <message>
       <location filename="../../../features/ed2k_pack/config.py" line="81"/>
@@ -2696,12 +2699,12 @@ configura sin simular para enviar tal cual</translation>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="134"/>
       <source>下载全部音轨</source>
-      <translation type="unfinished"/>
+      <translation>Descargar todas las pistas de audio</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="135"/>
       <source>默认拉取全部音频轨道</source>
-      <translation type="unfinished"/>
+      <translation>Obtener todas las pistas de audio por defecto</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/config.py" line="118"/>
@@ -2809,7 +2812,7 @@ configura sin simular para enviar tal cual</translation>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="34"/>
       <source>字幕</source>
-      <translation type="unfinished"/>
+      <translation>Subtítulos</translation>
     </message>
   </context>
   <context>
@@ -3511,12 +3514,12 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     <message>
       <location filename="../../config/cfg.py" line="221"/>
       <source>默认</source>
-      <translation type="unfinished"/>
+      <translation>Predeterminado</translation>
     </message>
     <message>
       <location filename="../../config/cfg.py" line="348"/>
       <source>百度网盘客户端</source>
-      <translation type="unfinished"/>
+      <translation>Cliente de Baidu Netdisk</translation>
     </message>
   </context>
   <context>
@@ -4736,6 +4739,7 @@ Data will be copied to new location and the program will then exit. Por favor ma
   <context>
     <name>StreamSelectCard</name>
     <message>
+      <location filename="../../../features/m3u8_pack/android.py" line="34"/>
       <location filename="../../../features/m3u8_pack/cards.py" line="189"/>
       <source>默认（最佳）</source>
       <translation>Predeterminado (Best)</translation>
@@ -4746,17 +4750,17 @@ Data will be copied to new location and the program will then exit. Por favor ma
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="72"/>
       <source>字幕</source>
-      <translation type="unfinished"/>
+      <translation>Subtítulos</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="74"/>
       <source>选择</source>
-      <translation type="unfinished"/>
+      <translation>Seleccionar</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/cards.py" line="102"/>
       <source>不下载</source>
-      <translation type="unfinished"/>
+      <translation>No descargar</translation>
     </message>
   </context>
   <context>
@@ -5989,11 +5993,15 @@ Data will be copied to new location and the program will then exit. Por favor ma
     <name>TrackBar</name>
     <message>
       <location filename="../../view/components/track_bar.py" line="96"/>
+      <location filename="../../../features/bili_pack/android.py" line="128"/>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="35"/>
       <source>视频</source>
       <translation>Vídeo</translation>
     </message>
     <message>
       <location filename="../../view/components/track_bar.py" line="98"/>
+      <location filename="../../../features/bili_pack/android.py" line="135"/>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="42"/>
       <source>音频</source>
       <translation>Audio</translation>
     </message>
@@ -6276,11 +6284,13 @@ Para importar manualmente: abra YouTube e inicie sesión, pulse F12 para abrir l
   <context>
     <name>YtDlpDraftCard</name>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="49"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="249"/>
       <source>音频语言</source>
       <translation>Idioma de audio</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="37"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
@@ -6288,6 +6298,7 @@ Para importar manualmente: abra YouTube e inicie sesión, pulse F12 para abrir l
       <translation>Mejor calidad</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="44"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
@@ -6295,6 +6306,7 @@ Para importar manualmente: abra YouTube e inicie sesión, pulse F12 para abrir l
       <translation>Mejor audio</translation>
     </message>
     <message>
+      <location filename="../../../features/yt_dlp_pack/android.py" line="58"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
       <source>自动</source>

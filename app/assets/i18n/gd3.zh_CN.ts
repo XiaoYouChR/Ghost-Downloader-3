@@ -418,6 +418,7 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../features/bili_pack/android.py" line="142"/>
         <location filename="../../../features/bili_pack/cards.py" line="468"/>
         <source>弹幕</source>
         <translation type="unfinished"></translation>
@@ -438,7 +439,8 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/task.py" line="87"/>
+        <location filename="../../../features/bili_pack/android.py" line="151"/>
+        <location filename="../../../features/bili_pack/cards.py" line="463"/>
         <source>（自动生成）</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4710,6 +4712,7 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>StreamSelectCard</name>
     <message>
+        <location filename="../../../features/m3u8_pack/android.py" line="34"/>
         <location filename="../../../features/m3u8_pack/cards.py" line="189"/>
         <source>默认（最佳）</source>
         <translation type="unfinished"></translation>
@@ -5963,11 +5966,15 @@ http://example.com/{mp4,mkv}/video</source>
     <name>TrackBar</name>
     <message>
         <location filename="../../view/components/track_bar.py" line="96"/>
+        <location filename="../../../features/bili_pack/android.py" line="128"/>
+        <location filename="../../../features/yt_dlp_pack/android.py" line="35"/>
         <source>视频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../view/components/track_bar.py" line="98"/>
+        <location filename="../../../features/bili_pack/android.py" line="135"/>
+        <location filename="../../../features/yt_dlp_pack/android.py" line="42"/>
         <source>音频</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6248,11 +6255,13 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>YtDlpDraftCard</name>
     <message>
+        <location filename="../../../features/yt_dlp_pack/android.py" line="49"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="249"/>
         <source>音频语言</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../features/yt_dlp_pack/android.py" line="37"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
@@ -6260,6 +6269,7 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../features/yt_dlp_pack/android.py" line="44"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
@@ -6267,6 +6277,7 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../features/yt_dlp_pack/android.py" line="58"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
         <source>自动</source>
