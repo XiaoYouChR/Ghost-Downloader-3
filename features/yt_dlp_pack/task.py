@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
+from app.config.cfg import cfg
 from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus, deletePlaceholder
 from app.platform.filesystem import splitStemExt, toSafeFilename
 from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep
@@ -51,7 +52,7 @@ def loadYtDlpToPath() -> None:
 
 def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
     from .config import cookieFile, hasCookieFile, youTubeRuntime
-    from app.config.cfg import cfg, proxy
+    from app.config.cfg import proxy
 
     opts: dict = {
         "quiet": True,
@@ -181,8 +182,10 @@ def parseLanguages(value: str) -> list[str]:
 def buildStepGroup(task: YouTubeTask, fileIndex: int, stepIndexes: Iterator[int], videoUrl: str = "") -> list[TaskStep]:
     steps: list[TaskStep] = [
         YouTubeExtractStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, videoUrl=videoUrl),
-        YouTubeResourceStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, role="video"),
-        YouTubeResourceStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, role="audio"),
+        YouTubeResourceStep(
+            stepIndex=next(stepIndexes), fileIndex=fileIndex, role="video", subworkerCount=task.subworkerCount),
+        YouTubeResourceStep(
+            stepIndex=next(stepIndexes), fileIndex=fileIndex, role="audio", subworkerCount=task.subworkerCount),
         YouTubeMergeStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, videoUrl=videoUrl),
     ]
     if task.isVideoEnabled or task.isAudioEnabled:
@@ -191,7 +194,8 @@ def buildStepGroup(task: YouTubeTask, fileIndex: int, stepIndexes: Iterator[int]
     if task.isAudioEnabled:
         for language in parseLanguages(task.audioLanguages)[1:]:
             steps.append(YouTubeResourceStep(
-                stepIndex=next(stepIndexes), fileIndex=fileIndex, role="audio", language=language))
+                stepIndex=next(stepIndexes), fileIndex=fileIndex, role="audio", language=language,
+                subworkerCount=task.subworkerCount))
             steps.append(YouTubeMergeStep(stepIndex=next(stepIndexes), fileIndex=fileIndex, language=language))
     return steps
 
@@ -218,11 +222,17 @@ class YouTubeTask(Task):
     coverUrl: str = ""
     isCoverEnabled: bool = False
     isPlaylist: bool = False
+    subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
 
     def __post_init__(self) -> None:
         super().__post_init__()
         if any(isinstance(s, YouTubeSubtitleStep) and not s.language for s in self.steps):
             self.updateSteps()
+
+    def setOptions(self, options: dict) -> None:
+        if "subworkerCount" in options:
+            self.subworkerCount = options["subworkerCount"]
+        super().setOptions(options)
 
     def setTracks(self, isVideoEnabled: bool, isAudioEnabled: bool, isCoverEnabled: bool) -> None:
         if (isVideoEnabled, isAudioEnabled, isCoverEnabled) == (self.isVideoEnabled, self.isAudioEnabled, self.isCoverEnabled):
@@ -429,8 +439,8 @@ class YouTubeExtractStep(TaskStep):
         self.task.fileSize = totalSize if totalSize > 0 else 0
 
     def _updateSiblingSteps(self, videoFmt: dict | None, audioFmt: dict | None, info: dict) -> None:
-        from app.config.cfg import cfg
         from .config import ytDlpConfig
+        task: YouTubeTask = self.task
 
         for step in self.task.steps:
             if step.fileIndex != self.fileIndex:
@@ -447,7 +457,7 @@ class YouTubeExtractStep(TaskStep):
                 step.fileSize = step.rawFileSize
                 step.extension = fmt.get("ext") or ("mp4" if step.role == "video" else "m4a")
                 step.canUseRangeRequests = True
-                step.subworkerCount = cfg.preBlockNum.value
+                step.subworkerCount = task.subworkerCount
                 step.headers = dict(fmt.get("http_headers") or {})
             elif isinstance(step, YouTubeMergeStep) and not step.language:
                 step.videoExtension = videoFmt.get("ext", "mp4") if videoFmt else ""
@@ -458,7 +468,7 @@ class YouTubeExtractStep(TaskStep):
                 if ytDlpConfig.shouldEmbedChapters.value:
                     step.chapters = info.get("chapters") or []
 
-        self._updateExtraAudioSteps(info, cfg.preBlockNum.value)
+        self._updateExtraAudioSteps(info, task.subworkerCount)
 
         totalSize = sum(
             s.fileSize for s in self.task.steps

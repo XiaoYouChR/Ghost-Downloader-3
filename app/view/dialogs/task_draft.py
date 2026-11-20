@@ -126,7 +126,8 @@ class TaskDraftDialog(MessageBoxBase):
         self.cancelButton.setText(self.tr("取消"))
 
         self.optionGroup.addCard(OutputFolderCard(self.optionGroup))
-        self.optionGroup.addCard(SubworkerCountCard(self.optionGroup))
+        self.subworkerCountCard = SubworkerCountCard(self.optionGroup)
+        self.optionGroup.addCard(self.subworkerCountCard)
 
     def _initLayout(self) -> None:
         self.headerLayout.addWidget(self.titleLabel)
@@ -143,6 +144,9 @@ class TaskDraftDialog(MessageBoxBase):
         self._parseTimer.setInterval(1000)
         self._parseTimer.timeout.connect(self._onParseNeeded)
         self.urlEdit.textChanged.connect(self._parseTimer.start)
+        self.subworkerCountCard.slider.valueChanged.connect(
+            lambda _: self._draft.setBaseOptions(self.optionGroup.options())
+        )
 
         self._draft.parsingBusyChanged.connect(self.progressBar.setVisible, owner=self)
         self._draft.parseSucceeded.connect(self._onParseSucceeded, owner=self)
