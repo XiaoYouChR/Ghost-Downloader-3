@@ -52,9 +52,9 @@
   },
   "packs": {
     "bili_pack": {
-      "version": "1.4.1",
+      "version": "1.4.2",
       "file": "bili_pack.zip",
-      "sha256": "d8eecc7c284e478485db0ef424e03ca61dcd0ce1ce6acdf9317d52a6dbe7245e",
+      "sha256": "cd859a03c30fd456ecb1ddc245742dd160745173bc33497e3564ac13f939f7a1",
       "gdMinVersion": "4.5.0"
     },
     "bittorrent_pack": {
@@ -100,9 +100,9 @@
       "gdMinVersion": "4.5.0"
     },
     "m3u8_pack": {
-      "version": "1.3.0",
+      "version": "1.3.1",
       "file": "m3u8_pack.zip",
-      "sha256": "b76ed67adbbb4ce66a6d1452a5766a7cff12ed262ebbad5c5aaa2b591f915fe1",
+      "sha256": "8a5cd3f94314e8e90317dc7f836dc31bff4b8caa44847a43d2fe1d5eb1322260",
       "gdMinVersion": "4.5.0"
     },
     "yt_dlp_pack": {
