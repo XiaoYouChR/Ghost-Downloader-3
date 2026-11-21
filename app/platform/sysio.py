@@ -1,6 +1,37 @@
 from __future__ import annotations
 
+import errno
+import os
+from pathlib import Path
 from sys import platform
+from tempfile import NamedTemporaryFile
+
+
+def writeAtomic(path: Path, data: bytes) -> None:
+    """Replace a file using a flushed temporary file on the same filesystem."""
+    temporaryPath = None
+    try:
+        with NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as output:
+            temporaryPath = Path(output.name)
+            output.write(data)
+            output.flush()
+            os.fsync(output.fileno())
+        temporaryPath.replace(path)
+        temporaryPath = None
+    finally:
+        if temporaryPath is not None:
+            temporaryPath.unlink(missing_ok=True)
+
+    if os.name == "posix":
+        fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            try:
+                os.fsync(fd)
+            except OSError as error:
+                if error.errno not in {errno.EINVAL, errno.ENOTSUP}:
+                    raise
+        finally:
+            os.close(fd)
 
 if platform == "win32":
     import msvcrt

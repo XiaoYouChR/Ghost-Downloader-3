@@ -5273,6 +5273,46 @@ Data will be copied to new location and the app will then exit. Please manually 
       <translation>The new link&apos;s content differs from the original task; please add a new task</translation>
     </message>
     <message>
+      <source>任务已变更，无法追加此下载源</source>
+      <translation>The task has changed and can no longer accept this source</translation>
+    </message>
+    <message>
+      <source>SHA-256 必须是 64 位十六进制字符</source>
+      <translation>A SHA-256 digest must contain 64 hexadecimal characters</translation>
+    </message>
+    <message>
+      <source>输入的 SHA-256 与任务已有的校验值不同</source>
+      <translation>This SHA-256 digest differs from the one already set for this task</translation>
+    </message>
+    <message>
+      <source>任务没有可分配的剩余区段</source>
+      <translation>There are no remaining ranges to assign</translation>
+    </message>
+    <message>
+      <source>无法读取原任务已下载的区段</source>
+      <translation>Could not read the downloaded bytes from the existing task</translation>
+    </message>
+    <message>
+      <source>下载源的文件样本与原任务不一致</source>
+      <translation>The new source&apos;s file samples differ from the existing task</translation>
+    </message>
+    <message>
+      <source>无法验证下载源，请检查链接和文件大小，并确认两端支持范围请求</source>
+      <translation>Could not verify the source. Check the links, file size, and range support on both servers.</translation>
+    </message>
+    <message>
+      <source>无法读取下载源的文件样本，请检查链接或网络</source>
+      <translation>Could not read the file samples. Check the link or your connection.</translation>
+    </message>
+    <message>
+      <source>下载源的文件版本已变更</source>
+      <translation>The file version at this source has changed</translation>
+    </message>
+    <message>
+      <source>下载源不可用，请检查链接或稍后继续</source>
+      <translation>No source is available. Check the links or resume later.</translation>
+    </message>
+    <message>
       <location filename="../../../features/bittorrent_pack/i18n.py" line="3"/>
       <source>该种子已在下载中</source>
       <translation>This torrent is already being downloaded</translation>
@@ -6378,6 +6418,120 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
       <location filename="../../../features/yt_dlp_pack/cards.py" line="44"/>
       <source>下载字幕</source>
       <translation>Downloading subtitles</translation>
+    </message>
+  </context>
+  <context>
+    <name>SourceChoiceDialog</name>
+    <message>
+      <source>选择下载方式</source>
+      <translation>Choose how to download</translation>
+    </message>
+    <message>
+      <source>新建任务</source>
+      <translation>New task</translation>
+    </message>
+    <message>
+      <source>添加到现有任务</source>
+      <translation>Add to existing task</translation>
+    </message>
+    <message>
+      <source>取消</source>
+      <translation>Cancel</translation>
+    </message>
+    <message>
+      <source>现有任务</source>
+      <translation>Existing task</translation>
+    </message>
+    <message>
+      <source>已暂停</source>
+      <translation>Paused</translation>
+    </message>
+    <message>
+      <source>下载中</source>
+      <translation>Downloading</translation>
+    </message>
+    <message>
+      <source>可信的 SHA-256（可选）</source>
+      <translation>Trusted SHA-256 digest (optional)</translation>
+    </message>
+    <message>
+      <source>该任务已变更，请选择其他任务或新建任务。</source>
+      <translation>The task has changed. Choose another task or create a new one.</translation>
+    </message>
+    <message>
+      <source>正在验证两个下载源的文件样本…</source>
+      <translation>Comparing file samples from both sources…</translation>
+    </message>
+  </context>
+  <context>
+    <name>SourceCard</name>
+    <message>
+      <source>下载源</source>
+      <translation>Download sources</translation>
+    </message>
+    <message>
+      <source>来源</source>
+      <translation>Source</translation>
+    </message>
+    <message>
+      <source>状态</source>
+      <translation>Status</translation>
+    </message>
+    <message>
+      <source>速度</source>
+      <translation>Speed</translation>
+    </message>
+    <message>
+      <source>已下载</source>
+      <translation>Downloaded</translation>
+    </message>
+    <message>
+      <source>原下载源</source>
+      <translation>Original</translation>
+    </message>
+    <message>
+      <source>追加源</source>
+      <translation>Added</translation>
+    </message>
+    <message>
+      <source>不可用</source>
+      <translation>Unavailable</translation>
+    </message>
+    <message>
+      <source>下载中</source>
+      <translation>Downloading</translation>
+    </message>
+    <message>
+      <source>已暂停</source>
+      <translation>Paused</translation>
+    </message>
+    <message>
+      <source>已完成</source>
+      <translation>Completed</translation>
+    </message>
+    <message>
+      <source>已停止</source>
+      <translation>Stopped</translation>
+    </message>
+    <message>
+      <source>等待区段</source>
+      <translation>Waiting for a range</translation>
+    </message>
+    <message>
+      <source>等待重试</source>
+      <translation>Waiting to retry</translation>
+    </message>
+    <message>
+      <source>整文件 SHA-256 校验通过</source>
+      <translation>File verified with SHA-256</translation>
+    </message>
+    <message>
+      <source>整文件 SHA-256 尚未通过校验</source>
+      <translation>File verification with SHA-256 is not complete</translation>
+    </message>
+    <message>
+      <source>仅抽样匹配</source>
+      <translation>Only file samples were matched</translation>
     </message>
   </context>
   <context>

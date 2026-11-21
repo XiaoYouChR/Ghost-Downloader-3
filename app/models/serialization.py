@@ -39,7 +39,7 @@ def toDict(obj: Any) -> Any:
     if is_dataclass(obj):
         return {
             f.name: toDict(getattr(obj, f.name))
-            for f in dataclass_fields(obj) if f.repr
+            for f in dataclass_fields(obj) if f.metadata.get("persist", f.repr)
         }
     if isinstance(obj, list):
         return [toDict(item) for item in obj]

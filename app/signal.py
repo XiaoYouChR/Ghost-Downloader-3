@@ -28,6 +28,10 @@ class BoundSignal:
     def __init__(self) -> None:
         self._slots: list[Callable | weakref.WeakMethod] = []
 
+    @property
+    def isConnected(self) -> bool:
+        return bool(self._slots)
+
     def connect(self, slot: Callable, owner=None) -> None:
         entry: Callable | weakref.WeakMethod = slot
         if hasattr(slot, "__self__") and hasattr(slot, "__func__"):

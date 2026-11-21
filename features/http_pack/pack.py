@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
     from app.view.cards.task_cards import TaskCard
     from app.view.components.option_cards import OptionCard
+    from app.view.dialogs.task_drawer import DetailCard
 
 
 DOWNLOADABLE_EXTENSIONS = frozenset({
@@ -47,7 +48,8 @@ async def probe(options: TaskOptions) -> RemoteFile:
         options.clientProfile or cfg.clientProfile.value,
         options.sourceUserAgent,
     )
-    client = buildClient(emulation=emulation, userAgent=userAgent or None, timeout=30)
+    client = buildClient(emulation=emulation, userAgent=userAgent or None, timeout=30,
+                         shouldSetRedirectReferer=not any(key.lower() == "referer" for key in headers))
 
     def rangeTotal(h: dict) -> int:
         cr = h.get("content-range", "")
@@ -265,4 +267,8 @@ class HttpPack(FeaturePack):
 
     def editCards(self, task: Task, parent: QWidget | None = None) -> list[OptionCard]:
         return buildEditCards(task, parent)
+
+    def detailCards(self, task: Task, parent: QWidget | None = None) -> list[DetailCard]:
+        from .detail_cards import SourceCard
+        return [SourceCard(task, parent)] if isinstance(task, HttpTask) else []
 
