@@ -12,7 +12,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
-from app.models.task import TaskError, TaskOptions, toTaskError
+from app.models.task import TaskError, TaskOptions, toHost
 from app.platform.filesystem import toSafeFilename
 from app.services.websocket_stream import WebSocketStream, readHead
 from app.signal import Signal
@@ -137,6 +137,7 @@ def parseTarget(options: dict, defaultFolder: Path) -> tuple[Path, str]:
 
 class Aria2RpcService:
     taskDraftRequested = Signal(list, object)
+    sourceChoiceRequested = Signal(object)
     parseFailed = Signal(str, object)
 
     def __init__(
@@ -144,10 +145,12 @@ class Aria2RpcService:
         coroutineRunner: CoroutineRunner,
         parse: Callable[[TaskOptions], Awaitable[Task]],
         addTask: Callable[..., bool],
+        sourceTargets: Callable[[Task], list[Task]],
     ) -> None:
         self._coroutineRunner = coroutineRunner
         self._parse = parse
         self._addTask = addTask
+        self._sourceTargets = sourceTargets
 
     async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         head = await readHead(reader)
@@ -279,6 +282,9 @@ class Aria2RpcService:
     def _onTaskParsed(self, task: Task, name: str, **_) -> None:
         if name:
             task.setName(name)
+        if self.sourceChoiceRequested.isConnected and self._sourceTargets(task):
+            self.sourceChoiceRequested.emit(task)
+            return
         if cfg.shouldDraftTakenDownload.value:
             self.taskDraftRequested.emit([task], None)
             return
@@ -288,5 +294,6 @@ class Aria2RpcService:
             self.taskDraftRequested.emit([task], e)
 
     def _onTaskParseFailed(self, error, url: str, **_) -> None:
-        logger.warning("Aria2 RPC task parse failed: {}", error)
-        self.parseFailed.emit(url, toTaskError(error))
+        logger.warning("Aria2 RPC task parse failed for {} ({})", toHost(url), type(error).__name__)
+        taskError = error if isinstance(error, TaskError) else TaskError("无法读取下载源的文件样本，请检查链接或网络")
+        self.parseFailed.emit(url, taskError)

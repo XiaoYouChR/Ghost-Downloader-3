@@ -47,7 +47,8 @@ class Engine:
                                             isEnabled=cfg.isBrowserExtensionEnabled, port=cfg.browserExtensionPort,
                                             shouldAutoSelect=cfg.shouldAutoSelectBrowserPort,
                                             fallbackPorts=CANDIDATE_PORTS)
-        self.aria2RpcService = Aria2RpcService(coroutineRunner, self.featureService.parse, self.taskService.add)
+        self.aria2RpcService = Aria2RpcService(coroutineRunner, self.featureService.parse, self.taskService.add,
+                                               self.taskService.sourceTargets)
         self.aria2RpcListener = PortListener(coroutineRunner, self.aria2RpcService.handle,
                                              isEnabled=cfg.isAria2RpcEnabled, port=cfg.aria2RpcPort)
 

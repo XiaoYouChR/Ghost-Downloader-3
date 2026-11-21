@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Coroutine
-from threading import Thread
+from threading import Thread, current_thread
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -57,11 +57,8 @@ class CoroutineRunner:
             except asyncio.CancelledError:
                 return
             except Exception as e:
-                logger.opt(exception=e).error("async work failed: {}", workId)
+                logger.error("async work failed: {} ({})", workId, type(e).__name__)
                 error = e
-            finally:
-                self._running.pop(workId, None)
-
             entry = self._pending.pop(workId, None)
             if entry is None:
                 return
@@ -76,24 +73,35 @@ class CoroutineRunner:
             if workId not in self._pending:
                 work.close()
                 return
-            self._running[workId] = self._loop.create_task(execute())
+            task = self._loop.create_task(execute())
+            self._running[workId] = task
+
+            def onDone(completed: asyncio.Task) -> None:
+                self._running.pop(workId, None)
+                if completed.cancelled():
+                    work.close()
+
+            task.add_done_callback(onDone)
 
         self._loop.call_soon_threadsafe(schedule)
         return workId
 
     def cancel(self, workId: str, finished: Callable[[], object] | None = None) -> bool:
-        self._pending.pop(workId, None)
-        task = self._running.pop(workId, None)
-        if task is not None:
-            def scheduleCancel():
+        wasPending = self._pending.pop(workId, None) is not None
+
+        def scheduleCancel() -> None:
+            task = self._running.get(workId)
+            if task is None:
                 if finished is not None:
-                    task.add_done_callback(lambda _: self.post(finished))
+                    self.post(finished)
+                return
+            if finished is not None:
+                task.add_done_callback(lambda _: self.post(finished))
+            if not task.cancelling():
                 task.cancel()
-            self._loop.call_soon_threadsafe(scheduleCancel)
-            return True
-        if finished is not None:
-            finished()
-        return False
+
+        self._loop.call_soon_threadsafe(scheduleCancel)
+        return wasPending or workId in self._running
 
     def post(self, callback: Callable[..., object], *args: object, **kwargs: object) -> None:
         def wrapper():
@@ -116,9 +124,18 @@ class CoroutineRunner:
         return guarded
 
     def stop(self) -> None:
-        for task in list(self._running.values()):
-            task.cancel()
-        if self._loop and self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._loop.stop)
         self._pending.clear()
-        self._running.clear()
+        if not self._thread.is_alive():
+            return
+
+        async def drain() -> None:
+            running = list(self._running.values())
+            for task in running:
+                if not task.cancelling():
+                    task.cancel()
+            await asyncio.gather(*running, return_exceptions=True)
+            self._loop.stop()
+
+        self._loop.call_soon_threadsafe(lambda: self._loop.create_task(drain()))
+        if current_thread() is not self._thread:
+            self._thread.join(timeout=5)

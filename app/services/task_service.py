@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 from shutil import disk_usage
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from enum import StrEnum
 from shutil import move
@@ -16,7 +16,7 @@ from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
 from app.platform.filesystem import deletePath, isExisting, splitStemExt
 from app.checksum import toChecksum
-from app.models.task import Task, TaskError, TaskOptions, TaskStatus, deletePlaceholder
+from app.models.task import Task, TaskError, TaskOptions, TaskStatus, deletePlaceholder, toTaskError
 from app.signal import Signal
 from typing import TYPE_CHECKING
 
@@ -266,8 +266,11 @@ class TaskQueue:
     def runningIds(self) -> list[str]:
         return list(self._running)
 
-    def nextWaiting(self) -> str | None:
-        return self._waiting.pop(0) if self._waiting else None
+    def nextWaiting(self, stopping: Collection[str]) -> str | None:
+        for index, taskId in enumerate(self._waiting):
+            if taskId not in stopping:
+                return self._waiting.pop(index)
+        return None
 
 
 class TaskService:
@@ -290,6 +293,8 @@ class TaskService:
     nameConflicted = Signal(object)
     overwriteFailed = Signal(object)
     editFailed = Signal(object, object)
+    sourceAdded = Signal(object, object)
+    sourceAddFailed = Signal(object, object, object)
 
     def __init__(
         self,
@@ -306,6 +311,7 @@ class TaskService:
         self._speedMeter = speedMeter
         self._store = TaskStore(deleteRecoverably)
         self._queue = TaskQueue()
+        self._stopping: dict[str, list[Callable[[], None]]] = {}
         self._seeding: dict[str, str] = {}
         self._checksums: dict[str, ChecksumWork] = {}
         self._fileWatcher = fileWatcher
@@ -323,6 +329,26 @@ class TaskService:
 
     def taskById(self, taskId: str) -> Task | None:
         return self._store.taskById(taskId)
+
+    def sourceTargets(self, incoming: Task) -> list[Task]:
+        return [task for task in self.tasks if task.canAddSource(incoming)]
+
+    def addSource(self, task: Task, incoming: Task, expectedSha256: str = "") -> None:
+        if self.taskById(task.taskId) is not task:
+            self.sourceAddFailed.emit(task, incoming, TaskError("任务已变更，无法追加此下载源"))
+            return
+        self._coroutineRunner.submit(
+            task.addSource(incoming, expectedSha256),
+            done=lambda _: self._onSourceAdded(task, incoming),
+            failed=lambda error: self.sourceAddFailed.emit(task, incoming, toTaskError(error)),
+        )
+
+    def _onSourceAdded(self, task: Task, incoming: Task) -> None:
+        if self.taskById(task.taskId) is not task:
+            self.sourceAddFailed.emit(task, incoming, TaskError("任务已变更，无法追加此下载源"))
+            return
+        self._flushSoon()
+        self.sourceAdded.emit(task, incoming)
 
     def runningCount(self) -> int:
         return self._queue.runningCount()
@@ -569,6 +595,8 @@ class TaskService:
         logger.error("Flush failed: {}", error)
 
     def _schedule(self, task: Task) -> None:
+        if self.taskById(task.taskId) is not task or self._queue.isRunning(task.taskId):
+            return
         self._queue.wait(task.taskId)
         self._pump()
 
@@ -577,8 +605,8 @@ class TaskService:
         task.setStatus(TaskStatus.RUNNING)
         workId = self._coroutineRunner.submit(
             task.run(self._speedMeter.addSpeed, self._speedMeter.waitForSpeedLimit),
-            done=lambda _: self._onRunDone(task),
-            failed=lambda error: self._onRunFailed(task, error),
+            done=lambda _: self._onRunDone(task, workId),
+            failed=lambda error: self._onRunFailed(task, workId),
         )
         self._queue.run(task.taskId, workId)
         self.taskStarted.emit(task)
@@ -626,15 +654,29 @@ class TaskService:
         self.checksumStopped.emit(task, TaskError("无法读取文件：{detail}", detail=str(error)))
 
     def _cancelWork(self, task: Task, finished: Callable = None) -> None:
-        workId = self._queue.workIdOf(task.taskId) or self._seeding.pop(task.taskId, None)
-        self._queue.cancel(task.taskId)
+        taskId = task.taskId
+        workId = self._queue.workIdOf(taskId) or self._seeding.pop(taskId, None)
+        self._queue.cancel(taskId)
+        if workId is not None:
+            self._stopping[taskId] = []
         if task.isSeeding:
             task.isSeeding = False
             self.seedingStopped.emit(task)
-        if workId is not None:
-            self._coroutineRunner.cancel(workId, finished=finished)
+        if taskId in self._stopping:
+            if finished is not None:
+                self._stopping[taskId].append(finished)
+            if workId is not None:
+                self._coroutineRunner.cancel(workId, finished=lambda: self._onWorkStopped(taskId))
         elif finished is not None:
             finished()
+
+    def _onWorkStopped(self, taskId: str) -> None:
+        try:
+            for callback in self._stopping[taskId]:
+                callback()
+        finally:
+            del self._stopping[taskId]
+            self._pump()
 
     def _rebalance(self, *_args) -> None:
         for taskId in self._queue.runningIds()[cfg.maxTaskNum.value:]:
@@ -647,7 +689,7 @@ class TaskService:
 
     def _pump(self) -> None:
         while self._queue.runningCount() < cfg.maxTaskNum.value:
-            taskId = self._queue.nextWaiting()
+            taskId = self._queue.nextWaiting(self._stopping.keys())
             if taskId is None:
                 break
             task = self._store.taskById(taskId)
@@ -661,7 +703,9 @@ class TaskService:
         else:
             self._speedMeter.stop()
 
-    def _onRunDone(self, task: Task) -> None:
+    def _onRunDone(self, task: Task, workId: str) -> None:
+        if self._queue.workIdOf(task.taskId) != workId:
+            return
         self._queue.done(task.taskId)
         self._flushSoon()
         self.taskCompleted.emit(task)
@@ -673,7 +717,9 @@ class TaskService:
         if self._queue.runningCount() == 0:
             self.tasksAllCompleted.emit()
 
-    def _onRunFailed(self, task: Task, error: Exception) -> None:
+    def _onRunFailed(self, task: Task, workId: str) -> None:
+        if self._queue.workIdOf(task.taskId) != workId:
+            return
         self._queue.done(task.taskId)
         self._flushSoon()
         self.taskFailed.emit(task)

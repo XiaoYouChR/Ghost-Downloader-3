@@ -7,11 +7,13 @@ from pathlib import Path
 
 import pytest
 import websockets
+from aiohttp import web
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
+from app.models.task import TaskOptions, TaskStatus
 from app.services.port_listener import ListenStatus
-from tests.helpers import probeFreePort, waitUntil
+from tests.helpers import buildRangeHandler, probeFreePort, waitUntil
 
 
 @dataclass
@@ -237,6 +239,43 @@ async def test_add_goes_to_draft_when_drafting_is_on(aria2, engine):
 
     await waitUntil(lambda: [task.url for task in drafted] == ["http://test/f"])
     assert engine.taskService.tasks == []
+
+
+async def test_add_offers_existing_task_for_linkswift_push(aria2, engine, httpPack, startServer):
+    cfg.set(cfg.shouldDraftTakenDownload, False)
+    cfg.set(cfg.aria2RpcToken, "test-secret")
+    content = b"known content" * 2000
+    serve = buildRangeHandler(content)
+    expectedHeaders = {"User-Agent": "Source-B", "Cookie": "source=B", "Referer": "https://b.example/"}
+
+    async def serveMirror(request):
+        if any(request.headers.get(key) != value for key, value in expectedHeaders.items()):
+            return web.Response(status=403)
+        return await serve(request)
+
+    primary = await engine.featureService.parse(TaskOptions(url=await startServer(serve)))
+    primary.setName("Rance10.7z")
+    tasks = engine.taskService
+    tasks.add(primary, autoStart=False)
+    choices = []
+    engine.aria2RpcService.sourceChoiceRequested.connect(choices.append)
+    mirrorUrl = await startServer(serveMirror)
+    result = await aria2.request("aria2.addUri", ["token:test-secret", [mirrorUrl], {
+        "out": primary.name, "header": [f"{key}: {value}" for key, value in expectedHeaders.items()],
+    }])
+
+    assert isGid(result["result"])
+    await waitUntil(lambda: bool(choices))
+    [incoming] = choices
+    assert tasks.sourceTargets(incoming) == [primary]
+    assert tasks.tasks == [primary]
+    tasks.addSource(primary, incoming)
+    await waitUntil(lambda: len(primary.mirrorStep.sources) == 2)
+    assert primary.status == TaskStatus.PAUSED
+    tasks.start(primary)
+    await waitUntil(lambda: primary.status == TaskStatus.COMPLETED)
+    assert Path(primary.outputPath).read_bytes() == content
+    assert tasks.tasks == [primary]
 
 
 async def test_add_into_blocked_folder_goes_to_draft_with_reason(aria2, engine, blockedFolder):

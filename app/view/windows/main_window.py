@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from collections import deque
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -124,6 +125,7 @@ class MainWindow(MSFluentWindow):
         self._pages: dict[str, QWidget] = {}
         self._progressToast = None
         self._draft = TaskDraft(self._coroutineRunner, self._featureService, self._taskService.add)
+        self._sourceChoices: deque[Task] = deque()
         self.searchEdit = SearchLineEdit(self.titleBar)
 
         self._initWidget()
@@ -277,6 +279,26 @@ class MainWindow(MSFluentWindow):
     def addTasks(self, tasks: list[Task], error: TaskError | None = None) -> None:
         self._draftDialog.addParsedTasks(tasks, error)
         self._openDraftDialog()
+
+    def offerSource(self, incoming: Task) -> None:
+        from app.view.dialogs.source_choice import SourceChoiceDialog
+
+        self._sourceChoices.append(incoming)
+        if len(self._sourceChoices) > 1:
+            return
+        while self._sourceChoices:
+            task = self._sourceChoices[0]
+            targets = self._taskService.sourceTargets(task)
+            if targets:
+                dialog = SourceChoiceDialog(task, targets, self._taskService, self)
+                dialog.exec()
+                shouldCreateTask = dialog.shouldCreateTask
+                dialog.deleteLater()
+            else:
+                shouldCreateTask = True
+            if shouldCreateTask:
+                self.addTasks([task])
+            self._sourceChoices.popleft()
 
     def _onDraftParseFailed(self, url: str, error: TaskError) -> None:
         self._openDraftDialog()

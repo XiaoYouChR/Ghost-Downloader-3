@@ -117,7 +117,7 @@ class FeatureService:
             try:
                 return await parser.parse(options)
             except Exception as e:
-                logger.opt(exception=e).warning("无法按内容解析，按普通文件下载 {}", options.url)
+                logger.warning("无法按内容解析，按普通文件下载 {} ({})", toHost(options.url), type(e).__name__)
         return await matched[-1].parse(options)
 
     def match(self, url: str) -> bool:

@@ -102,6 +102,8 @@ def buildClient(
     timeout: int | None = None,
     readTimeout: int | None = None,
     shouldVerifySsl: bool | None = None,
+    shouldSetRedirectReferer: bool = True,
+    shouldDecodeContent: bool = True,
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
     if shouldVerifySsl is None:
@@ -111,6 +113,10 @@ def buildClient(
         "tls_verify": Path(certifi.where()) if shouldVerifySsl else False,
         "redirect": Policy.limited(10),
     }
+    if not shouldSetRedirectReferer:
+        config["referer"] = False
+    if not shouldDecodeContent:
+        config.update(gzip=False, brotli=False, deflate=False, zstd=False)
     if cfg.shouldUseSystemDns.value:
         config["dns_options"] = DnsOptions(system_dns=True)
 

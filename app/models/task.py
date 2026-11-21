@@ -477,6 +477,12 @@ class Task:
     def relink(self, newTask: Task) -> None:
         raise TaskError("该链接不能用于更换")
 
+    def canAddSource(self, incoming: Task) -> bool:
+        return False
+
+    async def addSource(self, incoming: Task, expectedSha256: str = "") -> None:
+        raise TaskError("任务已变更，无法追加此下载源")
+
     async def run(
         self,
         reportSpeed: Callable[[int], None],

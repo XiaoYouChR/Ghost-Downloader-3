@@ -26,7 +26,10 @@ def _exceptionHook(exceptionType, value, tb):
 
 def setupEnvironment() -> None:
     from loguru import logger
-    logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=5)
+    logger.remove()
+    if sys.stderr is not None:
+        logger.add(sys.stderr, diagnose=False)
+    logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=5, diagnose=False)
     sys.excepthook = _exceptionHook
 
     from app.config.cfg import cfg
@@ -169,6 +172,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     browserService.taskDraftRequested.connect(onTaskDraftRequested)
     browserService.extensionUpdated.connect(onExtensionUpdated)
     engine.aria2RpcService.taskDraftRequested.connect(onTaskDraftRequested)
+    engine.aria2RpcService.sourceChoiceRequested.connect(lambda task: show().offerSource(task))
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
@@ -350,7 +354,8 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     taskService.taskCompleted.connect(onTaskCompleted)
     taskService.diskSpaceInsufficient.connect(
         lambda free, needed: sendNotice(buildDiskSpaceInsufficient(free, needed, activate)))
-    engine.aria2RpcService.parseFailed.connect(lambda url, error: sendNotice(buildParseFailed(url, error, activate)))
+    from app.models.task import toHost
+    engine.aria2RpcService.parseFailed.connect(lambda url, error: sendNotice(buildParseFailed(toHost(url), error, activate)))
 
     taskService.tasksAllCompleted.connect(emptyWorkingSetIfIdle)
 
