@@ -21,9 +21,12 @@ def loadResources(application: Application) -> None:
 
 def loadTranslators(application: Application) -> None:
     from PySide6.QtCore import QLocale, QTranslator, Qt
+    from qfluentwidgets import FluentTranslator
     from app.config.cfg import cfg
 
     translator = QTranslator(application)
+    # 输入框右键菜单等 qfluentwidgets 自带的文案不在 gd3 中 #1078
+    fluentTranslator = FluentTranslator(parent=application)
     if cfg.language.value not in cfg.language.options:
         cfg.language.value = "Auto"
 
@@ -31,7 +34,11 @@ def loadTranslators(application: Application) -> None:
         localeName = cfg.language.value
         locale = QLocale() if localeName == "Auto" else QLocale(localeName)
         application.removeTranslator(translator)
+        application.removeTranslator(fluentTranslator)
         application.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        fluentTranslator.load(locale)
+        if not fluentTranslator.isEmpty():
+            application.installTranslator(fluentTranslator)
         if locale.name() != "zh_CN":
             if translator.load(locale, "gd3", ".", ":/i18n") or translator.load("gd3.en_US", ":/i18n"):
                 application.installTranslator(translator)
