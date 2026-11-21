@@ -251,19 +251,21 @@ class SettingPage(QWidget):
                                 self.tr("更改应用程序的外观"),
                                 texts=[self.tr("浅色"), self.tr("深色"), self.tr("跟随系统设置")]),
         ]
+        # 只改显示文本，保存的值仍是配置中的原始字符串
         if sys.platform == "win32":
             personalCards.append(
                 ComboBoxSettingCard(cfg.backgroundEffect, FluentIcon.TRANSPARENT,
                                     self.tr("窗口背景透明材质"),
                                     self.tr("设置窗口背景透明效果和透明材质"),
-                                    texts=["Acrylic", "Mica", "MicaAlt", "Aero", "None"]),
+                                    texts=[self.tr("Acrylic"), self.tr("Mica"), self.tr("MicaAlt"),
+                                           self.tr("Aero"), self.tr("None")]),
             )
         elif sys.platform == "darwin":
             personalCards.append(
                 ComboBoxSettingCard(cfg.backgroundEffect, FluentIcon.TRANSPARENT,
                                     self.tr("窗口背景透明材质"),
                                     self.tr("设置窗口背景透明效果和透明材质"),
-                                    texts=["Acrylic", "None"]),
+                                    texts=[self.tr("Acrylic"), self.tr("None")]),
             )
         personalCards.append(self.zoomCard)
         if sys.platform == "darwin":
