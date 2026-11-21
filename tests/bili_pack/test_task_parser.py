@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from app.models.task import ResourceTaskOptions
+from bili_pack.pack import BilibiliParser
 from bili_pack.parse import BiliUrl, buildFavoritePages, buildPages, parseBiliUrl
 
 FAVORITE_SAMPLE = Path(__file__).parent.parent / "samples" / "bilibili_favorite.json"
@@ -359,3 +361,9 @@ async def test_fetch_redirect_strips_query_and_fragment(startServer):
 
 
 
+
+
+def test_match_skips_api_hosts():
+    parser = BilibiliParser()
+    assert not parser.match(ResourceTaskOptions(url="https://api.live.bilibili.com/xlive/play-gateway/master/url?cid=719260"))
+    assert parser.match(ResourceTaskOptions(url="https://www.bilibili.com/video/BV1eugW6DEYT/"))

@@ -31,6 +31,9 @@ class BilibiliParser(TaskParser):
 
     def match(self, options: TaskOptions) -> bool:
         hostname = (urlparse(options.url).hostname or "").lower()
+        # API hosts serve data such as stream manifests, not pages.
+        if hostname.startswith("api."):
+            return False
         return hostname == "bilibili.com" or hostname.endswith(".bilibili.com") or matchShortUrl(options.url)
 
     def matchPassive(self, options: TaskOptions) -> bool:
