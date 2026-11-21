@@ -52,6 +52,27 @@ async def test_parse_playlist_without_suffix_adds_stream(features, startServer):
     assert not task.isLive
 
 
+# Trimmed from Bilibili live: vendor attributes on Content Steering and variants.
+VENDOR_MASTER = (
+    b'#EXTM3U\n'
+    b'#EXT-X-CONTENT-STEERING:SERVER-URI="reserved",PATHWAY-ID="https://cdn.example",'
+    b'BILI-PATHWAY-PRIORITY="https://cdn.example",BILI-CTR-MODE=1,BILI-TTL=150\n'
+    b'#EXT-X-STREAM-INF:BANDWIDTH=1996000,RESOLUTION=1920x1080,CODECS="hvc1.1.6.L150,mp4a.40.2",BILI-QN=10000\n'
+    b'index.m3u8?qn=10000\n'
+    b'#EXT-X-STREAM-INF:BANDWIDTH=871556,RESOLUTION=1280x720,CODECS="hvc1.1.6.L120,mp4a.40.2",BILI-QN=250\n'
+    b'index.m3u8?qn=250\n'
+)
+
+
+async def test_parse_master_with_vendor_attributes_adds_stream(features, startServer):
+    url = await startServer(buildTypedHandler(VENDOR_MASTER, "application/vnd.apple.mpegurl"))
+
+    task = await features.parse(TaskOptions(url=url))
+
+    assert isinstance(task, M3U8Task)
+    assert [(stream["width"], stream["height"]) for stream in task.streams] == [(1920, 1080), (1280, 720)]
+
+
 async def test_parse_broken_playlist_without_suffix_adds_plain_file(features, startServer):
     url = await startServer(buildTypedHandler(b"<html>expired</html>", "application/vnd.apple.mpegurl"))
 

@@ -37,6 +37,12 @@ MEDIA_SUFFIXES = {
 MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
 MANIFEST_CONTENT_TYPES = {"application/vnd.apple.mpegurl", "application/x-mpegurl", "application/mpegurl",
                           "audio/mpegurl", "audio/x-mpegurl", "application/dash+xml"}
+# Only the tags we read: m3u8 crashes on vendor attributes in other tags, which RFC 8216 says to ignore.
+READ_TAGS = ("#EXTINF", "#EXT-X-ENDLIST", "#EXT-X-STREAM-INF", "#EXT-X-MEDIA:")
+
+
+def parsePlaylist(body: str, uri: str | None = None) -> m3u8.M3U8:
+    return m3u8.loads(body, uri=uri, custom_tags_parser=lambda line, *_: not line.startswith(READ_TAGS))
 
 
 class M3U8Parser(TaskParser):
@@ -104,7 +110,7 @@ class M3U8Parser(TaskParser):
         elif isVimeo:
             isLive = False
         else:
-            playlist = m3u8.loads(body, uri=manifestUrl)
+            playlist = parsePlaylist(body, uri=manifestUrl)
             if playlist.segments:
                 isLive = not playlist.is_endlist
             elif playlist.playlists:
@@ -122,7 +128,7 @@ class M3U8Parser(TaskParser):
                             variantBody = await variantResponse.text()
                         finally:
                             variantClient.close()
-                        isLive = not m3u8.loads(variantBody, uri=variantUrl).is_endlist
+                        isLive = not parsePlaylist(variantBody, uri=variantUrl).is_endlist
                     except Exception as e:
                         logger.warning("取变体清单判活失败, 按点播处理: {}", repr(e))
                         isLive = False
@@ -228,7 +234,7 @@ class M3U8Parser(TaskParser):
             else:
                 renditions = [
                     (media.language or "", media.name or "")
-                    for media in m3u8.loads(body).media if (media.type or "").upper() == "SUBTITLES"
+                    for media in parsePlaylist(body).media if (media.type or "").upper() == "SUBTITLES"
                 ]
         except Exception as e:
             logger.warning("枚举字幕失败: {}", repr(e))
@@ -250,7 +256,7 @@ class M3U8Parser(TaskParser):
             return []
 
     def _hlsStreams(self, body: str) -> list[dict]:
-        playlist = m3u8.loads(body)
+        playlist = parsePlaylist(body)
         streams = []
         for variant in playlist.playlists:
             resolution = variant.stream_info.resolution
