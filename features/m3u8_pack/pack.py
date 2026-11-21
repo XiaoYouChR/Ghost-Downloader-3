@@ -16,7 +16,7 @@ from app.config.cfg import cfg
 from app.i18n import N
 
 from app.models.pack import FeaturePack, TaskParser, FileType
-from app.models.task import PageTaskOptions, Task, TaskOptions
+from app.models.task import PageTaskOptions, ResourceTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8SubtitleStep, M3U8Task, M3U8TaskStep
@@ -48,7 +48,11 @@ class M3U8Parser(TaskParser):
         lowered = options.url.lower()
         if ".m3u" in lowered or ".mpd" in lowered:
             return True
-        return options.isProbed and options.file.matchType(MANIFEST_SUFFIXES, MANIFEST_CONTENT_TYPES)
+        if not options.isProbed:
+            return False
+        # The MIME alone is enough: parse checks the body and falls back to a plain file.
+        return (Path(options.file.name).suffix.lower() in MANIFEST_SUFFIXES
+                or options.file.contentType in MANIFEST_CONTENT_TYPES)
 
     async def parse(self, options: TaskOptions) -> Task:
         url = options.url.strip()
@@ -133,6 +137,8 @@ class M3U8Parser(TaskParser):
         name = ""
         if isinstance(options, PageTaskOptions) and options.pageTitle:
             name = toSafeFilename(options.pageTitle, fallback="")
+        elif isinstance(options, ResourceTaskOptions) and options.name:
+            name = options.name
 
         if not name:
             cd = responseHeaders.get("content-disposition", "")

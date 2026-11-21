@@ -6,10 +6,11 @@ import pytest
 from aiohttp import web
 
 from app.models.pack import PackServices
-from app.models.task import TaskOptions
+from app.models.task import ResourceTaskOptions, TaskOptions
 from ffmpeg_pack.pack import FFmpegPack
 from http_pack.pack import HttpPack
 from http_pack.task import HttpTask
+from m3u8_pack.config import m3u8Config
 from m3u8_pack.pack import M3U8Pack
 from m3u8_pack.task import M3U8Task, subtitleChoices
 from tests.helpers import buildRangeHandler
@@ -57,6 +58,32 @@ async def test_parse_broken_playlist_without_suffix_adds_plain_file(features, st
     task = await features.parse(TaskOptions(url=url))
 
     assert isinstance(task, HttpTask)
+
+
+def buildDisguisedHandler(content: bytes):
+    typedHandler = buildTypedHandler(content, "application/x-mpegurl")
+
+    async def handler(request: web.Request) -> web.Response:
+        response = await typedHandler(request)
+        response.headers["Content-Disposition"] = "attachment; filename=my.9stream.us"
+        return response
+    return handler
+
+
+async def test_parse_playlist_with_disguised_filename_adds_stream(features, startServer):
+    url = await startServer(buildDisguisedHandler(PLAYLIST))
+
+    task = await features.parse(TaskOptions(url=url))
+
+    assert isinstance(task, M3U8Task)
+
+
+async def test_parse_resource_playlist_takes_resource_name(features, startServer):
+    url = await startServer(buildDisguisedHandler(PLAYLIST))
+
+    task = await features.parse(ResourceTaskOptions(url=url, name="Nocturne.m3u8"))
+
+    assert task.name == f"Nocturne.{m3u8Config.outputFormat.value}"
 
 
 async def test_parse_vimeo_playlist_adds_stream(features, startServer):
