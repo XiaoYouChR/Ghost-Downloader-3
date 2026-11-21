@@ -157,13 +157,17 @@ def isSeedingLimitReached(shareRatioPercent: float, seedingTimeSeconds: int) -> 
     )
 
 
+def toFilePriorities(selectedIndexes: set[int], fileCount: int) -> list[int]:
+    return [4 if i in selectedIndexes else 0 for i in range(fileCount)]
+
+
 @dataclass(frozen=True)
 class TorrentParams:
     torrentData: bytes
     savePath: str
     resumeData: bytes = b""
     trackers: list[str] = field(default_factory=list)
-    filePriorities: list[int] = field(default_factory=list)
+    selectedIndexes: set[int] | None = None
     fileRenames: dict[int, str] = field(default_factory=dict)
     seedingTimeSeconds: int = 0
 
@@ -196,7 +200,7 @@ class ActiveTorrent:
     seedStart: int | None = None
     pollCount: int = 0
     resumeWaiter: asyncio.Future | None = None
-    pendingPriorities: list[int] | None = None
+    pendingSelection: set[int] | None = None
 
     def seedingElapsed(self, isSeeding: bool, sessionSeconds: int) -> int:
         if isSeeding:
@@ -337,10 +341,10 @@ class BTSession:
         except TimeoutError:
             return None
 
-    def updatePriorities(self, taskId: str, priorities: list[int]) -> None:
+    def setSelection(self, taskId: str, selectedIndexes: set[int]) -> None:
         entry = self._active.get(taskId)
         if entry is not None:
-            entry.pendingPriorities = priorities
+            entry.pendingSelection = selectedIndexes
 
     def lastResumeData(self, taskId: str) -> bytes | None:
         return self._resumeCache.pop(taskId, None)
@@ -463,7 +467,10 @@ class BTSession:
             if bittorrentConfig.storageMode.value == "allocate"
             else lt.storage_mode_t.storage_mode_sparse
         )
-        ltParams.file_priorities = params.filePriorities
+        if params.selectedIndexes is not None:
+            # resumeData 携带旧的 piece_priorities，不清空会覆盖新的 file_priorities
+            ltParams.piece_priorities = []
+            ltParams.file_priorities = toFilePriorities(params.selectedIndexes, ltParams.ti.num_files())
         ltParams.renamed_files = params.fileRenames
         if bittorrentConfig.enableSequentialDownload.value:
             ltParams.flags |= lt.torrent_flags.sequential_download
@@ -580,6 +587,12 @@ class BTSession:
             return
 
     def _updateEntry(self, entry: ActiveTorrent) -> None:
+        if entry.pendingSelection is not None:
+            fileCount = entry.handle.torrent_file().num_files()
+            entry.handle.prioritize_files(toFilePriorities(entry.pendingSelection, fileCount))
+            entry.pendingSelection = None
+            return
+
         status = entry.handle.status()
 
         isSeeding = status.is_seeding
@@ -611,10 +624,6 @@ class BTSession:
         )
         if entry.onProgress is not None:
             entry.onProgress(torrentProgress)
-
-        if entry.pendingPriorities is not None:
-            entry.handle.prioritize_files(entry.pendingPriorities)
-            entry.pendingPriorities = None
 
         if not entry.done.done() and entry.isDone(torrentProgress):
             entry.done.set_result(None)

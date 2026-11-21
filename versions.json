@@ -58,9 +58,9 @@
       "gdMinVersion": "4.5.0"
     },
     "bittorrent_pack": {
-      "version": "1.4.0",
+      "version": "1.4.1",
       "file": "bittorrent_pack.zip",
-      "sha256": "cb934b70849b97f3efa37a629c536778881fa1f437b90c842ab7571c9b8b01b3",
+      "sha256": "34ddaef956fb5692bf8969282a492a771c0eb0cd8f66928934028ee99a50c7fe",
       "gdMinVersion": "4.5.0"
     },
     "ed2k_pack": {

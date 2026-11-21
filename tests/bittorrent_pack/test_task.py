@@ -11,12 +11,12 @@ from app.models.task import TaskStatus
 
 class FakeSession:
     def __init__(self, onRun=None, progresses: tuple[TorrentProgress, ...] = ()):
-        self.runPriorities: list[list[int]] = []
+        self.runSelections: list[set[int]] = []
         self.onRun = onRun
         self.progresses = progresses
 
     async def run(self, taskId, params, onProgress=None) -> bytes:
-        self.runPriorities.append(list(params.filePriorities))
+        self.runSelections.append(set(params.selectedIndexes))
         for progress in self.progresses:
             onProgress(progress)
         if self.onRun is not None:
@@ -24,7 +24,7 @@ class FakeSession:
             onRun()
         return b"resume"
 
-    def updatePriorities(self, taskId, priorities):
+    def setSelection(self, taskId, selectedIndexes):
         pass
 
     def lastResumeData(self, taskId):
@@ -36,7 +36,7 @@ def buildTask(tmp_path: Path) -> BTTask:
         name="pack", url="x.torrent", outputFolder=tmp_path,
         steps=[BTTaskStep(stepIndex=1)], torrentData=b64encode(b"x").decode(),
         files=[BTFile(index=0, relativePath="pack/a", size=1),
-               BTFile(index=1, relativePath="pack/b", size=1, selected=False, priority=0)],
+               BTFile(index=1, relativePath="pack/b", size=1, selected=False)],
     )
     task.setStatus(TaskStatus.RUNNING)
     return task
@@ -71,7 +71,28 @@ def test_run_downloads_file_selected_near_the_end(monkeypatch, tmp_path):
 
     asyncio.run(task.run(lambda _: None, noLimit))
 
-    assert fake.runPriorities == [[4, 0], [4, 4]]
+    assert fake.runSelections == [{0}, {0, 1}]
+    assert task.status == TaskStatus.COMPLETED
+
+
+def test_set_selection_keeps_completed_with_empty_file(monkeypatch, tmp_path):
+    task = BTTask(
+        name="pack", url="x.torrent", outputFolder=tmp_path,
+        steps=[BTTaskStep(stepIndex=1)], torrentData=b64encode(b"x").decode(),
+        files=[BTFile(index=0, relativePath="pack/a", size=10),
+               BTFile(index=1, relativePath="pack/empty", size=0)],
+    )
+    task.setStatus(TaskStatus.RUNNING)
+    progress = TorrentProgress(
+        stateText="finished", peerCount=1, totalPeerCount=1, seedCount=1, isSeeding=False, isFinished=True,
+        downloadRate=0, uploadRate=0, shareRatioPercent=0, seedingTimeSeconds=0, progress=100,
+        receivedBytes=10, totalWanted=10, fileProgress=[10, 0],
+    )
+    monkeypatch.setattr(session_module, "btSession", FakeSession(progresses=(progress,)))
+
+    asyncio.run(task.run(lambda _: None, noLimit))
+    task.setSelection({1})
+
     assert task.status == TaskStatus.COMPLETED
 
 

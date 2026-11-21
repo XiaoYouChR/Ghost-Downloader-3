@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 @dataclass(kw_only=True)
 class BTFile(TaskFile):
-    priority: int = 4
 
     def __post_init__(self) -> None:
         self.relativePath = toPosixPath(self.relativePath)
@@ -67,20 +66,15 @@ class BTTask(Task):
             return self.name
         return toPosixPath(Path(self.name, *PurePosixPath(file.relativePath).parts[1:]))
 
-    def priorities(self) -> list[int]:
-        return [f.priority if f.selected else 0 for f in self.files]
-
     def setSelection(self, selectedIndexes: set[int]) -> None:
         if not selectedIndexes:
             raise ValueError("至少需要选择一个文件")
         changed = False
         for f in self.files:
             selected = f.index in selectedIndexes
-            priority = 4 if selected else 0
-            if f.selected != selected or f.priority != priority:
+            if f.selected != selected:
                 changed = True
             f.selected = selected
-            f.priority = priority
             if not selected:
                 f.downloadedBytes = 0
                 f.completed = False
@@ -90,7 +84,7 @@ class BTTask(Task):
         self.fileSize = sum(f.size for f in self.files if f.selected)
 
         from .session import btSession
-        btSession.updatePriorities(self.taskId, self.priorities())
+        btSession.setSelection(self.taskId, self.selectedIndexes)
 
         if self.step.status == TaskStatus.COMPLETED and any(f.selected and not f.completed for f in self.files):
             self.step.status = TaskStatus.WAITING
@@ -128,7 +122,7 @@ class BTTask(Task):
             savePath=str(self.outputFolder),
             resumeData=b64decode(self.resumeData) if self.resumeData else b"",
             trackers=self.trackers.copy(),
-            filePriorities=self.priorities(),
+            selectedIndexes=self.selectedIndexes,
             fileRenames=fileRenames,
             seedingTimeSeconds=self.seedingTimeSeconds,
         )
@@ -190,7 +184,7 @@ class BTTaskStep(TaskStep):
                     continue
                 dl = p.fileProgress[f.index] if f.index < len(p.fileProgress) else 0
                 f.downloadedBytes = dl
-                f.completed = f.size > 0 and dl >= f.size
+                f.completed = dl >= f.size
 
         selectionVersion = None
         while selectionVersion != task.selectionVersion:
