@@ -36,7 +36,8 @@ export function stripRangeParams(url: string): string {
 
 export function isStreamUrl(url: string, contentType: string): boolean {
   const ext = fileExtension(filenameFromUrl(url));
-  return isCatCatchM3u8(ext, contentType) || isCatCatchMpd(ext, contentType);
+  const mime = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+  return isCatCatchM3u8(ext, mime) || isCatCatchMpd(ext, mime);
 }
 
 export function isDashSegmentUrl(url: string): boolean {

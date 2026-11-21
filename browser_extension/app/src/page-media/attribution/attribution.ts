@@ -352,10 +352,9 @@ class MediaAttribution {
     }
   }
 
-  // Media-only — analytics fetches landing right before appendBuffer would otherwise
-  // get spuriously locked to the active session.
+  // Only a fetch that can feed a SourceBuffer can become a track.
   private recordFetch(url: string, contentType: string): void {
-    if (!this.isMediaUrl(url, contentType)) { return; }
+    if (!this.isMediaUrl(url, contentType) || isStreamUrl(url, contentType)) { return; }
     this.recentFetches.push({ url, capturedAt: performance.now(), idHints: urlIdHints(url) });
     if (this.recentFetches.length > RECENT_FETCHES_CAP) {
       this.recentFetches.shift();
