@@ -171,7 +171,6 @@ class M3U8TaskStep(TaskStep):
     shouldBinaryMerge: bool = False
     shouldCheckSegmentsCount: bool = True
     shouldDeleteTemp: bool = True
-    outputFormat: str = "mp4"
     customMuxAfterDone: str = ""
     subtitleFormat: str = "SRT"
     selectVideo: str = ""
@@ -188,7 +187,6 @@ class M3U8TaskStep(TaskStep):
     decryptionKeyFile: str = ""
     muxImports: list[str] = field(default_factory=list)
     shouldKeepLiveSegments: bool = False
-    shouldUseLivePipeMux: bool = False
     shouldFixLiveVtt: bool = False
     liveWaitTime: int = 0
     liveTakeCount: int = 0
@@ -269,7 +267,8 @@ class M3U8TaskStep(TaskStep):
         if self.task.isLive:
             args.append("--live-real-time-merge=true")
             args.append(f"--live-keep-segments={toBool(self.shouldKeepLiveSegments)}")
-            args.append(f"--live-pipe-mux={toBool(self.shouldUseLivePipeMux)}")
+            # Without pipe mux the container follows the segment format and can differ from the Name.
+            args.append("--live-pipe-mux=true")
             if self.shouldFixLiveVtt:
                 args.append("--live-fix-vtt-by-audio=true")
             if self.liveWaitTime > 0:
@@ -283,7 +282,7 @@ class M3U8TaskStep(TaskStep):
         else:
             from ffmpeg_pack.config import ffmpegRuntime
             ffmpegPath = ffmpegRuntime.path()
-            muxOption = f"format={self.outputFormat}:muxer=ffmpeg"
+            muxOption = f"format={Path(self.task.name).suffix.lstrip('.').lower()}:muxer=ffmpeg"
             if ffmpegPath:
                 muxOption += f":bin_path={ffmpegPath}"
             args.append(f"--mux-after-done={muxOption}")
