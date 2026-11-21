@@ -1,4 +1,5 @@
 import type {Resource} from "../shared/types";
+import {isCatCatchM3u8, isCatCatchMpd} from "../shared/cat-catch";
 import {fileExtension, filenameFromUrl} from "../shared/utils";
 
 // The extension names a browser-sourced task because only the browser has the page context;
@@ -89,8 +90,13 @@ export function resourceNameFromCapture(payload: ResourceNameInput): string {
 export function taskNameForResource(resource: Resource): string {
   const urlFilename = filenameFromUrl(resource.url);
   const current = cleanFilename(resource.filename || urlFilename);
-  const extension = fileExtension(current)
-    || fileExtension(urlFilename)
+  const urlExtension = fileExtension(urlFilename);
+  const manifestExtension = isCatCatchM3u8(urlExtension, resource.mime) ? "m3u8"
+    : isCatCatchMpd(urlExtension, resource.mime) ? "mpd"
+      : "";
+  const extension = manifestExtension
+    || fileExtension(current)
+    || urlExtension
     || extensionFromMime(resource.mime);
   const title = cleanFilename(resource.pageTitle);
   const baseName = title || current || "resource";
