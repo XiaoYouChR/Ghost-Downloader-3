@@ -19,7 +19,7 @@ from app.models.pack import FeaturePack, TaskParser, FileType
 from app.models.task import PageTaskOptions, ResourceTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 from .config import m3u8Config, m3u8Runtime
-from .task import M3U8SubtitleStep, M3U8Task, M3U8TaskStep
+from .task import MANIFEST_SUFFIXES, M3U8SubtitleStep, M3U8Task, M3U8TaskStep
 from .vimeo import buildVimeoFiles, matchVimeoPlaylist
 
 if TYPE_CHECKING:
@@ -34,7 +34,6 @@ MEDIA_SUFFIXES = {
     ".m3u8", ".m3u", ".mpd", ".mp4", ".mkv",
     ".ts", ".webm", ".m4a", ".m4v", ".vtt", ".srt",
 }
-MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
 MANIFEST_CONTENT_TYPES = {"application/vnd.apple.mpegurl", "application/x-mpegurl", "application/mpegurl",
                           "audio/mpegurl", "audio/x-mpegurl", "application/dash+xml"}
 # Only the tags we read: m3u8 crashes on vendor attributes in other tags, which RFC 8216 says to ignore.

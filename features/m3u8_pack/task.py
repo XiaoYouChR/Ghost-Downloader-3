@@ -31,6 +31,7 @@ LIVE_PROGRESS_PATTERN = re.compile(
 LIVE_RECORD_PATTERN = re.compile(
     rf"({_DURATION})/({_DURATION})\s+\d+\.\d+(?:KB|MB|GB|B)\s+\d+/\d+\s+(Recording|Waiting)\s+(-|{_SPEED})"
 )
+MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
 IGNORED_OUTPUT_SUFFIXES = {".json", ".txt", ".log", ".tmp", ".ghd"}
 DECRYPTION_ENGINES = {
     "FFmpeg": "FFMPEG",
@@ -137,6 +138,13 @@ class M3U8Task(Task):
         if isinstance(step, M3U8SubtitleStep):
             return step.key in self.subtitleLanguages
         return True
+
+    def setName(self, name: str) -> None:
+        suffix = Path(name).suffix
+        if suffix.lower() in MANIFEST_SUFFIXES:
+            targetSuffix = Path(self.name).suffix or (".ts" if self.isLive else ".mp4")
+            name = f"{name[:-len(suffix)]}{targetSuffix}"
+        super().setName(name)
 
     def setOptions(self, options: dict) -> None:
         previousPaths = [(step, step.outputPath) for step in self.steps]
@@ -427,14 +435,11 @@ class M3U8TaskStep(TaskStep):
             (c for c in self.task.partPath.glob("*")
              if c.is_file() and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
              and c.name.lower().startswith(prefix)),
-            key=lambda c: c.stat().st_mtime,
+            key=lambda c: (c.suffix.lower() == target.suffix.lower(), c.stat().st_mtime),
             default=None,
         )
         if found is None:
             return False
-        if found.suffix.lower() != target.suffix.lower():
-            raise TaskError("N_m3u8DL-RE 输出了 {actual} 文件，与任务的 {expected} 不符",
-                            actual=found.suffix, expected=target.suffix)
         self.task.fileSize = max(self.task.fileSize, found.stat().st_size)
         os.replace(found, target)
         return True
