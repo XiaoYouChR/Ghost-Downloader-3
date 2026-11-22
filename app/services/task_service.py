@@ -14,7 +14,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
-from app.platform.filesystem import deletePath, isExisting, splitStemExt
+from app.platform.filesystem import deletePath, isExisting, toNumberedFilename
 from app.checksum import toChecksum
 from app.models.task import Task, TaskError, TaskOptions, TaskStatus, deletePlaceholder
 from app.signal import Signal
@@ -63,7 +63,7 @@ class TaskStore:
 
     def add(self, task: Task, choice: NameConflictChoice) -> AddResult | None:
         isOverwriteFailed = False
-        stem, ext = splitStemExt(task.name)
+        baseName = task.name
         index = 0
         while (takenPath := self._createPlaceholders(task)) is not None:
             isUnfinished = self._isUnfinishedPlaceholder(takenPath)
@@ -75,7 +75,7 @@ class TaskStore:
                 isOverwriteFailed = True
                 choice = NameConflictChoice.KEEP_BOTH
             index += 1
-            task.setName(f"{stem}({index}){ext}")
+            task.setName(toNumberedFilename(baseName, index))
         replacedTasks: list[Task] = []
         for path in task.placeholderPaths:
             replaced = self._taskByPlaceholder.get(path)
@@ -91,12 +91,12 @@ class TaskStore:
         placeholders = self._placeholders[task.taskId]
         if task.placeholderPaths == placeholders.paths:
             return
-        stem, ext = splitStemExt(task.name)
+        baseName = task.name
         index = 0
         try:
             while self._createPlaceholders(task) is not None:
                 index += 1
-                task.setName(f"{stem}({index}){ext}")
+                task.setName(toNumberedFilename(baseName, index))
         except TaskError:
             task.outputFolder = placeholders.outputFolder
             task.setName(placeholders.name)

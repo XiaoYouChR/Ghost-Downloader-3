@@ -282,6 +282,19 @@ async def test_add_ignores_leftover_progress(engine):
     assert not task.partPath.exists()
 
 
+async def test_add_numbers_name_at_length_limit(engine, downloadFolder):
+    name = "x" * 200 + ".mp4"
+    engine.taskService.add(buildTask(name), autoStart=False)
+
+    task = buildTask(name)
+    engine.taskService.add(task, autoStart=False)
+
+    assert task.name != name
+    assert task.name.endswith("(1).mp4")
+    assert len(task.name) <= 200
+    assert engine.taskService.taskById(task.taskId) is task
+
+
 async def test_resume_paused_task_keeps_its_name(engine, startEngine, recycleBin):
     cfg.set(cfg.nameConflict, NameConflictChoice.OVERWRITE.value)
     saved = buildTask()
