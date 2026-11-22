@@ -10,7 +10,8 @@ jobs:
   auto-confirm:
     if: >-
       !github.event.issue.pull_request &&
-      github.event.comment.user.login == github.repository_owner
+      github.event.comment.user.login == github.repository_owner &&
+      !startsWith(github.event.comment.body, '/triage')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
