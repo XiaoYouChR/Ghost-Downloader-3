@@ -4,12 +4,19 @@ title: "[Feature] "
 labels:
   - "✨Enhancement"
 body:
+- type: markdown
+  attributes:
+    value: |
+      请用自己的话说明使用场景和痛点，**不要用 AI 代写需求文档或技术方案**，仅允许纯翻译。包含 AI 代写或方案的 Issue 可能会被直接关闭。
+
 - type: checkboxes
   id: no-duplicate
   attributes:
     label: 检查清单
     options:
       - label: 我已搜索现有 Issue 和 Discussions，确认没有重复
+        required: true
+      - label: 本 Issue 未使用 AI 代写，也不包含 AI 生成的技术方案
         required: true
 
 - type: textarea
@@ -24,9 +31,7 @@ body:
   id: solution-description
   attributes:
     label: 期望方案
-    description: 你期望的解决方式是什么？
-  validations:
-    required: true
+    description: 从使用体验描述期望的交互或效果，无需写技术方案
 
 - type: textarea
   id: alternatives

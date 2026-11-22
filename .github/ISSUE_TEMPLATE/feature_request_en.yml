@@ -4,12 +4,19 @@ title: "[Feature] "
 labels:
   - "✨Enhancement"
 body:
+- type: markdown
+  attributes:
+    value: |
+      Explain your use case and pain points in your own words. **Do not use AI to write feature specs or technical proposals**; direct translation only. Violating issues may be closed directly.
+
 - type: checkboxes
   id: no-duplicate
   attributes:
     label: Checklist
     options:
       - label: I have searched existing issues and Discussions to confirm this is not a duplicate
+        required: true
+      - label: This issue is written by me without AI-generated specs or technical proposals
         required: true
 
 - type: textarea
@@ -24,9 +31,7 @@ body:
   id: solution-description
   attributes:
     label: Proposed solution
-    description: How do you expect this to work?
-  validations:
-    required: true
+    description: Expected UX or behavior, no technical implementation needed
 
 - type: textarea
   id: alternatives

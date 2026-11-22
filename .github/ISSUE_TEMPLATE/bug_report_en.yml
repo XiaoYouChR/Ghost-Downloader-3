@@ -4,6 +4,11 @@ title: "[Bug] "
 labels:
   - "🐛Bug"
 body:
+- type: markdown
+  attributes:
+    value: |
+      Describe what happened in your own words with steps and raw logs. **Do not use AI to write this issue or paste AI root cause analyses or fix suggestions**; direct translation only. Violating issues may be closed directly.
+
 - type: checkboxes
   id: no-duplicate
   attributes:
@@ -11,12 +16,14 @@ body:
     options:
       - label: I have searched existing issues and confirmed this is not a duplicate
         required: true
+      - label: This issue is written by me without AI-generated text, analysis, or fix suggestions
+        required: true
 
 - type: textarea
   id: description
   attributes:
     label: Description
-    description: Briefly describe the problem
+    description: What you did and what happened, no code analysis or fix suggestions
   validations:
     required: true
 
@@ -104,4 +111,5 @@ body:
   id: additional-context
   attributes:
     label: Additional context
+    description: Other factual context for reproduction, no AI analysis
     render: markdown
