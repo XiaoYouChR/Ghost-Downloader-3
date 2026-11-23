@@ -15,7 +15,7 @@ from app.models.task import Task, TaskOptions
 from http_pack.pack import buildEditCards, buildOptionCards
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
-from .probe import probeUrls, toProxyHeaders
+from .probe import probeProxySitesFirst, probeUrls, toProxyHeaders
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
@@ -57,6 +57,17 @@ def isGitHubFileUrl(url: str) -> bool:
         or "/releases/download/" in path
         or "/releases/latest/download/" in path
     )
+
+
+def originalGitHubUrl(url: str) -> str:
+    if isGitHubFileUrl(url):
+        return url
+    for site in (*GITHUB_PROXY_SITES, githubConfig.customSite.value):
+        if site and url.startswith(site + "/"):
+            inner = url[len(site) + 1:]
+            if isGitHubFileUrl(inner):
+                return inner
+    return ""
 
 
 @dataclass(kw_only=True)
@@ -105,28 +116,41 @@ class GitHubParser(TaskParser):
     priority = 75
 
     def match(self, options: TaskOptions) -> bool:
-        return githubConfig.enabled.value and isGitHubFileUrl(options.url) and not options.isProbed
+        return githubConfig.enabled.value and not options.isProbed and bool(originalGitHubUrl(options.url))
 
     async def parse(self, options: TaskOptions) -> Task:
-        originalUrl = options.url
+        inputOptions = options
+        inputUrl = options.url
+        originalUrl = originalGitHubUrl(inputUrl)
+        preferred = []
+        if inputUrl != originalUrl:
+            preferred.append(inputUrl)
+            options = replace(options, url=originalUrl, headers=toProxyHeaders(options.headers))
         selected = selectedProxySite()
-        urls = [f"{site}/{originalUrl}" for site in GITHUB_PROXY_SITES if site != selected] + [originalUrl]
-
-        file = None
         if selected:
+            selectedUrl = f"{selected}/{originalUrl}"
+            if selectedUrl not in preferred:
+                preferred.append(selectedUrl)
+        proxyUrls = [f"{site}/{originalUrl}" for site in GITHUB_PROXY_SITES]
+        proxyUrls = [url for url in proxyUrls if url not in preferred]
+
+        for index, url in enumerate(preferred):
             try:
-                winner, file, _ = await probeUrls(options, [f"{selected}/{originalUrl}"])
-                fallbackUrls = urls
+                probeOptions = inputOptions if url == inputUrl else options
+                winner, file, _ = await probeUrls(probeOptions, [url])
             except Exception as e:
-                logger.warning("所选代理站不可用 {}: {}", selected, e)
-        if file is None:
-            winner, file, fallbackUrls = await probeUrls(options, urls)
+                logger.warning("优先代理站不可用: {}", e)
+                continue
+            fallbackUrls = [*preferred[index + 1:], *proxyUrls, originalUrl]
+            break
+        else:
+            winner, file, fallbackUrls = await probeProxySitesFirst(options, proxyUrls)
 
         logger.info("GitHub 选用 {}", winner)
-        headers = options.headers if winner == originalUrl else toProxyHeaders(options.headers)
+        headers = inputOptions.headers if winner == inputUrl else toProxyHeaders(options.headers)
         task = await self.pack.parse(replace(options, url=winner, headers=headers, file=file))
         if task.packId != "m3u8":
-            task.url = originalUrl
+            task.url = inputUrl
         if task.steps and type(task.steps[0]) is HttpTaskStep and fallbackUrls:
             step = GitHubHttpTaskStep.build(task.steps[0], fallbackUrls)
             step._bindTask(task)
