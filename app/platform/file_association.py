@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -127,60 +128,89 @@ def _registerLinux(fileTypes: list[FileType]) -> None:
     saveMimeTypes(schemes | {ft.mimeType for ft in fileTypes})
 
 
+HANDLER_DESKTOP_NAME = f"{DESKTOP_ID}.handler.desktop"
+DESKTOP_FILE = (
+    Path(os.environ["XDG_DATA_HOME"])
+    if os.environ.get("XDG_DATA_HOME", "").startswith("/")
+    else Path.home() / ".local/share"
+) / "applications" / HANDLER_DESKTOP_NAME
+MIMEAPPS_FILE = (
+    Path(os.environ["XDG_CONFIG_HOME"])
+    if os.environ.get("XDG_CONFIG_HOME", "").startswith("/")
+    else Path.home() / ".config"
+) / "mimeapps.list"
+
+
 def loadMimeTypes() -> set[str]:
-    desktopFile = Path.home() / ".local/share/applications" / f"{DESKTOP_ID}.desktop"
-    if not desktopFile.exists():
+    if not DESKTOP_FILE.exists():
         return set()
-    for line in desktopFile.read_text(encoding="utf-8").splitlines():
+    for line in DESKTOP_FILE.read_text(encoding="utf-8").splitlines():
         if line.startswith("MimeType="):
             return {m for m in line[9:].split(";") if m}
     return set()
 
 
-def saveMimeTypes(mimes: set[str]) -> None:
-    desktopDir = Path.home() / ".local/share/applications"
-    serviceDir = Path.home() / ".local/share/dbus-1/services"
-    desktopFile = desktopDir / f"{DESKTOP_ID}.desktop"
-    serviceFile = serviceDir / f"{DESKTOP_ID}.service"
+def deleteMimeDefaults(mimes: set[str]) -> None:
+    if not MIMEAPPS_FILE.exists():
+        return
 
+    lines: list[str] = []
+    isInDefaults = False
+    hasChanged = False
+    for line in MIMEAPPS_FILE.read_text(encoding="utf-8").splitlines(keepends=True):
+        stripped = line.strip()
+        if stripped.startswith("["):
+            isInDefaults = stripped == "[Default Applications]"
+        elif isInDefaults and "=" in line:
+            mime, rawValue = line.split("=", 1)
+            if mime.strip() in mimes:
+                entries = [e for e in rawValue.strip().split(";") if e]
+                remaining = [e for e in entries if e != HANDLER_DESKTOP_NAME]
+                if len(remaining) != len(entries):
+                    hasChanged = True
+                    if remaining:
+                        lines.append(f"{mime}={';'.join(remaining)};\n")
+                    continue
+        lines.append(line)
+
+    if hasChanged:
+        MIMEAPPS_FILE.write_text("".join(lines), encoding="utf-8")
+
+
+def saveMimeTypes(mimes: set[str]) -> None:
     desktopText = (
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=Ghost Downloader\n"
+        "Comment=The only downloader you need\n"
         f'Exec="{EXECUTABLE_PATH}" %U\n'
         "Icon=ghost-downloader\n"
+        "NoDisplay=true\n"
         "Terminal=false\n"
-        "Categories=Network;Utility;\n"
-        "DBusActivatable=true\n"
         f"MimeType={';'.join(sorted(mimes))};\n"
     )
-    oldText = desktopFile.read_text(encoding="utf-8") if desktopFile.exists() else None
+    oldText = DESKTOP_FILE.read_text(encoding="utf-8") if DESKTOP_FILE.exists() else None
     # 每次改写都会让桌面重建缓存，反复改写会卡住 KWin #1045
     if oldText == (desktopText if mimes else None):
         return
 
+    removed = loadMimeTypes() - mimes
     if mimes:
-        desktopDir.mkdir(parents=True, exist_ok=True)
-        serviceDir.mkdir(parents=True, exist_ok=True)
-        desktopFile.write_text(desktopText, encoding="utf-8")
-        serviceFile.write_text(
-            "[D-BUS Service]\n"
-            f"Name={DESKTOP_ID}\n"
-            f'Exec="{EXECUTABLE_PATH}"\n',
-            encoding="utf-8",
-        )
+        DESKTOP_FILE.parent.mkdir(parents=True, exist_ok=True)
+        DESKTOP_FILE.write_text(desktopText, encoding="utf-8")
     else:
-        desktopFile.unlink(missing_ok=True)
-        serviceFile.unlink(missing_ok=True)
+        DESKTOP_FILE.unlink(missing_ok=True)
+    if removed:
+        deleteMimeDefaults(removed)
 
     try:
-        subprocess.run(["update-desktop-database", str(desktopDir)], check=False, capture_output=True)
+        subprocess.run(["update-desktop-database", str(DESKTOP_FILE.parent)], check=False, capture_output=True)
     except FileNotFoundError:
         logger.warning("缺少 update-desktop-database, 跳过")
 
     for mime in mimes:
         try:
-            subprocess.run(["xdg-mime", "default", f"{DESKTOP_ID}.desktop", mime], check=False, capture_output=True)
+            subprocess.run(["xdg-mime", "default", HANDLER_DESKTOP_NAME, mime], check=False, capture_output=True)
         except FileNotFoundError:
             logger.warning("缺少 xdg-mime, 跳过文件关联")
             break

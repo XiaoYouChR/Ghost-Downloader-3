@@ -74,7 +74,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     from app.signal_bus import signalBus
     from app.services.port_listener import ListenStatus
     from app.services.update_service import UpdateService
-    from app.startup import loadResources, setupThemeColor, createEngine, deleteBackupDir, deleteLegacyAppIdFiles, loadPacks, checkUpdateAtStartup
+    from app.startup import loadResources, setupThemeColor, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -105,13 +105,6 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     browserService, speedMeter = engine.browserService, engine.speedMeter
 
     deleteBackupDir()
-    if deleteLegacyAppIdFiles():
-        from app.platform.file_association import registerUrlScheme
-        from app.platform.run_at_login import setRunAtLogin
-        if cfg.isUrlSchemeRegistered.value:
-            registerUrlScheme()
-        if cfg.shouldRunAtLogin.value:
-            setRunAtLogin(True)
 
     setupThemeColor(application)
 

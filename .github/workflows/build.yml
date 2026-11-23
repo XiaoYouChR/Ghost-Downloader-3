@@ -623,11 +623,9 @@ jobs:
         include:
           - architecture: x86_64
             runner: ubuntu-22.04
-            deb_arch: amd64
             appimage_arch: x86_64
           - architecture: arm64
             runner: ubuntu-24.04-arm
-            deb_arch: arm64
             appimage_arch: aarch64
     runs-on: ${{ matrix.runner }}
     steps:
@@ -710,73 +708,49 @@ jobs:
             fi
           done
 
-      - name: Build .deb and .AppImage
+      - name: Build .AppImage
         run: |
           DIST_DIR="dist/Ghost-Downloader-3.dist"
-          DEB_ROOT="$RUNNER_TEMP/deb-root"
           APPDIR="$RUNNER_TEMP/GhostDownloader.AppDir"
           PACKAGE_NAME="ghost-downloader"
-          INSTALL_DIR="/opt/Ghost-Downloader-3"
           DESKTOP_FILE="com.xychr.ghostdownloader.desktop"
           ICON_FILE="$PACKAGE_NAME.png"
-          DEB_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb"
           APPIMAGE_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage"
           APPIMAGETOOL_FILE="appimagetool-${{ matrix.appimage_arch }}.AppImage"
           APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/latest/download/${APPIMAGETOOL_FILE}"
 
-          rm -rf "$DEB_ROOT" "$APPDIR" "$RUNNER_TEMP/squashfs-root"
+          rm -rf "$APPDIR" "$RUNNER_TEMP/squashfs-root"
           mkdir -p \
-            "$DEB_ROOT/DEBIAN" \
-            "$DEB_ROOT$INSTALL_DIR" \
-            "$DEB_ROOT/usr/bin" \
-            "$DEB_ROOT/usr/share/applications" \
-            "$DEB_ROOT/usr/share/icons/hicolor/256x256/apps" \
             "$APPDIR/usr/bin" \
             "$APPDIR/usr/lib/$PACKAGE_NAME" \
             "$APPDIR/usr/share/applications" \
             "$APPDIR/usr/share/icons/hicolor/256x256/apps"
 
-          cp -R "$DIST_DIR"/. "$DEB_ROOT$INSTALL_DIR/"
           cp -R "$DIST_DIR"/. "$APPDIR/usr/lib/$PACKAGE_NAME/"
           cp /usr/lib/*/libzstd.so.1 "$APPDIR/usr/lib/$PACKAGE_NAME/"
 
-          ln -s "$INSTALL_DIR/Ghost-Downloader-3.bin" "$DEB_ROOT/usr/bin/$PACKAGE_NAME"
           ln -s "../lib/$PACKAGE_NAME/Ghost-Downloader-3.bin" "$APPDIR/usr/bin/$PACKAGE_NAME"
           ln -s "usr/bin/$PACKAGE_NAME" "$APPDIR/AppRun"
 
-          cat > "$DEB_ROOT/DEBIAN/control" <<EOF
-          Package: $PACKAGE_NAME
-          Version: ${{ env.VERSION }}
-          Section: net
-          Priority: optional
-          Architecture: ${{ matrix.deb_arch }}
-          Maintainer: XiaoYouChR <XiaoYouChR@qq.com>
-          Description: Ghost Downloader
-           A multi-threading downloader based on PySide6.
-          EOF
-
-          cat > "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE" <<EOF
+          cat > "$APPDIR/usr/share/applications/$DESKTOP_FILE" <<EOF
           [Desktop Entry]
           Type=Application
           Name=Ghost Downloader
-          Comment=A multi-threading downloader based on PySide6
-          Exec=$PACKAGE_NAME
+          Comment=The only downloader you need
+          Exec=$PACKAGE_NAME %U
           Icon=$PACKAGE_NAME
           Terminal=false
           Categories=Network;Utility;
           StartupNotify=false
           EOF
 
-          cp "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE" "$APPDIR/usr/share/applications/$DESKTOP_FILE"
-          cp "app/assets/logo.png" "$DEB_ROOT/usr/share/icons/hicolor/256x256/apps/$ICON_FILE"
           cp "app/assets/logo.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/$ICON_FILE"
 
           ln -s "usr/share/applications/$DESKTOP_FILE" "$APPDIR/$DESKTOP_FILE"
           ln -s "usr/share/icons/hicolor/256x256/apps/$ICON_FILE" "$APPDIR/$ICON_FILE"
           ln -s "usr/share/icons/hicolor/256x256/apps/$ICON_FILE" "$APPDIR/.DirIcon"
 
-          desktop-file-validate "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE"
-          dpkg-deb --build --root-owner-group "$DEB_ROOT" "$DEB_FILE"
+          desktop-file-validate "$APPDIR/usr/share/applications/$DESKTOP_FILE"
 
           curl -fL "$APPIMAGETOOL_URL" -o "$RUNNER_TEMP/$APPIMAGETOOL_FILE"
           chmod +x "$RUNNER_TEMP/$APPIMAGETOOL_FILE"
@@ -791,7 +765,6 @@ jobs:
           )
           chmod +x "$APPIMAGE_FILE"
 
-          dpkg-deb --info "$DEB_FILE"
           file "$APPIMAGE_FILE"
 
       - name: Tar the contents of Ghost-Downloader
@@ -801,6 +774,7 @@ jobs:
           $distPath = "dist/Ghost-Downloader-3.dist"
           $tarFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
 
+          Copy-Item "app/assets/logo.png" "$distPath/logo.png"
           Write-Output "Creating tar.xz archive of $distPath..."
           tar -cJf $tarFile -C $distPath .
           Write-Output "Archive created at $tarFile"
@@ -812,7 +786,6 @@ jobs:
         run: |
           gh release upload "v${{ env.VERSION }}" \
             "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz" \
-            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb" \
             "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage" \
             --clobber
 
@@ -823,7 +796,6 @@ jobs:
           name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
           path: |
             dist/Ghost-Downloader-3.dist
-            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb
             dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
 
   android-libtorrent:
@@ -1055,7 +1027,7 @@ jobs:
 
   finalize:
     needs: [prepare, build-windows, build-macos, build-ubuntu, build-android]
-    if: ${{ always() && github.event.inputs.create_release == 'true' && needs.build-windows.result == 'success' && needs.build-macos.result == 'success' }}
+    if: ${{ always() && github.event.inputs.create_release == 'true' && needs.prepare.result == 'success' && !contains(fromJSON('["failure","cancelled"]'), needs.build-windows.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-macos.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-ubuntu.result) && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-ubuntu.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -1078,7 +1050,7 @@ jobs:
           PREV_VER: ${{ needs.prepare.outputs.patch_base }}
         run: |
           mkdir -p assets
-          gh release download "v${VERSION}" --repo ${{ github.repository }} -p "*.hdiff" -p "*.zip" -p "*.dmg" -p "*.tar.xz" -p "*.deb" -p "*.AppImage" -p "*.apk" -p "*.exe" -D assets/ 2>/dev/null || true
+          gh release download "v${VERSION}" --repo ${{ github.repository }} -p "*.hdiff" -p "*.zip" -p "*.dmg" -p "*.tar.xz" -p "*.AppImage" -p "*.apk" -p "*.exe" -D assets/ 2>/dev/null || true
 
           uv run --no-project python3 << 'PYEOF'
           import hashlib, json, os
@@ -1094,7 +1066,12 @@ jobs:
                       h.update(chunk)
               return h.hexdigest()
 
-          platforms = ["Windows-x86_64", "Windows-arm64", "macOS-arm64", "macOS-x86_64"]
+          platforms = [
+              "Windows-x86_64", "Windows-arm64",
+              "macOS-arm64", "macOS-x86_64",
+              "Linux-x86_64", "Linux-arm64",
+          ]
+          full_ext = {"Windows": ".zip", "macOS": ".dmg", "Linux": ".tar.xz"}
           patches = {}
           full = {}
 
@@ -1102,10 +1079,12 @@ jobs:
               for f in os.listdir(assets_dir):
                   if f.startswith(f"patch-{p}-") and f.endswith(".hdiff"):
                       path = os.path.join(assets_dir, f)
-                      patches[p] = {"from": prev_ver, "file": f, "sha256": sha256of(path), "size": os.path.getsize(path)}
+                      prefix, suffix = f"patch-{p}-", f"-to-{version}.hdiff"
+                      from_ver = f[len(prefix):-len(suffix)] if f.endswith(suffix) else prev_ver
+                      patches[p] = {"from": from_ver, "file": f, "sha256": sha256of(path), "size": os.path.getsize(path)}
                       break
 
-              ext = ".zip" if p.startswith("Windows") else ".dmg"
+              ext = full_ext[p.split("-", 1)[0]]
               full_name = f"Ghost-Downloader-v{version}-{p}{ext}"
               full_path = os.path.join(assets_dir, full_name)
               if os.path.isfile(full_path):

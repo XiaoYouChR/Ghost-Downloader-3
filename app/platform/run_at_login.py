@@ -58,9 +58,10 @@ def _setMacOS(enabled: bool) -> None:
 
 
 def _setLinux(enabled: bool) -> None:
-    from app.config.constants import DESKTOP_ID, VERSION
+    from app.config.constants import DESKTOP_ID
 
-    autoStartDir = Path.home() / ".config/autostart"
+    configHome = Path(v) if (v := os.environ.get("XDG_CONFIG_HOME", "")).startswith("/") else Path.home() / ".config"
+    autoStartDir = configHome / "autostart"
     desktopFile = autoStartDir / f"{DESKTOP_ID}.desktop"
 
     if enabled:
@@ -68,10 +69,10 @@ def _setLinux(enabled: bool) -> None:
         desktopFile.write_text(
             "[Desktop Entry]\n"
             "Type=Application\n"
-            f"Version={VERSION}\n"
-            "Name=Ghost Downloader 3\n"
-            "Comment=A multi-threading downloader with QThread based on PySide6\n"
+            "Name=Ghost Downloader\n"
+            "Comment=The only downloader you need\n"
             f'Exec="{EXECUTABLE_PATH}" --silence\n'
+            "Icon=ghost-downloader\n"
             "StartupNotify=false\n"
             "Terminal=false\n",
             encoding="utf-8",
