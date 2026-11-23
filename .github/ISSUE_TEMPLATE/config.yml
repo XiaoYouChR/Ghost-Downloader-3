@@ -6,6 +6,6 @@ contact_links:
   - name: 功能建议 / Ideas
     url: https://github.com/XiaoYouChR/Ghost-Downloader-3/discussions/categories/功能建议-ideas
     about: 功能建议请先到 Discussions 讨论
-  - name: 翻译贡献 / Translations
-    url: https://github.com/XiaoYouChR/Ghost-Downloader-3/discussions/categories/翻译-translations
-    about: 翻译贡献请到 Discussions 讨论或直接走 Crowdin
+  - name: Translations
+    url: https://github.com/XiaoYouChR/Ghost-Downloader-3/discussions/categories/translations
+    about: Request new languages on Discussions or translate on Crowdin
