@@ -492,7 +492,7 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BilibiliPack</name>
     <message>
-      <location filename="../../../features/bili_pack/pack.py" line="233"/>
+      <location filename="../../../features/bili_pack/pack.py" line="236"/>
       <source>哔哩哔哩视频、番剧</source>
       <translation>嗶哩嗶哩影片、番劇</translation>
     </message>
@@ -533,12 +533,12 @@ http://example.com/{mp4,mkv}/video</translation>
       <translation>嗶哩嗶哩、YouTube 等網站影片下載必備，合併音訊與視訊軌道為完整檔案</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="153"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="150"/>
       <source>M3U8 / 直播下载</source>
       <translation>M3U8 / 直播下載</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="154"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="151"/>
       <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
       <translation>支援 HLS、DASH 等串流協定，可錄製直播串流</translation>
     </message>
@@ -2532,279 +2532,269 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>M3U8Config</name>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="79"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="78"/>
       <source>N_m3u8DL-RE 安装目录</source>
       <translation>N_m3u8DL-RE 安裝目錄</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="85"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="84"/>
       <source>输出容器</source>
       <translation>輸出容器</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="86"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="85"/>
       <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
       <translation>點播下載完成後優先使用 ffmpeg 混流為指定容器</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="87"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="86"/>
       <source>分片线程数</source>
       <translation>分片執行緒數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="88"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="87"/>
       <source>传给 N_m3u8DL-RE 的下载线程数</source>
       <translation>傳給 N_m3u8DL-RE 的下載執行緒數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="89"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="88"/>
       <source>分片重试次数</source>
       <translation>分片重試次數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="90"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="89"/>
       <source>单个分片下载失败时的最大重试次数</source>
       <translation>單一分片下載失敗時的最大重試次數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="90"/>
       <source>请求超时</source>
       <translation>要求逾時</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="90"/>
       <source>HTTP 请求超时时间</source>
       <translation>HTTP 要求逾時時間</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="93"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="92"/>
       <source>自动选择最佳轨道</source>
       <translation>自動選擇最佳軌道</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="76"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="75"/>
       <source>M3U8 下载</source>
       <translation>M3U8 下載</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="94"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="93"/>
       <source>默认选择最佳音视频轨道</source>
       <translation>預設選擇最佳音視訊軌道</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="95"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="94"/>
       <source>并发下载音视频</source>
       <translation>並行下載音視訊</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="96"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="95"/>
       <source>同时下载已选择的音频、视频和字幕轨道</source>
       <translation>同時下載已選擇的音訊、視訊和字幕軌道</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="97"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="96"/>
       <source>追加 URL 参数</source>
       <translation>附加 URL 參數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="98"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="97"/>
       <source>把输入链接上的 Query 参数追加到分片请求</source>
       <translation>將輸入連結上的 Query 參數附加到分片要求</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="99"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="98"/>
       <source>二进制合并</source>
       <translation>二進位合併</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="100"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="99"/>
       <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
       <translation>让 N_m3u8DL-RE 使用二進位方式合併分片</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="101"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="100"/>
       <source>校验分片数量</source>
       <translation>驗證分片數量</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="102"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="101"/>
       <source>下载完成后检查实际分片数是否与预期一致</source>
       <translation>下載完成後檢查實際分片數是否與預期一致</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="103"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="102"/>
       <source>直播保留原始分片</source>
       <translation>直播保留原始分片</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="104"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="103"/>
       <source>实时合并录制时仍保留下载的原始分片</source>
       <translation>即時合併錄製時仍保留下載的原始分片</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="106"/>
-      <source>录制时通过管道交给 ffmpeg 实时混流为封装容器</source>
-      <translation>錄製時透過管線交給 ffmpeg 即時混流為封裝容器</translation>
-    </message>
-    <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="107"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="104"/>
       <source>直播校正 VTT 字幕</source>
       <translation>直播校正 VTT 字幕</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="108"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="105"/>
       <source>根据音频起始时间校正 VTT 字幕时间轴</source>
       <translation>根據音訊起始時間校正 VTT 字幕時間軸</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="109"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="106"/>
       <source>直播刷新等待时间</source>
       <translation>直播重新整理等待時間</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="110"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="107"/>
       <source>两次拉取直播清单之间的等待秒数，0 为自动</source>
       <translation>兩次拉取直播清單之間的等待秒數，0 為自動</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="111"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="108"/>
       <source>直播每次取片数</source>
       <translation>直播每次取片數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="112"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="109"/>
       <source>每次刷新最多取走的分片数量，0 为自动</source>
       <translation>每次重新整理最多取走的分片數量，0 為自動</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="113"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="110"/>
       <source>解密引擎</source>
       <translation>解密引擎</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="114"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="111"/>
       <source>调用的第三方解密程序</source>
       <translation>調用的第三方解密程式</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="115"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="112"/>
       <source>解密引擎二进制路径</source>
       <translation>解密引擎二進位路徑</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="116"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="113"/>
       <source>MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg</source>
       <translation>MP4Decrypt / Shaka Packager 可執行檔路徑，留空則使用 FFmpeg</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="134"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="131"/>
       <source>下载全部音轨</source>
       <translation>下載全部音軌</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="135"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="132"/>
       <source>默认拉取全部音频轨道</source>
       <translation>預設拉取全部音訊軌道</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="118"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="115"/>
       <source>MP4 实时解密</source>
       <translation>MP4 即時解密</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="116"/>
       <source>下载 MP4 分片时实时解密</source>
       <translation>下載 MP4 分片時即時解密</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="120"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="117"/>
       <source>限速</source>
       <translation>限速</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="121"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="118"/>
       <source>最大下载速度，-1 为不限速</source>
       <translation>最大下載速度，-1 為不限速</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="122"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="119"/>
       <source>限速单位</source>
       <translation>限速單位</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="123"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="120"/>
       <source>限速数值的单位</source>
       <translation>限速數值的單位</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="124"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="121"/>
       <source>广告过滤</source>
       <translation>廣告過濾</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="122"/>
       <source>匹配广告分片 URL 的正则表达式</source>
       <translation>匹配廣告分片 URL 的正規表示式</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="122"/>
       <source>正则表达式</source>
       <translation>正規表示式</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="126"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="123"/>
       <source>字幕格式</source>
       <translation>字幕格式</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="127"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="124"/>
       <source>字幕输出格式</source>
       <translation>字幕輸出格式</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="128"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="125"/>
       <source>不写入日期信息</source>
       <translation>不寫入日期資訊</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="129"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="126"/>
       <source>混流时不写入日期信息</source>
       <translation>混流時不寫入日期資訊</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="130"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="127"/>
       <source>保留图形分片</source>
       <translation>保留圖形分片</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="131"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="128"/>
       <source>把图形字幕转图片后保留原始分片</source>
       <translation>把圖形字幕轉圖片後保留原始分片</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="132"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="129"/>
       <source>完成后删除临时文件</source>
       <translation>完成後刪除暫存檔案</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="133"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="130"/>
       <source>下载完成后删除分片临时目录</source>
       <translation>下載完成後刪除分片暫存目錄</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="136"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="133"/>
       <source>自定义混流参数</source>
       <translation>自訂混流參數</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="137"/>
+      <location filename="../../../features/m3u8_pack/config.py" line="134"/>
       <source>自定义 --mux-after-done，留空则按输出容器自动混流</source>
       <translation>自訂 --mux-after-done，留空則按輸出容器自動混流</translation>
-    </message>
-    <message>
-      <location filename="../../../features/m3u8_pack/config.py" line="105"/>
-      <source>直播管道混流</source>
-      <translation>直播管線混流</translation>
     </message>
   </context>
   <context>
@@ -2836,17 +2826,17 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>M3U8Pack</name>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="303"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="312"/>
       <source>M3U8 / DASH 流媒体</source>
       <translation>M3U8 / DASH 串流媒體</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="370"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="379"/>
       <source>M3U8 播放列表</source>
       <translation>M3U8 播放清單</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="376"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="385"/>
       <source>DASH 清单</source>
       <translation>DASH 清單</translation>
     </message>

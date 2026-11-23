@@ -160,13 +160,31 @@ ghd wait tsk_0123
         <sub><b>323770 words</b></sub>
       </td>
       <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/hzzmonet"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17541058/medium/6d2519b5176d5dc224526a18f945002e.jpeg" />
+          <br />
+          <sub><b>Nguyễn Anh Kiệt</b></sub>
+          <br />
+          <sub><b>(hzzmonet)</b></sub></a>
+        <br />
+        <sub><b>15061 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/oocr"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/18002969/medium/8dc2d6ceade5dc57fd4fccc62d874db0.jpeg" />
+          <br />
+          <sub><b>CHEONG-KYUN</b></sub>
+          <br />
+          <sub><b>(oocr)</b></sub></a>
+        <br />
+        <sub><b>6913 words</b></sub>
+      </td>
+      <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Havokdan"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/12607851/medium/a1ec7e6a771c303892d82c92015a3641_default.png" />
           <br />
           <sub><b>Daniel Neves</b></sub>
           <br />
           <sub><b>(Havokdan)</b></sub></a>
         <br />
-        <sub><b>4443 words</b></sub>
+        <sub><b>4481 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
@@ -200,6 +218,8 @@ ghd wait tsk_0123
         <br />
         <sub><b>245 words</b></sub>
       </td>
+    </tr>
+    <tr>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ryuuDre"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/18000817/medium/27dc57e2949e8cebf51ef86794abc1f3.png" />
           <br />

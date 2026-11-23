@@ -1,0 +1,870 @@
+{
+  "about": {
+    "message": "Giới thiệu"
+  },
+  "advancedFeatures": {
+    "message": "Tính năng nâng cao"
+  },
+  "advancedFeaturesHint": {
+    "message": "Bật khi cần; một số tính năng yêu cầu chèn mã vào trang hoặc quyền đặc biệt"
+  },
+  "audio": {
+    "message": "Âm thanh",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "Rãnh âm thanh"
+  },
+  "authenticating": {
+    "message": "Đang xác thực"
+  },
+  "autoPair": {
+    "message": "Tự động ghép nối"
+  },
+  "autoSelectPort": {
+    "message": "Tự động chọn port"
+  },
+  "awaitingPairing": {
+    "message": "Đang chờ ghép nối"
+  },
+  "browserDownload": {
+    "message": "Tải bằng trình duyệt"
+  },
+  "bypassShortcutKey": {
+    "message": "Phím tắt bỏ qua bắt liên kết"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "Giữ phím này khi bấm liên kết để bỏ qua bắt lượt tải và tải bằng trình duyệt"
+  },
+  "pressShortcutKey": {
+    "message": "Nhấn phím tắt..."
+  },
+  "cacheCapture": {
+    "message": "Bắt bộ nhớ đệm"
+  },
+  "cacheCaptureDescription": {
+    "message": "Bắt tài nguyên từ bộ nhớ đệm của trình duyệt"
+  },
+  "cancel": {
+    "message": "Hủy"
+  },
+  "clearSelection": {
+    "message": "Bỏ chọn",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "Hoàn thành"
+  },
+  "fileMissing": {
+    "message": "Thiếu tệp"
+  },
+  "confirmPairing": {
+    "message": "Xác nhận ghép nối"
+  },
+  "connected": {
+    "message": "Đã kết nối"
+  },
+  "connecting": {
+    "message": "Đang kết nối"
+  },
+  "connectionClosed": {
+    "message": "Mất kết nối"
+  },
+  "connectionConfig": {
+    "message": "Cấu hình kết nối"
+  },
+  "darkTheme": {
+    "message": "Tối"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 phân đoạn DASH $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
+  },
+  "deepSearch": {
+    "message": "Tìm kiếm sâu"
+  },
+  "deepSearchDescription": {
+    "message": "Phân tích sâu các tài nguyên được trang yêu cầu"
+  },
+  "desktopVersionInfo": {
+    "message": "Bản máy tính $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
+  },
+  "disconnected": {
+    "message": "Chưa kết nối"
+  },
+  "downloadThisMedia": {
+    "message": "Tải phương tiện này"
+  },
+  "mediaButtonLabel": {
+    "message": "Nút phương tiện"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "Tải bằng Ghost Downloader"
+  },
+  "saveAsWithGhostDownloader": {
+    "message": "Lưu dưới dạng bằng Ghost Downloader"
+  },
+  "downloading": {
+    "message": "Đang tải"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "Sau khi phát video hoặc âm thanh, tài nguyên bắt được sẽ tự động hiển thị tại đây."
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "Trang hiện tại chưa có tài nguyên nào"
+  },
+  "emptyImagesDescription": {
+    "message": "Thử chuyển sang trang có hình ảnh hoặc điều chỉnh bộ lọc."
+  },
+  "emptyImagesTitle": {
+    "message": "Không tìm thấy hình ảnh trên trang hiện tại"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "Sau khi chuyển sang tab khác và bắt được tài nguyên, chúng sẽ tự động tổng hợp tại đây."
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "Chưa có tài nguyên từ các trang khác"
+  },
+  "emptyTasksDescription": {
+    "message": "Khi tiện ích bắt lượt tải từ trình duyệt hoặc bạn gửi tài nguyên sang từ trang bắt tài nguyên, tác vụ sẽ hiện ở đây."
+  },
+  "emptyTasksTitle": {
+    "message": "Chưa có tác vụ nào"
+  },
+  "errorAutoPairingFailed": {
+    "message": "Tự động ghép nối thất bại"
+  },
+  "errorBackgroundNotReady": {
+    "message": "Dịch vụ nền chưa sẵn sàng"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "Trình duyệt không trả về tác vụ tải"
+  },
+  "errorCannotLocateMedia": {
+    "message": "Không thể định vị phương tiện"
+  },
+  "errorConnectionFailed": {
+    "message": "Kết nối thất bại"
+  },
+  "errorExtensionNotReady": {
+    "message": "Tiện ích mở rộng chưa sẵn sàng"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "Chuyển đổi tính năng thất bại"
+  },
+  "errorFullscreenFailed": {
+    "message": "Mở toàn màn hình thất bại"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "Yêu cầu tải xuống không hợp lệ"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "Yêu cầu gộp không hợp lệ"
+  },
+  "errorInvalidPairToken": {
+    "message": "Token ghép nối không hợp lệ"
+  },
+  "errorMediaActionFailed": {
+    "message": "Điều khiển phương tiện thất bại"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "Không nhận diện được nguồn phương tiện"
+  },
+  "errorMergeFailed": {
+    "message": "Gộp trực tuyến thất bại"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "Gộp trực tuyến hiện chỉ hỗ trợ chọn 2 tài nguyên"
+  },
+  "errorMultipleMediaFound": {
+    "message": "Tìm thấy nhiều tài nguyên phương tiện, vui lòng chọn trong trang bắt tài nguyên"
+  },
+  "errorNoActiveTab": {
+    "message": "Không có tab nào khả dụng"
+  },
+  "errorNoControllableMedia": {
+    "message": "Không có phương tiện nào có thể điều khiển"
+  },
+  "errorNoMediaDetected": {
+    "message": "Không phát hiện phương tiện"
+  },
+  "errorNoTokenReturned": {
+    "message": "Không nhận được token"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "Gộp trực tuyến thất bại"
+  },
+  "errorPairingDisconnected": {
+    "message": "Ngắt kết nối ghép nối"
+  },
+  "errorPairingRejected": {
+    "message": "Đã từ chối ghép nối"
+  },
+  "errorPairingTimeout": {
+    "message": "Hết thời gian ghép nối"
+  },
+  "errorPipFailed": {
+    "message": "Mở hình trong hình thất bại"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "Đọc trạng thái phương tiện thất bại"
+  },
+  "errorReconnectFailed": {
+    "message": "Kết nối lại thất bại"
+  },
+  "errorResourceNotFound": {
+    "message": "Không tìm thấy tài nguyên"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "Các tài nguyên đã chọn không đủ điều kiện để gộp trực tuyến"
+  },
+  "errorResponseTimeout": {
+    "message": "Hết thời gian phản hồi"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "Lưu token ghép nối thất bại"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "Lưu địa chỉ máy chủ thất bại"
+  },
+  "errorSendFailed": {
+    "message": "Gửi thất bại"
+  },
+  "errorSendImagesFailed": {
+    "message": "Gửi hình ảnh thất bại"
+  },
+  "errorSendResourceFailed": {
+    "message": "Gửi tài nguyên thất bại"
+  },
+  "errorStrategyException": {
+    "message": "Lỗi xử lý trang: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
+  },
+  "errorSwitchMediaFailed": {
+    "message": "Chuyển đổi phương tiện thất bại"
+  },
+  "errorTargetTabNotFound": {
+    "message": "Không tìm thấy tab đích"
+  },
+  "errorTaskActionFailed": {
+    "message": "Thao tác tác vụ thất bại"
+  },
+  "errorUnknownCommand": {
+    "message": "Lệnh không xác định: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
+  },
+  "errorUnknownDownloadType": {
+    "message": "Loại yêu cầu tải không xác định"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "Cập nhật nút tải thất bại"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "Cập nhật chế độ bắt lượt tải thất bại"
+  },
+  "extensionDescription": {
+    "message": "Quản lý tác vụ Ghost Downloader và gửi tài nguyên trình duyệt tới Ghost Downloader."
+  },
+  "extensionName": {
+    "message": "Ghost Downloader for Browser"
+  },
+  "extensionVersionInfo": {
+    "message": "Phiên bản tiện ích $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
+  },
+  "failed": {
+    "message": "Thất bại"
+  },
+  "featureBackgroundDisabled": {
+    "message": "Trạng thái nền của tính năng đã tắt; các bảng trên trang có thể tự đóng trực tiếp trong trang web"
+  },
+  "featureDisabled": {
+    "message": "Đã tắt tính năng"
+  },
+  "featureEnabled": {
+    "message": "Đã bật tính năng"
+  },
+  "featureEnabledAfterReload": {
+    "message": "Đã bật tính năng, tải lại trang để áp dụng"
+  },
+  "featureStateUpdated": {
+    "message": "Đã cập nhật trạng thái tính năng"
+  },
+  "featureToggles": {
+    "message": "Bật/tắt tính năng"
+  },
+  "filterAll": {
+    "message": "Tất cả"
+  },
+  "filterAudio": {
+    "message": "Âm thanh"
+  },
+  "filterHeightLabel": {
+    "message": "C",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "Video"
+  },
+  "filterWidthLabel": {
+    "message": "R",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "Theo hệ thống"
+  },
+  "fullscreen": {
+    "message": "Toàn màn hình"
+  },
+  "general": {
+    "message": "Chung"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 phân đoạn HLS $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
+  },
+  "imagesProcessed": {
+    "message": "Đã xử lý $1 hình ảnh",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "imagesSent": {
+    "message": "Đã gửi hình ảnh"
+  },
+  "installMethodInfo": {
+    "message": "Cách cài đặt $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
+  },
+  "installTypeDevelopment": {
+    "message": "Ứng dụng máy tính tự quản lý"
+  },
+  "installTypeSideload": {
+    "message": "Cài đặt thủ công (Sideload)"
+  },
+  "installTypeStore": {
+    "message": "Cài đặt từ cửa hàng"
+  },
+  "installTypeUnknown": {
+    "message": "Không rõ"
+  },
+  "interceptUnknownSize": {
+    "message": "Bắt liên kết khi không rõ kích thước"
+  },
+  "skipExtensions": {
+    "message": "Phần mở rộng tệp bỏ qua"
+  },
+  "skipExtensionsHint": {
+    "message": "Nhập phần mở rộng tệp không cần bắt liên kết, phân cách bằng dấu phẩy"
+  },
+  "catImages": {
+    "message": "Hình ảnh"
+  },
+  "catDocuments": {
+    "message": "Tài liệu"
+  },
+  "catAudio": {
+    "message": "Âm thanh"
+  },
+  "invertSelection": {
+    "message": "Chọn ngược lại"
+  },
+  "itemCount": {
+    "message": "$1 mục",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
+  },
+  "launchDesktop": {
+    "message": "Mở bản máy tính"
+  },
+  "lightTheme": {
+    "message": "Sáng"
+  },
+  "localServerAddress": {
+    "message": "Địa chỉ máy chủ cục bộ"
+  },
+  "loop": {
+    "message": "Lặp lại"
+  },
+  "mediaBridgeNotReady": {
+    "message": "Cầu nối phương tiện trên trang này chưa sẵn sàng"
+  },
+  "mediaConnected": {
+    "message": "Đã kết nối phương tiện hiện tại"
+  },
+  "mediaControl": {
+    "message": "Điều khiển phương tiện"
+  },
+  "mediaReleased": {
+    "message": "Đã giải phóng phương tiện"
+  },
+  "merge": {
+    "message": "Gộp"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "Đã gửi tác vụ gộp trực tuyến tới Ghost Downloader"
+  },
+  "minInterceptSize": {
+    "message": "Kích thước tối thiểu để bắt liên kết"
+  },
+  "minInterceptSizeHint": {
+    "message": "Tệp nhỏ hơn kích thước này sẽ do trình duyệt tải trực tiếp; 0 để bắt tất cả"
+  },
+  "mobileUserAgent": {
+    "message": "Giả lập di động"
+  },
+  "mobileUserAgentDescription": {
+    "message": "Giả lập thiết bị di động khi truy cập trang"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "Đã tắt giả lập di động"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "Đã bật giả lập di động, tải lại trang để áp dụng"
+  },
+  "mute": {
+    "message": "Tắt tiếng"
+  },
+  "navAdvanced": {
+    "message": "Nâng cao"
+  },
+  "navImages": {
+    "message": "Hình ảnh"
+  },
+  "navResources": {
+    "message": "Tài nguyên"
+  },
+  "navTasks": {
+    "message": "Tác vụ"
+  },
+  "noActiveTabForMedia": {
+    "message": "Không có tab nào khả dụng"
+  },
+  "noControllableMedia": {
+    "message": "Không có phương tiện nào có thể điều khiển"
+  },
+  "noControllableMediaDetected": {
+    "message": "Không phát hiện phương tiện có thể điều khiển"
+  },
+  "noMediaDetected": {
+    "message": "Không phát hiện phương tiện có thể điều khiển"
+  },
+  "noMediaStateResponse": {
+    "message": "Trang không trả về trạng thái phương tiện"
+  },
+  "notConnected": {
+    "message": "Chưa kết nối"
+  },
+  "openFile": {
+    "message": "Mở tệp"
+  },
+  "openFolder": {
+    "message": "Mở thư mục"
+  },
+  "openWhenDone": {
+    "message": "Mở khi hoàn tất"
+  },
+  "pageNoControllableMedia": {
+    "message": "Không phát hiện phương tiện có thể điều khiển trên trang hiện tại"
+  },
+  "pairing": {
+    "message": "Đang ghép nối"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "Đã gửi yêu cầu ghép nối, vui lòng xác nhận trên ứng dụng máy tính"
+  },
+  "pairingToken": {
+    "message": "Token ghép nối"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "Nhập token ghép nối"
+  },
+  "pairingTokenSaved": {
+    "message": "Đã lưu token ghép nối"
+  },
+  "pasteToken": {
+    "message": "Dán token"
+  },
+  "pause": {
+    "message": "Tạm dừng"
+  },
+  "paused": {
+    "message": "Đã tạm dừng"
+  },
+  "pendingPairing": {
+    "message": "Chờ ghép nối"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 đang chờ",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "pictureInPicture": {
+    "message": "Hình trong hình"
+  },
+  "play": {
+    "message": "Phát"
+  },
+  "reconnect": {
+    "message": "Kết nối lại"
+  },
+  "recordWebRTC": {
+    "message": "Ghi WebRTC"
+  },
+  "recordWebRTCDescription": {
+    "message": "Ghi nội dung truyền thông thời gian thực WebRTC"
+  },
+  "redownload": {
+    "message": "Tải lại"
+  },
+  "removeTask": {
+    "message": "Gỡ bỏ khỏi danh sách"
+  },
+  "reloadRequired": {
+    "message": "Cần tải lại"
+  },
+  "rescan": {
+    "message": "Quét lại"
+  },
+  "resolving": {
+    "message": "Đang phân giải"
+  },
+  "resource": {
+    "message": "Tài nguyên",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "Tab hiện tại tạm thời không thể cung cấp danh sách tài nguyên."
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "Tab hiện tại chưa hỗ trợ cầu nối tài nguyên"
+  },
+  "resourceProcessed": {
+    "message": "Xử lý tài nguyên thành công"
+  },
+  "resourceSentToBrowser": {
+    "message": "Đã chuyển tài nguyên cho trình duyệt tải"
+  },
+  "resourceSentToDesktop": {
+    "message": "Đã gửi tài nguyên tới Ghost Downloader"
+  },
+  "restoringCapturedResources": {
+    "message": "Đang khôi phục tài nguyên đã bắt"
+  },
+  "restoringCatCatchResources": {
+    "message": "Đang khôi phục tài nguyên do cat-catch bắt"
+  },
+  "restoringResourcesDescription": {
+    "message": "Đang khôi phục tài nguyên đã bắt."
+  },
+  "restoringResourcesTitle": {
+    "message": "Đang khôi phục tài nguyên trang hiện tại"
+  },
+  "resume": {
+    "message": "Tiếp tục"
+  },
+  "scanning": {
+    "message": "Đang quét…"
+  },
+  "scopeCurrentPage": {
+    "message": "Trang hiện tại"
+  },
+  "scopeOtherPages": {
+    "message": "Trang khác"
+  },
+  "screenCapture": {
+    "message": "Ghi màn hình"
+  },
+  "screenCaptureDescription": {
+    "message": "Ghi lại màn hình, cửa sổ hoặc tab"
+  },
+  "screenshot": {
+    "message": "Chụp ảnh"
+  },
+  "selectAll": {
+    "message": "Chọn tất cả"
+  },
+  "selectMedia": {
+    "message": "Chọn phương tiện"
+  },
+  "selectMediaPlaceholder": {
+    "message": "Chọn phương tiện"
+  },
+  "selectResourceLabel": {
+    "message": "Chọn $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
+  },
+  "sendCount": {
+    "message": "Gửi ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "Gửi phương tiện hiện tại tới Ghost Downloader"
+  },
+  "sendToDesktop": {
+    "message": "Gửi tới Ghost Downloader"
+  },
+  "sending": {
+    "message": "Đang gửi"
+  },
+  "sent": {
+    "message": "Đã gửi"
+  },
+  "sentToBrowserDownload": {
+    "message": "Đã chuyển cho trình duyệt tải"
+  },
+  "sentToDesktop": {
+    "message": "Đã gửi tới Ghost Downloader"
+  },
+  "serverUrlSaved": {
+    "message": "Đã lưu địa chỉ"
+  },
+  "settings": {
+    "message": "Cài đặt"
+  },
+  "sortByArea": {
+    "message": "Diện tích"
+  },
+  "sortByHeight": {
+    "message": "Chiều cao"
+  },
+  "sortByWidth": {
+    "message": "Chiều rộng"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "Tab hiện tại không hỗ trợ cầu nối tài nguyên cat-catch"
+  },
+  "takeOverDownloads": {
+    "message": "Bắt lượt tải"
+  },
+  "taskQueued": {
+    "message": "Chưa kết nối ứng dụng máy tính, tác vụ đã vào hàng chờ"
+  },
+  "theme": {
+    "message": "Giao diện"
+  },
+  "tokenInvalid": {
+    "message": "Token không hợp lệ"
+  },
+  "unmute": {
+    "message": "Bật tiếng"
+  },
+  "video": {
+    "message": "Video",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "Ghi hình video"
+  },
+  "videoRecordingDescription": {
+    "message": "Ghi nội dung video trong trang web"
+  },
+  "videoTrack": {
+    "message": "Rãnh video"
+  },
+  "waitedTimeout": {
+    "message": "$1 (đã chờ $2s)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
+  },
+  "waiting": {
+    "message": "Đang chờ"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "Đang chờ đủ rãnh âm thanh và video của Instagram"
+  },
+  "waitingForResource": {
+    "message": "Đang chờ tài nguyên…"
+  },
+  "waitingForResourceCapture": {
+    "message": "Đang chờ cat-catch bắt tài nguyên"
+  },
+  "waitingForSeparateTracks": {
+    "message": "Đang chờ đủ rãnh âm thanh và video"
+  },
+  "waitingForVideoResource": {
+    "message": "Đang chờ bắt được tài nguyên video hiện tại"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "Đang chờ danh sách phát chính của X"
+  },
+  "skipDomains": {
+    "message": "Tên miền bỏ qua"
+  },
+  "skipDomainsHint": {
+    "message": "Không bắt lượt tải từ các trang web này"
+  },
+  "addCurrentSite": {
+    "message": "Thêm trang hiện tại"
+  },
+  "openPopupOnSent": {
+    "message": "Mở cửa sổ tiện ích sau khi gửi tác vụ"
+  },
+  "filterPdf": {
+    "message": "PDF"
+  },
+  "filterImage": {
+    "message": "Hình ảnh"
+  },
+  "filterArchive": {
+    "message": "Tệp nén"
+  },
+  "filterDocument": {
+    "message": "Tài liệu"
+  },
+  "filterSpreadsheet": {
+    "message": "Bảng tính"
+  },
+  "filterOther": {
+    "message": "Khác"
+  },
+  "moreKinds": {
+    "message": "Loại khác"
+  },
+  "sortByTime": {
+    "message": "Thời gian"
+  },
+  "sortBySize": {
+    "message": "Kích thước"
+  },
+  "sortByName": {
+    "message": "Tên"
+  },
+  "searchResourcesPlaceholder": {
+    "message": "Tìm theo tên hoặc liên kết"
+  },
+  "noMatchingResourcesTitle": {
+    "message": "Không có tài nguyên phù hợp"
+  },
+  "noMatchingResourcesDescription": {
+    "message": "Thử từ khóa khác hoặc xóa bộ lọc."
+  },
+  "clearFilters": {
+    "message": "Xóa bộ lọc"
+  },
+  "sortByStatus": {
+    "message": "Trạng thái"
+  },
+  "sortAscending": {
+    "message": "Tăng dần"
+  },
+  "sortDescending": {
+    "message": "Giảm dần"
+  },
+  "searchTasksPlaceholder": {
+    "message": "Tìm tên tác vụ"
+  },
+  "noMatchingTasksTitle": {
+    "message": "Không có tác vụ phù hợp"
+  },
+  "noMatchingTasksDescription": {
+    "message": "Thử từ khóa khác."
+  },
+  "moreOptions": {
+    "message": "Tùy chọn khác"
+  },
+  "removeCompletedTasks": {
+    "message": "Gỡ bỏ tác vụ đã hoàn thành"
+  },
+  "removeMissingTasks": {
+    "message": "Gỡ bỏ tác vụ thiếu tệp"
+  },
+  "errorRemoveTasksFailed": {
+    "message": "Gỡ bỏ $1 tác vụ thất bại",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "mediaButtonStyle": {
+    "message": "Kiểu nút phương tiện"
+  },
+  "mediaButtonStyleStandard": {
+    "message": "Tiêu chuẩn"
+  },
+  "mediaButtonStyleCompact": {
+    "message": "Thu gọn"
+  },
+  "mediaButtonStyleHint": {
+    "message": "Kiểu thu gọn chỉ hiển thị biểu tượng"
+  }
+}
