@@ -480,3 +480,91 @@ async def test_run_finishes_when_rejection_arrives_after_left_subworker_ends(sta
         await runStep(step)
 
     assert (tmp_path / "test.bin").read_bytes() == content
+
+
+async def test_run_finishes_when_server_rejects_extra_connections_with_403(startServer, tmp_path):
+    # 部分网盘超出连接数时对新连接返回 403
+    content = buildFileContent(200_000)
+    slow = buildSlowHandler(content)
+
+    async def forbidsExtra(request: web.Request) -> web.StreamResponse:
+        if "Range" in request.headers:
+            return web.Response(status=403, text="Forbidden")
+        return await slow(request)
+
+    url = await startServer(forbidsExtra)
+    task, step = buildStep(url, tmp_path, fileSize=len(content), subworkerCount=8)
+
+    await runStep(step)
+
+    assert (tmp_path / "test.bin").read_bytes() == content
+
+
+async def test_run_keeps_speed_up_within_connection_limit(startServer, tmp_path):
+    # 按连接限速的服务器上，自动加速约 6 秒后首次加连接
+    content = bytes(range(256)) * (64 * 1536 * 4)
+    activeCount = peakCount = 0
+
+    async def throttledPerConnection(request: web.Request) -> web.StreamResponse:
+        nonlocal activeCount, peakCount
+        first, _, last = request.headers.get("Range", "bytes=0-").removeprefix("bytes=").partition("-")
+        start, end = int(first), int(last) if last else len(content) - 1
+        headers = {"Content-Range": f"bytes {start}-{end}/{len(content)}"} if "Range" in request.headers else {}
+        response = web.StreamResponse(status=206 if headers else 200, headers=headers)
+        response.content_length = end - start + 1
+        await response.prepare(request)
+        activeCount += 1
+        peakCount = max(peakCount, activeCount)
+        try:
+            for offset in range(start, end + 1, 16384):
+                await response.write(content[offset:min(offset + 16384, end + 1)])
+                await asyncio.sleep(0.125)
+        finally:
+            activeCount -= 1
+        return response
+
+    url = await startServer(throttledPerConnection)
+    task, step = buildStep(url, tmp_path, fileSize=len(content), subworkerCount=64)
+
+    await runStep(step)
+
+    assert (tmp_path / "test.bin").read_bytes() == content
+    assert peakCount <= 64
+
+
+@pytest.mark.parametrize("pauseDelays", [[0.05], [0.3], [0.1, 0.2, 0.15]])
+async def test_resume_after_pause_writes_served_file(startServer, tmp_path, pauseDelays):
+    content = buildFileContent(600_000)
+    url = await startServer(buildSlowHandler(content))
+    task, step = buildStep(url, tmp_path, fileSize=len(content), subworkerCount=4)
+
+    for delay in pauseDelays:
+        running = asyncio.create_task(runStep(step))
+        await asyncio.sleep(delay)
+        running.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await running
+        assert task.status == TaskStatus.PAUSED
+    task.setStatus(TaskStatus.RUNNING)
+    await runStep(step)
+
+    assert (tmp_path / "test.bin").read_bytes() == content
+
+
+async def test_resume_right_after_pause_writes_served_file(startServer, tmp_path):
+    # TaskService 取消上一轮后不等待其结束即开始下一轮
+    content = buildFileContent(600_000)
+    url = await startServer(buildSlowHandler(content))
+    task, step = buildStep(url, tmp_path, fileSize=len(content), subworkerCount=4)
+
+    for _ in range(3):
+        previous = asyncio.create_task(runStep(step))
+        await asyncio.sleep(0.15)
+        previous.cancel()
+    task.setStatus(TaskStatus.RUNNING)
+    await runStep(step)
+    with pytest.raises(asyncio.CancelledError):
+        await previous
+
+    assert (tmp_path / "test.bin").read_bytes() == content
+    assert not (tmp_path / "test.bin.ghd").exists()

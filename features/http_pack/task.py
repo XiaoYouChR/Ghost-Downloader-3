@@ -15,11 +15,13 @@ from loguru import logger
 from wreq import HeaderMap
 
 from app.client import buildClient, toEmulation
+from app.file_writer import FileWriter, FileWriteError
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
-from app.platform.sysio import ftruncate, pwrite
+from app.platform.sysio import ftruncate
 
 STREAM_READ_TIMEOUT = 30
+AUTO_SPEED_UP_MAX_SUBWORKERS = 64
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO})
 
@@ -32,6 +34,12 @@ class PermanentDownloadError(Exception):
 
 class RangeNotSupportedError(Exception):
     pass
+
+
+def toDiskTaskError(error: FileWriteError) -> Exception:
+    if error.__cause__.errno in FATAL_IO_ERRNO:
+        return TaskError("磁盘空间不足")
+    return error
 
 
 def matchRange(contentRange: bytes, start: int, end: int, total: int | None) -> bool:
@@ -105,6 +113,7 @@ class HttpTaskStep(TaskStep):
     isAccelerated: bool = False
     isFinishing: bool = field(default=False, init=False, repr=False)
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
+    lastRunStopped: asyncio.Event | None = field(default=None, init=False, repr=False)
 
     def rangeStep(self, start: int, end: int, path: Path) -> HttpTaskStep:
         isSmall = end - start < cfg.maxReassignSize.value * 1024
@@ -220,7 +229,7 @@ class HttpTaskStep(TaskStep):
         if slowest.end - slowest.position + 1 < cfg.maxReassignSize.value * 1024:
             return
         for newSw in self._splitSlowest():
-            self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
+            self._taskGroup.create_task(self._runSubworker(newSw))
 
     def _autoSpeedUp(self) -> None:
         if self.isAccelerated or not cfg.autoSpeedUp.value:
@@ -241,10 +250,16 @@ class HttpTaskStep(TaskStep):
             return
 
         if self._accelCheckTime == 0:
+            # 限流按连接计的服务器上速度会随连接数一直增长，不设上限会被当作滥用而封禁
+            activeCount = sum(sw.position <= sw.end for sw in self.subworkers)
+            if activeCount >= AUTO_SPEED_UP_MAX_SUBWORKERS:
+                self.isAccelerated = True
+                logger.info("自动加速已达连接上限 {}", AUTO_SPEED_UP_MAX_SUBWORKERS)
+                return
             self._accelInitialWorkers = len(self.subworkers)
             self._accelInitialSpeed = avgSpeed
             self._accelCheckTime = asyncio.get_running_loop().time()
-            for _ in range(4):
+            for _ in range(min(4, AUTO_SPEED_UP_MAX_SUBWORKERS - activeCount)):
                 self._reassignSubworker()
         else:
             elapsed = asyncio.get_running_loop().time() - self._accelCheckTime
@@ -264,22 +279,28 @@ class HttpTaskStep(TaskStep):
                 logger.info("继续自动加速，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
                             workerRatio, speedRatio)
 
+    def _buildRecord(self) -> bytes:
+        data = tuple(val for sw in self.subworkers for val in (sw.start, sw.position, sw.end))
+        return pack("<" + "Q" * len(data), *data)
+
     async def _supervise(self) -> None:
         recordFile = None
         if self.canUseRangeRequests:
             recordFile = open(self.recordPath, "wb")
+        # 进度在提交写入时即推进，快照须等对应数据落盘后才能保存，否则崩溃后续传会留下空洞
+        pending: tuple[int, bytes] | None = None
         try:
             self.receivedBytes = sum(sw.receivedBytes for sw in self.subworkers)
             while True:
                 if recordFile is not None:
-                    data = tuple(
-                        val for sw in self.subworkers
-                        for val in (sw.start, sw.position, sw.end)
-                    )
-                    recordFile.seek(0)
-                    recordFile.write(pack("<" + "Q" * len(data), *data))
-                    recordFile.flush()
-                    recordFile.truncate()
+                    if pending is None:
+                        pending = (self._writer.submittedCount, self._buildRecord())
+                    if self._writer.doneCount >= pending[0]:
+                        recordFile.seek(0)
+                        recordFile.write(pending[1])
+                        recordFile.flush()
+                        recordFile.truncate()
+                        pending = None
 
                 receivedBytes = sum(sw.receivedBytes for sw in self.subworkers)
                 self.speed = receivedBytes - self.receivedBytes
@@ -297,7 +318,7 @@ class HttpTaskStep(TaskStep):
             if recordFile is not None:
                 recordFile.close()
 
-    async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
+    async def _runSubworker(self, subworker: HttpSubworker) -> None:
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
@@ -317,20 +338,19 @@ class HttpTaskStep(TaskStep):
                             # 服务器发送 HTTP trailer 时，wreq 在流末尾以 HeaderMap 交出
                             if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
-                            pwrite(fd, chunk, subworker.position)
+                            self._writer.write(chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
+                            await self._writer.waitForRoom()
                     finally:
                         response.close()
                     return
                 except CancelledError:
                     raise
-                except (PermanentDownloadError, RangeNotSupportedError):
+                except (PermanentDownloadError, RangeNotSupportedError, FileWriteError):
                     raise
                 except Exception as e:
-                    if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
-                        raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
                 finally:
@@ -340,7 +360,7 @@ class HttpTaskStep(TaskStep):
             while True:
                 client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
-                    ftruncate(fd, 0)
+                    self._writer.truncate(0)
                     subworker.receivedBytes = 0
                     response = await client.get(self._effectiveUrl, headers=dict(self._effectiveHeaders))
                     try:
@@ -352,25 +372,24 @@ class HttpTaskStep(TaskStep):
                         async for chunk in response.stream():
                             if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
-                            pwrite(fd, chunk, subworker.receivedBytes)
+                            self._writer.write(chunk, subworker.receivedBytes)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
+                            await self._writer.waitForRoom()
                             if self.isFinishing:
                                 break
                     finally:
                         response.close()
-                    ftruncate(fd, subworker.receivedBytes)
+                    self._writer.truncate(subworker.receivedBytes)
                     return
                 except CancelledError:
                     raise
-                except PermanentDownloadError:
+                except (PermanentDownloadError, FileWriteError):
                     raise
                 except Exception as e:
-                    if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
-                        raise
                     if self.isFinishing:
-                        ftruncate(fd, subworker.receivedBytes)
+                        self._writer.truncate(subworker.receivedBytes)
                         return
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
@@ -409,7 +428,7 @@ class HttpTaskStep(TaskStep):
                             if length.isdigit():
                                 self.fileSize = self.task.fileSize = int(length)
                                 subworker.end = self.fileSize - 1
-                                ftruncate(fd, self.fileSize)
+                                self._writer.truncate(self.fileSize)
                             else:
                                 # 缺少 Content-Length 时无法校验 Range
                                 self.canUseRangeRequests = False
@@ -426,7 +445,7 @@ class HttpTaskStep(TaskStep):
                         self._effectiveUrl = str(response.url)
                         if len(self.subworkers) == 1 and self.canUseRangeRequests:
                             for newSw in self._splitSlowest(self.subworkerCount):
-                                self._taskGroup.create_task(self._runSubworker(newSw, fd))
+                                self._taskGroup.create_task(self._runSubworker(newSw))
                         async for chunk in response.stream():
                             if isinstance(chunk, HeaderMap) or not chunk:
                                 continue
@@ -438,30 +457,35 @@ class HttpTaskStep(TaskStep):
                             remaining = subworker.end - subworker.position + 1
                             if len(chunk) > remaining:
                                 chunk = chunk[:remaining]
-                            pwrite(fd, chunk, subworker.position)
+                            self._writer.write(chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
+                            await self._writer.waitForRoom()
                             if subworker.position > subworker.end or self.isFinishing:
                                 break
                     finally:
                         response.close()
 
                     if not self.canUseRangeRequests:
-                        ftruncate(fd, subworker.position)
+                        self._writer.truncate(subworker.position)
                         return
                     if subworker.position > subworker.end:
                         subworker.receivedBytes = subworker.end - subworker.start + 1
 
                 except CancelledError:
                     raise
-                except (PermanentDownloadError, RangeNotSupportedError):
+                except (RangeNotSupportedError, FileWriteError):
+                    raise
+                except PermanentDownloadError as e:
+                    # 部分服务器超出连接数时对新连接返回 403，左侧分片的连接仍然有效
+                    if not subworker.receivedBytes and self.subworkers[0] is not subworker:
+                        logger.info("分片请求被拒绝，留待左侧分片并入 {}: {}", self.outputPath, e)
+                        return
                     raise
                 except Exception as e:
-                    if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
-                        raise
                     if self.isFinishing:
-                        ftruncate(fd, subworker.position)
+                        self._writer.truncate(subworker.position)
                         return
                     if not self.canUseRangeRequests:
                         raise RangeNotSupportedError() from e
@@ -481,6 +505,9 @@ class HttpTaskStep(TaskStep):
         reportSpeed: Callable[[int], None],
         waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
+        # 暂停后立即继续时，上一轮可能仍在把写入队列写完并保存记录
+        if self.lastRunStopped is not None:
+            await self.lastRunStopped.wait()
         self._reportSpeed = reportSpeed
         self._waitForSpeedLimit = waitForSpeedLimit
         self._speedHistory: list[int] = []
@@ -512,6 +539,8 @@ class HttpTaskStep(TaskStep):
             except Exception as e:
                 logger.opt(exception=e).error("{} 预分配文件大小失败", self.outputPath)
 
+        self._writer = FileWriter(self._fd)
+        self.lastRunStopped = asyncio.Event()
         try:
             while True:
                 supervisor = asyncio.create_task(self._supervise())
@@ -519,10 +548,10 @@ class HttpTaskStep(TaskStep):
                     self._taskGroup = TaskGroup()
                     async with self._taskGroup:
                         for subworker in list(self.subworkers):
-                            self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+                            self._taskGroup.create_task(self._runSubworker(subworker))
                         if isResuming:
                             for newSw in self._splitSlowest(self.subworkerCount - len(self.subworkers) + 1):
-                                self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
+                                self._taskGroup.create_task(self._runSubworker(newSw))
 
                     shouldDeleteRecord = True
                     break
@@ -530,6 +559,8 @@ class HttpTaskStep(TaskStep):
                     self.setStatus(TaskStatus.PAUSED)
                     raise
                 except ExceptionGroup as eg:
+                    if self._writer.error is not None:
+                        raise toDiskTaskError(self._writer.error) from eg
                     if any(isinstance(e, RangeNotSupportedError) for e in eg.exceptions):
                         if isResuming:
                             # https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/377
@@ -539,7 +570,7 @@ class HttpTaskStep(TaskStep):
                             logger.warning("服务器不支持范围请求，降级为单流下载 {}", self.outputPath)
                             self.canUseRangeRequests = False
                         self.subworkers = self._buildSubworkers()
-                        ftruncate(self._fd, 0)
+                        self._writer.truncate(0)
                         self._deleteRecord()
                         self._speedHistory.clear()
                         self._accelCheckTime = 0
@@ -548,8 +579,6 @@ class HttpTaskStep(TaskStep):
                     cause = eg.exceptions[0]
                     if isinstance(cause, PermanentDownloadError):
                         raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
-                    if isinstance(cause, OSError) and cause.errno in FATAL_IO_ERRNO:
-                        raise TaskError("磁盘空间不足") from eg
                     raise cause from eg
                 finally:
                     if not supervisor.done():
@@ -557,13 +586,24 @@ class HttpTaskStep(TaskStep):
                         with suppress(CancelledError):
                             await supervisor
         finally:
-            os.close(self._fd)
-            if shouldDeleteRecord:
-                self._deleteRecord()
-                if cfg.shouldPreserveLastModified.value and self.lastModified:
-                    try:
-                        from email.utils import parsedate_to_datetime
-                        mtime = parsedate_to_datetime(self.lastModified).timestamp()
-                        os.utime(self.outputPath, (mtime, mtime))
-                    except Exception as e:
-                        logger.opt(exception=e).warning("设置文件修改时间失败 {}", self.outputPath)
+            try:
+                await self._writer.close()
+                if self._writer.error is not None:
+                    # 记录停留在最后一次落盘的快照，续传时补齐丢失的数据
+                    shouldDeleteRecord = False
+                elif not shouldDeleteRecord and self.canUseRangeRequests:
+                    self.recordPath.write_bytes(self._buildRecord())
+                if shouldDeleteRecord:
+                    self._deleteRecord()
+                    if cfg.shouldPreserveLastModified.value and self.lastModified:
+                        try:
+                            from email.utils import parsedate_to_datetime
+                            mtime = parsedate_to_datetime(self.lastModified).timestamp()
+                            os.utime(self.outputPath, (mtime, mtime))
+                        except Exception as e:
+                            logger.opt(exception=e).warning("设置文件修改时间失败 {}", self.outputPath)
+            finally:
+                self.lastRunStopped.set()
+        # 最后几块数据可能在所有分片结束后才写入失败
+        if self._writer.error is not None:
+            raise toDiskTaskError(self._writer.error)
