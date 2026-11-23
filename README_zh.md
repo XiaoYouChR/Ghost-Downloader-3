@@ -13,7 +13,8 @@ Swiftproxy 提供覆盖全球 220 多个地区的 9000 万+真实住宅 IP，支
 
 ![Banner](.github/assets/banner.webp)
 
-<a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/13847?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-13847" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/13847/daily?language=Python" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/13847?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-13847" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" width="250" height="55"/></a>
 
 ## 下载器的集大成者
 
