@@ -204,7 +204,7 @@ async function setupBackground() {
     [SKIP_DOMAINS_KEY]: [],
   });
 
-  shouldTakeDownloads = Boolean(localState[SHOULD_TAKE_DOWNLOADS_KEY] ?? true);
+  setShouldTakeDownloads(Boolean(localState[SHOULD_TAKE_DOWNLOADS_KEY] ?? true));
   isMediaButtonEnabled = Boolean(localState[IS_MEDIA_BUTTON_ENABLED_KEY] ?? true);
   minTakeSizeKB = Number(localState[MIN_TAKE_SIZE_KB_KEY]) || 0;
   shouldTakeUnknownSize = Boolean(localState[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true);
@@ -278,7 +278,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
   desktopBridge.onLocalStorageChanged(changes);
   if (changes[SHOULD_TAKE_DOWNLOADS_KEY]) {
-    shouldTakeDownloads = Boolean(changes[SHOULD_TAKE_DOWNLOADS_KEY].newValue ?? true);
+    setShouldTakeDownloads(Boolean(changes[SHOULD_TAKE_DOWNLOADS_KEY].newValue ?? true));
   }
   if (changes[IS_MEDIA_BUTTON_ENABLED_KEY]) {
     isMediaButtonEnabled = Boolean(changes[IS_MEDIA_BUTTON_ENABLED_KEY].newValue ?? true);
@@ -429,11 +429,27 @@ function sendReply(sendResponse: (response?: unknown) => void, response: Promise
   return true;
 }
 
+function onDeterminingFilename(downloadItem: chrome.downloads.DownloadItem, suggest: () => void): boolean {
+  void takeBrowserDownload(downloadItem, suggest);
+  return true;
+}
+
+function setShouldTakeDownloads(isEnabled: boolean): void {
+  shouldTakeDownloads = isEnabled;
+  if (!supportsDownloadDeterminingFilename()) return;
+
+  const event = chrome.downloads.onDeterminingFilename;
+  // Even a no-op listener can discard a filename supplied by another extension in Chromium.
+  if (!isEnabled) {
+    event.removeListener(onDeterminingFilename);
+  } else if (!event.hasListener(onDeterminingFilename)) {
+    event.addListener(onDeterminingFilename);
+  }
+}
+
 if (supportsDownloadDeterminingFilename()) {
-  chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
-    void takeBrowserDownload(downloadItem, suggest);
-    return true;
-  });
+  // Register before the worker yields so the download that wakes it can be intercepted.
+  chrome.downloads.onDeterminingFilename.addListener(onDeterminingFilename);
 } else if (chrome.downloads.onCreated?.addListener) {
   chrome.downloads.onCreated.addListener((downloadItem) => {
     void takeBrowserDownload(downloadItem);
@@ -461,7 +477,7 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
       await desktopBridge.connect(true);
       return buildPopupState({ currentView: command.view });
     case "popup_set_take_downloads":
-      shouldTakeDownloads = command.enabled;
+      setShouldTakeDownloads(command.enabled);
       await chrome.storage.local.set({ [SHOULD_TAKE_DOWNLOADS_KEY]: shouldTakeDownloads });
       return buildPopupState({ currentView: command.view });
     case "popup_set_media_button":
