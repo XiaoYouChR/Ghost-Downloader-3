@@ -406,7 +406,7 @@ dependencies = [
     { name = "pyside6" },
     { name = "pyside6-fluent-widgets" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
-    { name = "qrcode", extra = ["png"] },
+    { name = "qrcode" },
     { name = "uvloop", marker = "sys_platform != 'win32'" },
     { name = "websockets" },
     { name = "winloop", marker = "sys_platform == 'win32'" },
@@ -440,7 +440,7 @@ requires-dist = [
     { name = "pyside6", specifier = "~=6.10.3" },
     { name = "pyside6-fluent-widgets", git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main" },
     { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=312" },
-    { name = "qrcode", extras = ["png"], specifier = ">=8.2" },
+    { name = "qrcode", specifier = ">=8.2" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.22.1" },
     { name = "websockets", specifier = ">=14" },
     { name = "winloop", marker = "sys_platform == 'win32'", specifier = ">=0.6.0" },
@@ -828,15 +828,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pypng"
-version = "0.20220715.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/93/cd/112f092ec27cca83e0516de0a3368dbd9128c187fb6b52aaaa7cde39c96d/pypng-0.20220715.0.tar.gz", hash = "sha256:739c433ba96f078315de54c0db975aee537cbc3e1d0ae4ed9aab0ca1e427e2c1", size = 128992, upload-time = "2022-07-15T14:11:05.301Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/b9/3766cc361d93edb2ce81e2e1f87dd98f314d7d513877a342d31b30741680/pypng-0.20220715.0-py3-none-any.whl", hash = "sha256:4a43e969b8f5aaafb2a415536c1a8ec7e341cd6a3f957fd5b5f32a4cfeed902c", size = 58057, upload-time = "2022-07-15T14:11:03.713Z" },
-]
-
-[[package]]
 name = "pyside6"
 version = "6.10.3"
 source = { registry = "https://pypi.org/simple" }
@@ -887,7 +878,7 @@ wheels = [
 [[package]]
 name = "pyside6-fluent-widgets"
 version = "1.11.3"
-source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main#18e82c47308a486baaa84d67fb587d7956ad168b" }
+source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main#a23215c9316ab99f6356ae89aa06a6198962ca2f" }
 dependencies = [
     { name = "darkdetect" },
     { name = "pyside6" },
@@ -975,11 +966,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8f/b2/7fc2931bfae0af02d5f53b174e9cf701adbb35f39d69c2af63d4a39f81a9/qrcode-8.2.tar.gz", hash = "sha256:35c3f2a4172b33136ab9f6b3ef1c00260dd2f66f858f24d88418a015f446506c", size = 43317, upload-time = "2025-05-01T15:44:24.726Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/b8/d2d6d731733f51684bbf76bf34dab3b70a9148e8f2cef2bb544fccec681a/qrcode-8.2-py3-none-any.whl", hash = "sha256:16e64e0716c14960108e85d853062c9e8bba5ca8252c0b4d0231b9df4060ff4f", size = 45986, upload-time = "2025-05-01T15:44:22.781Z" },
-]
-
-[package.optional-dependencies]
-png = [
-    { name = "pypng" },
 ]
 
 [[package]]

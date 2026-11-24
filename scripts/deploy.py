@@ -21,7 +21,6 @@ MACOS_DOCUMENT_TYPES = [
 
 EXCLUDED_PACKS = {"jack_yao"}
 
-EXTRA_INCLUDE_PACKAGES: list[str] = []
 PLATFORM_INCLUDE_PACKAGES = {
     "win32": ["winrt"],
 }
@@ -68,9 +67,19 @@ def _typeCheckingImportIds(tree: ast.Module) -> set[int]:
     return ids
 
 
-def findImports(files: Iterable[Path]) -> tuple[set[str], set[str]]:
-    appModules: set[str] = set()
-    thirdParty: set[str] = set()
+def isModule(dotted: str) -> bool:
+    if dotted.split(".")[0] == "app":
+        base = REPO / Path(*dotted.split("."))
+        return base.with_suffix(".py").is_file() or (base / "__init__.py").is_file()
+    try:
+        return importlib.util.find_spec(dotted) is not None
+    except (ModuleNotFoundError, ValueError):
+        return False
+
+
+def findImports(files: Iterable[Path], ignoredTopLevels: Iterable[str] = ()) -> set[str]:
+    ignored = set(ignoredTopLevels)
+    modules: set[str] = set()
     for source in files:
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
         typeCheckingIds = _typeCheckingImportIds(tree)
@@ -79,33 +88,24 @@ def findImports(files: Iterable[Path]) -> tuple[set[str], set[str]]:
                 continue
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    dotted = alias.name
-                    top = dotted.split(".")[0]
-                    if top == "app":
-                        base = Path(*dotted.split("."))
-                        if base.with_suffix(".py").is_file() or (base / "__init__.py").is_file():
-                            appModules.add(dotted)
-                    elif top and top not in sys.stdlib_module_names:
-                        thirdParty.add(top)
+                    top = alias.name.split(".")[0]
+                    if top and top not in sys.stdlib_module_names and top not in ignored and isModule(alias.name):
+                        modules.add(alias.name)
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                 module = node.module
                 top = module.split(".")[0]
-
-                if top == "app":
-                    base = Path(*module.split("."))
-                    if base.with_suffix(".py").is_file() or (base / "__init__.py").is_file():
-                        appModules.add(module)
-                elif top and top not in sys.stdlib_module_names:
-                    thirdParty.add(top)
-
+                if not top or top in sys.stdlib_module_names or top in ignored:
+                    continue
+                if isModule(module):
+                    modules.add(module)
                 for alias in node.names:
+                    if alias.name == "*":
+                        continue
                     dotted = f"{module}.{alias.name}"
-                    if top == "app":
-                        base = Path(*dotted.split("."))
-                        if base.with_suffix(".py").is_file() or (base / "__init__.py").is_file():
-                            appModules.add(dotted)
+                    if isModule(dotted):
+                        modules.add(dotted)
 
-    return appModules, thirdParty
+    return modules
 
 
 def findQfwModules(
@@ -153,24 +153,20 @@ def findIncludes() -> tuple[list[str], list[str]]:
     from qfluentwidgets._symbols import PACKAGE_EXPORTS
 
     featureFiles = [path for pack in findPacks() for path in pack.rglob("*.py")]
-    appFiles = list((REPO / "app").rglob("*.py"))
-    featureModules, featurePackages = findImports(featureFiles)
-    appModules, appPackages = findImports(appFiles)
+    appFiles = [REPO / "Ghost-Downloader-3.py", *(REPO / "app").rglob("*.py")]
 
     featuresDir = REPO / "features"
     internalPackages = {featuresDir.name} | {item.name for item in featuresDir.iterdir() if item.is_dir()}
+    ignoredTopLevels = internalPackages | {"qfluentwidgets"}
 
-    packages = ((featurePackages - appPackages - internalPackages) | set(EXTRA_INCLUDE_PACKAGES)) - {"qfluentwidgets"}
-    packages |= set(PLATFORM_INCLUDE_PACKAGES.get(sys.platform, []))
+    # FeaturePack 第三方依赖按导入模块走 --include-module，由 Nuitka 做传递闭包，避免整包带入 tests 等子包
+    featureModules = findImports(featureFiles, ignoredTopLevels)
+    appModules = findImports(appFiles, ignoredTopLevels)
+    qfwModules = findQfwModules([*appFiles, *featureFiles], PACKAGE_EXPORTS)
 
-    qfwModules = findQfwModules([REPO / "Ghost-Downloader-3.py", *appFiles, *featureFiles], PACKAGE_EXPORTS)
-    modules = {
-        module
-        for module in featureModules - appModules
-        if not (Path(*module.split(".")) / "__init__.py").is_file()
-    } | set(EXTRA_INCLUDE_MODULES) | qfwModules
-
-    return sorted(packages), sorted(modules)
+    packages = sorted(PLATFORM_INCLUDE_PACKAGES.get(sys.platform, []))
+    modules = sorted((featureModules - appModules) | set(EXTRA_INCLUDE_MODULES) | qfwModules)
+    return packages, modules
 
 
 def buildArgs() -> list[str]:

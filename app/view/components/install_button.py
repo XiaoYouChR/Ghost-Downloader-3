@@ -9,7 +9,7 @@ STOP_SIZE = 6
 QWIDGETSIZE_MAX = (1 << 24) - 1
 
 
-class `InstallButton`(PrimaryPushButton):
+class InstallButton(PrimaryPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._progress: int | None = None
