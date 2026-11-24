@@ -116,9 +116,9 @@
       "gdMinVersion": "4.5.0"
     },
     "yt_dlp_pack": {
-      "version": "1.4.1",
+      "version": "1.4.2",
       "file": "yt_dlp_pack.zip",
-      "sha256": "61c04cdef4a75d0dc4c897938e6110a0c97062b565c048877fdc15aef26809a7",
+      "sha256": "0b702cafa0c3cae1d69c7de7169af1c3abed6688eefb2b3ae5c3ad3e92cc7423",
       "gdMinVersion": "4.5.0"
     },
     "arxiv_pack": {

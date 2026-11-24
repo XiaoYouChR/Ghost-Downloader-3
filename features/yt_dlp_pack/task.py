@@ -5,7 +5,7 @@ import importlib
 import io
 import tempfile
 import threading
-from collections.abc import Awaitable, Callable, Iterable, Iterator
+from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from itertools import count
 from pathlib import Path
@@ -26,9 +26,58 @@ ERROR_HINTS = (
     ("members-only", "会员专属视频，需要会员账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
     ("confirm your age", "年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
     ("confirm you're not a bot", "YouTube 需要人机验证。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
-    ("requested format is not available", "请求的格式不可用，请稍后重试（{detail}）"),
     ("http error 403", "下载被拒绝（403），链接可能已失效（{detail}）"),
 )
+
+FORMAT_UNAVAILABLE_NEEDLE = "requested format is not available"
+
+FORMAT_WARNING_HINTS = (
+    (
+        ("no supported javascript runtime", "error running quickjs"),
+        "QuickJS 运行环境异常，请在设置中重新安装 yt-dlp（{detail}）",
+    ),
+    (
+        ("failed to download challenge solver", "remote component", "n challenge solving failed"),
+        "YouTube 解密组件缺失或不可用，请在设置中更新或重新安装 yt-dlp（{detail}）",
+    ),
+    (
+        ("cookies are no longer valid", "forcing sabr"),
+        "YouTube Cookie 已失效或受限，请在设置中清除或重新导入 Cookie（{detail}）",
+    ),
+)
+
+
+class YtDlpLogger:
+    def __init__(self) -> None:
+        self.warnings: list[str] = []
+
+    def debug(self, msg: str) -> None:
+        if msg:
+            logger.debug("[yt-dlp] {}", msg)
+
+    def warning(self, msg: str) -> None:
+        if msg:
+            self.warnings.append(msg)
+            logger.warning("[yt-dlp] {}", msg)
+
+    def error(self, msg: str) -> None:
+        if msg:
+            logger.warning("[yt-dlp] {}", msg)
+
+
+def buildExtractError(detail: str, warnings: Sequence[str] = ()) -> TaskError:
+    lowered = detail.lower()
+    hint = next((h for needle, h in ERROR_HINTS if needle in lowered), "")
+    if hint:
+        return TaskError(hint, detail=detail)
+    if FORMAT_UNAVAILABLE_NEEDLE in lowered:
+        joinedWarnings = "\n".join(warnings).lower()
+        for needles, warningHint in FORMAT_WARNING_HINTS:
+            if any(needle in joinedWarnings for needle in needles):
+                return TaskError(warningHint, detail=detail)
+        return TaskError("请求的格式不可用，请在设置中更新 yt-dlp 后重试（{detail}）", detail=detail)
+    return TaskError("视频信息提取失败：{detail}", detail=detail or "unknown")
+
 
 _pathLock = threading.Lock()
 _pathInserted = False
@@ -49,17 +98,23 @@ def loadYtDlpToPath() -> None:
         _pathInserted = True
 
 
-def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
+def buildYtDlpOptions(
+    *,
+    noplaylist: bool = True,
+    useCookies: bool = True,
+    ytLogger: YtDlpLogger | None = None,
+) -> dict:
     from .config import cookieFile, hasCookieFile, youTubeRuntime
     from app.config.cfg import cfg, proxy
 
     opts: dict = {
         "quiet": True,
-        "no_warnings": True,
         "allowed_extractors": ["youtube.*"],
         "remote_components": {"ejs:github"},
         "nocheckcertificate": not cfg.shouldVerifySsl.value,
     }
+    if ytLogger is not None:
+        opts["logger"] = ytLogger
     if noplaylist:
         opts["noplaylist"] = True
     qjsPath = youTubeRuntime.qjsPath()
@@ -68,26 +123,52 @@ def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
     proxyUrl = proxy()
     if proxyUrl:
         opts["proxy"] = proxyUrl
-    if hasCookieFile():
+    if useCookies and hasCookieFile():
         opts["cookiefile"] = io.StringIO(cookieFile().read_text(encoding="utf-8"))
     return opts
 
 
-def probeFormats(url: str) -> dict:
+def extractInfo(url: str, opts: dict) -> dict:
     loadYtDlpToPath()
     yt_dlp = importlib.import_module("yt_dlp")
-    opts = buildYtDlpOptions()
     with yt_dlp.YoutubeDL(opts) as ydl:
         return ydl.extract_info(url, download=False)
 
 
+def probeFormats(
+    url: str,
+    *,
+    extract: Callable[[str, dict], dict] = extractInfo,
+) -> dict:
+    ytLogger = YtDlpLogger()
+    opts = buildYtDlpOptions(ytLogger=ytLogger)
+    try:
+        return extract(url, opts)
+    except Exception as firstError:
+        detail = str(firstError)
+        shouldRetryWithoutCookies = (
+            "cookiefile" in opts
+            and FORMAT_UNAVAILABLE_NEEDLE in detail.lower()
+            and not any(needle in detail.lower() for needle, _ in ERROR_HINTS)
+        )
+        if shouldRetryWithoutCookies:
+            logger.info("retrying extract_info without cookies for {}", url)
+            retryLogger = YtDlpLogger()
+            retryOpts = buildYtDlpOptions(useCookies=False, ytLogger=retryLogger)
+            try:
+                return extract(url, retryOpts)
+            except Exception as retryError:
+                logger.opt(exception=retryError).warning("extract_info retry without cookies failed for {}", url)
+                raise buildExtractError(str(retryError), [*ytLogger.warnings, *retryLogger.warnings]) from retryError
+        logger.opt(exception=firstError).warning("extract_info failed for {}", url)
+        raise buildExtractError(detail, ytLogger.warnings) from firstError
+
+
 def probePlaylist(url: str) -> list[dict]:
-    loadYtDlpToPath()
-    yt_dlp = importlib.import_module("yt_dlp")
-    opts = buildYtDlpOptions(noplaylist=False)
+    ytLogger = YtDlpLogger()
+    opts = buildYtDlpOptions(noplaylist=False, ytLogger=ytLogger)
     opts["extract_flat"] = True
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+    info = extractInfo(url, opts)
     entries = info.get("entries") or []
     return [
         {"id": e.get("id") or "", "title": e.get("title") or "", "duration": e.get("duration") or 0}
@@ -355,16 +436,7 @@ class YouTubeExtractStep(TaskStep):
             raise TaskError("{name} 未安装，请在设置中安装", name=youTubeRuntime.name)
 
         url = self.videoUrl or self.task.url
-        try:
-            info = await asyncio.to_thread(probeFormats, url)
-        except Exception as e:
-            logger.opt(exception=e).warning("extract_info failed for {}", url)
-            detail = str(e)
-            lowered = detail.lower()
-            hint = next((h for needle, h in ERROR_HINTS if needle in lowered), "")
-            if hint:
-                raise TaskError(hint, detail=detail)
-            raise TaskError("视频信息提取失败：{detail}", detail=detail or "unknown")
+        info = await asyncio.to_thread(probeFormats, url)
 
         videoFmt, audioFmt = buildFormatPair(info, self.task)
         if not videoFmt and not audioFmt:

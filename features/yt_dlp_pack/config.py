@@ -173,17 +173,7 @@ class YouTubeRuntime(BinaryRuntime):
         if not versionFile.is_file():
             return VersionInfo("")
 
-        ytDlpVersion = ""
-        try:
-            text = versionFile.read_text(encoding="utf-8")
-            for node in ast.walk(ast.parse(text)):
-                if isinstance(node, ast.Assign):
-                    for target in node.targets:
-                        if isinstance(target, ast.Name) and target.id == "__version__":
-                            if isinstance(node.value, ast.Constant):
-                                ytDlpVersion = str(node.value.value)
-        except Exception:
-            pass
+        ytDlpVersion = parseConstant(versionFile, "__version__")
 
         qjsPath = self.qjsPath()
         if qjsPath:
@@ -210,9 +200,10 @@ class YouTubeRuntime(BinaryRuntime):
 
     def installedPaths(self) -> list[Path]:
         folder = self.installFolder()
-        if IS_ANDROID:
-            return [folder / "yt_dlp"]
-        return [folder / "yt_dlp", folder / ("qjs.exe" if sys.platform == "win32" else "qjs")]
+        paths = [folder / "yt_dlp", folder / "yt_dlp_ejs"]
+        if not IS_ANDROID:
+            paths.append(folder / ("qjs.exe" if sys.platform == "win32" else "qjs"))
+        return paths
 
     async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
         folder = self.installFolder()
@@ -232,6 +223,51 @@ class YouTubeRuntime(BinaryRuntime):
         archive = folder / "yt_dlp.whl"
         await fetchPypiFile(wheelUrl, archive, onProgress)
         await installArchive(archive, folder, subtree="yt_dlp/")
+
+        ejsInfoFile = folder / "yt_dlp" / "extractor" / "youtube" / "jsc" / "_builtin" / "vendor" / "_info.py"
+        ejsVersion = parseConstant(ejsInfoFile, "VERSION")
+        if ejsVersion:
+            ejsUrl = await fetchEjsWheel(ejsVersion)
+            ejsArchive = folder / "yt_dlp_ejs.whl"
+            await fetchPypiFile(ejsUrl, ejsArchive)
+            await installArchive(ejsArchive, folder, subtree="yt_dlp_ejs/")
+
+
+def parseConstant(path: Path, name: str) -> str:
+    if not path.is_file():
+        return ""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == name:
+                        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                            return node.value.value
+    except Exception:
+        pass
+    return ""
+
+
+async def fetchEjsWheel(version: str) -> str:
+    target = parseVersion(version)
+    exact: str = ""
+    compatible: dict[tuple[int, ...], str] = {}
+    for releaseVersion, files in (await fetchPypiReleases("yt-dlp-ejs")).items():
+        wheel = next((f for f in files if f["filename"].endswith("-py3-none-any.whl") and not f.get("yanked")), None)
+        if not wheel:
+            continue
+        parsed = parseVersion(releaseVersion)
+        if parsed == target:
+            exact = wheel["url"]
+            break
+        if parsed[:2] == target[:2] and "dev" not in releaseVersion:
+            compatible[parsed] = wheel["url"]
+    if exact:
+        return exact
+    if compatible:
+        return compatible[max(compatible)]
+    raise TaskError("未找到 yt-dlp-ejs {version}", version=version)
 
 
 async def fetchNightlyWheel() -> tuple[str, str]:

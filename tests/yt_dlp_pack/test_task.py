@@ -85,3 +85,72 @@ def test_merge_step_builds_per_source_trim_args(tmp_path):
     assert mergeStep._buildTrimArgs(mergeStep._videoPath) == (["-ss", "3.0"], ["-t", "30"])
     assert mergeStep._buildTrimArgs(mergeStep._audioPath) == (["-ss", "0.5"], ["-t", "30"])
 
+
+def test_probe_formats_retries_without_cookies():
+    from yt_dlp_pack.config import clearCookies, saveCookies
+    from yt_dlp_pack.task import probeFormats
+
+    calls: list[bool] = []
+
+    def fakeExtract(url: str, opts: dict) -> dict:
+        hasCookies = "cookiefile" in opts
+        calls.append(hasCookies)
+        if hasCookies:
+            opts["logger"].warning("The provided YouTube account cookies are no longer valid.")
+            raise RuntimeError("ERROR: [youtube] wYSncx9zLIU: Requested format is not available.")
+        return {"id": "wYSncx9zLIU", "formats": [{"format_id": "18"}]}
+
+    saveCookies("SID=1")
+    try:
+        info = probeFormats("https://www.youtube.com/watch?v=wYSncx9zLIU", extract=fakeExtract)
+    finally:
+        clearCookies()
+
+    assert calls == [True, False]
+    assert info["id"] == "wYSncx9zLIU"
+
+
+def test_probe_formats_keeps_auth_error_with_cookies():
+    from yt_dlp_pack.config import clearCookies, saveCookies
+    from yt_dlp_pack.task import probeFormats
+
+    calls: list[bool] = []
+
+    def fakeExtract(url: str, opts: dict) -> dict:
+        calls.append("cookiefile" in opts)
+        raise RuntimeError("ERROR: [youtube] abc: Private video. Sign in if you've been granted access")
+
+    saveCookies("SID=1")
+    try:
+        with pytest.raises(TaskError, match="私密视频"):
+            probeFormats("https://www.youtube.com/watch?v=abc", extract=fakeExtract)
+    finally:
+        clearCookies()
+
+    assert calls == [True]
+
+
+@pytest.mark.parametrize(
+    ("warning", "expectedMatch"),
+    [
+        ("No supported JavaScript runtime could be found.", "QuickJS"),
+        ("Remote component challenge solver script (quickjs) was skipped.", "解密组件"),
+        ("n challenge solving failed: Some formats may be missing.", "解密组件"),
+        ("The provided YouTube account cookies are no longer valid.", "Cookie"),
+        ("", "更新 yt-dlp"),
+    ],
+)
+def test_probe_formats_reports_root_cause_from_warnings(warning, expectedMatch):
+    from yt_dlp_pack.config import clearCookies
+    from yt_dlp_pack.task import probeFormats
+
+    clearCookies()
+
+    def fakeExtract(url: str, opts: dict) -> dict:
+        if warning:
+            opts["logger"].warning(warning)
+        raise RuntimeError("ERROR: [youtube] wYSncx9zLIU: Requested format is not available.")
+
+    with pytest.raises(TaskError, match=expectedMatch):
+        probeFormats("https://www.youtube.com/watch?v=wYSncx9zLIU", extract=fakeExtract)
+

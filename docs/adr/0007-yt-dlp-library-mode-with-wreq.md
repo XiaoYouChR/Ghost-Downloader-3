@@ -12,9 +12,11 @@ progress — it never touches YouTube's API directly.
 
 Switch yt_dlp_pack from subprocess mode to **library mode, extract-only**:
 
-- **Install:** download the `yt_dlp` wheel (~3–5 MB) and a QuickJS-NG `qjs`
-  binary (~2 MB) at runtime into the pack's vendor directory. One "一键安装"
-  button, one Task with three steps (download whl, download qjs, extract/chmod).
+- **Install:** download the `yt_dlp` wheel (~3–5 MB), the matching `yt-dlp-ejs`
+  challenge-solver wheel (~55 KB, pinned to `yt_dlp`'s `vendor.VERSION`), and a
+  QuickJS-NG `qjs` binary (~2 MB) at runtime into the pack's vendor directory.
+  All three are installed via `YouTubeRuntime.install()` using PyPI/GitCode
+  mirrors so extraction does not depend on reaching GitHub at runtime.
   Total: ~7 MB vs ~130 MB.
 - **Isolation:** all yt-dlp imports are lazy (`importlib.import_module`), so
   Nuitka's AST scanner in `deploy.py` never sees them. The main binary size is
