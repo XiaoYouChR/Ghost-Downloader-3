@@ -240,7 +240,14 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         speedMeter.speedChanged.connect(lambda _: setLauncherProgress(taskService.overallProgress()))
 
     from app.platform.desktop_keepalive import hold, release
+
+    def releaseIfIdle(_):
+        if not taskService.runningCount() and not taskService.waitingOrder():
+            release()
+
     taskService.taskStarted.connect(lambda _: hold())
+    taskService.taskPaused.connect(releaseIfIdle)
+    taskService.taskRemoved.connect(releaseIfIdle)
     taskService.tasksAllCompleted.connect(release)
 
     from app.platform.desktop_notification import (
