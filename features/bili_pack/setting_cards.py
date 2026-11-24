@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from io import BytesIO
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QPixmap
+from PySide6.QtGui import QDesktopServices, QImage, QPixmap
 from PySide6.QtWidgets import QHBoxLayout
 
 from qfluentwidgets import (
@@ -27,16 +26,17 @@ if TYPE_CHECKING:
 
 def toQrPixmap(content: str, size: int = 240) -> QPixmap:
     import qrcode
-    from qrcode.image.pure import PyPNGImage
 
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=2, box_size=10)
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=2)
     qr.add_data(content)
     qr.make(fit=True)
-    buf = BytesIO()
-    qr.make_image(image_factory=PyPNGImage).save(buf)
-    pixmap = QPixmap()
-    pixmap.loadFromData(buf.getvalue(), "PNG")
-    return pixmap.scaled(size, size)
+    matrix = qr.get_matrix()
+    dim = len(matrix)
+    data = bytes(0 if dark else 255 for row in matrix for dark in row)
+    image = QImage(data, dim, dim, dim, QImage.Format.Format_Grayscale8)
+    return QPixmap.fromImage(image).scaled(
+        size, size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation
+    )
 
 
 class ScanLoginDialog(MessageBoxBase):
