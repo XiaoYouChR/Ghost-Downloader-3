@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from app.config.cfg import cfg
+from app.config.paths import APP_DATA_DIR
 from app.models.task import Task, TaskFile, TaskStatus
 from tests.conftest import FakeStep
 from tests.helpers import waitUntil
@@ -357,15 +359,56 @@ async def test_pause_after_step_completed_keeps_paused(engine):
     assert task.status == TaskStatus.PAUSED
 
 
-async def test_resume_paused_multi_step_task_stays_paused(engine, startEngine):
+async def test_resume_running_multi_step_task_continues(engine, startEngine):
     task = buildTask("v.mp4", steps=[FakeStep(stepIndex=0), FakeStep(stepIndex=1, sideSuffix="en.srt", outcome="hang")])
     engine.taskService.add(task)
     await waitUntil(lambda: task.steps[0].status == TaskStatus.COMPLETED and task.status == TaskStatus.RUNNING)
 
     restarted = startEngine()
 
-    assert restarted.taskService.taskById(task.taskId).status == TaskStatus.PAUSED
-    assert restarted.taskService.runningCount() == 0 and restarted.taskService.waitingOrder() == []
+    assert restarted.taskService.taskById(task.taskId).status == TaskStatus.RUNNING
+    assert restarted.taskService.runningCount() == 1
+
+
+async def test_resume_unfinished_tasks_continue_after_restart(engine, startEngine):
+    cfg.set(cfg.maxTaskNum, 1)
+    running = buildTask("a.zip", steps=[FakeStep(stepIndex=0, outcome="hang")])
+    waiting = buildTask("b.zip", steps=[FakeStep(stepIndex=0, outcome="hang")])
+    paused = buildTask("c.zip", steps=[FakeStep(stepIndex=0, outcome="hang")])
+    engine.taskService.add(running)
+    engine.taskService.add(waiting)
+    engine.taskService.add(paused, autoStart=False)
+    await waitUntil(lambda: running.status == TaskStatus.RUNNING and waiting.status == TaskStatus.WAITING)
+
+    restarted = startEngine()
+
+    await waitUntil(lambda: restarted.taskService.taskById(running.taskId).status == TaskStatus.RUNNING)
+    assert restarted.taskService.taskById(waiting.taskId).status == TaskStatus.WAITING
+    assert restarted.taskService.waitingOrder() == [waiting.taskId]
+    assert restarted.taskService.taskById(paused.taskId).status == TaskStatus.PAUSED
+
+
+async def test_resume_then_crash_keeps_task_paused(engine, startEngine, monkeypatch):
+    task = buildTask(steps=[FakeStep(stepIndex=0, outcome="hang")])
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.status == TaskStatus.RUNNING)
+
+    restarted = startEngine()
+    resumed = restarted.taskService.taskById(task.taskId)
+    await waitUntil(lambda: resumed.status == TaskStatus.RUNNING)
+    record = APP_DATA_DIR / "tasks.jsonl"
+    await waitUntil(lambda: json.loads(record.read_text(encoding="utf-8"))["status"] == "RUNNING")
+    stop = restarted.taskService.stop
+
+    def crash() -> None:
+        stop()
+        resumed.setStatus(TaskStatus.RUNNING)
+    monkeypatch.setattr(restarted.taskService, "stop", crash)
+
+    crashed = startEngine()
+
+    assert crashed.taskService.taskById(task.taskId).status == TaskStatus.PAUSED
+    assert crashed.taskService.runningCount() == 0 and crashed.taskService.waitingOrder() == []
 
 
 async def test_resume_after_crash_keeps_task_paused(engine, startEngine, monkeypatch, downloadFolder):

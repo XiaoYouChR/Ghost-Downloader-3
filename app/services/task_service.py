@@ -510,6 +510,7 @@ class TaskService:
                 self.pause(task)
 
     def resumeSaved(self) -> None:
+        hasResumed = False
         for task in self._store.loadSaved():
             # 不可续传的 Step 若被退出打断，重来会覆盖已写入的数据
             for step in task.steps:
@@ -520,8 +521,13 @@ class TaskService:
                 self._watchFile(task)
                 if task.canSeed and task.shouldSeed:
                     self._seed(task)
-            elif task.status in {TaskStatus.WAITING, TaskStatus.RUNNING}:
+            elif task.status == TaskStatus.WAITING:
+                self._schedule(task)
+                hasResumed = True
+            elif task.status == TaskStatus.RUNNING:
                 task.setStatus(TaskStatus.PAUSED)
+        if hasResumed:
+            self._flushSoon()
         if cfg.shouldRemoveMissingTasks.value:
             self.removeMissing()
 
@@ -539,7 +545,7 @@ class TaskService:
         cfg.shouldRemoveMissingTasks.valueChanged.disconnect(self._onShouldRemoveMissingTasksChanged)
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
-                task.setStatus(TaskStatus.PAUSED)
+                task.setStatus(TaskStatus.WAITING if task.canPause else TaskStatus.PAUSED)
 
     def waitingOrder(self) -> list[str]:
         return self._queue.waitingOrder()
