@@ -1,10 +1,11 @@
 import ast
+import importlib.util
 import os
 import plistlib
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ MACOS_DOCUMENT_TYPES = [
 
 EXCLUDED_PACKS = {"jack_yao"}
 
-EXTRA_INCLUDE_PACKAGES = []
+EXTRA_INCLUDE_PACKAGES: list[str] = []
 PLATFORM_INCLUDE_PACKAGES = {
     "win32": ["winrt"],
 }
@@ -107,37 +108,86 @@ def findImports(files: Iterable[Path]) -> tuple[set[str], set[str]]:
     return appModules, thirdParty
 
 
+def findQfwModules(
+    files: Iterable[Path],
+    packageExports: Mapping[str, Mapping[str, str]],
+) -> set[str]:
+    modules: set[str] = set()
+    for source in files:
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        typeCheckingIds = _typeCheckingImportIds(tree)
+        for node in ast.walk(tree):
+            if id(node) in typeCheckingIds:
+                continue
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "qfluentwidgets" or alias.name.startswith("qfluentwidgets."):
+                        raise ValueError(
+                            f"{source}:{node.lineno}: use 'from qfluentwidgets import ...' instead of 'import {alias.name}'"
+                        )
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                module = node.module
+                if module != "qfluentwidgets" and not module.startswith("qfluentwidgets."):
+                    continue
+                exports = packageExports.get(module)
+                for alias in node.names:
+                    if alias.name == "*":
+                        raise ValueError(f"{source}:{node.lineno}: wildcard import from {module} breaks tree-shaking")
+                    if exports is not None:
+                        target = exports.get(alias.name)
+                        if target is not None:
+                            modules.add(target)
+                            continue
+                        candidate = f"{module}.{alias.name}"
+                        if candidate in packageExports or importlib.util.find_spec(candidate) is not None:
+                            modules.add(candidate)
+                            continue
+                        raise ValueError(f"{source}:{node.lineno}: unknown qfluentwidgets symbol {module}.{alias.name}")
+                    if importlib.util.find_spec(module) is None:
+                        raise ValueError(f"{source}:{node.lineno}: unknown qfluentwidgets module {module}")
+                    modules.add(module)
+    return modules
+
+
 def findIncludes() -> tuple[list[str], list[str]]:
-    featureFiles = (path for pack in findPacks() for path in pack.rglob("*.py"))
+    from qfluentwidgets._symbols import PACKAGE_EXPORTS
+
+    featureFiles = [path for pack in findPacks() for path in pack.rglob("*.py")]
+    appFiles = list((REPO / "app").rglob("*.py"))
     featureModules, featurePackages = findImports(featureFiles)
-    appModules, appPackages = findImports((REPO / "app").rglob("*.py"))
+    appModules, appPackages = findImports(appFiles)
 
     featuresDir = REPO / "features"
     internalPackages = {featuresDir.name} | {item.name for item in featuresDir.iterdir() if item.is_dir()}
 
-    packages = (featurePackages - appPackages - internalPackages) | set(EXTRA_INCLUDE_PACKAGES)
+    packages = ((featurePackages - appPackages - internalPackages) | set(EXTRA_INCLUDE_PACKAGES)) - {"qfluentwidgets"}
     packages |= set(PLATFORM_INCLUDE_PACKAGES.get(sys.platform, []))
 
+    qfwModules = findQfwModules([REPO / "Ghost-Downloader-3.py", *appFiles, *featureFiles], PACKAGE_EXPORTS)
     modules = {
         module
         for module in featureModules - appModules
         if not (Path(*module.split(".")) / "__init__.py").is_file()
-    } | set(EXTRA_INCLUDE_MODULES)
+    } | set(EXTRA_INCLUDE_MODULES) | qfwModules
 
     return sorted(packages), sorted(modules)
 
 
 def buildArgs() -> list[str]:
     includePackages, includeModules = findIncludes()
+    from qfluentwidgets._rc import RCC_PATH as QFW_RCC_PATH
+
     includeArgs = [
         *[f"--include-package={package}" for package in includePackages],
         *[f"--include-module={module}" for module in includeModules],
+        "--report=dist/compilation-report.xml",
     ]
 
     nuitka = f'"{sys.executable}" -m nuitka'
 
     dataArgs = [
         '--include-data-files=app/assets/resources.rcc=app/assets/resources.rcc',
+        f'--include-data-files="{QFW_RCC_PATH}=qfluentwidgets/_rc/resource.rcc"',
     ]
     excludeArgs = [f"--noinclude-dlls={path}" for path in PLATFORM_EXCLUDED_DLLS[sys.platform]]
 

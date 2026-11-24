@@ -13,8 +13,10 @@ if TYPE_CHECKING:
 
 def loadResources(application: Application) -> None:
     from PySide6.QtCore import QResource
+    from qfluentwidgets import load as loadQFluentWidgets
     from app.config.paths import EXECUTABLE_DIR
 
+    loadQFluentWidgets(application)
     QResource.registerResource(str(EXECUTABLE_DIR / "app" / "assets" / "resources.rcc"))
     loadTranslators(application)
 

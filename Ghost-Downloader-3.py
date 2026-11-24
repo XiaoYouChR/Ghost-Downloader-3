@@ -38,10 +38,8 @@ def setupEnvironment() -> None:
         setupHiddenSubprocess()
 
     from app.view.qfw_patch import (
-        patchLinuxFrameless, patchMaskDialogAnimation, patchStackedWidgetAnimation, patchWindowsFrameless,
+        patchLinuxFrameless, patchMaskDialogAnimation, patchWindowsFrameless,
     )
-    from app.view.components.labels import IconBodyLabel
-    patchStackedWidgetAnimation()
     # Wayland 上在绘制中截图会递归重绘，卡住合成器 #1017
     if sys.platform != "linux":
         patchMaskDialogAnimation()
@@ -49,7 +47,6 @@ def setupEnvironment() -> None:
         patchLinuxFrameless()
     if sys.platform == "win32":
         patchWindowsFrameless()
-    qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
     if cfg.dpiScale.value != 0:
@@ -75,7 +72,6 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     from app.services.port_listener import ListenStatus
     from app.services.update_service import UpdateService
     from app.startup import loadResources, setupThemeColor, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
-    from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
         _exceptionHook(exceptionType, value, tb)
@@ -104,12 +100,9 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     coroutineRunner, taskService, featureService = engine.coroutineRunner, engine.taskService, engine.featureService
     browserService, speedMeter = engine.browserService, engine.speedMeter
 
-    deleteBackupDir()
-
     setupThemeColor(application)
 
     updateService = UpdateService(coroutineRunner)
-    loadPacks(featureService, coroutineRunner, speedMeter)
 
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
@@ -136,6 +129,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
 
     def createWindow() -> MainWindow:
         nonlocal window
+        from app.view.windows.main_window import MainWindow
         window = MainWindow(taskService, featureService, browserService, engine.browserListener, engine.aria2RpcListener, engine.categoryService, speedMeter, coroutineRunner, plan, updateService)
         window.destroyed.connect(onWindowDestroyed)
         return window
@@ -170,7 +164,9 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow
 
+        loadPacks(featureService, coroutineRunner, speedMeter)
         engine.start()
+        deleteBackupDir()
 
         oobe = OobeWindow(browserService, engine.browserListener, coroutineRunner, featureService, engine.runtimeStatusService)
         def onOobePairRequestChanged(request):
@@ -191,21 +187,33 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         oobe.deleteLater()
 
         show()
+    elif isSilent:
+        loadPacks(featureService, coroutineRunner, speedMeter)
+        engine.start()
+        deleteBackupDir()
+    elif sys.platform == "darwin":
+        loadPacks(featureService, coroutineRunner, speedMeter)
+        createWindow().setupPacks()
+        engine.start()
+        deleteBackupDir()
     else:
+        from qfluentwidgets import SplashScreen
         createWindow()
+        splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
+        splash.raise_()
+        window.show()
+        application.processEvents()
 
-        if not isSilent and sys.platform != "darwin":
-            from qfluentwidgets import SplashScreen
-            splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
-            splash.raise_()
-            window.show()
-            application.processEvents()
-
+        loadPacks(featureService, coroutineRunner, speedMeter)
         window.setupPacks()
         engine.start()
+        deleteBackupDir()
 
-        if not isSilent and sys.platform != "darwin":
-            splash.finish()
+        splash.finish()
+
+    from qfluentwidgets import qconfig
+    from app.view.components.labels import IconBodyLabel
+    qconfig.themeChanged.connect(IconBodyLabel.clearCache)
 
     if sys.platform != "darwin":
         signalBus.activationRequested.connect(show)

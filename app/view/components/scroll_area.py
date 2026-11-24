@@ -38,7 +38,7 @@ class ScrollArea(FluentScrollArea):
     else:
         def enableTransparentBackground(self) -> None:
             self.setStyleSheet("QScrollArea{border: none; background: transparent}")
-            self.viewport().setStyleSheet("background: transparent")
+            self.viewport().setStyleSheet(".QWidget{background: transparent}")
 
 SCROLL_BAR_WIDTH = 13
 PAGE_MARGIN = 12

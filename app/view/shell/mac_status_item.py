@@ -21,8 +21,6 @@ from Foundation import NSData
 
 from app.config.cfg import cfg
 from app.format import toReadableSize
-from app.view.pages.setting_page import SettingPage
-from app.view.pages.task_page import TaskPage
 
 
 class MenuTarget(NSObject):
@@ -44,7 +42,7 @@ class MenuTarget(NSObject):
             self.owner._show()
 
     def showDashboard_(self, sender):
-        self.owner._show().showPage(TaskPage)
+        self.owner._show().showTasks()
 
     def newTask_(self, sender):
         self.owner._show().addUrls([])
@@ -56,7 +54,7 @@ class MenuTarget(NSObject):
         self.owner._taskService.pauseAll()
 
     def openSettings_(self, sender):
-        self.owner._show().showPage(SettingPage)
+        self.owner._show().showSettings()
 
     def quitApp_(self, sender):
         QApplication.instance().quit()

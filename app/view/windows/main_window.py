@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -26,13 +27,7 @@ from app.models.task import TaskError, TaskOptions, TaskStatus
 from app.services.port_listener import PortListener
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
-from app.update import fetchAssetUrl, fetchBestAssetUrl, fetchRelease
 from app.view.components.labels import IconBodyLabel
-from app.view.components.progress_toast import ProgressToast
-from app.view.dialogs.release_info import ReleaseInfoDialog
-from app.view.dialogs.task_draft import TaskDraftDialog
-from app.view.qfw_patch import unregisterRouter
-from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 
 if sys.platform == "darwin":
@@ -51,6 +46,7 @@ if TYPE_CHECKING:
     from app.services.feature_service import FeatureService
     from app.services.task_service import TaskService
     from app.services.update_service import UpdateInfo, UpdateService
+    from app.view.dialogs.task_draft import TaskDraftDialog
 
 
 class DropOverlay(QWidget):
@@ -148,25 +144,45 @@ class MainWindow(MSFluentWindow):
         self._dropOverlay = DropOverlay(self)
 
     def _initLayout(self) -> None:
-        self._addPage(TaskPage, FluentIcon.DOWNLOAD, self.tr("下载任务"),
-                      NavigationItemPosition.TOP)
         self.navigationInterface.addItem(
-            routeKey="addTaskButton",
-            text=self.tr("新建任务"),
-            selectable=False,
-            icon=FluentIcon.ADD,
-            onClick=lambda: self.addUrls([]),
-            position=NavigationItemPosition.TOP,
+            routeKey="TaskPage", icon=FluentIcon.DOWNLOAD, text=self.tr("下载任务"),
+            onClick=self.showTasks, position=NavigationItemPosition.TOP,
         )
-        self._addPage(SettingPage, FluentIcon.SETTING, self.tr("设置"),
-                      NavigationItemPosition.BOTTOM)
-        self.showPage(TaskPage)
+        self.navigationInterface.addItem(
+            routeKey="addTaskButton", icon=FluentIcon.ADD, text=self.tr("新建任务"),
+            selectable=False, onClick=lambda: self.addUrls([]), position=NavigationItemPosition.TOP,
+        )
+        self.navigationInterface.addItem(
+            routeKey="SettingPage", icon=FluentIcon.SETTING, text=self.tr("设置"),
+            onClick=self.showSettings, position=NavigationItemPosition.BOTTOM,
+        )
+        self.showTasks()
 
     def setupPacks(self) -> None:
         for PageClass in self._featureService.pages():
-            self._addPage(PageClass, PageClass.icon,
-                          QCoreApplication.translate("PackPage", PageClass.title),
-                          NavigationItemPosition.TOP)
+            routeKey = PageClass.__name__
+            self.navigationInterface.addItem(
+                routeKey=routeKey, icon=PageClass.icon,
+                text=QCoreApplication.translate("PackPage", PageClass.title),
+                onClick=lambda cls=PageClass, key=routeKey: self._showPage(
+                    key, lambda: self._featureService.createPage(cls, parent=self),
+                ),
+                position=NavigationItemPosition.TOP,
+            )
+
+    def showTasks(self) -> None:
+        self._showPage("TaskPage", lambda: TaskPage(
+            self._taskService, self._featureService,
+            self._categoryService, self._speedMeter, self._plan, parent=self,
+        ))
+
+    def showSettings(self) -> None:
+        from app.view.pages.setting_page import SettingPage
+        self._showPage("SettingPage", lambda: SettingPage(
+            self._featureService, self._browserService, self._browserListener, self._aria2RpcListener,
+            self._coroutineRunner, self._categoryService, self._taskService,
+            self._updateService, parent=self,
+        ))
 
     def systemTitleBarRect(self, size) -> QRect:
         return QRect(0, 10, 75, size.height())
@@ -180,18 +196,10 @@ class MainWindow(MSFluentWindow):
             return self._darkBackgroundColor if isDarkTheme() else self._lightBackgroundColor
         return QColor(0, 0, 0, 0)
 
-    def _addPage(self, pageClass: type[QWidget], icon: FluentIconBase, text: str,
-                 position: NavigationItemPosition) -> None:
-        self.navigationInterface.addItem(
-            routeKey=pageClass.__name__, icon=icon, text=text,
-            onClick=lambda: self.showPage(pageClass), position=position,
-        )
-
-    def showPage(self, pageClass: type[QWidget]) -> None:
-        routeKey = pageClass.__name__
+    def _showPage(self, routeKey: str, createPage: Callable[[], QWidget]) -> None:
         page = self._pages.get(routeKey)
         if page is None:
-            page = self._createPage(pageClass)
+            page = createPage()
             page.setObjectName(routeKey)
             # addSubInterface 会设这个属性，懒创建绕过了它；不设时每次切页都会重刷整个内容区的样式
             page.setProperty("isStackedTransparent", False)
@@ -203,20 +211,6 @@ class MainWindow(MSFluentWindow):
         self.switchTo(page)
         self.navigationInterface.setCurrentItem(routeKey)
         self._updateSearchTarget(page)
-
-    def _createPage(self, pageClass: type[QWidget]) -> QWidget:
-        if pageClass is TaskPage:
-            return TaskPage(
-                self._taskService, self._featureService,
-                self._categoryService, self._speedMeter, self._plan, parent=self,
-            )
-        if pageClass is SettingPage:
-            return SettingPage(
-                self._featureService, self._browserService, self._browserListener, self._aria2RpcListener,
-                self._coroutineRunner, self._categoryService, self._taskService,
-                self._updateService, parent=self,
-            )
-        return self._featureService.createPage(pageClass, parent=self)
 
     def _onSearchTextChanged(self, text: str) -> None:
         page = self.stackedWidget.currentWidget()
@@ -300,6 +294,7 @@ class MainWindow(MSFluentWindow):
 
     @cached_property
     def _draftDialog(self) -> TaskDraftDialog:
+        from app.view.dialogs.task_draft import TaskDraftDialog
         return TaskDraftDialog(
             self._draft, self._featureService, self._categoryService,
             parent=self,
@@ -342,7 +337,7 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         settingButton = PushButton(FluentIcon.SETTING, self.tr("前往设置"))
-        settingButton.clicked.connect(lambda: (infoBar.close(), self.showPage(SettingPage)))
+        settingButton.clicked.connect(lambda: (infoBar.close(), self.showSettings()))
         infoBar.addWidget(settingButton)
         infoBar.show()
 
@@ -376,6 +371,8 @@ class MainWindow(MSFluentWindow):
         infoBar.show()
 
     def _downloadBestAsset(self) -> None:
+        from app.update import fetchBestAssetUrl
+
         def onUrl(url):
             if url is None:
                 self._showReleaseDetails()
@@ -394,6 +391,7 @@ class MainWindow(MSFluentWindow):
         if info.state not in (UpdateState.DOWNLOADING, UpdateState.READY, UpdateState.FAILED):
             return
         if self._progressToast is None:
+            from app.view.components.progress_toast import ProgressToast
             self._progressToast = ProgressToast(
                 onRetry=lambda: self._updateService.download("app"),
                 parent=self,
@@ -401,6 +399,9 @@ class MainWindow(MSFluentWindow):
         self._progressToast.setInfo(info)
 
     def _showReleaseDetails(self) -> None:
+        from app.update import fetchAssetUrl, fetchRelease
+        from app.view.dialogs.release_info import ReleaseInfoDialog
+
         def onFetched(release):
             dialog = ReleaseInfoDialog(release, self)
 
@@ -550,7 +551,7 @@ class MainWindow(MSFluentWindow):
         if not self.isMaximized():
             geo = self.geometry()
             cfg.set(cfg.geometry, (geo.x(), geo.y(), geo.width(), geo.height()))
-        unregisterRouter(self.stackedWidget)
+        qrouter.unregister(self.stackedWidget)
         event.accept()
 
     def setVisible(self, visible: bool) -> None:
@@ -618,16 +619,16 @@ class MainWindow(MSFluentWindow):
         isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
 
         if value == "Acrylic":
-            self.setStyleSheet("background-color: transparent")
+            self.setStyleSheet(".MainWindow { background-color: transparent }")
             self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if isDark else "FFFFFF30")
         elif value in {"Mica", "MicaBlur"}:
-            self.setStyleSheet("background-color: transparent")
+            self.setStyleSheet(".MainWindow { background-color: transparent }")
             self.windowEffect.setMicaEffect(self.winId(), isDark)
         elif value == "MicaAlt":
-            self.setStyleSheet("background-color: transparent")
+            self.setStyleSheet(".MainWindow { background-color: transparent }")
             self.windowEffect.setMicaEffect(self.winId(), isDark, isAlt=True)
         elif value == "Aero":
-            self.setStyleSheet("background-color: transparent")
+            self.setStyleSheet(".MainWindow { background-color: transparent }")
             self.windowEffect.setAeroEffect(self.winId())
             if isLessThanWin10():
                 self.titleBar.closeBtn.hide()

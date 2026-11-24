@@ -12,8 +12,6 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.view.pages.setting_page import SettingPage
-from app.view.pages.task_page import TaskPage
 
 
 class GhostIcon(FluentIconBase, Enum):
@@ -182,7 +180,7 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self._menu = TrayMenu()
         self._menu.addAction(Action(GhostIcon.GHOST, self.tr("仪表盘"), self._menu,
-                                    triggered=lambda: self._show().showPage(TaskPage)))
+                                    triggered=lambda: self._show().showTasks()))
         self._menu.addAction(Action(FluentIcon.ADD, self.tr("新建任务"), self._menu,
                                     triggered=lambda: self._show().addUrls([])))
         self._menu.addAction(Action(FluentIcon.PLAY, self.tr("全部开始"), self._menu,
@@ -190,7 +188,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self._menu.addAction(Action(FluentIcon.PAUSE, self.tr("全部暂停"), self._menu,
                                     triggered=self._taskService.pauseAll))
         self._menu.addAction(Action(FluentIcon.SETTING, self.tr("设置"), self._menu,
-                                    triggered=lambda: self._show().showPage(SettingPage)))
+                                    triggered=lambda: self._show().showSettings()))
         self._menu.addSeparator()
         self._menu.addAction(Action(FluentIcon.CLOSE, self.tr("退出程序"), self._menu,
                                     triggered=QApplication.instance().quit))

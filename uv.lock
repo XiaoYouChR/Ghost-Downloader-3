@@ -438,7 +438,7 @@ requires-dist = [
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'", specifier = ">=10.0" },
     { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'", specifier = ">=10.0" },
     { name = "pyside6", specifier = "~=6.10.3" },
-    { name = "pyside6-fluent-widgets", specifier = ">=1.11.3" },
+    { name = "pyside6-fluent-widgets", git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main" },
     { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=312" },
     { name = "qrcode", extras = ["png"], specifier = ">=8.2" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.22.1" },
@@ -887,15 +887,11 @@ wheels = [
 [[package]]
 name = "pyside6-fluent-widgets"
 version = "1.11.3"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main#18e82c47308a486baaa84d67fb587d7956ad168b" }
 dependencies = [
     { name = "darkdetect" },
     { name = "pyside6" },
     { name = "pysidesix-frameless-window" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/be/fa/7ccdf706cf06aa07be142d52606f10c84a0800f9c890faffc097a635c6b1/pyside6_fluent_widgets-1.11.3.tar.gz", hash = "sha256:bfb86a12e0d88edf1a1b4327b79e84767771ba0d2a294c4cb1fe170e026ebc16", size = 1455676, upload-time = "2026-08-01T02:46:14.835Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/b2/5c675b4d56eddeff0930b9e6b1be2fc75f0535dd86d1add3d24b5dd796f6/pyside6_fluent_widgets-1.11.3-py3-none-any.whl", hash = "sha256:f2bece3ba45ef1a222d12cff89c4ffc9505644ee25c9db9c1d2175f59231973d", size = 1549200, upload-time = "2026-08-01T02:46:13.498Z" },
 ]
 
 [[package]]

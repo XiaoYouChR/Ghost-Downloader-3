@@ -23,7 +23,7 @@ dependencies = [
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
     "certifi>=2026.10.19",
-    "winrt-runtime < 4; sys_platform == 'win32'"
+    "winrt-runtime < 4; sys_platform == 'win32'",
 ]
 
 [dependency-groups]
@@ -56,3 +56,6 @@ markers = ["network: requires internet access"]
 override-dependencies = [
     "pyobjc; python_version < '0'",
 ]
+
+[tool.uv.sources]
+pyside6-fluent-widgets = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git", branch = "main" }

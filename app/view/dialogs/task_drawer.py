@@ -53,7 +53,7 @@ class SelectableText(QTextEdit):
         self.setWordWrapMode(QTextOption.WrapMode.WrapAnywhere)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setStyleSheet(f"background: transparent; color: {'white' if isDarkTheme() else 'black'}")
+        self.setStyleSheet(f".SelectableText {{ background: transparent; color: {'white' if isDarkTheme() else 'black'} }}")
         self.document().setDocumentMargin(0)
         setFont(self, 14)
 
@@ -444,7 +444,7 @@ class TaskDrawer(MaskDialogBase):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scrollArea.enableTransparentBackground()
-        self.scrollWidget.setStyleSheet("background: transparent")
+        self.scrollWidget.setStyleSheet(".QWidget { background: transparent }")
         self.refreshTimer.setInterval(1000)
 
     def _initLayout(self) -> None:
