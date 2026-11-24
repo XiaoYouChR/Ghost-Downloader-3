@@ -105,7 +105,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     updateService = UpdateService(coroutineRunner)
 
     from app.services.plan import Plan
-    plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
+    plan = Plan(allCompleted=lambda: taskService.runningCount() == 0, quitApp=application.quit)
     taskService.tasksAllCompleted.connect(plan.trigger)
 
     application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)

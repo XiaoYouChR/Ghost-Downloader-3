@@ -21,6 +21,7 @@ class PlanTaskDialog(MessageBoxBase):
         self.restartButton = RadioButton(self.tr("重启"), self)
         self.sleepButton = RadioButton(self.tr("睡眠"), self)
         self.openFileButton = RadioButton(self.tr("打开文件"), self)
+        self.quitButton = RadioButton(self.tr("退出程序"), self)
         self.pathContainer = QWidget(self)
         self.pathLayout = QHBoxLayout(self.pathContainer)
         self.pathEdit = LineEdit(self.pathContainer)
@@ -39,6 +40,7 @@ class PlanTaskDialog(MessageBoxBase):
         self.radioGroup.addButton(self.restartButton)
         self.radioGroup.addButton(self.sleepButton)
         self.radioGroup.addButton(self.openFileButton)
+        self.radioGroup.addButton(self.quitButton)
         self.radioGroup.setExclusive(True)
         self.shutdownButton.setChecked(True)
 
@@ -61,6 +63,7 @@ class PlanTaskDialog(MessageBoxBase):
         optionsLayout.addWidget(self.restartButton)
         optionsLayout.addWidget(self.sleepButton)
         optionsLayout.addWidget(self.openFileButton)
+        optionsLayout.addWidget(self.quitButton)
 
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addSpacing(2)
@@ -89,6 +92,8 @@ class PlanTaskDialog(MessageBoxBase):
             return PlanAction.SLEEP
         if self.radioGroup.checkedButton() is self.openFileButton:
             return PlanAction.OPEN_FILE
+        if self.radioGroup.checkedButton() is self.quitButton:
+            return PlanAction.QUIT
         return PlanAction.SHUTDOWN
 
     def selectedFilePath(self) -> str:

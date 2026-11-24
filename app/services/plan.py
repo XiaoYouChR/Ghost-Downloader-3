@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import IntEnum
 
 
@@ -8,12 +9,14 @@ class PlanAction(IntEnum):
     RESTART = 1
     SLEEP = 2
     OPEN_FILE = 3
+    QUIT = 4
 
 
 class Plan:
 
-    def __init__(self, allCompleted):
+    def __init__(self, allCompleted, quitApp: Callable[[], None]):
         self._allCompleted = allCompleted
+        self._quitApp = quitApp
         self.action: PlanAction | None = None
         self.filePath: str = ""
         self._onCleared = None
@@ -49,5 +52,7 @@ class Plan:
             restart()
         elif action == PlanAction.SLEEP:
             sleep()
+        elif action == PlanAction.QUIT:
+            self._quitApp()
         else:
             shutdown()
