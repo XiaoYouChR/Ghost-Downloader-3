@@ -17,7 +17,7 @@ from loguru import logger
 
 from app.checksum import parseChecksum, toChecksum
 from app.config.constants import VERSION
-from app.config.paths import APP_DATA_DIR, FEATURES_DIR, EXECUTABLE_DIR
+from app.config.paths import APP_DATA_DIR, APP_DIR, EXECUTABLE_DIR, FEATURES_DIR
 from app.platform.android import IS_ANDROID
 from app.platform.arch import BUILD_ARCH, MACHINE_ARCH
 from app.models.pack import PackManifest
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from app.services.coroutine_runner import CoroutineRunner
 
 STAGING_DIR = APP_DATA_DIR / "update_staging"
+UPDATER_PATH = EXECUTABLE_DIR / ("updater.exe" if sys.platform == "win32" else "updater")
 
 OS_MAP = {"win32": "Windows", "darwin": "macOS", "linux": "Linux"}
 
@@ -117,6 +118,17 @@ class UpdateService:
 
     def infoById(self, targetId: str) -> UpdateInfo | None:
         return self._infos.get(targetId)
+
+    def canSelfUpdate(self) -> bool:
+        if "__compiled__" not in globals() or not UPDATER_PATH.is_file():
+            return False
+        if sys.platform != "linux":
+            return True
+        return (
+            "APPIMAGE" not in os.environ
+            and os.access(APP_DIR, os.W_OK)
+            and os.access(APP_DIR.parent, os.W_OK)
+        )
 
     def check(self) -> None:
         self._coroutineRunner.submit(self._check())
@@ -283,17 +295,14 @@ class UpdateService:
         logger.info("Pack 更新已暂存: {}", packId)
 
     def _startUpdater(self) -> None:
-        updaterName = "updater.exe" if sys.platform == "win32" else "updater"
-        updaterPath = EXECUTABLE_DIR / updaterName
-        if not updaterPath.is_file():
-            logger.error("updater not found: {}", updaterPath)
+        if not UPDATER_PATH.is_file():
+            logger.error("updater not found: {}", UPDATER_PATH)
             return
 
-        appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
         patchPath = STAGING_DIR / "patch.hdiff"
         stagingNewDir = STAGING_DIR / "app_new"
 
-        args = [str(updaterPath), str(os.getpid()), str(appDir),
+        args = [str(UPDATER_PATH), str(os.getpid()), str(APP_DIR),
                 str(Path(sys.executable).resolve())]
         if patchPath.is_file():
             args.append(str(patchPath))

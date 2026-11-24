@@ -362,10 +362,10 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        if sys.platform == "linux":
-            downloadButton.clicked.connect(lambda: (infoBar.close(), self._downloadBestAsset()))
-        else:
+        if self._updateService.canSelfUpdate():
             downloadButton.clicked.connect(lambda: (infoBar.close(), self._updateService.download("app")))
+        else:
+            downloadButton.clicked.connect(lambda: (infoBar.close(), self._downloadBestAsset()))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
         detailButton.clicked.connect(self._showReleaseDetails)

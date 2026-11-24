@@ -84,11 +84,11 @@ def createEngine(application: Application) -> Engine:
 
 def deleteBackupDir() -> None:
     import shutil
-    import sys
-    from app.config.paths import EXECUTABLE_DIR
+    from app.config.paths import APP_DIR
 
-    appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
-    backupDir = appDir.parent / f"{appDir.name}_backup"
+    if "__compiled__" not in globals():
+        return
+    backupDir = APP_DIR.parent / f"{APP_DIR.name}_backup"
     if backupDir.is_dir():
         shutil.rmtree(backupDir, ignore_errors=True)
 

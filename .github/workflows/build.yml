@@ -624,9 +624,11 @@ jobs:
           - architecture: x86_64
             runner: ubuntu-22.04
             appimage_arch: x86_64
+            hdiff_arch: linux64
           - architecture: arm64
             runner: ubuntu-24.04-arm
             appimage_arch: aarch64
+            hdiff_arch: linux_arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
@@ -640,7 +642,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y desktop-file-utils libegl1-mesa-dev libzstd1
+          sudo apt-get install -y cmake desktop-file-utils libegl1-mesa-dev libzstd1
           uv python install 3.13
           uv sync
 
@@ -767,27 +769,59 @@ jobs:
 
           file "$APPIMAGE_FILE"
 
+      - name: Build updater
+        run: |
+          cmake -B build-updater -DCMAKE_BUILD_TYPE=Release tools/updater
+          cmake --build build-updater
+          cp build-updater/updater dist/Ghost-Downloader-3.dist/
+
+      - name: Download HDiffPatch
+        run: |
+          curl -fsSL "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_${{ matrix.hdiff_arch }}.zip" -o hdiffpatch.zip
+          python3 -m zipfile -e hdiffpatch.zip hdiffpatch
+          chmod +x "hdiffpatch/${{ matrix.hdiff_arch }}/hdiffz" "hdiffpatch/${{ matrix.hdiff_arch }}/hpatchz"
+          cp "hdiffpatch/${{ matrix.hdiff_arch }}/hpatchz" dist/Ghost-Downloader-3.dist/
+
       - name: Tar the contents of Ghost-Downloader
         if: ${{ github.event.inputs.create_release == 'true' }}
-        shell: pwsh
         run: |
-          $distPath = "dist/Ghost-Downloader-3.dist"
-          $tarFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
+          cp app/assets/logo.png dist/Ghost-Downloader-3.dist/logo.png
+          TAR_FILE="Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
+          echo "Creating tar.xz archive of dist/Ghost-Downloader-3.dist..."
+          tar -cJf "$TAR_FILE" -C dist/Ghost-Downloader-3.dist .
+          echo "Archive created at $TAR_FILE"
 
-          Copy-Item "app/assets/logo.png" "$distPath/logo.png"
-          Write-Output "Creating tar.xz archive of $distPath..."
-          tar -cJf $tarFile -C $distPath .
-          Write-Output "Archive created at $tarFile"
+      - name: Generate patch
+        if: ${{ needs.prepare.outputs.patch_base != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BASE_VER="${{ needs.prepare.outputs.patch_base }}"
+          BASE_TAR="Ghost-Downloader-v${BASE_VER}-Linux-${{ matrix.architecture }}.tar.xz"
+          if ! gh release view "v$BASE_VER" --json assets --jq '.assets[].name' | grep -Fxq "$BASE_TAR"; then
+            echo "v$BASE_VER has no Linux-${{ matrix.architecture }} package, skipping patch"
+            exit 0
+          fi
+
+          mkdir -p prev-download prev-dir
+          gh release download "v$BASE_VER" -p "$BASE_TAR" -D prev-download/
+          tar -xJf "prev-download/$BASE_TAR" -C prev-dir
+          PATCH_FILE="patch-Linux-${{ matrix.architecture }}-${BASE_VER}-to-${{ env.VERSION }}.hdiff"
+          "hdiffpatch/${{ matrix.hdiff_arch }}/hdiffz" -f prev-dir dist/Ghost-Downloader-3.dist "$PATCH_FILE"
+          rm -rf prev-download prev-dir
+          echo "PATCH_FILE=$PATCH_FILE" >> "$GITHUB_ENV"
 
       - name: Upload to release
         if: ${{ github.event.inputs.create_release == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "v${{ env.VERSION }}" \
-            "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz" \
-            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage" \
-            --clobber
+          FILES=(
+            "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
+            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage"
+          )
+          if [ -n "${PATCH_FILE:-}" ] && [ -f "$PATCH_FILE" ]; then FILES+=("$PATCH_FILE"); fi
+          gh release upload "v${{ env.VERSION }}" "${FILES[@]}" --clobber
 
       - name: Upload artifacts
         if: ${{ github.event.inputs.create_release == 'false' }}

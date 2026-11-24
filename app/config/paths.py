@@ -19,6 +19,8 @@ EXECUTABLE_DIR = (
     else Path(".")
 )
 
+APP_DIR = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
+
 APP_DATA_DIR = (
     EXECUTABLE_DIR / "GhostDownloader"
     if (EXECUTABLE_DIR / "GhostDownloader").is_dir()

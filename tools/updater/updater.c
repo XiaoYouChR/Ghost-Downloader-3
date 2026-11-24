@@ -3,6 +3,10 @@
  * Exit:   0 ok · 1 patch · 2 rename · 3 timeout · 4 launch · 5 args
  */
 
+#ifdef __linux__
+    #define _GNU_SOURCE
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +25,7 @@
 #else
     #include <dirent.h>
     #include <errno.h>
+    #include <fcntl.h>
     #include <ftw.h>
     #include <pwd.h>
     #include <signal.h>
@@ -75,6 +80,10 @@ static void toDirname(pchar *path) {
 }
 
 static void openLog(const pchar *exeDir) {
+    if (g_log) {
+        fclose(g_log);
+        g_log = NULL;
+    }
 #ifdef _WIN32
     if (exeDir && exeDir[0]) {
         wsnprintf(g_logPath, PATH_BUF, L"%ls\\GhostDownloader", exeDir);
@@ -442,7 +451,7 @@ static void installUninstaller(const wchar_t *appDir, const wchar_t *newDir) {
     FindClose(h);
 }
 #else
-static int copyFile(const char *from, const char *to) {
+static int copyFile(const char *from, const char *to, mode_t mode) {
     FILE *in = fopen(from, "rb");
     if (!in) return -1;
     FILE *out = fopen(to, "wb");
@@ -460,8 +469,9 @@ static int copyFile(const char *from, const char *to) {
         }
     }
     if (ferror(in)) ok = 0;
+    if (ok && fchmod(fileno(out), mode & 0777) != 0) ok = 0;
     fclose(in);
-    fclose(out);
+    if (fclose(out) != 0) ok = 0;
     if (!ok) {
         remove(to);
         return -1;
@@ -489,18 +499,32 @@ static int copyDir(const char *from, const char *to) {
             closedir(d);
             return -1;
         }
-        if (stat(fromChild, &st) != 0) {
+        if (lstat(fromChild, &st) != 0) {
             closedir(d);
             return -1;
         }
-        if (S_ISDIR(st.st_mode)) {
+        if (S_ISLNK(st.st_mode)) {
+            char target[PATH_BUF];
+            ssize_t linkLen = readlink(fromChild, target, sizeof(target) - 1);
+            if (linkLen < 0 || (size_t)linkLen >= sizeof(target) - 1) {
+                closedir(d);
+                return -1;
+            }
+            target[linkLen] = '\0';
+            if (symlink(target, toChild) != 0) {
+                closedir(d);
+                return -1;
+            }
+        } else if (S_ISDIR(st.st_mode)) {
             if (copyDir(fromChild, toChild) != 0) {
                 closedir(d);
                 return -1;
             }
-        } else if (copyFile(fromChild, toChild) != 0) {
-            closedir(d);
-            return -1;
+        } else if (S_ISREG(st.st_mode)) {
+            if (copyFile(fromChild, toChild, st.st_mode) != 0) {
+                closedir(d);
+                return -1;
+            }
         }
     }
     closedir(d);
@@ -532,6 +556,16 @@ static int moveDir(const pchar *from, const pchar *to) {
     return -1;
 #else
     if (rename(from, to) == 0) return 0;
+    if (errno == EXDEV) {
+        logMsg("cross-device, copying \"" PFMT "\" -> \"" PFMT "\"", from, to);
+        if (copyDir(from, to) != 0) {
+            logMsg("copy failed");
+            deleteDir(to);
+            return -1;
+        }
+        deleteDir(from);
+        return 0;
+    }
     logMsg("rename \"" PFMT "\" -> \"" PFMT "\" failed: %s", from, to, strerror(errno));
     return -1;
 #endif
@@ -597,6 +631,16 @@ static void restructureBundle(const char *appDir) {
 }
 #endif
 
+#if defined(__APPLE__) || defined(__linux__)
+static int swapDirs(const char *a, const char *b) {
+#ifdef __APPLE__
+    return renamex_np(a, b, RENAME_SWAP);
+#else
+    return renameat2(AT_FDCWD, a, AT_FDCWD, b, RENAME_EXCHANGE);
+#endif
+}
+#endif
+
 static int install(const pchar *appDir, const pchar *newDir,
                    const pchar *backupDir, const pchar *exeDir) {
     if (!hasDir(newDir))
@@ -633,9 +677,9 @@ static int install(const pchar *appDir, const pchar *newDir,
 #endif
 
     int swapOk = 0;
-#ifdef __APPLE__
-    if (renamex_np(newDir, appDir, RENAME_SWAP) == 0) {
-        /* After SWAP, newDir holds the old tree. Leaving it there makes
+#if defined(__APPLE__) || defined(__linux__)
+    if (swapDirs(newDir, appDir) == 0) {
+        /* After swap, newDir holds the old tree. Leaving it there makes
            the next patch reuse it as New Dir. */
         if (rename(newDir, backupDir) != 0) {
             logMsg("rename old to backup failed (%s), deleting leftover", strerror(errno));
@@ -643,7 +687,7 @@ static int install(const pchar *appDir, const pchar *newDir,
         }
         swapOk = 1;
     } else {
-        logMsg("renamex_np failed (%s), falling back", strerror(errno));
+        logMsg("atomic swap failed (%s), falling back", strerror(errno));
     }
 #endif
     if (!swapOk) {
@@ -995,8 +1039,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+#ifdef _WIN32
     /* Windows cannot MoveFile a directory while updater.log is open inside it. */
     closeLog();
+#endif
     if (patchFile && !isStagedDir) {
 #ifdef _WIN32
         _wremove(patchFile);
@@ -1040,13 +1086,22 @@ int main(int argc, char *argv[]) {
     restructureBundle(appDir);
 #endif
 
+#ifndef _WIN32
+    /* Avoid passing a deleted Backup Dir as cwd when the old process started inside App Dir. */
+    if (chdir(appDir) != 0)
+        logMsg("chdir \"" PFMT "\" failed: %s", appDir, strerror(errno));
+#endif
+
     logMsg("starting " PFMT, appExe);
     if (startApp(appExe) != 0) {
         logMsg("start failed, rolling back");
         closeLog();
-        if (moveDir(appDir, newDir) == 0)
-            moveDir(backupDir, appDir);
-        deleteDir(newDir);
+        if (hasDir(backupDir) && moveDir(appDir, newDir) == 0) {
+            if (moveDir(backupDir, appDir) == 0)
+                deleteDir(newDir);
+            else
+                moveDir(newDir, appDir);
+        }
         return EXIT_LAUNCH_FAILED;
     }
 
