@@ -1,72 +1,88 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QHBoxLayout
-from qfluentwidgets import IndeterminateProgressRing, PrimaryPushButton, ProgressRing, isDarkTheme
+from PySide6.QtCore import QRectF, Qt, QVariantAnimation
+from PySide6.QtGui import QColor, QPainter, QPen
+from qfluentwidgets import PrimaryPushButton, isDarkTheme
 
 RING_SIZE = 16
 STOP_SIZE = 6
 QWIDGETSIZE_MAX = (1 << 24) - 1
 
 
-class InstallButton(PrimaryPushButton):
+class `InstallButton`(PrimaryPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.ring = ProgressRing(self, useAni=False)
-        self.spinner = IndeterminateProgressRing(self, start=False)
-        self._isInstalling = False
+        self._progress: int | None = None
+        self._spinAni = QVariantAnimation(self)
+        self._spinAni.setStartValue(0.0)
+        self._spinAni.setEndValue(2.0)
+        self._spinAni.setDuration(2000)
+        self._spinAni.setLoopCount(-1)
+        self._spinAni.valueChanged.connect(self.update)
 
-        self._initWidget()
-        self._initLayout()
-
-    def _initWidget(self) -> None:
-        for ring in (self.ring, self.spinner):
-            ring.setFixedSize(RING_SIZE, RING_SIZE)
-            ring.setStrokeWidth(2)
-            ring.setCustomBarColor(QColor(255, 255, 255), QColor(0, 0, 0))
-            ring.setCustomBackgroundColor(QColor(255, 255, 255, 90), QColor(0, 0, 0, 60))
-            ring.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-            ring.hide()
-
-    def _initLayout(self) -> None:
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.ring, 0, Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.spinner, 0, Qt.AlignmentFlag.AlignCenter)
-
-    def setInstalling(self, isInstalling: bool) -> None:
-        if isInstalling == self._isInstalling:
-            return
-        self._isInstalling = isInstalling
-        if isInstalling:
+    def setProgress(self, progress: int | None) -> None:
+        if progress is not None and self._progress is None:
             self.setFixedWidth(self.sizeHint().width())
             self.setText("")
-            return
-        self.setMinimumWidth(0)
-        self.setMaximumWidth(QWIDGETSIZE_MAX)
-        self.ring.hide()
-        self.spinner.stop()
-        self.spinner.hide()
+        elif progress is None and self._progress is not None:
+            self.setMinimumWidth(0)
+            self.setMaximumWidth(QWIDGETSIZE_MAX)
+        self._progress = progress
+        self._syncSpin()
+        self.update()
 
-    def setProgress(self, progress: int) -> None:
-        isDownloading = 0 < progress < 100
-        self.ring.setValue(progress)
-        self.ring.setVisible(isDownloading)
-        if isDownloading:
-            self.spinner.stop()
-            self.spinner.hide()
-        elif self.spinner.isHidden():
-            self.spinner.show()
-            self.spinner.start()
+    def showEvent(self, e) -> None:
+        super().showEvent(e)
+        self._syncSpin()
 
-    def paintEvent(self, e):
+    def hideEvent(self, e) -> None:
+        super().hideEvent(e)
+        self._syncSpin()
+
+    def _syncSpin(self) -> None:
+        isSpinning = self._spinAni.state() == QVariantAnimation.State.Running
+        shouldSpin = self._progress is not None and not (0 < self._progress < 100) and self.isVisible()
+        if shouldSpin and not isSpinning:
+            self._spinAni.start()
+        elif not shouldSpin and isSpinning:
+            self._spinAni.stop()
+
+    def paintEvent(self, e) -> None:
         super().paintEvent(e)
-        if not self._isInstalling:
+        if self._progress is None:
             return
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if not self.isEnabled():
+            painter.setOpacity(0.3628)
+        elif self.isPressed:
+            painter.setOpacity(0.786)
+
+        isDark = isDarkTheme()
+        fgColor = QColor(0, 0, 0) if isDark else QColor(255, 255, 255)
+        trackColor = QColor(0, 0, 0, 60) if isDark else QColor(255, 255, 255, 90)
+
+        cx, cy = self.width() / 2, self.height() / 2
+        diameter = RING_SIZE - 2
+        ringRect = QRectF(cx - diameter / 2, cy - diameter / 2, diameter, diameter)
+
+        pen = QPen(trackColor, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+        painter.drawArc(ringRect, 0, 360 * 16)
+
+        pen.setColor(fgColor)
+        painter.setPen(pen)
+        if 0 < self._progress < 100:
+            painter.drawArc(ringRect, 90 * 16, -round(self._progress / 100 * 360 * 16))
+        else:
+            t = self._spinAni.currentValue() or 0.0
+            if t <= 1.0:
+                startDeg, spanDeg = 450.0 * t, 180.0 * t
+            else:
+                startDeg, spanDeg = 450.0 + 630.0 * (t - 1.0), 180.0 * (2.0 - t)
+            painter.drawArc(ringRect, round((-startDeg + 180.0) % 360.0 * 16), -round(spanDeg * 16))
+
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(0, 0, 0) if isDarkTheme() else QColor(255, 255, 255))
-        rect = QRectF((self.width() - STOP_SIZE) / 2, (self.height() - STOP_SIZE) / 2, STOP_SIZE, STOP_SIZE)
-        painter.drawRoundedRect(rect, 1.5, 1.5)
+        painter.setBrush(fgColor)
+        painter.drawRoundedRect(QRectF(cx - STOP_SIZE / 2, cy - STOP_SIZE / 2, STOP_SIZE, STOP_SIZE), 1.5, 1.5)

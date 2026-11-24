@@ -985,14 +985,13 @@ class RuntimeCard(SettingCard):
                 self.setContent(self.tr("正在下载... {0}%").format(status.progress))
             else:
                 self.setContent(self.tr("正在安装..."))
-            self.installButton.setInstalling(True)
             self.installButton.setProgress(status.progress)
             self.installButton.setToolTip(self.tr("取消安装"))
             self.installButton.setVisible(self._runtime.canInstall)
             self.deleteButton.hide()
             return
 
-        self.installButton.setInstalling(False)
+        self.installButton.setProgress(None)
         self.installButton.setToolTip("")
 
         if status.isBusy:
