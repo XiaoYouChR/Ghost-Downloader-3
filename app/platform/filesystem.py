@@ -64,6 +64,15 @@ def splitStemExt(name: str) -> tuple[str, str]:
     return name[:dot], name[dot:]
 
 
+def toNumberedFilename(name: str, index: int, maxLength: int = 200) -> str:
+    """编号落在末尾，先拼后截会把编号截掉，名字便不再变化；所以先截短主名给编号腾位置。"""
+    stem, ext = splitStemExt(name)
+    counter = f"({index})"
+    if 0 < maxLength:
+        stem = stem[:max(0, maxLength - len(counter) - len(ext))]
+    return toSafeFilename(f"{stem}{counter}{ext}", maxLength=maxLength)
+
+
 def toPosixPath(path) -> str:
     return str(Path(path)).replace("\\", "/")
 
