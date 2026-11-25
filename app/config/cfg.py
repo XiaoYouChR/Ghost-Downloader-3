@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from enum import Enum
+from pathlib import Path
 from re import compile
 from urllib.parse import urlsplit
 from urllib.request import getproxies
@@ -238,6 +239,10 @@ class Config(QConfig):
     recentFolders = ConfigItem(
         "GeneralDownload", "RecentFolders", [], StringListValidator(), PathSerializer(APP_DATA_DIR),
     )
+    shouldUseLastFolder = ConfigItem("GeneralDownload", "UseLastFolder", False, BoolValidator())
+    lastOutputFolder = ConfigItem(
+        "GeneralDownload", "LastOutputFolder", "", serializer=PathSerializer(APP_DATA_DIR),
+    )
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
     nameConflict = OptionsConfigItem(
         "GeneralDownload", "NameConflict", "keepBoth", OptionsValidator(["keepBoth", "overwrite", "ask"])
@@ -351,8 +356,24 @@ class Config(QConfig):
         IdentityPresetListValidator(), JsonConfigSerializer(list, list),
     )
 
+    def set(self, item, value, save=True, copy=True):
+        isDefaultChanged = item is self.downloadFolder and item.value != value
+        super().set(item, value, save=save, copy=copy)
+        if isDefaultChanged:
+            super().set(self.lastOutputFolder, "", save=save)
+
 
 cfg = Config()
+
+
+def currentOutputFolder() -> Path:
+    if cfg.shouldUseLastFolder.value and cfg.lastOutputFolder.value:
+        return Path(cfg.lastOutputFolder.value)
+    return Path(cfg.downloadFolder.value)
+
+
+def saveLastOutputFolder(folder: Path) -> None:
+    cfg.set(cfg.lastOutputFolder, str(folder))
 
 
 def currentHeadersPresetIndex() -> int:

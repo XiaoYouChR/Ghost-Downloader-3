@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, currentOutputFolder
 from app.config.constants import VERSION
 from app.models.task import TaskError, TaskOptions, toTaskError
 from app.platform.filesystem import toSafeFilename
@@ -244,7 +244,7 @@ class Aria2RpcService:
             case "aria2.getVersion":
                 return {"version": VERSION, "enabledFeatures": ["HTTPS"]}
             case "aria2.getGlobalOption":
-                return {"dir": cfg.downloadFolder.value}
+                return {"dir": str(currentOutputFolder())}
             case "aria2.addUri":
                 return self._addUri(params)
             case _:
@@ -262,7 +262,7 @@ class Aria2RpcService:
         if not isinstance(options, dict):
             raise RpcError("The parameter at 1 has wrong type.")
 
-        outputFolder, name = parseTarget(options, Path(cfg.downloadFolder.value))
+        outputFolder, name = parseTarget(options, currentOutputFolder())
         taskOptions = TaskOptions(
             url=uris[0],
             headers=toHeaders(options),

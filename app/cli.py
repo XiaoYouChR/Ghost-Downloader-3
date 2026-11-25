@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from app.config.cfg import cfg, currentHeaders
+from app.config.cfg import cfg, currentHeaders, currentOutputFolder
 from app.config.constants import VERSION
 from app.models.task import Task, TaskError, TaskOptions, TaskStatus, toTaskError
 from app.platform.instance import Invocation, Reply
@@ -214,7 +214,7 @@ class Cli:
         except ValueError:
             reply(toError("usage", "--select takes comma-separated file indexes, e.g. 0,3,5.", 2))
             return
-        folder = Path(cwd, args.folder).resolve() if args.folder else Path(cfg.downloadFolder.value)
+        folder = Path(cwd, args.folder).resolve() if args.folder else currentOutputFolder()
         choice = NameConflictChoice.OVERWRITE if args.conflict == "overwrite" else NameConflictChoice.KEEP_BOTH
         items: list[dict | None] = [None] * len(args.urls)
 

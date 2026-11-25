@@ -13,7 +13,7 @@ from typing import Any, TYPE_CHECKING
 
 from loguru import logger
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, currentOutputFolder
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.platform.filesystem import isExisting
 from app.services.websocket_stream import WebSocketStream, readHead
@@ -117,7 +117,7 @@ def toResourceTaskOptions(resource: dict) -> ResourceTaskOptions:
 
 def toTaskOptions(source: TaskSource, payload: dict) -> TaskOptions:
     rawPath = payload.get("path")
-    outputFolder = Path(rawPath) if rawPath else Path(cfg.downloadFolder.value)
+    outputFolder = Path(rawPath) if rawPath else currentOutputFolder()
 
     match source:
         case TaskSource.RESOURCE_MERGE:

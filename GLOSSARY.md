@@ -32,7 +32,7 @@ Task 加入时为它将产出的每个最终路径（成品和 Side File）创�
 _Avoid_: 占位符文件、lock file
 
 **Default Folder**:
-新 Task 的 Output Folder 初始值，由用户在设置中指定。
+用户在设置中指定的基准下载目录，用于 Category 的 `{default}` 模板，并在未开启 "使用上次使用的文件夹" 或尚无记录时作为新 Task 的初始 Output Folder；开启该设置时优先使用上次通过界面成功确认或修改的 Output Folder，修改 Default Folder 后回到新的 Default Folder。
 文件夹不存在（如移动硬盘未接入）时保持原样，应用不替用户改动。
 _Avoid_: 下载路径、默认目录
 

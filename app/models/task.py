@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from app.config.cfg import cfg, currentHeaders
+from app.config.cfg import cfg, currentHeaders, currentOutputFolder
 from app.platform.filesystem import deletePath, splitStemExt, toSafeFilename
 
 # urllib 遇到方括号会抛 ValueError（如 ed2k 文件名），链接文本一律经 toScheme / toHost 取协议头和 host
@@ -93,7 +93,7 @@ class RemoteFile:
 @dataclass(frozen=True)
 class TaskOptions:
     url: str
-    outputFolder: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
+    outputFolder: Path = field(default_factory=currentOutputFolder)
     headers: dict[str, str] = field(default_factory=currentHeaders)
     clientProfile: str = ""
     userAgent: str = ""
@@ -244,7 +244,7 @@ class Task:
     steps: list[TaskStep] = field(default_factory=list)
     createdAt: int = field(default_factory=lambda: int(time()))
     completedAt: int = 0
-    outputFolder: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
+    outputFolder: Path = field(default_factory=currentOutputFolder)
     fileSize: int = 0
     files: list[TaskFile] | None = None
     category: str | None = None

@@ -12,7 +12,7 @@ from qfluentwidgets import (
     isDarkTheme,
 )
 
-from app.config.cfg import cfg, currentHeaders
+from app.config.cfg import cfg, currentHeaders, currentOutputFolder
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QPaintEvent
@@ -98,7 +98,7 @@ class OutputFolderCard(OptionCard):
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("选择下载路径"), self)
         self.folderPicker = FolderPicker(lambda: cfg.downloadFolder.value, self.tr("默认"), self)
-        self.folderPicker.setPath(str(initial) if initial else cfg.downloadFolder.value)
+        self.folderPicker.setPath(str(initial or currentOutputFolder()))
 
         self._initLayout()
 
@@ -115,7 +115,7 @@ class OutputFolderCard(OptionCard):
         return {"outputFolder": Path(self.folderPicker.path())}
 
     def reset(self) -> None:
-        self.folderPicker.setPath(cfg.downloadFolder.value)
+        self.folderPicker.setPath(str(currentOutputFolder()))
 
 
 class SubworkerCountCard(OptionCard):

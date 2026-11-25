@@ -8,6 +8,7 @@ from typing import Any, TYPE_CHECKING
 from app.signal import Signal
 from loguru import logger
 
+from app.config.cfg import saveLastOutputFolder
 from app.models.task import TaskError, TaskOptions, toTaskError
 
 if TYPE_CHECKING:
@@ -183,11 +184,8 @@ class TaskDraft:
         failures: list[tuple[Task, TaskError]] = []
         for item in self._items:
             if item.task is not None:
-                item.task.setOptions(self._buildOptions(item))
-                try:
-                    self._add(item.task, autoStart)
-                except TaskError as e:
-                    failures.append((item.task, e))
+                if error := self._addTask(item.task, self._buildOptions(item), autoStart):
+                    failures.append((item.task, error))
             elif item.parseId:
                 item.confirmedOptions = self._buildOptions(item)
                 item.confirmedAutoStart = autoStart
@@ -221,14 +219,22 @@ class TaskDraft:
     def _isParsing(self) -> bool:
         return any(item.parseId for item in self._items)
 
+    def _addTask(self, task: Task, options: dict[str, Any], autoStart: bool) -> TaskError | None:
+        task.setOptions(options)
+        folder = task.outputFolder
+        try:
+            self._add(task, autoStart)
+        except TaskError as e:
+            return e
+        saveLastOutputFolder(folder)
+        return None
+
     def _onParsed(self, task: Task, item: DraftItem) -> None:
         if item.confirmedOptions is not None:
-            task.setOptions(item.confirmedOptions)
+            options = item.confirmedOptions
             item.confirmedOptions = None
-            try:
-                self._add(task, item.confirmedAutoStart)
-            except TaskError as e:
-                self.addFailed.emit([task], e)
+            if error := self._addTask(task, options, item.confirmedAutoStart):
+                self.addFailed.emit([task], error)
             return
 
         if not item.parseId:

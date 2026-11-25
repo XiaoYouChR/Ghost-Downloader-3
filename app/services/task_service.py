@@ -12,7 +12,7 @@ from shutil import move
 
 from loguru import logger
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, saveLastOutputFolder
 from app.config.paths import APP_DATA_DIR
 from app.platform.filesystem import deletePath, isExisting, splitStemExt
 from app.checksum import toChecksum
@@ -451,11 +451,15 @@ class TaskService:
             task.relink(newTask)
         self.cancelChecksum(task)
         def onStopped():
+            previousFolder = task.outputFolder
             task.setOptions(options)
             try:
                 self._store.updatePlaceholders(task)
             except TaskError as e:
                 self.editFailed.emit(task, e)
+            else:
+                if task.outputFolder != previousFolder:
+                    saveLastOutputFolder(task.outputFolder)
             self._flushSoon()
             self._schedule(task)
         self._cancelWork(task, finished=onStopped)
