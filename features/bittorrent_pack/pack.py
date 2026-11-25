@@ -47,7 +47,10 @@ class TorrentParser(TaskParser):
 
     def match(self, options: TaskOptions) -> bool:
         if options.isProbed:
-            return options.file.matchType({".torrent"}, {"application/x-bittorrent"})
+            return (
+                bittorrentConfig.shouldParseOnlineTorrent.value
+                and options.file.matchType({".torrent"}, {"application/x-bittorrent"})
+            )
         url = toMagnetUrl(options.url.strip())
         if urlparse(url).scheme.lower() == "magnet":
             return True

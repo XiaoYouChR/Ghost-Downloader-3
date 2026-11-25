@@ -5,7 +5,7 @@ import pytest
 from aiohttp import web
 
 from app.models.pack import PackServices
-from app.models.task import TaskError, TaskOptions
+from app.models.task import ResourceTaskOptions, TaskError, TaskOptions
 from bittorrent_pack.config import bittorrentConfig
 from bittorrent_pack.pack import BitTorrentPack
 from bittorrent_pack.session import btSession
@@ -36,10 +36,12 @@ def buildTorrent(folder) -> bytes:
     return lt.bencode(torrent.generate())
 
 
-def buildNamedHandler(content: bytes, name: str):
+def buildNamedHandler(content: bytes, name: str, requests: list[web.Request] | None = None):
     rangeHandler = buildRangeHandler(content)
 
     async def handler(request: web.Request) -> web.Response:
+        if requests is not None:
+            requests.append(request)
         response = await rangeHandler(request)
         response.headers["Content-Disposition"] = f'attachment; filename="{name}"'
         return response
@@ -54,6 +56,49 @@ async def test_parse_online_torrent_adds_its_files(features, startServer, tmp_pa
     assert isinstance(task, BTTask)
     assert task.name == "movie.mkv"
     assert task.url == f"{url}?id=1"
+
+
+async def test_parse_online_torrent_downloads_file_when_disabled(features, startServer, monkeypatch, tmp_path):
+    monkeypatch.setattr(bittorrentConfig.shouldParseOnlineTorrent, "value", False)
+    requests: list[web.Request] = []
+    url = await startServer(buildNamedHandler(buildTorrent(tmp_path), "movie.torrent", requests))
+
+    task = await features.parse(TaskOptions(url=f"{url}?id=1"))
+
+    assert isinstance(task, HttpTask)
+    assert task.name == "movie.torrent"
+    assert task.url == f"{url}?id=1"
+    assert all("range" in req.headers for req in requests)
+
+
+async def test_parse_resource_torrent_downloads_file_without_request_when_disabled(
+    features, startServer, monkeypatch, tmp_path,
+):
+    monkeypatch.setattr(bittorrentConfig.shouldParseOnlineTorrent, "value", False)
+    torrentBytes = buildTorrent(tmp_path)
+    requests: list[web.Request] = []
+    url = await startServer(buildNamedHandler(torrentBytes, "movie.torrent", requests))
+
+    task = await features.parse(
+        ResourceTaskOptions(url=url, name="movie.torrent", size=len(torrentBytes), canUseRangeRequests=False)
+    )
+
+    assert isinstance(task, HttpTask)
+    assert task.name == "movie.torrent"
+    assert requests == []
+
+
+async def test_parse_local_torrent_still_creates_bt_task_when_online_parse_disabled(
+    features, monkeypatch, tmp_path,
+):
+    monkeypatch.setattr(bittorrentConfig.shouldParseOnlineTorrent, "value", False)
+    torrentFile = tmp_path / "movie.torrent"
+    torrentFile.write_bytes(buildTorrent(tmp_path))
+
+    task = await features.parse(TaskOptions(url=torrentFile.as_uri()))
+
+    assert isinstance(task, BTTask)
+    assert task.name == "movie.mkv"
 
 
 async def test_parse_invalid_online_torrent_adds_plain_file(features, startServer):

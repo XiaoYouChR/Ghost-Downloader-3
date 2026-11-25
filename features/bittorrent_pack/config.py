@@ -35,6 +35,7 @@ class BitTorrentConfig(PackConfig):
     )
     enableWebTrackers = ConfigItem("BitTorrent", "EnableWebTrackers", True, BoolValidator())
     autoRefreshWebTrackers = ConfigItem("BitTorrent", "AutoRefreshWebTrackers", True, BoolValidator())
+    shouldParseOnlineTorrent = ConfigItem("BitTorrent", "ParseOnlineTorrent", True, BoolValidator())
     saveMagnetFile = ConfigItem("BitTorrent", "SaveMagnetTorrentFile", False, BoolValidator())
     seedingRatioLimit = RangeConfigItem("BitTorrent", "SeedRatioLimitPercent", 0, RangeValidator(0, 10000))
     seedingTimeLimit = RangeConfigItem("BitTorrent", "SeedTimeLimitMinutes", 0, RangeValidator(0, 43200))
@@ -105,6 +106,9 @@ class BitTorrentConfig(PackConfig):
             ComboBoxSettingCard(self.storageMode, FluentIcon.SAVE, self.tr("文件分配模式"),
                 self.tr("稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足"),
                 texts=[self.tr("稀疏分配"), self.tr("预分配")], parent=btGroup),
+            SwitchSettingCard(FluentIcon.LINK, self.tr("解析在线种子链接"),
+                self.tr("HTTP 链接指向 .torrent 文件时解析为 BT 任务，关闭时仅下载 .torrent 文件"),
+                self.shouldParseOnlineTorrent, btGroup),
             SwitchSettingCard(FluentIcon.SAVE, self.tr("保存 Magnet 种子文件"),
                 self.tr("下载 magnet 链接或在线种子时额外保存 .torrent 文件"), self.saveMagnetFile, btGroup),
             SwitchSettingCard(FluentIcon.LIBRARY, self.tr("顺序下载"),
