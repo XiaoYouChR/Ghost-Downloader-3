@@ -267,6 +267,7 @@ class Aria2RpcService:
             url=uris[0],
             headers=toHeaders(options),
             outputFolder=outputFolder,
+            shouldSuggestFolder=not options.get("dir") and outputFolder == currentOutputFolder(),
             clientProfile="" if cfg.aria2RpcEmulateFingerprint.value else "raw",
         )
         self._coroutineRunner.submit(

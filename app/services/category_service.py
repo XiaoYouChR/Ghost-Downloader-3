@@ -184,10 +184,19 @@ class CategoryService:
         return category.folder.replace("{default}", cfg.downloadFolder.value)
 
     def outputFolderOf(self, task: Task) -> tuple[str | None, Path]:
-        if not cfg.isCategoryEnabled.value:
-            return task.category, task.outputFolder
-        categoryId = self.categoryOf(task)
         folder = task.outputFolder
+        categoryId = self.categoryOf(task) if cfg.isCategoryEnabled.value else task.category
+        if cfg.shouldSuggestFolder.value and task.shouldSuggestFolder and task.category is None:
+            from app.services.folder_matching import matchFolder
+            suggested = matchFolder(task.name, task.url, task.suggestionFolders)
+            if suggested is not None:
+                try:
+                    if suggested.is_dir():
+                        return categoryId, suggested
+                except OSError:
+                    pass
+        if not cfg.isCategoryEnabled.value:
+            return categoryId, folder
         if categoryId and folder == Path(cfg.downloadFolder.value):
             folder = Path(self.folderOf(categoryId) or folder)
         return categoryId, folder

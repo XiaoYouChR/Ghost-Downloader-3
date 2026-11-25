@@ -241,7 +241,8 @@ class Cli:
             collect(index, {"error": {"code": "parseFailed", "message": str(toTaskError(error))}})
 
         for index, url in enumerate(args.urls):
-            options = TaskOptions(url=toUrl(url, cwd), headers=toHeaders(args.header), outputFolder=folder)
+            options = TaskOptions(url=toUrl(url, cwd), headers=toHeaders(args.header), outputFolder=folder,
+                                  shouldSuggestFolder=not bool(args.folder))
             self._submit(self._parse(options), onParsed, onParseFailed, index)
 
     def _tasks(self, args: Namespace, cwd: str, reply: Callable[[Reply], None]) -> None:

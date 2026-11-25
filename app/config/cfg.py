@@ -239,6 +239,7 @@ class Config(QConfig):
     recentFolders = ConfigItem(
         "GeneralDownload", "RecentFolders", [], StringListValidator(), PathSerializer(APP_DATA_DIR),
     )
+    shouldSuggestFolder = ConfigItem("GeneralDownload", "SuggestFolder", False, BoolValidator())
     shouldUseLastFolder = ConfigItem("GeneralDownload", "UseLastFolder", False, BoolValidator())
     lastOutputFolder = ConfigItem(
         "GeneralDownload", "LastOutputFolder", "", serializer=PathSerializer(APP_DATA_DIR),

@@ -100,11 +100,15 @@ class TaskOptions:
     sourceUserAgent: str = ""
     subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
     file: RemoteFile | None = None
+    # Entry points opt in only when no output folder was explicitly supplied.
+    shouldSuggestFolder: bool = False
 
     @classmethod
     def fromOptions(cls, options: dict) -> TaskOptions:
         from app.models.serialization import filterFields
-        return cls(**filterFields(cls, options))
+        values = filterFields(cls, options)
+        values.setdefault("shouldSuggestFolder", "outputFolder" not in options)
+        return cls(**values)
 
     @property
     def isProbed(self) -> bool:
@@ -251,6 +255,9 @@ class Task:
     shouldSeed: bool = False
     checksums: dict[str, str] = field(default_factory=dict)
     isSeeding: bool = field(default=False, init=False, repr=False)
+    shouldSuggestFolder: bool = field(default=False, init=False, repr=False)
+    # Restored tasks must never acquire a new destination from their old names.
+    suggestionFolders: tuple[Path, ...] = field(default=(), init=False, repr=False)
 
     @property
     def outputPath(self) -> str:
@@ -330,7 +337,11 @@ class Task:
     def setOptions(self, options: dict) -> None:
         newFolder = options.get("outputFolder")
         if isinstance(newFolder, (str, Path)):
-            self.outputFolder = Path(newFolder)
+            isAutomatic = options.get("shouldSuggestFolder", False)
+            if not isAutomatic or self.shouldSuggestFolder:
+                self.outputFolder = Path(newFolder)
+            if not isAutomatic:
+                self.shouldSuggestFolder = False
         if "category" in options:
             self.category = options["category"]
         for step in self.steps:

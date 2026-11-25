@@ -390,3 +390,23 @@ async def test_install_updates_outdated_dev_extension(browser):
     assert reload == {"type": "reload"}
     assert (APP_DATA_DIR / "browser_extension" / "manifest.json").exists()
     assert ("extensionUpdated", LATEST_EXTENSION_VERSION) in browser.events
+
+
+class TestFolderSuggestion:
+    @pytest.fixture(params=["desktop", "android"])
+    def engine(self, request, startEngine):
+        return startEngine(request.param)
+
+    @pytest.mark.parametrize("explicit", [False, True])
+    async def test_add_keeps_explicit_folder(self, browser, tmp_path, downloadFolder, explicit):
+        folder = tmp_path / "artist1"
+        folder.mkdir()
+        cfg.set(cfg.shouldSuggestFolder, True)
+        cfg.set(cfg.recentFolders, [str(folder)])
+        payload = {"url": "http://test/artist1.cbz"}
+        if explicit:
+            payload["path"] = str(downloadFolder)
+        result = await createTask(browser, source="download", payload=payload)
+
+        assert result["status"] == "created"
+        assert browser.engine.taskService.tasks[-1].outputFolder == (downloadFolder if explicit else folder)

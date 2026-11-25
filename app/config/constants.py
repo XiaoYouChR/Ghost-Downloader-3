@@ -4,6 +4,7 @@ VERSION = "4.6.1"
 BUILD_VERSION = VERSION.split("-")[0]
 DESKTOP_ID = "com.xychr.ghostdownloader"
 DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")
+RECENT_FOLDER_LIMIT = 20
 LATEST_EXTENSION_VERSION = "2.3.4"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 DONATE_URL = "https://gd.xychr.com/docs/donate/"
