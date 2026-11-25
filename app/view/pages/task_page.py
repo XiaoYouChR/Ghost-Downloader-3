@@ -82,7 +82,7 @@ class TaskCommandBarView(CommandBarView):
         self.addAction(self.selectMissingAction)
         self.addAction(self.invertSelectAction)
         self.addAction(self.cancelAction)
-        self.resizeToSuitableWidth()
+        self.setMenuDropDown(False)
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(35)
@@ -406,6 +406,7 @@ class TaskPage(QWidget):
                 card.setChecked(False)
         self.commandView.setVisible(enter)
         if enter:
+            self._updateCommandBarGeometry()
             self.commandView.raise_()
 
     def _onCardSelectionChanged(self, taskId: str, checked: bool, extend: bool) -> None:
@@ -844,13 +845,18 @@ class TaskPage(QWidget):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._refreshViewport()
-        self.commandView.move(
-            (self.width() - self.commandView.width()) // 2,
-            self.height() - self.commandView.sizeHint().height() - 20,
-        )
+        self._updateCommandBarGeometry()
         self.emptyStatusWidget.move(
             (self.width() - self.emptyStatusWidget.width()) // 2,
             (self.height() - self.emptyStatusWidget.height()) // 2,
+        )
+
+    def _updateCommandBarGeometry(self) -> None:
+        width = min(self.commandView.suitableWidth(), max(0, self.width() - 2 * PAGE_MARGIN))
+        self.commandView.setFixedWidth(width)
+        self.commandView.move(
+            (self.width() - width) // 2,
+            self.height() - self.commandView.sizeHint().height() - 20,
         )
 
     def showEvent(self, event) -> None:
