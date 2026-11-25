@@ -1044,12 +1044,37 @@ jobs:
           mv "$APK" "$DEST"
           echo "APK_FILE=$DEST" >> "$GITHUB_ENV"
 
+      - name: Generate patch
+        if: ${{ needs.prepare.outputs.patch_base != '' && env.HAS_KEYSTORE == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BASE_VER="${{ needs.prepare.outputs.patch_base }}"
+          BASE_APK="Ghost-Downloader-v${BASE_VER}-Android-arm64-v8a.apk"
+          if ! gh release view "v$BASE_VER" --json assets --jq '.assets[].name' | grep -Fxq "$BASE_APK"; then
+            echo "v$BASE_VER has no Android-arm64 APK, skipping patch"
+            exit 0
+          fi
+
+          curl -fL "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_linux64.zip" -o hdiffpatch.zip
+          unzip -q hdiffpatch.zip -d hdiffpatch
+          chmod +x hdiffpatch/linux64/hdiffz
+
+          mkdir -p prev
+          gh release download "v$BASE_VER" -p "$BASE_APK" -D prev/
+
+          PATCH_FILE="patch-Android-arm64-${BASE_VER}-to-${{ needs.prepare.outputs.version }}.hdiff"
+          hdiffpatch/linux64/hdiffz -f -c-lzma2 "prev/$BASE_APK" "${{ env.APK_FILE }}" "$PATCH_FILE"
+          echo "PATCH_FILE=$PATCH_FILE" >> "$GITHUB_ENV"
+
       - name: Upload to release
         if: ${{ github.event.inputs.create_release == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "v${{ needs.prepare.outputs.version }}" "${{ env.APK_FILE }}" --clobber
+          FILES=("${{ env.APK_FILE }}")
+          if [ -n "$PATCH_FILE" ] && [ -f "$PATCH_FILE" ]; then FILES+=("$PATCH_FILE"); fi
+          gh release upload "v${{ needs.prepare.outputs.version }}" "${FILES[@]}" --clobber
 
       - name: Upload APK artifact
         if: ${{ github.event.inputs.create_release == 'false' }}
@@ -1061,7 +1086,7 @@ jobs:
 
   finalize:
     needs: [prepare, build-windows, build-macos, build-ubuntu, build-android]
-    if: ${{ always() && github.event.inputs.create_release == 'true' && needs.prepare.result == 'success' && !contains(fromJSON('["failure","cancelled"]'), needs.build-windows.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-macos.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-ubuntu.result) && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-ubuntu.result == 'success') }}
+    if: ${{ always() && github.event.inputs.create_release == 'true' && needs.prepare.result == 'success' && !contains(fromJSON('["failure","cancelled"]'), needs.build-windows.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-macos.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-ubuntu.result) && !contains(fromJSON('["failure","cancelled"]'), needs.build-android.result) && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-ubuntu.result == 'success' || needs.build-android.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -1100,16 +1125,19 @@ jobs:
                       h.update(chunk)
               return h.hexdigest()
 
-          platforms = [
-              "Windows-x86_64", "Windows-arm64",
-              "macOS-arm64", "macOS-x86_64",
-              "Linux-x86_64", "Linux-arm64",
-          ]
-          full_ext = {"Windows": ".zip", "macOS": ".dmg", "Linux": ".tar.xz"}
+          full_suffix = {
+              "Windows-x86_64": "Windows-x86_64.zip",
+              "Windows-arm64": "Windows-arm64.zip",
+              "macOS-arm64": "macOS-arm64.dmg",
+              "macOS-x86_64": "macOS-x86_64.dmg",
+              "Linux-x86_64": "Linux-x86_64.tar.xz",
+              "Linux-arm64": "Linux-arm64.tar.xz",
+              "Android-arm64": "Android-arm64-v8a.apk",
+          }
           patches = {}
           full = {}
 
-          for p in platforms:
+          for p, suffix_name in full_suffix.items():
               for f in os.listdir(assets_dir):
                   if f.startswith(f"patch-{p}-") and f.endswith(".hdiff"):
                       path = os.path.join(assets_dir, f)
@@ -1118,8 +1146,7 @@ jobs:
                       patches[p] = {"from": from_ver, "file": f, "sha256": sha256of(path), "size": os.path.getsize(path)}
                       break
 
-              ext = full_ext[p.split("-", 1)[0]]
-              full_name = f"Ghost-Downloader-v{version}-{p}{ext}"
+              full_name = f"Ghost-Downloader-v{version}-{suffix_name}"
               full_path = os.path.join(assets_dir, full_name)
               if os.path.isfile(full_path):
                   full[p] = {"file": full_name, "sha256": sha256of(full_path), "size": os.path.getsize(full_path)}

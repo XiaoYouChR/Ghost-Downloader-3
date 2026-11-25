@@ -136,18 +136,29 @@ class UpdateService:
     def download(self, targetId: str) -> None:
         self._coroutineRunner.submit(self._download(targetId))
 
-    def apply(self) -> None:
+    def apply(self) -> bool:
         for info in self._infos.values():
             if info.state == UpdateState.READY and info.targetId != "app":
                 self._applyPack(info.targetId)
         appInfo = self._infos.get("app")
-        if appInfo is not None and appInfo.state == UpdateState.READY:
-            self._startUpdater()
+        if appInfo is None or appInfo.state != UpdateState.READY:
+            return False
+        if IS_ANDROID:
+            full = self._versionsData.get("app", {}).get("full", {}).get(f"Android-{MACHINE_ARCH}")
+            apkPath = STAGING_DIR / full["file"] if full and full.get("file") else None
+            if apkPath is None or not apkPath.is_file():
+                return False
+            from app.platform.android import installApk
+            return installApk(apkPath)
+        return self._startUpdater()
 
     # ── Private ──
 
     async def _check(self) -> None:
-        self._emit("app", UpdateState.CHECKING, label=f"Ghost Downloader {VERSION}")
+        appInfo = self._infos.get("app")
+        if appInfo is not None and appInfo.state in (UpdateState.CHECKING, UpdateState.DOWNLOADING):
+            return
+        self._emit("app", UpdateState.CHECKING, label=f"Ghost Downloader {VERSION}", error=None)
 
         data = await self._fetchVersions()
         if data is None:
@@ -159,10 +170,25 @@ class UpdateService:
         appData = data.get("app", {})
         latestVersion = appData.get("version", "")
         if latestVersion and isNewer(VERSION, latestVersion):
+            full = appData.get("full", {}).get(f"Android-{MACHINE_ARCH}") if IS_ANDROID else None
+            if IS_ANDROID and not full:
+                self._emit("app", UpdateState.IDLE)
+                return
+            apkPath = STAGING_DIR / full["file"] if full and full.get("file") and full.get("sha256") else None
+            if apkPath and apkPath.is_file():
+                if await toChecksum(apkPath, "sha256", lambda _: None) == parseChecksum(full["sha256"]):
+                    self._emit("app", UpdateState.READY,
+                               label=f"Ghost Downloader {latestVersion}",
+                               latestVersion=latestVersion, progress=100)
+                    return
+                apkPath.unlink(missing_ok=True)
             self._emit("app", UpdateState.AVAILABLE,
-                        label=f"Ghost Downloader {latestVersion}",
-                        latestVersion=latestVersion)
+                       label=f"Ghost Downloader {latestVersion}",
+                       latestVersion=latestVersion)
         else:
+            if IS_ANDROID:
+                for path in (*STAGING_DIR.glob("*.apk"), STAGING_DIR / "patch.hdiff"):
+                    path.unlink(missing_ok=True)
             self._emit("app", UpdateState.IDLE)
 
         if IS_ANDROID:
@@ -193,15 +219,15 @@ class UpdateService:
         try:
             data, _ = await fetchJson(APP_REPO, "main", "versions.json")
             return data
-        except RuntimeError:
+        except (TaskError, RuntimeError):
             return None
 
     async def _download(self, targetId: str) -> None:
         info = self._infos.get(targetId)
-        if info is None or info.state != UpdateState.AVAILABLE:
+        if info is None or info.state not in (UpdateState.AVAILABLE, UpdateState.FAILED):
             return
 
-        self._emit(targetId, UpdateState.DOWNLOADING)
+        self._emit(targetId, UpdateState.DOWNLOADING, progress=0, error=None)
         STAGING_DIR.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -217,27 +243,56 @@ class UpdateService:
         appData = self._versionsData.get("app", {})
         version = appData.get("version", "")
         tag = f"v{version}"
-        platformKey = f"{OS_MAP[sys.platform]}-{MACHINE_ARCH}"
+        platformKey = f"{'Android' if IS_ANDROID else OS_MAP[sys.platform]}-{MACHINE_ARCH}"
 
+        full = appData.get("full", {}).get(platformKey)
         patches = appData.get("patches", {})
         patch = patches.get(platformKey)
 
+        if IS_ANDROID:
+            for path in (*STAGING_DIR.glob("*.apk"), STAGING_DIR / "patch.hdiff"):
+                path.unlink(missing_ok=True)
+
         if patch and patch.get("from") == VERSION and BUILD_ARCH == MACHINE_ARCH:
-            sha = patch.get("sha256", "")
-            outputPath = STAGING_DIR / "patch.hdiff"
+            patchPath = STAGING_DIR / "patch.hdiff"
+            patchSha = patch.get("sha256", "")
+            if not IS_ANDROID:
+                await fetchReleaseAsset(APP_REPO, tag, patch["file"], patchPath,
+                                        onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
-            await fetchReleaseAsset(APP_REPO, tag, patch["file"], outputPath,
-                                    onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
+                if not patchSha or await toChecksum(patchPath, "sha256", lambda _: None) != parseChecksum(patchSha):
+                    patchPath.unlink(missing_ok=True)
+                    self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
+                    return
 
-            if not sha or await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(sha):
-                outputPath.unlink(missing_ok=True)
-                self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
+                self._emit("app", UpdateState.READY)
                 return
 
-            self._emit("app", UpdateState.READY)
-            return
+            if full:
+                apkPath = STAGING_DIR / full["file"]
+                try:
+                    from app.platform.android import patchApk
 
-        full = appData.get("full", {}).get(platformKey)
+                    await fetchReleaseAsset(APP_REPO, tag, patch["file"], patchPath,
+                                            onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
+                    if not patchSha or await toChecksum(patchPath, "sha256", lambda _: None) != parseChecksum(patchSha):
+                        raise TaskError("校验失败")
+
+                    await asyncio.to_thread(patchApk, patchPath, apkPath)
+                    patchPath.unlink(missing_ok=True)
+
+                    fullSha = full.get("sha256", "")
+                    if not fullSha or await toChecksum(apkPath, "sha256", lambda _: None) != parseChecksum(fullSha):
+                        raise TaskError("校验失败")
+
+                    self._emit("app", UpdateState.READY, progress=100)
+                    return
+                except Exception as e:
+                    logger.warning("Android 补丁更新失败，回退全量下载: {}", repr(e))
+                    patchPath.unlink(missing_ok=True)
+                    apkPath.unlink(missing_ok=True)
+                    self._emit("app", UpdateState.DOWNLOADING, progress=0)
+
         if not full:
             self._emit("app", UpdateState.FAILED, error=TaskError("当前平台无可用更新"))
             return
@@ -251,6 +306,10 @@ class UpdateService:
         if not sha or await toChecksum(archivePath, "sha256", lambda _: None) != parseChecksum(sha):
             archivePath.unlink(missing_ok=True)
             self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
+            return
+
+        if IS_ANDROID:
+            self._emit("app", UpdateState.READY, progress=100)
             return
 
         newDir = STAGING_DIR / "app_new"
@@ -294,10 +353,10 @@ class UpdateService:
         zipPath.unlink()
         logger.info("Pack 更新已暂存: {}", packId)
 
-    def _startUpdater(self) -> None:
+    def _startUpdater(self) -> bool:
         if not UPDATER_PATH.is_file():
             logger.error("updater not found: {}", UPDATER_PATH)
-            return
+            return False
 
         patchPath = STAGING_DIR / "patch.hdiff"
         stagingNewDir = STAGING_DIR / "app_new"
@@ -310,7 +369,7 @@ class UpdateService:
             args.append(str(stagingNewDir))
         else:
             logger.error("no patch or newDir found for update")
-            return
+            return False
 
         kwargs = {}
         if sys.platform == "win32":
@@ -320,6 +379,7 @@ class UpdateService:
 
         subprocess.Popen(args, **kwargs)
         logger.info("updater started")
+        return True
 
     def _emit(self, targetId: str, state: UpdateState, **kwargs) -> None:
         current = self._infos.get(targetId)

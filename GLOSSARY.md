@@ -318,7 +318,7 @@ Inno Setup 写在 App Dir 里的卸载程序与日志。
 _Avoid_: setup、installer
 
 **Patch**:
-一份目录级增量文件。
+一份应用增量文件：桌面端按目录生成，Android 按安装包生成。
 _Avoid_: delta、diff
 
 **Staging**:
@@ -338,7 +338,7 @@ _Avoid_: old、prev
 _Avoid_: helper、installer
 
 **Apply**:
-退出时把已就绪的更新交出去：Pack 暂存到 Features Dir，应用则启动 Updater。
+把已就绪的更新交出去：桌面端在退出时暂存 Pack 并启动 Updater，Android 调起系统安装器。
 _Avoid_: install、commit
 
 **Install**:

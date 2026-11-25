@@ -20,6 +20,11 @@ sys.path.insert(0, str(tree))
 sys.path.insert(0, str(tree / "features"))
 
 failures = {}
+for module in ("app.services.update_service",):
+    try:
+        importlib.import_module(module)
+    except Exception as e:
+        failures[module] = f"{type(e).__name__}: {e}"
 for pack in packs:
     for module in ("pack", "android"):
         if not (tree / "features" / pack / f"{module}.py").exists():
