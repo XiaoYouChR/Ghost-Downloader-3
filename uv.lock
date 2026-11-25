@@ -878,7 +878,7 @@ wheels = [
 [[package]]
 name = "pyside6-fluent-widgets"
 version = "1.11.3"
-source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main#a23215c9316ab99f6356ae89aa06a6198962ca2f" }
+source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?branch=main#8313fa371785cbf0bdf0657a03bfc0ddea55033f" }
 dependencies = [
     { name = "darkdetect" },
     { name = "pyside6" },

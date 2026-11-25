@@ -72,8 +72,6 @@ class AnimationLayer(QWidget):
     def _run(self) -> None:
         self._maskColor = self._buildMaskColor()
         self._panelOrigin, self._panel = self._buildPanel()
-        # 关掉阴影效果，面板就不会每帧重新模糊
-        self._setPanelEffectEnabled(False)
         self._animation.start()
 
     def _toFrame(self, ms: float) -> tuple[float, float, QPoint]:
@@ -91,14 +89,8 @@ class AnimationLayer(QWidget):
     def _onAnimationStateChanged(self, state: QVariantAnimation.State) -> None:
         if state == QVariantAnimation.State.Stopped:
             self._dialog.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
-            self._setPanelEffectEnabled(True)
             self.hide()
             self.deleteLater()
-
-    def _setPanelEffectEnabled(self, isEnabled: bool) -> None:
-        effect = self._dialog.widget.graphicsEffect()
-        if effect is not None:
-            effect.setEnabled(isEnabled)
 
     def _buildBackdrop(self) -> QPixmap:
         window = self._dialog.window()
@@ -132,8 +124,11 @@ class AnimationLayer(QWidget):
     def _buildPanel(self) -> tuple[QPoint, QPixmap]:
         panel = self._dialog.widget
         mask = self._dialog.windowMask
-        effect = panel.graphicsEffect()
-        bounds = effect.boundingRectFor(panel.rect()).toAlignedRect() if effect else panel.rect()
+        bounds = panel.geometry()
+        for child in self._dialog.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly):
+            if child.isVisible() and child not in (mask, self):
+                bounds |= child.geometry()
+        bounds = bounds.translated(-panel.pos())
         pixmap = self._buildPixmap(bounds.size())
         # 从对话框渲染才画得出阴影，渲染期间撤掉遮罩底色和这一层的不透明声明
         self._isRenderingPanel = True
