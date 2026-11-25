@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import sys
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -33,6 +34,7 @@ LIVE_RECORD_PATTERN = re.compile(
 )
 MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
 IGNORED_OUTPUT_SUFFIXES = {".json", ".txt", ".log", ".tmp", ".ghd"}
+OUTPUT_STEM = "output"
 DECRYPTION_ENGINES = {
     "FFmpeg": "FFMPEG",
     "MP4Decrypt": "MP4DECRYPT",
@@ -60,10 +62,9 @@ ERROR_HINTS = (
      "SSL 连接失败，请检查网络连接（{detail}）"),
 )
 
-LOG_LINE_PATTERN = re.compile(
-    r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(WARN|ERROR)\s*:\s*(.*)"
+LOG_PATTERN = re.compile(
+    r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|WARN|ERROR)\s*:\s*"
 )
-LOG_PREFIX_PATTERN = re.compile(r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(?:INFO|WARN|ERROR)\s*:\s*")
 MUX_FAILED_PATTERN = re.compile(r"\d{2}:\d{2}:\d{2}\.\d{3}\s+ERROR\s*:\s*Mux failed")
 UNHANDLED_PATTERN = re.compile(
     r"Unhandled exception:\s*\S+:\s*(.*)"
@@ -74,23 +75,35 @@ def toBool(value: bool) -> str:
     return "true" if value else "false"
 
 
+def decodeText(data: bytes, fallbackEncoding: str = "") -> str:
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        encoding = fallbackEncoding or ("oem" if sys.platform == "win32" else "utf-8")
+        return data.decode(encoding, errors="replace")
+
+
+def parseLogs(output: str) -> list[tuple[str, str]]:
+    parts = LOG_PATTERN.split(output)
+    return [(level, body.strip()) for level, body in zip(parts[1::2], parts[2::2]) if body.strip()]
+
+
 def parseError(output: str, returncode: int) -> TaskError | None:
     """输出表明失败时返回 TaskError，成功时返回 None。"""
     # N_m3u8DL-RE 0.6.0-beta 混流失败仍以 0 退出
     muxFailure = MUX_FAILED_PATTERN.search(output)
     if muxFailure:
-        lines = [line.strip() for line in LOG_PREFIX_PATTERN.split(output[:muxFailure.start()]) if line.strip()]
-        return TaskError("合并音视频失败（{detail}）", detail=lines[-1] if lines else "")
+        entries = parseLogs(output[:muxFailure.start()])
+        return TaskError("合并音视频失败（{detail}）", detail=entries[-1][1] if entries else "")
     if returncode == 0:
         return None
 
+    detail = parseDiagnostic(output)
     lowered = output.lower()
     for needle, message in ERROR_HINTS:
         if needle in lowered:
-            detail = parseDiagnostic(output)
             return TaskError(message, detail=detail)
 
-    detail = parseDiagnostic(output)
     return TaskError(
         "进程异常退出（{code}）：{detail}",
         code=returncode,
@@ -100,22 +113,36 @@ def parseError(output: str, returncode: int) -> TaskError | None:
 
 def parseDiagnostic(output: str) -> str:
     last = ""
-    for m in LOG_LINE_PATTERN.finditer(output):
-        last = m.group(2).strip()
+    for level, body in parseLogs(output):
+        if level in {"WARN", "ERROR"}:
+            last = body
     cut = last.find("Unhandled exception:")
     if cut > 0:
         last = last[:cut].strip()
     if last:
-        return last
+        return last.splitlines()[0].strip()
     m = UNHANDLED_PATTERN.search(output)
     return m.group(1).strip() if m else ""
+
+
+def findOutputFile(folder: Path, preferredSuffix: str = "") -> Path | None:
+    if not folder.is_dir():
+        return None
+    prefix = f"{OUTPUT_STEM}."
+    preferred = preferredSuffix.lower()
+    return max(
+        (c for c in folder.iterdir()
+         if c.is_file() and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
+         and c.name.lower().startswith(prefix)),
+        key=lambda c: (c.suffix.lower() == preferred, c.stat().st_mtime),
+        default=None,
+    )
 
 
 @dataclass(kw_only=True, eq=False)
 class M3U8Task(Task):
     packId: str = "m3u8"
     canEdit = True
-    manifestType: str = "m3u8"
     isLive: bool = False
     streams: list[dict] = field(default_factory=list)
     subtitleLanguages: list[str] = field(default_factory=list)
@@ -127,7 +154,7 @@ class M3U8Task(Task):
         if self.isLive and self.status in {TaskStatus.PAUSED, TaskStatus.RUNNING}:
             for step in self.steps:
                 if isinstance(step, M3U8TaskStep) and step.status != TaskStatus.COMPLETED:
-                    step._findOutputFile()
+                    step.moveOutput()
                     step.status = TaskStatus.COMPLETED
                     step.progress = 100
                     step.speed = 0
@@ -199,10 +226,8 @@ class M3U8TaskStep(TaskStep):
     liveWaitTime: int = 0
     liveTakeCount: int = 0
     recordLimit: str = ""
-    lastMessage: str = ""
     liveStatus: str = ""
     liveElapsed: str = ""
-    liveTotal: str = ""
 
     @property
     def canPause(self) -> bool:
@@ -219,10 +244,6 @@ class M3U8TaskStep(TaskStep):
     @property
     def _tempFolder(self) -> str:
         return toPosixPath(self._saveFolder / "tmp")
-
-    @property
-    def _saveName(self) -> str:
-        return Path(self.task.name).stem
 
     def setOptions(self, options: dict) -> None:
         if "headers" in options:
@@ -258,7 +279,7 @@ class M3U8TaskStep(TaskStep):
             (folder / name).write_bytes(data)
         return toPosixPath(folder / "master.m3u8")
 
-    def _buildCommand(self, source: str) -> list[str]:
+    def buildCommand(self, source: str) -> list[str]:
         args = [source, *self._buildTransferArgs()]
 
         if self.shouldSelectAllAudioSubtitle:
@@ -304,7 +325,7 @@ class M3U8TaskStep(TaskStep):
     def _buildTransferArgs(self) -> list[str]:
         args = [
             f"--save-dir={toPosixPath(self._saveFolder)}",
-            f"--save-name={self._saveName}",
+            f"--save-name={OUTPUT_STEM}",
             f"--tmp-dir={self._tempFolder}",
             f"--thread-count={self.threadCount}",
             f"--download-retry-count={self.retryCount}",
@@ -366,8 +387,6 @@ class M3U8TaskStep(TaskStep):
         if not text:
             return
 
-        self.lastMessage = text[-1000:]
-
         vodMatch = None
         for m in VOD_PROGRESS_PATTERN.finditer(text):
             vodMatch = m
@@ -386,7 +405,6 @@ class M3U8TaskStep(TaskStep):
             liveMatch = m
         if liveMatch:
             self.liveElapsed = liveMatch.group(1)
-            self.liveTotal = liveMatch.group(2)
             self.liveStatus = liveMatch.group(3)
             self.progress = float(liveMatch.group(4))
             self.speed = 0 if liveMatch.group(5) == "-" else toBytes(liveMatch.group(6), liveMatch.group(7))
@@ -397,20 +415,18 @@ class M3U8TaskStep(TaskStep):
             recordMatch = m
         if recordMatch:
             self.liveElapsed = recordMatch.group(1)
-            self.liveTotal = recordMatch.group(2)
             self.liveStatus = recordMatch.group(3)
             self.speed = 0 if recordMatch.group(4) == "-" else toBytes(recordMatch.group(5), recordMatch.group(6))
 
-    async def _readOutput(self, stream: asyncio.StreamReader):
-        rawChunks = []
+    async def _readOutput(self, stream: asyncio.StreamReader) -> str:
+        rawChunks: list[bytes] = []
         buffer = ""
         while True:
             chunk = await stream.read(4096)
             if not chunk:
                 break
-            raw = chunk.decode("utf-8", errors="ignore")
-            rawChunks.append(raw)
-            buffer += raw
+            rawChunks.append(chunk)
+            buffer += chunk.decode("utf-8", errors="ignore")
             buffer = buffer.replace("\r\n", "\n").replace("\r", "\n")
             lines = buffer.split("\n")
             buffer = lines.pop()
@@ -422,22 +438,14 @@ class M3U8TaskStep(TaskStep):
                 buffer = buffer[-4096:]
         if buffer.strip():
             self.parseOutputLine(buffer)
-        self._processOutput = "".join(rawChunks)
+        return decodeText(b"".join(rawChunks))
 
-    def _findOutputFile(self) -> bool:
+    def moveOutput(self) -> bool:
         target = Path(self.outputPath)
         if target.is_file() and target.stat().st_size > 0:
             self.task.fileSize = max(self.task.fileSize, target.stat().st_size)
             return True
-
-        prefix = f"{self._saveName.lower()}."
-        found = max(
-            (c for c in self.task.partPath.glob("*")
-             if c.is_file() and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
-             and c.name.lower().startswith(prefix)),
-            key=lambda c: (c.suffix.lower() == target.suffix.lower(), c.stat().st_mtime),
-            default=None,
-        )
+        found = findOutputFile(self._saveFolder, target.suffix)
         if found is None:
             return False
         self.task.fileSize = max(self.task.fileSize, found.stat().st_size)
@@ -465,7 +473,7 @@ class M3U8TaskStep(TaskStep):
         outputTask = None
         try:
             source = await self._writeVimeoFiles() if matchVimeoPlaylist(self.task.url) else self.task.url
-            command = self._buildCommand(source)
+            command = self.buildCommand(source)
             self._process = await asyncio.create_subprocess_exec(
                 execPath, *command,
                 cwd=Path(execPath).parent,
@@ -477,19 +485,18 @@ class M3U8TaskStep(TaskStep):
             outputTask = asyncio.create_task(self._readOutput(self._process.stdout))
 
             await self._process.wait()
-            await outputTask
+            output = await outputTask
 
-            output = getattr(self, "_processOutput", "")
             error = parseError(output, self._process.returncode)
             if error is not None and not self._stopping:
                 if output:
                     logger.warning("N_m3u8DL-RE output:\n{}", output[-8192:])
                 raise error
 
-            if not self._findOutputFile():
+            if not self.moveOutput():
                 raise TaskError(
                     "未找到输出文件：{detail}",
-                    detail=self.lastMessage[-200:] if self.lastMessage else "",
+                    detail=parseDiagnostic(output) or "N_m3u8DL-RE",
                 )
         except asyncio.CancelledError:
             if self._process is not None and self._process.returncode is None:
@@ -504,7 +511,7 @@ class M3U8TaskStep(TaskStep):
                 with suppress(asyncio.CancelledError):
                     await outputTask
             if self.task.isLive:
-                self._findOutputFile()
+                self.moveOutput()
                 self.setStatus(TaskStatus.COMPLETED)
             else:
                 self.setStatus(TaskStatus.PAUSED)
@@ -532,14 +539,14 @@ class M3U8SubtitleStep(M3U8TaskStep):
     def _saveFolder(self) -> Path:
         return self.task.partPath / f"subtitle{self.stepIndex}"
 
-    def _buildCommand(self, source: str) -> list[str]:
+    def buildCommand(self, source: str) -> list[str]:
         selector = f'lang="^{re.escape(self.language)}$"' if self.language else f'name="^{re.escape(self.name)}$"'
         return [source, *self._buildTransferArgs(), "--sub-only", f"--select-subtitle={selector}:for=best"]
 
-    def _findOutputFile(self) -> bool:
+    def moveOutput(self) -> bool:
         target = Path(self.outputPath)
-        found = next((c for c in self._saveFolder.glob("*") if c.is_file() and c.suffix.lower() == target.suffix), None)
-        if found is None:
+        found = findOutputFile(self._saveFolder, target.suffix)
+        if found is None or found.suffix.lower() != target.suffix.lower():
             # 清单里的字幕已下架时只少一个 Side File，不算任务失败
             deletePlaceholder(target)
             return True

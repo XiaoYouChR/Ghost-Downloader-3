@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from app.models.task import TaskStatus
 from features.m3u8_pack.task import M3U8Task, M3U8TaskStep
 
 
@@ -31,3 +32,30 @@ def test_set_name_keeps_non_manifest_suffix():
 
     task.setName("clip")
     assert task.name == "clip"
+
+
+def test_load_running_live_completes_with_output(tmp_path: Path):
+    target = tmp_path / "live.ts"
+    target.write_bytes(b"")
+    part = tmp_path / "live.ts.ghd"
+    part.mkdir()
+
+    probe = M3U8Task(name="live.ts", url="http://test", fileSize=1, outputFolder=tmp_path, isLive=True)
+    probeStep = M3U8TaskStep(stepIndex=1)
+    probe.addStep(probeStep)
+    saveName = next(a.removeprefix("--save-name=") for a in probeStep.buildCommand("http://test") if a.startswith("--save-name="))
+    (part / f"{saveName}.ts").write_bytes(b"recorded-stream")
+
+    step = M3U8TaskStep(stepIndex=1, status=TaskStatus.RUNNING)
+    task = M3U8Task(
+        name="live.ts",
+        url="http://test",
+        fileSize=1,
+        outputFolder=tmp_path,
+        isLive=True,
+        status=TaskStatus.RUNNING,
+        steps=[step],
+    )
+
+    assert task.status == TaskStatus.COMPLETED
+    assert target.read_bytes() == b"recorded-stream"

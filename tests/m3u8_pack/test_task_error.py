@@ -1,4 +1,4 @@
-from features.m3u8_pack.task import parseDiagnostic, parseError
+from features.m3u8_pack.task import decodeText, parseDiagnostic, parseError
 
 
 # -- parseDiagnostic ----------------------------------------------------------
@@ -193,3 +193,28 @@ def test_parse_success_returns_none():
         "19:18:15.736 INFO : Done"
     )
     assert parseError(output, 0) is None
+
+
+def test_parse_glued_logs_takes_last_warning():
+    output = (
+        "21:47:26.100 WARN : Muxing to output.MUX.mp4"
+        "21:47:26.120 WARN : Cleaning files..."
+        "21:47:26.121 WARN : Rename to output.mp4"
+        "21:47:26.125 INFO : Done"
+    )
+    assert parseDiagnostic(output) == "Rename to output.mp4"
+
+
+def test_decode_utf8_preserves_text():
+    text = "22:00:00.000 INFO : 二进制合并中... ━━━ X 上的测试"
+    assert decodeText(text.encode("utf-8"), fallbackEncoding="gbk") == text
+
+
+def test_decode_gbk_recovers_console_text():
+    text = "21:47:26.120 WARN : Rename to (1) X 上的 Alexey Fateev：“https t.co FkpOOsDFNI”.mp4"
+    assert decodeText(text.encode("gbk"), fallbackEncoding="gbk") == text
+
+
+def test_decode_invalid_bytes_keeps_readable_text():
+    decoded = decodeText(b"\xff\xfehello", fallbackEncoding="utf-8")
+    assert "hello" in decoded

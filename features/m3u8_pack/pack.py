@@ -180,7 +180,6 @@ class M3U8Parser(TaskParser):
             url=url,
             fileSize=1,
             outputFolder=outputFolder,
-            manifestType=manifestType,
             isLive=isLive,
             streams=streams,
         )
