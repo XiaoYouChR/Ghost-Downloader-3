@@ -299,6 +299,14 @@ class YouTubeTask(Task):
     coverUrl: str = ""
     isCoverEnabled: bool = False
     isPlaylist: bool = False
+    startTime: int = 0
+    endTime: int = 0
+
+    def timeRange(self, fileIndex: int) -> tuple[int, int]:
+        for file in self.files or []:
+            if file.index == fileIndex:
+                return file.startTime, file.endTime
+        return self.startTime, self.endTime
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -448,9 +456,9 @@ class YouTubeExtractStep(TaskStep):
                      videoFmt.get("format_id") if videoFmt else None,
                      audioFmt.get("format_id") if audioFmt else None, url)
 
-        file = self.task.files[self.fileIndex] if self.task.files else None
-        if file and (file.startTime or file.endTime):
-            await self._updateSegmentRanges(file)
+        startTime, endTime = self.task.timeRange(self.fileIndex)
+        if startTime or endTime:
+            await self._updateSegmentRanges(startTime, endTime)
 
         self._updateSubtitleSteps(info)
 
@@ -482,17 +490,17 @@ class YouTubeExtractStep(TaskStep):
                 continue
         return False
 
-    async def _updateSegmentRanges(self, file: YouTubeFile) -> None:
+    async def _updateSegmentRanges(self, startTime: int, endTime: int) -> None:
         for step in self.task.steps:
             if step.fileIndex != self.fileIndex:
                 continue
             if isinstance(step, YouTubeResourceStep) and step.url:
-                step.startTime = file.startTime
-                step.endTime = file.endTime
+                step.startTime = startTime
+                step.endTime = endTime
                 await step.updateSegmentRange()
             elif isinstance(step, YouTubeMergeStep):
-                step.startTime = file.startTime
-                step.endTime = file.endTime
+                step.startTime = startTime
+                step.endTime = endTime
 
         totalSize = sum(
             s.fileSize for s in self.task.steps
@@ -593,10 +601,7 @@ class YouTubeResourceStep(FFmpegResourceStep):
     ) -> None:
         if not self.url:
             return
-        file = next((f for f in (self.task.files or []) if f.index == self.fileIndex), None)
-        if file:
-            self.startTime = file.startTime
-            self.endTime = file.endTime
+        self.startTime, self.endTime = self.task.timeRange(self.fileIndex)
         await super().run(reportSpeed, waitForSpeedLimit)
 
 
@@ -647,9 +652,9 @@ class YouTubeMergeStep(FFmpegStep):
 
     @property
     def _timeRange(self) -> tuple[float, float] | None:
-        for f in self.task.files or []:
-            if f.index == self.fileIndex and (f.startTime or f.endTime):
-                return f.startTime, f.endTime
+        startTime, endTime = self.task.timeRange(self.fileIndex)
+        if startTime or endTime:
+            return startTime, endTime
         return super()._timeRange
 
     async def run(

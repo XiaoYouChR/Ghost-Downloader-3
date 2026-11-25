@@ -22,7 +22,7 @@ from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .task import (
-    YouTubeExtractStep, YouTubeFile, YouTubeMergeStep, YouTubeResourceStep, YouTubeSubtitleStep,
+    YouTubeExtractStep, YouTubeMergeStep, YouTubeResourceStep, YouTubeSubtitleStep,
     YouTubeTask, buildFormatPair, probeFormats, probePlaylist, parseLanguages,
 )
 
@@ -355,27 +355,19 @@ class YtDlpDraftCard(DraftCard):
         if checked:
             self.setFixedHeight(87)
             self.layout().setContentsMargins(10, 2, 10, 54)
-            task: YouTubeTask = self._task
-            if not task.files:
-                from .task import YouTubeFile
-                task.files = [YouTubeFile(index=0, relativePath="")]
         else:
             self.setFixedHeight(35)
             self.layout().setContentsMargins(10, 2, 10, 2)
             self._rangeSlider.clear()
-            file = self._task.files[0] if self._task.files else None
-            if file:
-                file.startTime = 0
-                file.endTime = 0
+            self._task.startTime = 0
+            self._task.endTime = 0
         w = self
         while w := w.parentWidget():
             w.updateGeometry()
 
     def _onRangeChanged(self, start: int, end: int) -> None:
-        file = self._task.files[0] if self._task.files else None
-        if file:
-            file.startTime = start
-            file.endTime = end
+        self._task.startTime = start
+        self._task.endTime = end
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)

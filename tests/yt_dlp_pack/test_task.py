@@ -154,3 +154,79 @@ def test_probe_formats_reports_root_cause_from_warnings(warning, expectedMatch):
     with pytest.raises(TaskError, match=expectedMatch):
         probeFormats("https://www.youtube.com/watch?v=wYSncx9zLIU", extract=fakeExtract)
 
+
+def test_trim_single_video_keeps_extract_url_after_subtitle_change(tmp_path):
+    from yt_dlp_pack.task import YouTubeExtractStep, YouTubeTask
+
+    task = YouTubeTask(
+        name="clip.mp4",
+        url="https://www.youtube.com/watch?v=0ynU5eQhJEA",
+        outputFolder=tmp_path,
+    )
+    task.startTime = 10
+    task.endTime = 60
+    task.setSubtitleLanguages("en", False)
+
+    extractSteps = [s for s in task.steps if isinstance(s, YouTubeExtractStep)]
+    assert len(extractSteps) == 1
+    assert extractSteps[0].videoUrl == ""
+    assert task.files is None
+    assert task.timeRange(0) == (10, 60)
+
+
+def test_trim_playlist_reads_per_video_range(tmp_path):
+    from yt_dlp_pack.task import YouTubeExtractStep, YouTubeTask
+
+    task = YouTubeTask(
+        name="list.mp4",
+        url="https://www.youtube.com/playlist?list=PL123",
+        outputFolder=tmp_path,
+        isPlaylist=True,
+    )
+    task.setVideos([
+        {"id": "vidA", "title": "First", "duration": 120},
+        {"id": "vidB", "title": "Second", "duration": 200},
+    ])
+    task.files[1].startTime = 30
+    task.files[1].endTime = 90
+
+    extractSteps = [s for s in task.steps if isinstance(s, YouTubeExtractStep)]
+    assert [s.videoUrl for s in extractSteps] == [
+        "https://www.youtube.com/watch?v=vidA",
+        "https://www.youtube.com/watch?v=vidB",
+    ]
+    assert task.timeRange(0) == (0, 0)
+    assert task.timeRange(1) == (30, 90)
+
+
+def test_load_legacy_trimmed_single_video_preserves_time_range(tmp_path):
+    from app.models.serialization import fromDict, toDict
+    from app.models.task import Task
+    from yt_dlp_pack.task import YouTubeTask
+
+    legacy = {
+        "type": "yt_dlp_pack.task.YouTubeTask",
+        "name": "legacy.mp4",
+        "url": "https://www.youtube.com/watch?v=abc",
+        "packId": "ytdlp",
+        "outputFolder": str(tmp_path),
+        "files": [{"index": 0, "relativePath": "", "videoId": "", "startTime": 15, "endTime": 75}],
+        "steps": [],
+    }
+    restored = fromDict(legacy, Task)
+    assert isinstance(restored, YouTubeTask)
+    assert restored.timeRange(0) == (15, 75)
+
+    current = YouTubeTask(
+        name="new.mp4",
+        url="https://www.youtube.com/watch?v=xyz",
+        outputFolder=tmp_path,
+        startTime=20,
+        endTime=80,
+    )
+    roundTripped = fromDict(toDict(current), Task)
+    assert roundTripped.timeRange(0) == (20, 80)
+    assert roundTripped.files is None
+
+
+

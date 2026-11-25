@@ -1,12 +1,13 @@
 """Android draft adapter. No Qt imports; extraction uses the same functions as Desktop."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from app.i18n import N
 
 from .choices import buildAudioLanguageChoices, buildAudioTiers, buildSubtitleChoices, buildVideoTiers
-from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist, parseLanguages
+from .task import buildFormatPair, probeFormats, probePlaylist, parseLanguages
 
 if TYPE_CHECKING:
     from .task import YouTubeTask
@@ -22,7 +23,6 @@ def draftFields(task: YouTubeTask) -> dict:
     info = getattr(task, "_mediaInfo", {})
     hasInfo = bool(info.get("formats"))
     subtitles, _ = buildSubtitleChoices(info, "{auto}")
-    page = task.files[0] if task.files and len(task.files) == 1 else None
     videoTiers = buildVideoTiers(info, "{best}") if hasInfo else [("0", "{best}")]
     audioTiers = buildAudioTiers(info, "{best}") if hasInfo else [("0", "{best}")]
     return {
@@ -58,32 +58,35 @@ def draftFields(task: YouTubeTask) -> dict:
         "subtitles": toDraftOptions(subtitles, auto=N("YtDlpDraftCard", "自动")),
         "subtitleLanguages": [s for s in task.subtitleLanguages.split(",") if s],
         "duration": int(info.get("duration") or 0) if not task.isPlaylist else 0,
-        "startTime": page.startTime if page else 0,
-        "endTime": page.endTime if page else 0,
+        "startTime": task.startTime,
+        "endTime": task.endTime,
         "hasPreview": any(f.get("format_note") == "storyboard" for f in info.get("formats") or []),
     }
 
 
-def probe(task: YouTubeTask, url: str, kind: str) -> None:
+def probe(url: str, kind: str) -> Callable[[YouTubeTask], None]:
     if kind == "media":
         info = probeFormats(url)
         if not info or not info.get("formats"):
             raise ValueError("No media formats found")
-        task._mediaInfo = info
-        choices = buildAudioLanguageChoices(info)
-        if choices and not task.audioLanguages:
-            task.setAudioLanguages(choices[0][0])
-        thumbnailUrl = info.get("thumbnail") or ""
-        if thumbnailUrl:
-            task.setCoverUrl(thumbnailUrl)
-        updateSize(task)
-    elif kind == "playlist":
+
+        def apply(task: YouTubeTask) -> None:
+            task._mediaInfo = info
+            choices = buildAudioLanguageChoices(info)
+            if choices and not task.audioLanguages:
+                task.setAudioLanguages(choices[0][0])
+            thumbnailUrl = info.get("thumbnail") or ""
+            if thumbnailUrl:
+                task.setCoverUrl(thumbnailUrl)
+            updateSize(task)
+
+        return apply
+    if kind == "playlist":
         result = probePlaylist(url)
         if not result:
             raise ValueError("No playlist entries found")
-        task.setVideos(result)
-    else:
-        raise ValueError(f"Unsupported probe kind: {kind}")
+        return lambda task: task.setVideos(result)
+    raise ValueError(f"Unsupported probe kind: {kind}")
 
 
 def updateSize(task: YouTubeTask) -> None:
@@ -119,13 +122,8 @@ def setSubtitles(task: YouTubeTask, languages: str) -> None:
 
 
 def setTrim(task: YouTubeTask, start: int, end: int) -> None:
-    duration = int(getattr(task, "_mediaInfo", {}).get("duration") or 0)
-    if task.isPlaylist or not (0 <= start < (end or duration) <= duration):
-        raise ValueError("Invalid trim range")
-    if not task.files:
-        task.files = [YouTubeFile(index=0, relativePath="")]
-    task.files[0].startTime = start
-    task.files[0].endTime = end
+    task.startTime = start
+    task.endTime = end
 
 
 def fileFields(task: YouTubeTask) -> dict[int, dict[str, int]]:
