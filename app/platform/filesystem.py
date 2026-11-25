@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import sys
@@ -107,10 +108,15 @@ def findExecutable(installFolder: Path, name: str) -> str:
 
 
 def deletePath(path: Path) -> None:
-    if path.is_dir() and not path.is_symlink():
-        shutil.rmtree(path, ignore_errors=True)
+    target = path
+    if sys.platform == "win32":
+        raw = os.path.abspath(path)
+        if not raw.startswith("\\\\?\\"):
+            target = Path(f"\\\\?\\UNC\\{raw[2:]}" if raw.startswith("\\\\") else f"\\\\?\\{raw}")
+    if target.is_dir() and not target.is_symlink():
+        shutil.rmtree(target, ignore_errors=True)
     else:
         try:
-            path.unlink(missing_ok=True)
+            target.unlink(missing_ok=True)
         except OSError:
             pass
