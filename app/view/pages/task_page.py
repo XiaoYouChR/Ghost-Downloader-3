@@ -240,6 +240,8 @@ class TaskPage(QWidget):
 
         self.rateLimitButton.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._onSpeedLimitChanged()
+        if self._plan is not None:
+            self.planButton.setChecked(self._plan.action is not None)
 
         for btn, tip in (
             (self.selectButton, self.tr("选择任务")),
@@ -300,6 +302,8 @@ class TaskPage(QWidget):
         self.pauseAllButton.clicked.connect(self.pauseAll)
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self._isSelectionMode))
         self.planButton.clicked.connect(self._onPlanButtonClicked)
+        if self._plan is not None:
+            self._plan.changed.connect(self._onPlanChanged, owner=self)
         self.rateLimitButton.clicked.connect(self._onRateLimitToggled)
         self.rateLimitButton.customContextMenuRequested.connect(self._onRateLimitMenuRequested)
         cfg.isSpeedLimitEnabled.valueChanged.connect(self._onSpeedLimitChanged)
@@ -476,6 +480,9 @@ class TaskPage(QWidget):
         cfg.set(cfg.speedLimitation, value * 1024)
         cfg.set(cfg.isSpeedLimitEnabled, True)
 
+    def _onPlanChanged(self) -> None:
+        self.planButton.setChecked(self._plan.action is not None)
+
     def _onPlanButtonClicked(self) -> None:
         plan = self._plan
         if plan is None:
@@ -484,8 +491,7 @@ class TaskPage(QWidget):
             from app.view.dialogs.plan_task import PlanTaskDialog
             dialog = PlanTaskDialog(self.window())
             if dialog.exec():
-                plan.set(dialog.selectedAction(), dialog.selectedFilePath(),
-                         onCleared=lambda: self.planButton.setChecked(False))
+                plan.set(dialog.selectedAction(), dialog.selectedFilePath())
             else:
                 self.planButton.setChecked(False)
             dialog.deleteLater()
