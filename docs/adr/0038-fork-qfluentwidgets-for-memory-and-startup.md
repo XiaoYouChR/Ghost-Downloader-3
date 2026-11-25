@@ -39,3 +39,8 @@ status: accepted
 - `scripts/deploy.py` 接入 Fork 时须同步三项 Nuitka 配置：`EXTRA_INCLUDE_PACKAGES` 加入 `"qfluentwidgets"`（确保独立 Publish 的 FeaturePack 可按需导入任意控件），配套 `--nofollow-import-to=qfluentwidgets.multimedia`（遵守 [ADR 0028](./0028-notice-sound-without-qtmultimedia.md)，避免带入 `QtMultimedia` 与 FFmpeg），以及 `dataArgs` 附带 `qfluentwidgets/_rc/resource.rcc`。
 - 上游升级时重跑 Fork 构建脚本再生 `_symbols.py` 与 `resource.rcc`，并以 `pytest` 验收：12 个包导出符号集与上游一致（仅多 `load` / `unload`）、16 份提升 `.qss` 无裸选择器、透明容器不击穿 Button 背景、显式 `load` / `unload` 与 `MainWindow` 关窗重建零泄漏。
 - 应用侧自身的 `--silence` 延迟创建主窗口与 TaskCard 视口对象池复用，留作独立任务推进，不混入本 Fork。
+
+## 版本号与打 Tag 规范
+
+- **版本与 Tag 格式**：采用四段版本号 `<upstream>.<N>` 与 `v` 前缀（如 `1.11.3.1` / `v1.11.3.1`），同步写入 `setup.py` 与 `qfluentwidgets/__init__.py`，保持分发包名 `PySide6-Fluent-Widgets` 不变；上游升级后重置末尾序号（如 `1.11.4.1`）。选择四段纯数字而非 `.postN`（PEP 440 限定其仅用于不改代码的打包小修）或 `+local`（PEP 440 禁止 `>=` 范围约束且 `+` 在 GitHub 归档 URL 中存在 `%2B` 转义问题），可同时满足 PEP 440、MacPorts `vercmp` 单调递增与 `livecheck` 自动识别（高于仓库继承的历史上游标签 `v1.7.0`）。
+- **发版与分支纪律**：仅在 `main` 上过检（`pytest`）后手动打不可变 Annotated Tag，绝不移动或重打已推送的 Tag；后续同步 `upstream/PySide6` 一律采用 `git merge` 合并进 `main`，避免 rebase 破坏历史 Tag 祖先链。因 `_symbols.py` 与 `_rc/resource.rcc` 已随 git 提交，MacPorts 侧直接以 `github.setup XiaoYouChR PyQt-Fluent-Widgets <version> v` 配合 `github.tarball_from archive` 拉取源码构建，暂不引入 CI 上传 Release sdist。
