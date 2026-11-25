@@ -1,1 +1,170 @@
-{}
+{
+  "about": {
+    "message": "Tentang"
+  },
+  "advancedFeatures": {
+    "message": "Fitur lanjutan"
+  },
+  "advancedFeaturesHint": {
+    "message": "Aktifkan sesuai kebutuhan; beberapa fitur memerlukan injeksi script ke halaman atau izin khusus"
+  },
+  "audio": {
+    "message": "Audio",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "Trek Audio"
+  },
+  "authenticating": {
+    "message": "Memvalidasi"
+  },
+  "autoPair": {
+    "message": "Auto Pair"
+  },
+  "autoSelectPort": {
+    "message": "Pilih port otomatis"
+  },
+  "awaitingPairing": {
+    "message": "Menghubungkan"
+  },
+  "browserDownload": {
+    "message": "Browser Download"
+  },
+  "bypassShortcutKey": {
+    "message": "Bypass Shortcut"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "Tahan tombol ini saat mengeklik link download untuk melewati interception dan mengunduh langsung melalui browser"
+  },
+  "pressShortcutKey": {
+    "message": "Tekan tombol shortcut..."
+  },
+  "cacheCapture": {
+    "message": "Cache Capture"
+  },
+  "cacheCaptureDescription": {
+    "message": "Pengambilan sumber dari cache browser"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "clearSelection": {
+    "message": "Bersihkan pilihan",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "Selesai"
+  },
+  "fileMissing": {
+    "message": "File hilang"
+  },
+  "confirmPairing": {
+    "message": "Konfirmasi Pairing"
+  },
+  "connected": {
+    "message": "Tersambung"
+  },
+  "connecting": {
+    "message": "Menyambungkan"
+  },
+  "connectionClosed": {
+    "message": "Koneksi terputus"
+  },
+  "connectionConfig": {
+    "message": "Konfigurasi koneksi"
+  },
+  "darkTheme": {
+    "message": "Gelap"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 segmen DASH $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
+  },
+  "deepSearch": {
+    "message": "Pencarian lebih dalam"
+  },
+  "deepSearchDescription": {
+    "message": "Analisis sumber halaman lebih dalam"
+  },
+  "desktopVersionInfo": {
+    "message": "Desktop $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
+  },
+  "disconnected": {
+    "message": "Terputus"
+  },
+  "downloadThisMedia": {
+    "message": "Download media ini"
+  },
+  "mediaButtonLabel": {
+    "message": "Tombol media"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "Download dengan Ghost Downloader"
+  },
+  "saveAsWithGhostDownloader": {
+    "message": "Simpan sebagai dengan Ghost Downloader"
+  },
+  "downloading": {
+    "message": "Sedang men-download"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "Setelah memutar video atau audio, sumber yang ditangkap akan otomatis tampil disini."
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "Tidak ada resource pada halaman ini"
+  },
+  "emptyImagesDescription": {
+    "message": "Coba beralih ke halaman dengan gambar, atau sesuaikan kriteria filter."
+  },
+  "emptyImagesTitle": {
+    "message": "Tidak ditemukan gambar pada halaman ini"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "Setelah beralih ke tab lain dan mengambil sumber, semuanya akan otomatis muncul di sini."
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "Belum ada sumber dari halaman lain"
+  },
+  "emptyTasksDescription": {
+    "message": "Setelah browser mengambil alih proses download atau resource dikirim dari halaman Sniffer, tugas akan otomatis muncul di sini."
+  },
+  "emptyTasksTitle": {
+    "message": "Belum ada tugas"
+  },
+  "errorAutoPairingFailed": {
+    "message": "Penyambungan otomatis gagal"
+  },
+  "errorBackgroundNotReady": {
+    "message": "Service latar belakang belum siap"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "Browser tidak mengembalikan tugas download"
+  },
+  "errorCannotLocateMedia": {
+    "message": "Media tidak dapat ditemukan"
+  },
+  "errorConnectionFailed": {
+    "message": "Koneksi gagal"
+  },
+  "errorExtensionNotReady": {
+    "message": "Extension belum siap"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "Toggle fitur gagal"
+  }
+}

@@ -556,213 +556,223 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BitTorrentConfig</name>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="64"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="65"/>
       <source>BitTorrent 下载</source>
       <translation>BitTorrent</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
       <source>停止</source>
       <translation>Hentikan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
       <source>停止 BitTorrent 会话</source>
       <translation>Hentikan Sesi BitTorrent</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
-      <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
       <source>未运行</source>
       <translation>Tidak berjalan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
       <source>有 BT 任务正在下载或做种，结束后才能停止</source>
       <translation>Terdapat tugasan BT yang sedang dimuat turun atau disemai; ia mesti selesai sebelum dihentikan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="71"/>
       <source>空闲 5 分钟后自动停止，开始任务时会自动启动</source>
       <translation>Berhenti secara automatik selepas 5 minit tidak aktif; akan bermula secara automatik apabila tugasan dimulakan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
       <source>监听端口</source>
       <translation>Port</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
       <source>0 表示交给系统自动分配可用端口</source>
       <translation>0 untuk port yang diperuntukkan sistem</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
       <source>元数据超时</source>
       <translation>Had Masa Muat Turun Metadata</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
       <source>解析 magnet 链接时等待元数据的最长时间</source>
       <translation>Masa pemuatan maksimum untuk metadata semasa menghuraikan pautan magnet</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="95"/>
       <source>连接数上限</source>
       <translation>Sambungan Maksimum</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="95"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
       <source>单个 BT 任务对应 session 的最大连接数</source>
       <translation>Sambungan maksimum bagi setiap sesi tugas BT</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
       <source>上传限速</source>
       <translation>Had Kelajuan Muat Naik Menyemai</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="98"/>
       <source>0 表示不限速，单位为 session 级别的 KB/s</source>
       <translation>0 untuk tanpa had, dalam KB/s setiap sesi</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="99"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="100"/>
       <source>自动停止做种分享率</source>
       <translation>Had Nisbah Menyemai Automatik</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="100"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="101"/>
       <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
       <translation>0 bermaksud tiada had nisbah semai, 100% bermaksud nisbah semai 1.0</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="103"/>
       <source>自动停止做种时长</source>
       <translation>Had Masa Menyemai Automatik</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="103"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="104"/>
       <source>0 表示不按做种时长自动停止</source>
       <translation>0 bermaksud tiada had masa menyemai</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="105"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
       <source>文件分配模式</source>
       <translation>Kaedah Peruntukan Fail</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
       <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
       <translation>Peruntukan jarang meminimumkan penulisan cakera; Pra-peruntukan memperuntukkan ruang lebih awal</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
       <source>稀疏分配</source>
       <translation>Peruntukan jarang</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
       <source>预分配</source>
       <translation>Pra-peruntukan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
+      <source>解析在线种子链接</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="110"/>
+      <source>HTTP 链接指向 .torrent 文件时解析为 BT 任务，关闭时仅下载 .torrent 文件</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="112"/>
       <source>保存 Magnet 种子文件</source>
       <translation>Simpan Fail Torrent Magnet</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="110"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="114"/>
       <source>顺序下载</source>
       <translation>Muat Turun Berjujukan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="111"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="115"/>
       <source>按文件顺序下载，适合边下边看但通常会影响整体效率</source>
       <translation>Muat turun fail secara berjujukan, sesuai untuk menonton sambil memuat turun tetapi mungkin mengurangkan kecekapan keseluruhan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
       <source>启用 uTP</source>
       <translation>Dayakan uTP</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="122"/>
       <source>使用 uTP 传输协议控制拥塞，关闭后仅使用 TCP</source>
       <translation>Gunakan protokol pengangkutan uTP untuk kawalan kesesakan; hanya TCP digunakan jika dinyahdayakan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="119"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="123"/>
       <source>协议加密</source>
       <translation>Penyulitan Protokol</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="120"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="124"/>
       <source>混淆对等连接流量特征，减少被运营商识别和限速</source>
       <translation>Kekaburkan trafik sambungan rakan setara untuk mengurangkan pengesanan dan pendikit oleh ISP</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
       <source>允许加密</source>
       <translation>Benarkan Penyulitan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
       <source>强制加密</source>
       <translation>Paksa Penyulitan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
       <source>禁用加密</source>
       <translation>Nyahdayakan Penyulitan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="122"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="126"/>
       <source>附加 Tracker 列表</source>
       <translation>Senarai Penjejak Tambahan</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="123"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="127"/>
       <source>把 Tracker 列表合并到新建的 BT 任务中</source>
       <translation>Gabungkan senarai penjejak ke dalam tugas BitTorrent baharu</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="129"/>
       <source>自动更新订阅</source>
       <translation>Kemas Kini Langganan Secara Automatik</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="126"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="130"/>
       <source>每天在后台更新一次 Tracker 列表</source>
       <translation>Kemas kini senarai penjejak sekali sehari di latar belakang</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
       <source>Tracker 列表</source>
       <translation>Senarai Penjejak</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="113"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
       <source>启用 DHT</source>
       <translation>Dayakan DHT</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="113"/>
       <source>下载 magnet 链接或在线种子时额外保存 .torrent 文件</source>
       <translation>Simpan fail .torrent tambahan semasa memuat turun pautan magnet atau torrent dalam talian</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="114"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
       <source>允许通过 DHT 网络发现 peers</source>
       <translation>Benarkan penemuan rakan setara melalui rangkaian Jadual Cincang Teragih</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="115"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="119"/>
       <source>启用 LSD</source>
       <translation>Dayakan LSD</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="116"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="120"/>
       <source>在局域网中广播并发现同一 torrent 的 peers</source>
       <translation>Siarkan dan temui rakan setara pada rangkaian tempatan untuk torrent yang sama</translation>
     </message>
@@ -770,12 +780,12 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BitTorrentPack</name>
     <message>
-      <location filename="../../../features/bittorrent_pack/pack.py" line="137"/>
+      <location filename="../../../features/bittorrent_pack/pack.py" line="140"/>
       <source>磁力链接</source>
       <translation>Pautan magnet</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/pack.py" line="167"/>
+      <location filename="../../../features/bittorrent_pack/pack.py" line="170"/>
       <source>BitTorrent 种子文件</source>
       <translation>Fail Torrent BitTorrent</translation>
     </message>
@@ -783,7 +793,7 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BootstrapList</name>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="136"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="140"/>
       <source>DHT 节点 {nodes}</source>
       <translation>{nodes} nod DHT</translation>
     </message>
@@ -1444,7 +1454,7 @@ Anda boleh mengubah suai pilihan dalam Tetapan pada bila-bila masa.</translation
   <context>
     <name>DropOverlay</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="70"/>
+      <location filename="../../view/windows/main_window.py" line="66"/>
       <source>松开以添加任务</source>
       <translation>Lepaskan untuk menambah tugasan</translation>
     </message>
@@ -2827,17 +2837,17 @@ pilih "Tiada Emulasi" untuk menghantar seperti asal</translation>
   <context>
     <name>M3U8Pack</name>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="312"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="311"/>
       <source>M3U8 / DASH 流媒体</source>
       <translation>Penstriman M3U8 / DASH</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="379"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="378"/>
       <source>M3U8 播放列表</source>
       <translation>Senarai Main M3U8</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="385"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="384"/>
       <source>DASH 清单</source>
       <translation>Senarai DASH</translation>
     </message>
@@ -2845,37 +2855,37 @@ pilih "Tiada Emulasi" untuk menghantar seperti asal</translation>
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="432"/>
+      <location filename="../../view/windows/main_window.py" line="433"/>
       <source>程序发生异常</source>
       <translation>Pengecualian berlaku</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="151"/>
+      <location filename="../../view/windows/main_window.py" line="148"/>
       <source>下载任务</source>
       <translation>Tugasan</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="155"/>
+      <location filename="../../view/windows/main_window.py" line="152"/>
       <source>新建任务</source>
       <translation>Tugasan Baharu</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="161"/>
+      <location filename="../../view/windows/main_window.py" line="156"/>
       <source>设置</source>
       <translation>Tetapan</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="314"/>
+      <location filename="../../view/windows/main_window.py" line="309"/>
       <source>未知</source>
       <translation>Tidak Diketahui</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="313"/>
+      <location filename="../../view/windows/main_window.py" line="308"/>
       <source>浏览器扩展</source>
       <translation>Sambungan Pelayar</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="310"/>
+      <location filename="../../view/windows/main_window.py" line="305"/>
       <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -2892,42 +2902,42 @@ Versi Sambungan: {2}
 Hanya benarkan permintaan ini jika anda telah meminta &quot;Ganding Automatik&quot; daripada sambungan.</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="316"/>
+      <location filename="../../view/windows/main_window.py" line="311"/>
       <source>浏览器扩展配对请求</source>
       <translation>Permintaan Gandingan Sambungan Pelayar</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="317"/>
+      <location filename="../../view/windows/main_window.py" line="312"/>
       <source>允许配对</source>
       <translation>Benarkan</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="318"/>
+      <location filename="../../view/windows/main_window.py" line="313"/>
       <source>拒绝</source>
       <translation>Tolak</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="328"/>
+      <location filename="../../view/windows/main_window.py" line="323"/>
       <source>浏览器扩展服务无法启动</source>
       <translation>Tidak dapat memulakan perkhidmatan sambungan pelayar</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="331"/>
+      <location filename="../../view/windows/main_window.py" line="326"/>
       <source>Aria2 RPC 兼容服务无法启动</source>
       <translation>Tidak dapat memulakan perkhidmatan serasi Aria2 RPC</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="344"/>
+      <location filename="../../view/windows/main_window.py" line="339"/>
       <source>前往设置</source>
       <translation>Buka Tetapan</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="370"/>
+      <location filename="../../view/windows/main_window.py" line="365"/>
       <source>查看详情</source>
       <translation>Lihat Butiran</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="434"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2936,52 +2946,52 @@ Hanya benarkan permintaan ini jika anda telah meminta &quot;Ganding Automatik&qu
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="437"/>
+      <location filename="../../view/windows/main_window.py" line="438"/>
       <source>查看日志</source>
       <translation>Lihat Log</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="484"/>
+      <location filename="../../view/windows/main_window.py" line="485"/>
       <source>是否完全退出程序？</source>
       <translation>Keluar dari Aplikasi Sepenuhnya?</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="486"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>Semasa berjalan di latar belakang, anda boleh membuka semula aplikasi daripada ikon dulang sistem.</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="488"/>
+      <location filename="../../view/windows/main_window.py" line="489"/>
       <source>退出程序</source>
       <translation>Keluar dari Aplikasi</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="490"/>
       <source>继续在后台运行</source>
       <translation>Teruskan berjalan di latar belakang</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="491"/>
       <source>记住我的选择</source>
       <translation>Ingat pilihan saya</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="356"/>
+      <location filename="../../view/windows/main_window.py" line="351"/>
       <source>检测到新版本</source>
       <translation>Versi Baharu Tersedia</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="357"/>
+      <location filename="../../view/windows/main_window.py" line="352"/>
       <source>最新版本: {0}</source>
       <translation>Versi terkini: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="364"/>
+      <location filename="../../view/windows/main_window.py" line="359"/>
       <source>立即下载</source>
       <translation>Muat Turun Sekarang</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="373"/>
+      <location filename="../../view/windows/main_window.py" line="368"/>
       <source>请作者喝咖啡</source>
       <translation>Belanja Penulis Kopi</translation>
     </message>
@@ -3373,27 +3383,32 @@ Bendera {2}  Kemajuan {3}</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/plan_task.py" line="23"/>
+      <source>退出程序</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/dialogs/plan_task.py" line="24"/>
       <source>打开文件</source>
       <translation>Buka Fail</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="35"/>
+      <location filename="../../view/dialogs/plan_task.py" line="36"/>
       <source>确认</source>
       <translation>Sahkan</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="36"/>
+      <location filename="../../view/dialogs/plan_task.py" line="37"/>
       <source>取消</source>
       <translation>Batal</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="45"/>
+      <location filename="../../view/dialogs/plan_task.py" line="47"/>
       <source>请选择要打开的文件</source>
       <translation>Sila pilih fail untuk dibuka</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="47"/>
-      <location filename="../../view/dialogs/plan_task.py" line="81"/>
+      <location filename="../../view/dialogs/plan_task.py" line="49"/>
+      <location filename="../../view/dialogs/plan_task.py" line="84"/>
       <source>选择文件</source>
       <translation>Pilih Fail</translation>
     </message>
@@ -3503,12 +3518,12 @@ Kad liar: *.pcs.baidu.com (memadankan semua subdomain)</translation>
   <context>
     <name>Presets</name>
     <message>
-      <location filename="../../config/cfg.py" line="221"/>
+      <location filename="../../config/cfg.py" line="222"/>
       <source>默认</source>
       <translation>Lalai</translation>
     </message>
     <message>
-      <location filename="../../config/cfg.py" line="348"/>
+      <location filename="../../config/cfg.py" line="353"/>
       <source>百度网盘客户端</source>
       <translation>Klien Baidu Netdisk</translation>
     </message>
@@ -3666,13 +3681,13 @@ Kad liar: *.pcs.baidu.com (memadankan semua subdomain)</translation>
     <name>RuntimeCard</name>
     <message>
       <location filename="../../view/components/setting_cards.py" line="928"/>
-      <location filename="../../view/components/setting_cards.py" line="999"/>
+      <location filename="../../view/components/setting_cards.py" line="998"/>
       <source>正在检测运行时...</source>
       <translation>Mengesan masa jalan...</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="942"/>
-      <location filename="../../view/components/setting_cards.py" line="1027"/>
+      <location filename="../../view/components/setting_cards.py" line="1026"/>
       <source>一键安装</source>
       <translation>Pasang</translation>
     </message>
@@ -3687,7 +3702,7 @@ Kad liar: *.pcs.baidu.com (memadankan semua subdomain)</translation>
       <translation>Memuat turun... {0}%</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="990"/>
+      <location filename="../../view/components/setting_cards.py" line="989"/>
       <source>取消安装</source>
       <translation>Batal Pasang</translation>
     </message>
@@ -3707,47 +3722,47 @@ Kad liar: *.pcs.baidu.com (memadankan semua subdomain)</translation>
       <translation>Memasang...</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1011"/>
+      <location filename="../../view/components/setting_cards.py" line="1010"/>
       <source>版本: {0}（最新: {1}）</source>
       <translation>Versi: {0} (Terkini: {1})</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1013"/>
+      <location filename="../../view/components/setting_cards.py" line="1012"/>
       <source>版本: {0}</source>
       <translation>Versi: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1015"/>
+      <location filename="../../view/components/setting_cards.py" line="1014"/>
       <source>最新版本: {0}</source>
       <translation>Versi terkini: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1054"/>
+      <location filename="../../view/components/setting_cards.py" line="1053"/>
       <source>确认卸载</source>
       <translation>Sahkan Nyahpasang</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1055"/>
+      <location filename="../../view/components/setting_cards.py" line="1054"/>
       <source>确定要卸载 {0} 吗？</source>
       <translation>Adakah anda pasti mahu menyahpasang {0}?</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1066"/>
+      <location filename="../../view/components/setting_cards.py" line="1065"/>
       <source>卸载失败</source>
       <translation>Gagal Menyahpasang</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1018"/>
+      <location filename="../../view/components/setting_cards.py" line="1017"/>
       <source>路径: {0}</source>
       <translation>Laluan: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1021"/>
+      <location filename="../../view/components/setting_cards.py" line="1020"/>
       <source>未检测到可用的 {0}</source>
       <translation>Tiada {0} yang tersedia dikesan</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1024"/>
+      <location filename="../../view/components/setting_cards.py" line="1023"/>
       <source>更新到 {0}</source>
       <translation>Kemas kini ke {0}</translation>
     </message>
@@ -3963,7 +3978,7 @@ Kad liar: *.pcs.baidu.com (memadankan semua subdomain)</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="62"/>
-      <location filename="../../view/pages/setting_page.py" line="376"/>
+      <location filename="../../view/pages/setting_page.py" line="379"/>
       <source>关于</source>
       <translation>Perihal</translation>
     </message>
@@ -4015,80 +4030,80 @@ apabila bebenang selesai atau Peningkatan Automatik didayakan</translation>
       <translation>Apabila suis Had Kelajuan dihidupkan pada halaman Tugasan, kelajuan gabungan semua tugasan akan dihadkan kepada nilai ini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="137"/>
+      <location filename="../../view/pages/setting_page.py" line="140"/>
       <source>下载时验证 SSL 证书</source>
       <translation>Sahkan Sijil SSL</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="138"/>
+      <location filename="../../view/pages/setting_page.py" line="141"/>
       <source>文件无法下载时，可尝试关闭该选项</source>
       <translation>Cuba nyahdayakan pilihan ini jika fail gagal dimuat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="145"/>
+      <location filename="../../view/pages/setting_page.py" line="148"/>
       <source>启用浏览器扩展</source>
       <translation>Dayakan Sambungan Penyemak Imbas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="146"/>
-      <location filename="../../view/pages/setting_page.py" line="485"/>
+      <location filename="../../view/pages/setting_page.py" line="149"/>
+      <location filename="../../view/pages/setting_page.py" line="488"/>
       <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
       <translation>Terima muat turun daripada penyemak imbas - pemasangan sambungan diperlukan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="178"/>
+      <location filename="../../view/pages/setting_page.py" line="181"/>
       <source>复制令牌</source>
       <translation>Salin</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="178"/>
+      <location filename="../../view/pages/setting_page.py" line="181"/>
       <source>配对令牌</source>
       <translation>Token Pemadanan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="182"/>
+      <location filename="../../view/pages/setting_page.py" line="185"/>
       <source>重新生成令牌</source>
       <translation>Jana Semula</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="250"/>
+      <location filename="../../view/pages/setting_page.py" line="253"/>
       <source>应用主题</source>
       <translation>Tema Aplikasi</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="251"/>
+      <location filename="../../view/pages/setting_page.py" line="254"/>
       <source>更改应用程序的外观</source>
       <translation>Ubah penampilan aplikasi</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <location filename="../../view/pages/setting_page.py" line="255"/>
       <source>浅色</source>
       <translation>Cerah</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <location filename="../../view/pages/setting_page.py" line="255"/>
       <source>深色</source>
       <translation>Gelap</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <location filename="../../view/pages/setting_page.py" line="255"/>
       <source>跟随系统设置</source>
       <translation>Ikut Tetapan Sistem</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="257"/>
-      <location filename="../../view/pages/setting_page.py" line="264"/>
+      <location filename="../../view/pages/setting_page.py" line="260"/>
+      <location filename="../../view/pages/setting_page.py" line="267"/>
       <source>窗口背景透明材质</source>
       <translation>Mod Ketelusan Latar Belakang Tetingkap</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="258"/>
-      <location filename="../../view/pages/setting_page.py" line="265"/>
+      <location filename="../../view/pages/setting_page.py" line="261"/>
+      <location filename="../../view/pages/setting_page.py" line="268"/>
       <source>设置窗口背景透明效果和透明材质</source>
       <translation>Laraskan kesan ketelusan latar belakang tetingkap</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="244"/>
+      <location filename="../../view/pages/setting_page.py" line="247"/>
       <source>界面缩放</source>
       <translation>Penskalaan UI</translation>
     </message>
@@ -4118,27 +4133,27 @@ apabila bebenang selesai atau Peningkatan Automatik didayakan</translation>
       <translation>Tetapkan masa pengubahsuaian fail kepada nilai Last-Modified pelayan selepas muat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="168"/>
+      <location filename="../../view/pages/setting_page.py" line="171"/>
       <source>Edge 商店</source>
       <translation>Kedai Edge</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="164"/>
+      <location filename="../../view/pages/setting_page.py" line="167"/>
       <source>从商店安装扩展</source>
       <translation>Pasang Sambungan Daripada Kedai Web</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="165"/>
+      <location filename="../../view/pages/setting_page.py" line="168"/>
       <source>商店版扩展需等待审核后才能获得更新</source>
       <translation>Kemas kini versi kedai web mungkin tertangguh disebabkan oleh proses semakan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="173"/>
+      <location filename="../../view/pages/setting_page.py" line="176"/>
       <source>Chrome 商店</source>
       <translation>Kedai Chrome</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="163"/>
+      <location filename="../../view/pages/setting_page.py" line="166"/>
       <source>Firefox 商店</source>
       <translation>Kedai Firefox</translation>
     </message>
@@ -4148,78 +4163,78 @@ apabila bebenang selesai atau Peningkatan Automatik didayakan</translation>
       <translation>Tiada tetapan sepadan ditemui</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="134"/>
+      <location filename="../../view/pages/setting_page.py" line="137"/>
       <source>使用系统 DNS</source>
       <translation>Gunakan DNS Sistem</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="135"/>
+      <location filename="../../view/pages/setting_page.py" line="138"/>
       <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
       <translation>Gunakan penyelesai DNS sistem untuk keserasian yang lebih baik dengan persekitaran TUN/VPN/Proksi</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="151"/>
+      <location filename="../../view/pages/setting_page.py" line="154"/>
       <source>一键安装</source>
       <translation>Pasang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="152"/>
+      <location filename="../../view/pages/setting_page.py" line="155"/>
       <source>安装到 Chromium 浏览器</source>
       <translation>Pasang ke Penyemak Imbas Chromium</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="153"/>
+      <location filename="../../view/pages/setting_page.py" line="156"/>
       <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
       <translation>Nyahbungkus sambungan dan paparkan panduan pemasangan (Chrome/Brave dll.); sambungan dikemas kini secara automatik bersama klien desktop</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="156"/>
+      <location filename="../../view/pages/setting_page.py" line="159"/>
       <source>导出 CRX</source>
       <translation>Eksport Fail CRX</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="193"/>
+      <location filename="../../view/pages/setting_page.py" line="196"/>
       <source>服务端口</source>
       <translation>Port Perkhidmatan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="194"/>
+      <location filename="../../view/pages/setting_page.py" line="197"/>
       <source>浏览器扩展连接使用的端口</source>
       <translation>Port yang digunakan untuk sambungan penyemak imbas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="208"/>
+      <location filename="../../view/pages/setting_page.py" line="211"/>
       <source>接管下载时进入草稿模式</source>
       <translation>Cipta Draf Apabila Memintas Muat Turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="209"/>
+      <location filename="../../view/pages/setting_page.py" line="212"/>
       <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
       <translation>Masuk ke mod draf apabila memintas muat turun penyemak imbas secara automatik untuk melaraskan laluan muat turun dan nama fail</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="202"/>
+      <location filename="../../view/pages/setting_page.py" line="205"/>
       <source>允许浏览器扩展唤醒</source>
       <translation>Benarkan Pelancaran Daripada Sambungan Pelayar</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="203"/>
+      <location filename="../../view/pages/setting_page.py" line="206"/>
       <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
       <translation>Sambungan pelayar boleh melancarkan aplikasi melalui skema URL ghostdownloader://</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="220"/>
+      <location filename="../../view/pages/setting_page.py" line="223"/>
       <source>启用 Aria2 RPC 兼容</source>
       <translation>Dayakan Sokongan Aria2 RPC</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="220"/>
-      <location filename="../../view/pages/setting_page.py" line="499"/>
+      <location filename="../../view/pages/setting_page.py" line="223"/>
+      <location filename="../../view/pages/setting_page.py" line="502"/>
       <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
       <translation>Dayakan sokongan untuk protokol Aria2 JSON-RPC, membenarkan penerimaan pautan muat turun daripada alat luaran</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="225"/>
+      <location filename="../../view/pages/setting_page.py" line="228"/>
       <source>监听端口</source>
       <translation>Port</translation>
     </message>
@@ -4239,356 +4254,366 @@ apabila bebenang selesai atau Peningkatan Automatik didayakan</translation>
       <translation>Rangkaian</translation>
     </message>
     <message>
+      <location filename="../../view/pages/setting_page.py" line="122"/>
+      <source>记住上次使用的下载路径</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
       <location filename="../../view/pages/setting_page.py" line="123"/>
+      <source>新建任务默认使用上次下载的文件夹，无记录时使用默认下载路径</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/pages/setting_page.py" line="126"/>
       <source>同名文件</source>
       <translation>Fail Pendua</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="124"/>
+      <location filename="../../view/pages/setting_page.py" line="127"/>
       <source>下载目录中已有同名文件时的处理方式</source>
       <translation>Cara mengendalikan nama fail pendua dalam direktori muat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <location filename="../../view/pages/setting_page.py" line="128"/>
       <source>保留两者</source>
       <translation>Simpan Kedua-duanya</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <location filename="../../view/pages/setting_page.py" line="128"/>
       <source>覆盖</source>
       <translation>Tulis Ganti</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <location filename="../../view/pages/setting_page.py" line="128"/>
       <source>询问</source>
       <translation>Tanya</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="126"/>
+      <location filename="../../view/pages/setting_page.py" line="129"/>
       <source>自动移除缺失的任务</source>
       <translation>Alih Keluar Tugasan Dengan Kandungan Hilang Secara Automatik</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="127"/>
+      <location filename="../../view/pages/setting_page.py" line="130"/>
       <source>文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务</source>
       <translation>Alih keluar tugasan yang kandungannya hilang daripada senarai tugasan secara automatik,
 akibat operasi fail atau kemungkinan cakera terputus sambungan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="187"/>
+      <location filename="../../view/pages/setting_page.py" line="190"/>
       <source>自动选择端口</source>
       <translation>Pilih Port Secara Automatik</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="188"/>
+      <location filename="../../view/pages/setting_page.py" line="191"/>
       <source>端口冲突时自动切换至可用候选端口</source>
       <translation>Beralih secara automatik ke port calon yang tersedia sekiranya berlaku konflik port</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="226"/>
+      <location filename="../../view/pages/setting_page.py" line="229"/>
       <source>Aria2 RPC 默认端口为 16800</source>
       <translation>Port lalai Aria2 RPC ialah 16800</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="230"/>
+      <location filename="../../view/pages/setting_page.py" line="233"/>
       <source>令牌</source>
       <translation>Token Pengesahan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="231"/>
+      <location filename="../../view/pages/setting_page.py" line="234"/>
       <source>若设置，客户端需传入 token 才可创建任务</source>
       <translation>Jika ditetapkan, klien mesti menyediakan token ini untuk mencipta tugasan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="233"/>
+      <location filename="../../view/pages/setting_page.py" line="236"/>
       <source>可选</source>
       <translation>Pilihan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="237"/>
+      <location filename="../../view/pages/setting_page.py" line="240"/>
       <source>模拟浏览器指纹</source>
       <translation>Ajuk Cap Jari Penyemak Imbas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="238"/>
+      <location filename="../../view/pages/setting_page.py" line="241"/>
       <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
       <translation>Lampirkan Cap Jari TLS Penyemak Imbas dan Pengepala Permintaan pada tugasan yang diterima melalui Aria2 RPC</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="245"/>
+      <location filename="../../view/pages/setting_page.py" line="248"/>
       <source>改变应用程序界面的缩放比例, 0% 为自动</source>
       <translation>Laraskan penskalaan UI (0% untuk automatik)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="271"/>
+      <location filename="../../view/pages/setting_page.py" line="274"/>
       <source>在 Dock 栏中显示程序</source>
       <translation>Tunjukkan Ikon Aplikasi dalam Dock</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="272"/>
+      <location filename="../../view/pages/setting_page.py" line="275"/>
       <source>关闭后可通过菜单栏图标继续使用程序</source>
       <translation>Jika dinyahdayakan, gunakan item bar menu untuk membuka tetingkap ini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="276"/>
+      <location filename="../../view/pages/setting_page.py" line="279"/>
       <source>在 Dock 图标上显示实时速度</source>
       <translation>Tunjukkan Kelajuan Masa Nyata pada Ikon Dock</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="277"/>
+      <location filename="../../view/pages/setting_page.py" line="280"/>
       <source>下载时在程序坞图标上叠加当前速度</source>
       <translation>Tindih kelajuan muat turun semasa pada ikon Dock</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="284"/>
+      <location filename="../../view/pages/setting_page.py" line="287"/>
       <source>在菜单栏显示实时速度</source>
       <translation>Tunjukkan Kelajuan Masa Nyata dalam Bar Menu</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="285"/>
+      <location filename="../../view/pages/setting_page.py" line="288"/>
       <source>下载时在菜单栏图标旁显示当前速度</source>
       <translation>Tunjukkan kelajuan muat turun semasa bersebelahan ikon bar menu</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="289"/>
+      <location filename="../../view/pages/setting_page.py" line="292"/>
       <source>语言</source>
       <translation>Bahasa</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="290"/>
+      <location filename="../../view/pages/setting_page.py" line="293"/>
       <source>设置界面的首选语言</source>
       <translation>Tetapkan bahasa pilihan untuk antara muka</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="291"/>
+      <location filename="../../view/pages/setting_page.py" line="294"/>
       <source>使用系统设置</source>
       <translation>Gunakan Tetapan Sistem</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="303"/>
+      <location filename="../../view/pages/setting_page.py" line="306"/>
       <source>切换到用户模式</source>
       <translation>Beralih ke Mod Pengguna</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="304"/>
-      <location filename="../../view/pages/setting_page.py" line="310"/>
+      <location filename="../../view/pages/setting_page.py" line="307"/>
+      <location filename="../../view/pages/setting_page.py" line="313"/>
       <source>数据存储模式</source>
       <translation>Mod Penyimpanan Data Konfigurasi</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="305"/>
+      <location filename="../../view/pages/setting_page.py" line="308"/>
       <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
       <translation>Kini berjalan dalam mod Mudah Alih (Portable), konfigurasi disimpan di sebelah aplikasi:
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="309"/>
+      <location filename="../../view/pages/setting_page.py" line="312"/>
       <source>切换到 Portable 模式</source>
       <translation>Beralih ke Mod Mudah Alih (Portable)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="311"/>
+      <location filename="../../view/pages/setting_page.py" line="314"/>
       <source>当前为用户模式，数据保存在: {0}</source>
       <translation>Kini berjalan dalam Mod Pengguna, konfigurasi disimpan di:
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="322"/>
+      <location filename="../../view/pages/setting_page.py" line="325"/>
       <source>命令行工具</source>
       <translation>Alat Baris Arahan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="323"/>
+      <location filename="../../view/pages/setting_page.py" line="326"/>
       <source>安装后可在终端中使用 ghd 命令添加和管理任务</source>
       <translation>Selepas memasang, gunakan arahan ghd dalam terminal untuk menambah dan mengurus tugasan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="381"/>
+      <location filename="../../view/pages/setting_page.py" line="384"/>
       <source>在应用程序启动时检查更新</source>
       <translation>Semak Kemas Kini semasa Permulaan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="382"/>
+      <location filename="../../view/pages/setting_page.py" line="385"/>
       <source>新版本将更稳定，并具有更多功能</source>
       <translation>Dapatkan lebih banyak ciri dan kestabilan yang lebih baik dengan versi baharu</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="331"/>
+      <location filename="../../view/pages/setting_page.py" line="334"/>
       <source>关闭主窗口时</source>
       <translation>Tindakan Menutup Tetingkap Utama</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="332"/>
+      <location filename="../../view/pages/setting_page.py" line="335"/>
       <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
       <translation>Pilih sama ada mahu terus berjalan di latar belakang atau keluar apabila menutup tetingkap utama</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>关闭时询问</source>
       <translation>Tanya apabila menutup</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>继续在后台运行</source>
       <translation>Teruskan berjalan di latar belakang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>退出程序</source>
       <translation>Keluar dari Aplikasi</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="341"/>
+      <location filename="../../view/pages/setting_page.py" line="344"/>
       <source>通知提示音</source>
       <translation>Bunyi Pemberitahuan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="342"/>
+      <location filename="../../view/pages/setting_page.py" line="345"/>
       <source>下载完成时播放提示音</source>
       <translation>Mainkan bunyi apabila muat turun selesai</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="366"/>
+      <location filename="../../view/pages/setting_page.py" line="369"/>
       <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
       <translation>Bantu menambah baik Ghost Downloader dengan memberikan maklum balas, atau lihat log untuk menyelesaikan masalah</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="372"/>
+      <location filename="../../view/pages/setting_page.py" line="375"/>
       <source>查看详情</source>
       <translation>Lihat Butiran</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="372"/>
+      <location filename="../../view/pages/setting_page.py" line="375"/>
       <source>功能包</source>
       <translation>Pek Ciri</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="373"/>
+      <location filename="../../view/pages/setting_page.py" line="376"/>
       <source>管理已安装的功能包</source>
       <translation>Urus pek ciri yang dipasang pada masa ini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="503"/>
+      <location filename="../../view/pages/setting_page.py" line="506"/>
       <source>正在端口 {} 上监听</source>
       <translation>Mendengar pada port {}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="338"/>
+      <location filename="../../view/pages/setting_page.py" line="341"/>
       <source>系统通知</source>
       <translation>Pemberitahuan Sistem</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="315"/>
+      <location filename="../../view/pages/setting_page.py" line="318"/>
       <source>新建任务的下载进度</source>
       <translation>Kemajuan Muat Turun untuk Tugasan Baharu</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="316"/>
+      <location filename="../../view/pages/setting_page.py" line="319"/>
       <source>选择新建任务下载进度的显示方式</source>
       <translation>Pilih cara kemajuan muat turun untuk tugasan baharu ditunjukkan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <location filename="../../view/pages/setting_page.py" line="320"/>
       <source>不显示</source>
       <translation>Jangan tunjukkan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <location filename="../../view/pages/setting_page.py" line="320"/>
       <source>通过弹窗显示</source>
       <translation>Tunjukkan dalam tetingkap timbul</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <location filename="../../view/pages/setting_page.py" line="320"/>
       <source>显示于任务栏</source>
       <translation>Tunjukkan dalam bar tugasan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="336"/>
+      <location filename="../../view/pages/setting_page.py" line="339"/>
       <source>通知方式</source>
       <translation>Gaya Pemberitahuan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="337"/>
+      <location filename="../../view/pages/setting_page.py" line="340"/>
       <source>下载完成、磁盘空间不足等提示的显示方式</source>
       <translation>Cara notis seperti muat turun selesai atau ruang cakera tidak mencukupi ditunjukkan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="338"/>
+      <location filename="../../view/pages/setting_page.py" line="341"/>
       <source>弹窗</source>
       <translation>Tetingkap Timbul</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="339"/>
+      <location filename="../../view/pages/setting_page.py" line="342"/>
       <source>关闭</source>
       <translation>Tutup</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="348"/>
+      <location filename="../../view/pages/setting_page.py" line="351"/>
       <source>复制链接后先询问</source>
       <translation>Tanya selepas menyalin pautan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="349"/>
+      <location filename="../../view/pages/setting_page.py" line="352"/>
       <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
       <translation>Apabila tetingkap utama ditutup atau diminimumkan, tunjukkan tetingkap timbul bertanyakan sama ada mahu memuat turun jika didayakan; jika tidak, buka tetingkap utama secara terus.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="533"/>
+      <location filename="../../view/pages/setting_page.py" line="536"/>
       <source>卸载</source>
       <translation>Nyahpasang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="533"/>
+      <location filename="../../view/pages/setting_page.py" line="536"/>
       <source>安装</source>
       <translation>Pasang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="545"/>
+      <location filename="../../view/pages/setting_page.py" line="548"/>
       <source>已卸载命令行工具</source>
       <translation>Alat baris arahan telah dinyahpasang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="548"/>
+      <location filename="../../view/pages/setting_page.py" line="551"/>
       <source>新打开的终端即可使用 ghd</source>
       <translation>ghd tersedia dalam terminal yang baru dibuka</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="550"/>
+      <location filename="../../view/pages/setting_page.py" line="553"/>
       <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
       <translation>ghd tersedia dalam terminal yang baru dibuka; jika arahan tidak ditemui, tambahkan ~/.local/bin ke PATH</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="551"/>
+      <location filename="../../view/pages/setting_page.py" line="554"/>
       <source>已安装命令行工具</source>
       <translation>Alat baris arahan telah dipasang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="557"/>
+      <location filename="../../view/pages/setting_page.py" line="560"/>
       <source>卸载命令行工具失败</source>
       <translation>Gagal menyahpasang alat baris arahan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="557"/>
+      <location filename="../../view/pages/setting_page.py" line="560"/>
       <source>安装命令行工具失败</source>
       <translation>Gagal memasang alat baris arahan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="565"/>
+      <location filename="../../view/pages/setting_page.py" line="568"/>
       <source>用户模式</source>
       <translation>Mod Pengguna</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="565"/>
+      <location filename="../../view/pages/setting_page.py" line="568"/>
       <source>Portable 模式</source>
       <translation>Mod Mudah Alih (Portable)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="567"/>
+      <location filename="../../view/pages/setting_page.py" line="570"/>
       <source>切换数据存储模式</source>
       <translation>Tukar Mod Penyimpanan Data</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="568"/>
+      <location filename="../../view/pages/setting_page.py" line="571"/>
       <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4597,58 +4622,58 @@ akibat operasi fail atau kemungkinan cakera terputus sambungan</translation>
 Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila lancarkan semula aplikasi secara manual.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="588"/>
+      <location filename="../../view/pages/setting_page.py" line="591"/>
       <source>正在检查更新...</source>
       <translation>Menyemak kemas kini...</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="600"/>
+      <location filename="../../view/pages/setting_page.py" line="603"/>
       <source>当前已是最新版本</source>
       <translation>Anda sedang menggunakan versi terkini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="597"/>
+      <location filename="../../view/pages/setting_page.py" line="600"/>
       <source>检查更新失败</source>
       <translation>Gagal menyemak kemas kini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="597"/>
+      <location filename="../../view/pages/setting_page.py" line="600"/>
       <source>无法获取最新版本信息</source>
       <translation>Tidak dapat memperoleh maklumat versi terkini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="613"/>
+      <location filename="../../view/pages/setting_page.py" line="616"/>
       <source>搜索设置</source>
       <translation>Cari Tetapan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="296"/>
+      <location filename="../../view/pages/setting_page.py" line="299"/>
       <source>开机启动</source>
       <translation>Mula semasa But</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="297"/>
+      <location filename="../../view/pages/setting_page.py" line="300"/>
       <source>在系统启动时静默运行 Ghost Downloader</source>
       <translation>Mulakan Ghost Downloader secara diminimumkan semasa permulaan sistem</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="387"/>
+      <location filename="../../view/pages/setting_page.py" line="390"/>
       <source>打开作者的个人空间</source>
       <translation>Buka Profil Pengarang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="388"/>
+      <location filename="../../view/pages/setting_page.py" line="391"/>
       <source>了解作者</source>
       <translation>Perihal Pengarang</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="388"/>
+      <location filename="../../view/pages/setting_page.py" line="391"/>
       <source>发现更多 {} 的作品</source>
       <translation>Temui lebih banyak karya oleh {}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="364"/>
-      <location filename="../../view/pages/setting_page.py" line="365"/>
+      <location filename="../../view/pages/setting_page.py" line="367"/>
+      <location filename="../../view/pages/setting_page.py" line="368"/>
       <source>提供反馈</source>
       <translation>Beri Maklum Balas</translation>
     </message>
@@ -4658,63 +4683,63 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
       <translation>Saiz Pengagihan Semula Minimum</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="368"/>
+      <location filename="../../view/pages/setting_page.py" line="371"/>
       <source>查看日志</source>
       <translation>Lihat Log</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="376"/>
-      <location filename="../../view/pages/setting_page.py" line="588"/>
+      <location filename="../../view/pages/setting_page.py" line="379"/>
+      <location filename="../../view/pages/setting_page.py" line="591"/>
       <source>检查更新</source>
       <translation>Semak Kemas Kini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="449"/>
+      <location filename="../../view/pages/setting_page.py" line="452"/>
       <source>已配置</source>
       <translation>Konfigurasi Disimpan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="449"/>
+      <location filename="../../view/pages/setting_page.py" line="452"/>
       <source>重启软件后生效</source>
       <translation>Mula semula diperlukan untuk berkuat kuasa</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="457"/>
+      <location filename="../../view/pages/setting_page.py" line="460"/>
       <source>已复制配对令牌</source>
       <translation>Token Disalin</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="463"/>
+      <location filename="../../view/pages/setting_page.py" line="466"/>
       <source>已重新生成配对令牌</source>
       <translation>Token Dijana Semula</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="463"/>
+      <location filename="../../view/pages/setting_page.py" line="466"/>
       <source>新令牌已复制到剪贴板</source>
       <translation>Token baharu telah disalin ke papan keratan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="478"/>
+      <location filename="../../view/pages/setting_page.py" line="481"/>
       <source>解包失败</source>
       <translation>Gagal menyahbungkus</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="489"/>
+      <location filename="../../view/pages/setting_page.py" line="492"/>
       <source>未连接</source>
       <translation>Tidak Disambungkan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="491"/>
+      <location filename="../../view/pages/setting_page.py" line="494"/>
       <source>已连接 v{} (桌面端自管理)</source>
       <translation>Disambungkan v{} (Diuruskan oleh desktop)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="493"/>
+      <location filename="../../view/pages/setting_page.py" line="496"/>
       <source>已连接 v{} (商店安装)</source>
       <translation>Disambungkan v{} (Dipasang dari gedung)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="510"/>
+      <location filename="../../view/pages/setting_page.py" line="513"/>
       <source>选择导出路径</source>
       <translation>Pilih Laluan Eksport</translation>
     </message>
@@ -4818,38 +4843,38 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
   <context>
     <name>SystemTrayIcon</name>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="105"/>
-      <location filename="../../view/shell/tray.py" line="184"/>
+      <location filename="../../view/shell/mac_status_item.py" line="103"/>
+      <location filename="../../view/shell/tray.py" line="182"/>
       <source>仪表盘</source>
       <translation>Papan Pemuka</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="106"/>
-      <location filename="../../view/shell/tray.py" line="186"/>
+      <location filename="../../view/shell/mac_status_item.py" line="104"/>
+      <location filename="../../view/shell/tray.py" line="184"/>
       <source>新建任务</source>
       <translation>Tugasan Baharu</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="107"/>
-      <location filename="../../view/shell/tray.py" line="188"/>
+      <location filename="../../view/shell/mac_status_item.py" line="105"/>
+      <location filename="../../view/shell/tray.py" line="186"/>
       <source>全部开始</source>
       <translation>Mulakan Semua</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="108"/>
-      <location filename="../../view/shell/tray.py" line="190"/>
+      <location filename="../../view/shell/mac_status_item.py" line="106"/>
+      <location filename="../../view/shell/tray.py" line="188"/>
       <source>全部暂停</source>
       <translation>Jedakan Semua</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="109"/>
-      <location filename="../../view/shell/tray.py" line="192"/>
+      <location filename="../../view/shell/mac_status_item.py" line="107"/>
+      <location filename="../../view/shell/tray.py" line="190"/>
       <source>设置</source>
       <translation>Tetapan</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="111"/>
-      <location filename="../../view/shell/tray.py" line="195"/>
+      <location filename="../../view/shell/mac_status_item.py" line="109"/>
+      <location filename="../../view/shell/tray.py" line="193"/>
       <source>退出程序</source>
       <translation>Keluar dari Aplikasi</translation>
     </message>
@@ -5367,33 +5392,48 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="9"/>
-      <source>请求的格式不可用，请稍后重试（{detail}）</source>
-      <translation>Format yang diminta tidak tersedia, sila cuba sebentar lagi: {detail}</translation>
+      <source>QuickJS 运行环境异常，请在设置中重新安装 yt-dlp（{detail}）</source>
+      <translation type="unfinished"/>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="10"/>
+      <source>YouTube 解密组件缺失或不可用，请在设置中更新或重新安装 yt-dlp（{detail}）</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
+      <source>YouTube Cookie 已失效或受限，请在设置中清除或重新导入 Cookie（{detail}）</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
+      <source>请求的格式不可用，请在设置中更新 yt-dlp 后重试（{detail}）</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="16"/>
+      <source>未找到 yt-dlp nightly</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="17"/>
+      <source>未找到 yt-dlp-ejs {version}</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
       <source>下载被拒绝（403），链接可能已失效（{detail}）</source>
       <translation>Permintaan ditolak (403), pautan mungkin telah tamat tempoh: {detail}</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="14"/>
       <source>视频信息提取失败：{detail}</source>
       <translation>Pengekstrakan metadata video gagal: {detail}</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="15"/>
       <source>未找到可用的视频格式</source>
       <translation>Tiada format video yang tersedia ditemui</translation>
-    </message>
-    <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
-      <source>未找到 yt-dlp nightly tarball</source>
-      <translation>Tarball nightly yt-dlp tidak ditemui</translation>
-    </message>
-    <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="14"/>
-      <source>FFmpeg 写入元数据失败（{code}）：{detail}</source>
-      <translation>Penulisan metadata FFmpeg gagal ({code}): {detail}</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/i18n.py" line="3"/>
@@ -5625,23 +5665,23 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
     </message>
     <message>
       <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="660"/>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="666"/>
+      <location filename="../../view/pages/task_page.py" line="678"/>
       <source>暂无下载任务</source>
       <translation>Tiada tugas muat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>限速（右键修改）</source>
       <translation>Had Kelajuan (Klik kanan untuk ubah)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>按分类筛选</source>
       <translation>Tapis Mengikut Kategori</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="245"/>
+      <location filename="../../view/pages/task_page.py" line="247"/>
       <source>选择任务</source>
       <translation>Pilih Tugas</translation>
     </message>
@@ -5666,103 +5706,103 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
       <translation>Susun mengikut Tertib Giliran</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="246"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>计划任务</source>
       <translation>Jadualkan Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="361"/>
+      <location filename="../../view/pages/task_page.py" line="365"/>
       <source>搜索任务</source>
       <translation>Cari Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="471"/>
+      <location filename="../../view/pages/task_page.py" line="475"/>
       <source>下载限速</source>
       <translation>Had Kelajuan Muat Turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="555"/>
+      <location filename="../../view/pages/task_page.py" line="561"/>
       <source>删除任务</source>
       <translation>Padam Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="555"/>
+      <location filename="../../view/pages/task_page.py" line="561"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>Adakah anda pasti mahu memadamkan tugas muat turun yang dipilih?</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="556"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>同时删除已下载的文件</source>
       <translation>Padamkan juga fail yang dimuat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="662"/>
+      <location filename="../../view/pages/task_page.py" line="668"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>Tiada tugas yang sepadan dengan penapis semasa</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="664"/>
+      <location filename="../../view/pages/task_page.py" line="670"/>
       <source>没有匹配的任务</source>
       <translation>Tiada tugas yang sepadan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="666"/>
+      <location filename="../../view/pages/task_page.py" line="672"/>
       <source>该分类下暂无任务</source>
       <translation>Tiada tugas di bawah kategori ini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="674"/>
       <source>暂无活动任务</source>
       <translation>Tiada tugas aktif</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="676"/>
       <source>暂无完成任务</source>
       <translation>Tiada tugas selesai</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="782"/>
+      <location filename="../../view/pages/task_page.py" line="788"/>
       <source>校验失败</source>
       <translation>Pengesahan nilai semakan gagal</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="879"/>
+      <location filename="../../view/pages/task_page.py" line="885"/>
       <source>无法移到回收站</source>
       <translation>Tidak dapat mengalihkan ke tong kitar semula</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="880"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>Fail lama dikekalkan; fail baharu disimpan sebagai {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="888"/>
+      <location filename="../../view/pages/task_page.py" line="894"/>
       <source>无法修改任务</source>
       <translation>Tidak dapat mengedit tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="897"/>
+      <location filename="../../view/pages/task_page.py" line="903"/>
       <source>文件删除受限</source>
       <translation>Operasi Fail Disekat</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="898"/>
+      <location filename="../../view/pages/task_page.py" line="904"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>macOS telah menafikan pemadaman fail; sila tambah Ghost Downloader ke dalam
 Tetapan Sistem &gt; Privasi &amp; Keselamatan &gt; Akses Cakera Penuh</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="909"/>
       <source>前往设置</source>
       <translation>Buka Tetapan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="504"/>
+      <location filename="../../view/pages/task_page.py" line="510"/>
       <source>全部分类</source>
       <translation>Semua Kategori</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="579"/>
+      <location filename="../../view/pages/task_page.py" line="585"/>
       <source>未分类</source>
       <translation>Tidak Berkategori</translation>
     </message>
@@ -6290,7 +6330,7 @@ Untuk import manual: Buka YouTube dan log masuk, tekan F12 untuk membuka Alat Pe
       <location filename="../../../features/yt_dlp_pack/android.py" line="37"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="429"/>
       <source>最佳画质</source>
       <translation>Kualiti Terbaik</translation>
     </message>
@@ -6298,14 +6338,14 @@ Untuk import manual: Buka YouTube dan log masuk, tekan F12 untuk membuka Alat Pe
       <location filename="../../../features/yt_dlp_pack/android.py" line="44"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="430"/>
       <source>最佳音质</source>
       <translation>Kualiti Terbaik</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/android.py" line="58"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
       <source>自动</source>
       <translation>Automatik</translation>
     </message>
@@ -6320,17 +6360,17 @@ Untuk import manual: Buka YouTube dan log masuk, tekan F12 untuk membuka Alat Pe
       <translation>Pilih Video</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="395"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="387"/>
       <source>选择音频语言</source>
       <translation>Pilih Bahasa Audio</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="573"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="565"/>
       <source>未找到播放列表</source>
       <translation>Senarai main tidak ditemui</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="578"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="570"/>
       <source>加载播放列表失败</source>
       <translation>Gagal memuatkan senarai main</translation>
     </message>
