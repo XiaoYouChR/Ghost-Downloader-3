@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject, QSharedMemory
+from PySide6.QtCore import QObject, QSharedMemory, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from app.config.constants import DESKTOP_ID, DESKTOP_OBJECT_PATH
@@ -119,6 +119,9 @@ class PrimaryInstance(QObject):
         self._run: Callable[[Invocation], None] | None = None
         self._pending = [invocation] if invocation.argv or sys.platform != "darwin" else []
         self._isWakeLaunch = False
+        self._wakeActivationTimer = QTimer(self)
+        self._wakeActivationTimer.setSingleShot(True)
+        self._wakeActivationTimer.timeout.connect(self._onWakeActivationFinished)
         self._server = QLocalServer(self)
         self._server.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
         if not self._server.listen(INSTANCE_NAME):
@@ -182,6 +185,7 @@ class PrimaryInstance(QObject):
     def _onOpenRequested(self, uri: str) -> None:
         if isWakeUri(uri):
             self._isWakeLaunch = True
+            self._wakeActivationTimer.start(0)
         if uri:
             self._receive(Invocation([uri], os.getcwd()))
 
@@ -189,6 +193,9 @@ class PrimaryInstance(QObject):
         if self._run is None or self._isWakeLaunch or sys.platform != "darwin":
             return
         self._run(Invocation([], os.getcwd()))
+
+    def _onWakeActivationFinished(self) -> None:
+        self._isWakeLaunch = False
 
 
 if sys.platform == "linux":
