@@ -370,6 +370,15 @@ class MainWindow(MSFluentWindow):
         infoBar.addWidget(sponsorButton)
         infoBar.show()
 
+    def showPackUpdateReady(self, label: str) -> None:
+        InfoBar.success(
+            self.tr("功能包更新"),
+            self.tr("{0} 将在下次启动时生效").format(label),
+            duration=5000,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self,
+        )
+
     def _downloadBestAsset(self) -> None:
         from app.update import fetchBestAssetUrl
 
