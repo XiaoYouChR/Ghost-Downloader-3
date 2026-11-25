@@ -232,6 +232,9 @@ async function setupBackground() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
+  if (!chrome.contextMenus?.create) {
+    return;
+  }
   chrome.contextMenus.create({
     id: "gd-download",
     title: chrome.i18n.getMessage("downloadWithGhostDownloader"),
@@ -244,7 +247,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.contextMenus.onClicked.addListener((info) => {
+chrome.contextMenus?.onClicked?.addListener((info) => {
   void (async () => {
     await ready;
     const url = info.linkUrl || info.srcUrl;
@@ -302,7 +305,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
   void injectMediaButton(activeInfo.tabId);
 });
 
-chrome.windows.onFocusChanged.addListener((windowId) => {
+chrome.windows?.onFocusChanged?.addListener((windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
     return;
   }
@@ -434,7 +437,7 @@ if (supportsDownloadDeterminingFilename()) {
     void takeBrowserDownload(downloadItem, suggest);
     return true;
   });
-} else if (chrome.downloads.onCreated?.addListener) {
+} else if (chrome.downloads?.onCreated?.addListener) {
   chrome.downloads.onCreated.addListener((downloadItem) => {
     void takeBrowserDownload(downloadItem);
   });
