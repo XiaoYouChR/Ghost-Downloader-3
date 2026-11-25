@@ -403,6 +403,8 @@ export function createResourceBridge(options: {
 
   async function routeBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
+    // Replaying the original request obtains fresh single-use redirect targets.
+    const requestUrl = /^https?:/i.test(downloadItem.url) ? downloadItem.url : finalUrl;
     const matchedResource = cache.resourceByUrl(finalUrl) ?? cache.resourceByUrl(downloadItem.url);
     const filename =
       basenameOf(downloadItem.filename)
@@ -411,7 +413,7 @@ export function createResourceBridge(options: {
       || "resource";
 
     const headerSnapshot = cache.headerSnapshotByUrl(finalUrl) ?? cache.headerSnapshotByUrl(downloadItem.url);
-    const headers = cache.headersForUrl(finalUrl, downloadItem.referrer);
+    const headers = cache.headersForUrl(requestUrl, downloadItem.referrer);
 
     try {
       const result = await options.sendDesktopRequest<CommandResult>({
@@ -419,7 +421,7 @@ export function createResourceBridge(options: {
         source: "download",
         title: filename,
         payload: {
-          url: finalUrl,
+          url: requestUrl,
           headers,
           filename: filename,
           size:
