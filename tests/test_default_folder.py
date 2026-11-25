@@ -7,7 +7,6 @@ from app.config.cfg import cfg, currentOutputFolder, saveLastOutputFolder
 from app.models.task import Task, TaskOptions
 from app.services.browser_service import TaskSource, toTaskOptions
 from tests.conftest import FakeStep
-from tests.test_android import loadAndroidCfg
 
 
 def buildTask(name: str, folder: Path | None = None) -> Task:
@@ -125,21 +124,3 @@ def test_task_options_and_browser_follow_current_output_folder(config, downloadF
     assert TaskOptions(url="http://test/a.bin").outputFolder == work
     assert toTaskOptions(TaskSource.DOWNLOAD, {"url": "http://test/a.bin"}).outputFolder == work
     assert toTaskOptions(TaskSource.DOWNLOAD, {"url": "http://test/a.bin", "path": str(downloadFolder)}).outputFolder == downloadFolder
-
-
-def test_android_config_clears_last_folder_on_default_change(tmp_path):
-    androidCfg = loadAndroidCfg()
-    default = tmp_path / "downloads"
-    work = tmp_path / "work"
-    other = tmp_path / "other"
-    androidCfg.cfg.load(str(tmp_path / "UserConfig.json"))
-    androidCfg.cfg.set(androidCfg.cfg.downloadFolder, str(default))
-    androidCfg.cfg.set(androidCfg.cfg.shouldUseLastFolder, True)
-
-    assert androidCfg.currentOutputFolder() == default
-
-    androidCfg.saveLastOutputFolder(work)
-    assert androidCfg.currentOutputFolder() == work
-
-    androidCfg.cfg.set(androidCfg.cfg.downloadFolder, str(other))
-    assert androidCfg.currentOutputFolder() == other

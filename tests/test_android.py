@@ -128,3 +128,21 @@ def test_load_every_pack_on_android(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout.splitlines()[-1]) == {}
+
+
+def test_android_config_clears_last_folder_on_default_change(tmp_path):
+    androidCfg = loadAndroidCfg()
+    default = tmp_path / "downloads"
+    work = tmp_path / "work"
+    other = tmp_path / "other"
+    androidCfg.cfg.load(str(tmp_path / "UserConfig.json"))
+    androidCfg.cfg.set(androidCfg.cfg.downloadFolder, str(default))
+    androidCfg.cfg.set(androidCfg.cfg.shouldUseLastFolder, True)
+
+    assert androidCfg.currentOutputFolder() == default
+
+    androidCfg.saveLastOutputFolder(work)
+    assert androidCfg.currentOutputFolder() == work
+
+    androidCfg.cfg.set(androidCfg.cfg.downloadFolder, str(other))
+    assert androidCfg.currentOutputFolder() == other
