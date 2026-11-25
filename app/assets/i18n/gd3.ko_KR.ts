@@ -556,213 +556,223 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BitTorrentConfig</name>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="64"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="65"/>
       <source>BitTorrent 下载</source>
       <translation>BitTorrent 다운로드</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
       <source>停止</source>
       <translation>중지</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
       <source>停止 BitTorrent 会话</source>
       <translation>BitTorrent 연결 중지</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
-      <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="67"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
       <source>未运行</source>
       <translation>실행 중 아님</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
       <source>有 BT 任务正在下载或做种，结束后才能停止</source>
       <translation>BT 작업이 받거나 시딩하는 중이라 끝난 뒤에만 중지할 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="70"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="71"/>
       <source>空闲 5 分钟后自动停止，开始任务时会自动启动</source>
       <translation>5분 동안 아무 작업이 없으면 자동으로 멈춰요. 작업을 시작하면 다시 켜져요.</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="90"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
       <source>监听端口</source>
       <translation>수신 포트</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="91"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
       <source>0 表示交给系统自动分配可用端口</source>
       <translation>0이면 쓸 수 있는 포트를 자동으로 골라요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="92"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
       <source>元数据超时</source>
       <translation>메타데이터 제한 시간</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="93"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
       <source>解析 magnet 链接时等待元数据的最长时间</source>
       <translation>마그넷 링크를 열 때 메타데이터를 기다리는 최대 시간</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="94"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="95"/>
       <source>连接数上限</source>
       <translation>최대 연결 수</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="95"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
       <source>单个 BT 任务对应 session 的最大连接数</source>
       <translation>BT 세션 전체에서 쓸 최대 연결 수</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="96"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
       <source>上传限速</source>
       <translation>업로드 속도 제한</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="97"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="98"/>
       <source>0 表示不限速，单位为 session 级别的 KB/s</source>
       <translation>0이면 제한 없음, 단위는 BT 세션 전체 KB/s</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="99"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="100"/>
       <source>自动停止做种分享率</source>
       <translation>공유율 기준 자동 중지</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="100"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="101"/>
       <source>0 表示不按分享率自动停止，100% 表示分享率 1.0</source>
       <translation>0이면 공유율 제한이 없어요. 100%는 공유율 1.0이에요.</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="103"/>
       <source>自动停止做种时长</source>
       <translation>시딩 시간 기준 자동 중지</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="103"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="104"/>
       <source>0 表示不按做种时长自动停止</source>
       <translation>0이면 시딩 시간으로 자동 중지하지 않아요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="105"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
       <source>文件分配模式</source>
       <translation>파일 할당 모드</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
       <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
       <translation>스파스 할당은 디스크 쓰기를 줄이고, 사전 할당은 공간 부족을 더 빨리 알려 줘요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
       <source>稀疏分配</source>
       <translation>스파스 할당</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="107"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
       <source>预分配</source>
       <translation>사전 할당</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="108"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
+      <source>解析在线种子链接</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="110"/>
+      <source>HTTP 链接指向 .torrent 文件时解析为 BT 任务，关闭时仅下载 .torrent 文件</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/bittorrent_pack/config.py" line="112"/>
       <source>保存 Magnet 种子文件</source>
       <translation>마그넷 링크의 .torrent 저장</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="110"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="114"/>
       <source>顺序下载</source>
       <translation>순차 다운로드</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="111"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="115"/>
       <source>按文件顺序下载，适合边下边看但通常会影响整体效率</source>
       <translation>파일 순서대로 받아서 받는 동안 바로 보기 좋지만, 전체 속도는 조금 느려질 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
       <source>启用 uTP</source>
       <translation>uTP 사용</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="122"/>
       <source>使用 uTP 传输协议控制拥塞，关闭后仅使用 TCP</source>
       <translation>uTP로 네트워크 혼잡을 조절해요. 끄면 TCP만 써요.</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="119"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="123"/>
       <source>协议加密</source>
       <translation>프로토콜 암호화</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="120"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="124"/>
       <source>混淆对等连接流量特征，减少被运营商识别和限速</source>
       <translation>피어 연결 트래픽을 알아보기 어렵게 만들어 통신사의 탐지와 속도 제한을 줄여요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
       <source>允许加密</source>
       <translation>암호화 허용</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
       <source>强制加密</source>
       <translation>암호화 강제</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="121"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
       <source>禁用加密</source>
       <translation>암호화 사용 안 함</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="122"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="126"/>
       <source>附加 Tracker 列表</source>
       <translation>추가 트래커 목록</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="123"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="127"/>
       <source>把 Tracker 列表合并到新建的 BT 任务中</source>
       <translation>트래커 목록을 새 BT 작업에 합쳐요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="129"/>
       <source>自动更新订阅</source>
       <translation>구독 자동 업데이트</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="126"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="130"/>
       <source>每天在后台更新一次 Tracker 列表</source>
       <translation>매일 백그라운드에서 트래커 목록을 한 번 새로 받아요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="83"/>
       <source>Tracker 列表</source>
       <translation>트래커 목록</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="113"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
       <source>启用 DHT</source>
       <translation>DHT 사용</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="113"/>
       <source>下载 magnet 链接或在线种子时额外保存 .torrent 文件</source>
       <translation>마그넷 링크나 온라인 토렌트를 받을 때 .torrent 파일도 함께 저장해요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="114"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
       <source>允许通过 DHT 网络发现 peers</source>
       <translation>DHT 네트워크에서 피어를 찾을 수 있게 해요</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="115"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="119"/>
       <source>启用 LSD</source>
       <translation>LSD 사용</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="116"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="120"/>
       <source>在局域网中广播并发现同一 torrent 的 peers</source>
       <translation>같은 네트워크에서 같은 토렌트를 쓰는 피어를 찾아요</translation>
     </message>
@@ -770,12 +780,12 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BitTorrentPack</name>
     <message>
-      <location filename="../../../features/bittorrent_pack/pack.py" line="137"/>
+      <location filename="../../../features/bittorrent_pack/pack.py" line="140"/>
       <source>磁力链接</source>
       <translation>마그넷 링크</translation>
     </message>
     <message>
-      <location filename="../../../features/bittorrent_pack/pack.py" line="167"/>
+      <location filename="../../../features/bittorrent_pack/pack.py" line="170"/>
       <source>BitTorrent 种子文件</source>
       <translation>BitTorrent 토렌트 파일</translation>
     </message>
@@ -783,7 +793,7 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>BootstrapList</name>
     <message>
-      <location filename="../../../features/bittorrent_pack/config.py" line="136"/>
+      <location filename="../../../features/bittorrent_pack/config.py" line="140"/>
       <source>DHT 节点 {nodes}</source>
       <translation>DHT 노드 {nodes}</translation>
     </message>
@@ -1443,7 +1453,7 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>DropOverlay</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="70"/>
+      <location filename="../../view/windows/main_window.py" line="66"/>
       <source>松开以添加任务</source>
       <translation>놓아서 작업 추가</translation>
     </message>
@@ -2826,17 +2836,17 @@ cURL 명령이 여러 개면 첫 번째만 써요
   <context>
     <name>M3U8Pack</name>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="312"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="311"/>
       <source>M3U8 / DASH 流媒体</source>
       <translation>M3U8 / DASH 스트리밍</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="379"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="378"/>
       <source>M3U8 播放列表</source>
       <translation>M3U8 재생목록</translation>
     </message>
     <message>
-      <location filename="../../../features/m3u8_pack/pack.py" line="385"/>
+      <location filename="../../../features/m3u8_pack/pack.py" line="384"/>
       <source>DASH 清单</source>
       <translation>DASH 매니페스트</translation>
     </message>
@@ -2844,37 +2854,37 @@ cURL 명령이 여러 개면 첫 번째만 써요
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="432"/>
+      <location filename="../../view/windows/main_window.py" line="433"/>
       <source>程序发生异常</source>
       <translation>프로그램에 문제가 생겼어요</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="151"/>
+      <location filename="../../view/windows/main_window.py" line="148"/>
       <source>下载任务</source>
       <translation>다운로드 작업</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="155"/>
+      <location filename="../../view/windows/main_window.py" line="152"/>
       <source>新建任务</source>
       <translation>새 작업</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="161"/>
+      <location filename="../../view/windows/main_window.py" line="156"/>
       <source>设置</source>
       <translation>설정</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="314"/>
+      <location filename="../../view/windows/main_window.py" line="309"/>
       <source>未知</source>
       <translation>알 수 없음</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="313"/>
+      <location filename="../../view/windows/main_window.py" line="308"/>
       <source>浏览器扩展</source>
       <translation>브라우저 확장 프로그램</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="310"/>
+      <location filename="../../view/windows/main_window.py" line="305"/>
       <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -2891,42 +2901,42 @@ cURL 명령이 여러 개면 첫 번째만 써요
 방금 확장 프로그램에서 [자동 페어링]을 누른 경우에만 허용해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="316"/>
+      <location filename="../../view/windows/main_window.py" line="311"/>
       <source>浏览器扩展配对请求</source>
       <translation>브라우저 확장 프로그램 페어링 요청</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="317"/>
+      <location filename="../../view/windows/main_window.py" line="312"/>
       <source>允许配对</source>
       <translation>페어링 허용</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="318"/>
+      <location filename="../../view/windows/main_window.py" line="313"/>
       <source>拒绝</source>
       <translation>거부</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="328"/>
+      <location filename="../../view/windows/main_window.py" line="323"/>
       <source>浏览器扩展服务无法启动</source>
       <translation>브라우저 확장 프로그램 서비스를 시작하지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="331"/>
+      <location filename="../../view/windows/main_window.py" line="326"/>
       <source>Aria2 RPC 兼容服务无法启动</source>
       <translation>Aria2 RPC 호환 서비스를 시작하지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="344"/>
+      <location filename="../../view/windows/main_window.py" line="339"/>
       <source>前往设置</source>
       <translation>설정 열기</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="370"/>
+      <location filename="../../view/windows/main_window.py" line="365"/>
       <source>查看详情</source>
       <translation>세부 정보 보기</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="434"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2935,52 +2945,52 @@ cURL 명령이 여러 개면 첫 번째만 써요
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="437"/>
+      <location filename="../../view/windows/main_window.py" line="438"/>
       <source>查看日志</source>
       <translation>로그 보기</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="484"/>
+      <location filename="../../view/windows/main_window.py" line="485"/>
       <source>是否完全退出程序？</source>
       <translation>프로그램을 완전히 종료할까요?</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="486"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>백그라운드에서 실행 중일 때는 시스템 트레이 아이콘으로 다시 열 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="488"/>
+      <location filename="../../view/windows/main_window.py" line="489"/>
       <source>退出程序</source>
       <translation>프로그램 종료</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="490"/>
       <source>继续在后台运行</source>
       <translation>백그라운드에서 계속 실행</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="491"/>
       <source>记住我的选择</source>
       <translation>내 선택 기억하기</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="356"/>
+      <location filename="../../view/windows/main_window.py" line="351"/>
       <source>检测到新版本</source>
       <translation>새 버전이 나왔어요</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="357"/>
+      <location filename="../../view/windows/main_window.py" line="352"/>
       <source>最新版本: {0}</source>
       <translation>최신 버전: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="364"/>
+      <location filename="../../view/windows/main_window.py" line="359"/>
       <source>立即下载</source>
       <translation>지금 다운로드</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="373"/>
+      <location filename="../../view/windows/main_window.py" line="368"/>
       <source>请作者喝咖啡</source>
       <translation>개발자에게 커피 한 잔 사주기</translation>
     </message>
@@ -3372,27 +3382,32 @@ cURL 명령이 여러 개면 첫 번째만 써요
     </message>
     <message>
       <location filename="../../view/dialogs/plan_task.py" line="23"/>
+      <source>退出程序</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/dialogs/plan_task.py" line="24"/>
       <source>打开文件</source>
       <translation>파일 열기</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="35"/>
+      <location filename="../../view/dialogs/plan_task.py" line="36"/>
       <source>确认</source>
       <translation>예약하기</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="36"/>
+      <location filename="../../view/dialogs/plan_task.py" line="37"/>
       <source>取消</source>
       <translation>취소</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="45"/>
+      <location filename="../../view/dialogs/plan_task.py" line="47"/>
       <source>请选择要打开的文件</source>
       <translation>열 파일을 골라 주세요</translation>
     </message>
     <message>
-      <location filename="../../view/dialogs/plan_task.py" line="47"/>
-      <location filename="../../view/dialogs/plan_task.py" line="81"/>
+      <location filename="../../view/dialogs/plan_task.py" line="49"/>
+      <location filename="../../view/dialogs/plan_task.py" line="84"/>
       <source>选择文件</source>
       <translation>파일 선택</translation>
     </message>
@@ -3502,12 +3517,12 @@ cURL 명령이 여러 개면 첫 번째만 써요
   <context>
     <name>Presets</name>
     <message>
-      <location filename="../../config/cfg.py" line="221"/>
+      <location filename="../../config/cfg.py" line="222"/>
       <source>默认</source>
       <translation>기본</translation>
     </message>
     <message>
-      <location filename="../../config/cfg.py" line="348"/>
+      <location filename="../../config/cfg.py" line="353"/>
       <source>百度网盘客户端</source>
       <translation>바이두 넷디스크 클라이언트</translation>
     </message>
@@ -3665,13 +3680,13 @@ cURL 명령이 여러 개면 첫 번째만 써요
     <name>RuntimeCard</name>
     <message>
       <location filename="../../view/components/setting_cards.py" line="928"/>
-      <location filename="../../view/components/setting_cards.py" line="999"/>
+      <location filename="../../view/components/setting_cards.py" line="998"/>
       <source>正在检测运行时...</source>
       <translation>런타임 확인 중</translation>
     </message>
     <message>
       <location filename="../../view/components/setting_cards.py" line="942"/>
-      <location filename="../../view/components/setting_cards.py" line="1027"/>
+      <location filename="../../view/components/setting_cards.py" line="1026"/>
       <source>一键安装</source>
       <translation>자동 설치</translation>
     </message>
@@ -3686,7 +3701,7 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>다운로드 중 {0}%</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="990"/>
+      <location filename="../../view/components/setting_cards.py" line="989"/>
       <source>取消安装</source>
       <translation>설치 취소</translation>
     </message>
@@ -3706,47 +3721,47 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>설치 중</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1011"/>
+      <location filename="../../view/components/setting_cards.py" line="1010"/>
       <source>版本: {0}（最新: {1}）</source>
       <translation>버전: {0} (최신: {1})</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1013"/>
+      <location filename="../../view/components/setting_cards.py" line="1012"/>
       <source>版本: {0}</source>
       <translation>버전: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1015"/>
+      <location filename="../../view/components/setting_cards.py" line="1014"/>
       <source>最新版本: {0}</source>
       <translation>최신 버전: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1054"/>
+      <location filename="../../view/components/setting_cards.py" line="1053"/>
       <source>确认卸载</source>
       <translation>런타임 제거</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1055"/>
+      <location filename="../../view/components/setting_cards.py" line="1054"/>
       <source>确定要卸载 {0} 吗？</source>
       <translation>설치된 {0}을(를) 제거할까요?</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1066"/>
+      <location filename="../../view/components/setting_cards.py" line="1065"/>
       <source>卸载失败</source>
       <translation>제거하지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1018"/>
+      <location filename="../../view/components/setting_cards.py" line="1017"/>
       <source>路径: {0}</source>
       <translation>경로: {0}</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1021"/>
+      <location filename="../../view/components/setting_cards.py" line="1020"/>
       <source>未检测到可用的 {0}</source>
       <translation>쓸 수 있는 {0}을(를) 찾지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/components/setting_cards.py" line="1024"/>
+      <location filename="../../view/components/setting_cards.py" line="1023"/>
       <source>更新到 {0}</source>
       <translation>{0} 버전으로 업데이트</translation>
     </message>
@@ -3962,7 +3977,7 @@ cURL 명령이 여러 개면 첫 번째만 써요
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="62"/>
-      <location filename="../../view/pages/setting_page.py" line="376"/>
+      <location filename="../../view/pages/setting_page.py" line="379"/>
       <source>关于</source>
       <translation>정보</translation>
     </message>
@@ -4012,80 +4027,80 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>작업 화면에서 속도 제한을 켜면 모든 작업의 속도가 이 값으로 제한돼요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="137"/>
+      <location filename="../../view/pages/setting_page.py" line="140"/>
       <source>下载时验证 SSL 证书</source>
       <translation>다운로드할 때 SSL 인증서 확인</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="138"/>
+      <location filename="../../view/pages/setting_page.py" line="141"/>
       <source>文件无法下载时，可尝试关闭该选项</source>
       <translation>파일을 받지 못할 때 이 옵션을 끄면 나아질 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="145"/>
+      <location filename="../../view/pages/setting_page.py" line="148"/>
       <source>启用浏览器扩展</source>
       <translation>브라우저 확장 프로그램 활성화</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="146"/>
-      <location filename="../../view/pages/setting_page.py" line="485"/>
+      <location filename="../../view/pages/setting_page.py" line="149"/>
+      <location filename="../../view/pages/setting_page.py" line="488"/>
       <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
       <translation>브라우저에서 다운로드 정보를 받아요. 브라우저 확장 프로그램을 설치한 뒤 사용해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="178"/>
+      <location filename="../../view/pages/setting_page.py" line="181"/>
       <source>复制令牌</source>
       <translation>토큰 복사</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="178"/>
+      <location filename="../../view/pages/setting_page.py" line="181"/>
       <source>配对令牌</source>
       <translation>페어링 토큰</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="182"/>
+      <location filename="../../view/pages/setting_page.py" line="185"/>
       <source>重新生成令牌</source>
       <translation>토큰 재생성</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="250"/>
+      <location filename="../../view/pages/setting_page.py" line="253"/>
       <source>应用主题</source>
       <translation>앱 테마</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="251"/>
+      <location filename="../../view/pages/setting_page.py" line="254"/>
       <source>更改应用程序的外观</source>
       <translation>앱의 화면 테마를 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <location filename="../../view/pages/setting_page.py" line="255"/>
       <source>浅色</source>
       <translation>라이트</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <location filename="../../view/pages/setting_page.py" line="255"/>
       <source>深色</source>
       <translation>다크</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="252"/>
+      <location filename="../../view/pages/setting_page.py" line="255"/>
       <source>跟随系统设置</source>
       <translation>시스템 설정 따르기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="257"/>
-      <location filename="../../view/pages/setting_page.py" line="264"/>
+      <location filename="../../view/pages/setting_page.py" line="260"/>
+      <location filename="../../view/pages/setting_page.py" line="267"/>
       <source>窗口背景透明材质</source>
       <translation>창 배경 효과</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="258"/>
-      <location filename="../../view/pages/setting_page.py" line="265"/>
+      <location filename="../../view/pages/setting_page.py" line="261"/>
+      <location filename="../../view/pages/setting_page.py" line="268"/>
       <source>设置窗口背景透明效果和透明材质</source>
       <translation>창 뒤에 비치는 배경 효과를 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="244"/>
+      <location filename="../../view/pages/setting_page.py" line="247"/>
       <source>界面缩放</source>
       <translation>UI 배율</translation>
     </message>
@@ -4115,27 +4130,27 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>다운로드가 끝나면 파일의 수정 시간을 서버가 알려 준 Last-Modified 값으로 맞춰요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="168"/>
+      <location filename="../../view/pages/setting_page.py" line="171"/>
       <source>Edge 商店</source>
       <translation>Edge 스토어</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="164"/>
+      <location filename="../../view/pages/setting_page.py" line="167"/>
       <source>从商店安装扩展</source>
       <translation>스토어에서 확장 프로그램 설치</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="165"/>
+      <location filename="../../view/pages/setting_page.py" line="168"/>
       <source>商店版扩展需等待审核后才能获得更新</source>
       <translation>스토어 버전 확장 프로그램은 심사를 거쳐야 업데이트를 받을 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="173"/>
+      <location filename="../../view/pages/setting_page.py" line="176"/>
       <source>Chrome 商店</source>
       <translation>Chrome 스토어</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="163"/>
+      <location filename="../../view/pages/setting_page.py" line="166"/>
       <source>Firefox 商店</source>
       <translation>Firefox 스토어</translation>
     </message>
@@ -4145,78 +4160,78 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>조건에 맞는 설정 항목을 찾지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="134"/>
+      <location filename="../../view/pages/setting_page.py" line="137"/>
       <source>使用系统 DNS</source>
       <translation>시스템 DNS 사용</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="135"/>
+      <location filename="../../view/pages/setting_page.py" line="138"/>
       <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
       <translation>운영체제의 DNS 확인을 써서 TUN, VPN, 프록시 같은 네트워크 환경과 잘 맞춰요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="151"/>
+      <location filename="../../view/pages/setting_page.py" line="154"/>
       <source>一键安装</source>
       <translation>자동 설치</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="152"/>
+      <location filename="../../view/pages/setting_page.py" line="155"/>
       <source>安装到 Chromium 浏览器</source>
       <translation>Chromium 브라우저에 설치</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="153"/>
+      <location filename="../../view/pages/setting_page.py" line="156"/>
       <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
       <translation>확장 프로그램 압축을 자동으로 풀고 설치를 안내해요(Chrome / Brave 등). 확장 프로그램은 데스크톱 앱과 함께 자동으로 업데이트돼요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="156"/>
+      <location filename="../../view/pages/setting_page.py" line="159"/>
       <source>导出 CRX</source>
       <translation>CRX 내보내기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="193"/>
+      <location filename="../../view/pages/setting_page.py" line="196"/>
       <source>服务端口</source>
       <translation>서비스 포트</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="194"/>
+      <location filename="../../view/pages/setting_page.py" line="197"/>
       <source>浏览器扩展连接使用的端口</source>
       <translation>브라우저 확장 프로그램이 연결할 때 쓰는 포트예요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="208"/>
+      <location filename="../../view/pages/setting_page.py" line="211"/>
       <source>接管下载时进入草稿模式</source>
       <translation>브라우저 다운로드를 받으면 초안으로 열기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="209"/>
+      <location filename="../../view/pages/setting_page.py" line="212"/>
       <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
       <translation>브라우저 다운로드를 자동으로 받을 때 초안으로 먼저 열어 다운로드 경로와 파일 이름을 바꿀 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="202"/>
+      <location filename="../../view/pages/setting_page.py" line="205"/>
       <source>允许浏览器扩展唤醒</source>
       <translation>브라우저 확장 프로그램의 앱 실행 허용</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="203"/>
+      <location filename="../../view/pages/setting_page.py" line="206"/>
       <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
       <translation>브라우저 확장 프로그램이 ghostdownloader:// 링크로 데스크톱 앱을 실행할 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="220"/>
+      <location filename="../../view/pages/setting_page.py" line="223"/>
       <source>启用 Aria2 RPC 兼容</source>
       <translation>Aria2 RPC 호환 활성화</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="220"/>
-      <location filename="../../view/pages/setting_page.py" line="499"/>
+      <location filename="../../view/pages/setting_page.py" line="223"/>
+      <location filename="../../view/pages/setting_page.py" line="502"/>
       <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
       <translation>Aria2 JSON-RPC를 지원해서 외부 도구가 보낸 다운로드 링크를 받을 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="225"/>
+      <location filename="../../view/pages/setting_page.py" line="228"/>
       <source>监听端口</source>
       <translation>수신 포트</translation>
     </message>
@@ -4236,355 +4251,365 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>네트워크 설정</translation>
     </message>
     <message>
+      <location filename="../../view/pages/setting_page.py" line="122"/>
+      <source>记住上次使用的下载路径</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
       <location filename="../../view/pages/setting_page.py" line="123"/>
+      <source>新建任务默认使用上次下载的文件夹，无记录时使用默认下载路径</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/pages/setting_page.py" line="126"/>
       <source>同名文件</source>
       <translation>같은 이름의 파일</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="124"/>
+      <location filename="../../view/pages/setting_page.py" line="127"/>
       <source>下载目录中已有同名文件时的处理方式</source>
       <translation>다운로드 폴더에 같은 이름의 파일이 있을 때 어떻게 할지 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <location filename="../../view/pages/setting_page.py" line="128"/>
       <source>保留两者</source>
       <translation>둘 다 유지</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <location filename="../../view/pages/setting_page.py" line="128"/>
       <source>覆盖</source>
       <translation>덮어쓰기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="125"/>
+      <location filename="../../view/pages/setting_page.py" line="128"/>
       <source>询问</source>
       <translation>묻기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="126"/>
+      <location filename="../../view/pages/setting_page.py" line="129"/>
       <source>自动移除缺失的任务</source>
       <translation>파일이 없는 작업 자동 제거</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="127"/>
+      <location filename="../../view/pages/setting_page.py" line="130"/>
       <source>文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务</source>
       <translation>파일이 지워졌거나 옮겨졌거나 디스크 연결이 끊기면 완료된 작업을 목록에서 자동으로 치워요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="187"/>
+      <location filename="../../view/pages/setting_page.py" line="190"/>
       <source>自动选择端口</source>
       <translation>포트 자동 선택</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="188"/>
+      <location filename="../../view/pages/setting_page.py" line="191"/>
       <source>端口冲突时自动切换至可用候选端口</source>
       <translation>포트가 겹치면 쓸 수 있는 다른 포트로 자동 전환해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="226"/>
+      <location filename="../../view/pages/setting_page.py" line="229"/>
       <source>Aria2 RPC 默认端口为 16800</source>
       <translation>Aria2 RPC의 기본 포트는 16800이에요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="230"/>
+      <location filename="../../view/pages/setting_page.py" line="233"/>
       <source>令牌</source>
       <translation>인증 토큰</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="231"/>
+      <location filename="../../view/pages/setting_page.py" line="234"/>
       <source>若设置，客户端需传入 token 才可创建任务</source>
       <translation>값을 넣으면 클라이언트가 토큰을 보내야 작업을 만들 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="233"/>
+      <location filename="../../view/pages/setting_page.py" line="236"/>
       <source>可选</source>
       <translation>선택 사항</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="237"/>
+      <location filename="../../view/pages/setting_page.py" line="240"/>
       <source>模拟浏览器指纹</source>
       <translation>브라우저 지문 위장</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="238"/>
+      <location filename="../../view/pages/setting_page.py" line="241"/>
       <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
       <translation>Aria2 RPC로 받은 작업에 브라우저 TLS 지문과 요청 헤더를 붙여요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="245"/>
+      <location filename="../../view/pages/setting_page.py" line="248"/>
       <source>改变应用程序界面的缩放比例, 0% 为自动</source>
       <translation>앱 화면의 배율을 조정해요. 0%는 자동이에요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="271"/>
+      <location filename="../../view/pages/setting_page.py" line="274"/>
       <source>在 Dock 栏中显示程序</source>
       <translation>Dock에 앱 표시</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="272"/>
+      <location filename="../../view/pages/setting_page.py" line="275"/>
       <source>关闭后可通过菜单栏图标继续使用程序</source>
       <translation>끄면 메뉴 막대 아이콘으로 계속 쓸 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="276"/>
+      <location filename="../../view/pages/setting_page.py" line="279"/>
       <source>在 Dock 图标上显示实时速度</source>
       <translation>Dock 아이콘에 실시간 속도 표시</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="277"/>
+      <location filename="../../view/pages/setting_page.py" line="280"/>
       <source>下载时在程序坞图标上叠加当前速度</source>
       <translation>Dock 아이콘 위에 현재 속도를 겹쳐 보여 줘요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="284"/>
+      <location filename="../../view/pages/setting_page.py" line="287"/>
       <source>在菜单栏显示实时速度</source>
       <translation>메뉴 막대에 실시간 속도 표시</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="285"/>
+      <location filename="../../view/pages/setting_page.py" line="288"/>
       <source>下载时在菜单栏图标旁显示当前速度</source>
       <translation>메뉴 막대 아이콘 옆에 현재 속도를 보여 줘요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="289"/>
+      <location filename="../../view/pages/setting_page.py" line="292"/>
       <source>语言</source>
       <translation>언어</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="290"/>
+      <location filename="../../view/pages/setting_page.py" line="293"/>
       <source>设置界面的首选语言</source>
       <translation>앱에서 사용할 언어를 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="291"/>
+      <location filename="../../view/pages/setting_page.py" line="294"/>
       <source>使用系统设置</source>
       <translation>시스템 언어 사용</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="303"/>
+      <location filename="../../view/pages/setting_page.py" line="306"/>
       <source>切换到用户模式</source>
       <translation>사용자 모드로 전환</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="304"/>
-      <location filename="../../view/pages/setting_page.py" line="310"/>
+      <location filename="../../view/pages/setting_page.py" line="307"/>
+      <location filename="../../view/pages/setting_page.py" line="313"/>
       <source>数据存储模式</source>
       <translation>데이터 저장 모드</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="305"/>
+      <location filename="../../view/pages/setting_page.py" line="308"/>
       <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
       <translation>지금은 Portable 모드예요. 데이터는 앱 옆에 저장돼요.
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="309"/>
+      <location filename="../../view/pages/setting_page.py" line="312"/>
       <source>切换到 Portable 模式</source>
       <translation>Portable 모드로 전환</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="311"/>
+      <location filename="../../view/pages/setting_page.py" line="314"/>
       <source>当前为用户模式，数据保存在: {0}</source>
       <translation>지금은 사용자 모드예요. 데이터는 다음 위치에 저장돼요.
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="322"/>
+      <location filename="../../view/pages/setting_page.py" line="325"/>
       <source>命令行工具</source>
       <translation>명령줄 도구</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="323"/>
+      <location filename="../../view/pages/setting_page.py" line="326"/>
       <source>安装后可在终端中使用 ghd 命令添加和管理任务</source>
       <translation>설치하면 터미널에서 ghd 명령으로 작업을 추가하고 관리할 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="381"/>
+      <location filename="../../view/pages/setting_page.py" line="384"/>
       <source>在应用程序启动时检查更新</source>
       <translation>앱 시작 시 업데이트 확인</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="382"/>
+      <location filename="../../view/pages/setting_page.py" line="385"/>
       <source>新版本将更稳定，并具有更多功能</source>
       <translation>새 버전은 더 안정적이고 기능도 더 많아요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="331"/>
+      <location filename="../../view/pages/setting_page.py" line="334"/>
       <source>关闭主窗口时</source>
       <translation>창을 닫을 때</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="332"/>
+      <location filename="../../view/pages/setting_page.py" line="335"/>
       <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
       <translation>창을 닫으면 백그라운드로 숨길지 앱을 끝낼지 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>关闭时询问</source>
       <translation>닫을 때 묻기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>继续在后台运行</source>
       <translation>백그라운드에서 계속 실행</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="333"/>
+      <location filename="../../view/pages/setting_page.py" line="336"/>
       <source>退出程序</source>
       <translation>앱 종료</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="341"/>
+      <location filename="../../view/pages/setting_page.py" line="344"/>
       <source>通知提示音</source>
       <translation>알림음</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="342"/>
+      <location filename="../../view/pages/setting_page.py" line="345"/>
       <source>下载完成时播放提示音</source>
       <translation>다운로드가 끝나면 알림음을 재생해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="366"/>
+      <location filename="../../view/pages/setting_page.py" line="369"/>
       <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
       <translation>피드백을 보내 Ghost Downloader를 더 나아지게 해 주세요. 로그를 보고 문제를 찾을 수도 있어요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="372"/>
+      <location filename="../../view/pages/setting_page.py" line="375"/>
       <source>查看详情</source>
       <translation>상세 보기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="372"/>
+      <location filename="../../view/pages/setting_page.py" line="375"/>
       <source>功能包</source>
       <translation>기능 팩</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="373"/>
+      <location filename="../../view/pages/setting_page.py" line="376"/>
       <source>管理已安装的功能包</source>
       <translation>설치된 기능 팩을 관리해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="503"/>
+      <location filename="../../view/pages/setting_page.py" line="506"/>
       <source>正在端口 {} 上监听</source>
       <translation>포트 {}에서 수신 중</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="338"/>
+      <location filename="../../view/pages/setting_page.py" line="341"/>
       <source>系统通知</source>
       <translation>시스템 알림</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="315"/>
+      <location filename="../../view/pages/setting_page.py" line="318"/>
       <source>新建任务的下载进度</source>
       <translation>새 작업의 다운로드 진행률</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="316"/>
+      <location filename="../../view/pages/setting_page.py" line="319"/>
       <source>选择新建任务下载进度的显示方式</source>
       <translation>새 작업의 다운로드 진행률을 어떻게 보여 줄지 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <location filename="../../view/pages/setting_page.py" line="320"/>
       <source>不显示</source>
       <translation>표시 안 함</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <location filename="../../view/pages/setting_page.py" line="320"/>
       <source>通过弹窗显示</source>
       <translation>팝업으로 표시</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="317"/>
+      <location filename="../../view/pages/setting_page.py" line="320"/>
       <source>显示于任务栏</source>
       <translation>작업 표시줄에 표시</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="336"/>
+      <location filename="../../view/pages/setting_page.py" line="339"/>
       <source>通知方式</source>
       <translation>알림 방식</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="337"/>
+      <location filename="../../view/pages/setting_page.py" line="340"/>
       <source>下载完成、磁盘空间不足等提示的显示方式</source>
       <translation>다운로드 완료, 디스크 공간 부족 같은 알림을 어떻게 보여 줄지 정해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="338"/>
+      <location filename="../../view/pages/setting_page.py" line="341"/>
       <source>弹窗</source>
       <translation>팝업</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="339"/>
+      <location filename="../../view/pages/setting_page.py" line="342"/>
       <source>关闭</source>
       <translation>사용 안 함</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="348"/>
+      <location filename="../../view/pages/setting_page.py" line="351"/>
       <source>复制链接后先询问</source>
       <translation>링크 복사 후 먼저 묻기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="349"/>
+      <location filename="../../view/pages/setting_page.py" line="352"/>
       <source>主窗口关闭或最小化时，开启则先弹出窗口询问是否下载，关闭则直接打开主窗口。</source>
       <translation>창을 닫거나 최소화했을 때, 켜 두면 다운로드할지 묻는 창이 먼저 뜨고, 끄면 앱 창이 바로 열려요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="533"/>
+      <location filename="../../view/pages/setting_page.py" line="536"/>
       <source>卸载</source>
       <translation>제거</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="533"/>
+      <location filename="../../view/pages/setting_page.py" line="536"/>
       <source>安装</source>
       <translation>설치</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="545"/>
+      <location filename="../../view/pages/setting_page.py" line="548"/>
       <source>已卸载命令行工具</source>
       <translation>명령줄 도구를 제거했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="548"/>
+      <location filename="../../view/pages/setting_page.py" line="551"/>
       <source>新打开的终端即可使用 ghd</source>
       <translation>새로 연 터미널에서 ghd를 쓸 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="550"/>
+      <location filename="../../view/pages/setting_page.py" line="553"/>
       <source>新打开的终端即可使用 ghd；若提示找不到命令，请将 ~/.local/bin 添加到 PATH</source>
       <translation>새로 연 터미널에서 ghd를 쓸 수 있어요. 명령을 찾지 못하면 ~/.local/bin을 PATH에 추가해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="551"/>
+      <location filename="../../view/pages/setting_page.py" line="554"/>
       <source>已安装命令行工具</source>
       <translation>명령줄 도구를 설치했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="557"/>
+      <location filename="../../view/pages/setting_page.py" line="560"/>
       <source>卸载命令行工具失败</source>
       <translation>명령줄 도구를 제거하지 못했어요. 다시 시도해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="557"/>
+      <location filename="../../view/pages/setting_page.py" line="560"/>
       <source>安装命令行工具失败</source>
       <translation>명령줄 도구를 설치하지 못했어요. 다시 시도해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="565"/>
+      <location filename="../../view/pages/setting_page.py" line="568"/>
       <source>用户模式</source>
       <translation>사용자 모드</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="565"/>
+      <location filename="../../view/pages/setting_page.py" line="568"/>
       <source>Portable 模式</source>
       <translation>Portable 모드</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="567"/>
+      <location filename="../../view/pages/setting_page.py" line="570"/>
       <source>切换数据存储模式</source>
       <translation>데이터 저장 모드 전환</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="568"/>
+      <location filename="../../view/pages/setting_page.py" line="571"/>
       <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4593,58 +4618,58 @@ cURL 명령이 여러 개면 첫 번째만 써요
 데이터를 새 위치로 복사한 뒤 앱이 종료돼요. 앱을 직접 다시 실행해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="588"/>
+      <location filename="../../view/pages/setting_page.py" line="591"/>
       <source>正在检查更新...</source>
       <translation>업데이트 확인 중</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="600"/>
+      <location filename="../../view/pages/setting_page.py" line="603"/>
       <source>当前已是最新版本</source>
       <translation>이미 최신 버전이에요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="597"/>
+      <location filename="../../view/pages/setting_page.py" line="600"/>
       <source>检查更新失败</source>
       <translation>업데이트를 확인하지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="597"/>
+      <location filename="../../view/pages/setting_page.py" line="600"/>
       <source>无法获取最新版本信息</source>
       <translation>최신 버전 정보를 가져오지 못했어요. 네트워크를 확인해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="613"/>
+      <location filename="../../view/pages/setting_page.py" line="616"/>
       <source>搜索设置</source>
       <translation>설정 검색</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="296"/>
+      <location filename="../../view/pages/setting_page.py" line="299"/>
       <source>开机启动</source>
       <translation>로그인할 때 자동 실행</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="297"/>
+      <location filename="../../view/pages/setting_page.py" line="300"/>
       <source>在系统启动时静默运行 Ghost Downloader</source>
       <translation>로그인하면 백그라운드에서 조용히 실행해요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="387"/>
+      <location filename="../../view/pages/setting_page.py" line="390"/>
       <source>打开作者的个人空间</source>
       <translation>개발자 프로필 열기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="388"/>
+      <location filename="../../view/pages/setting_page.py" line="391"/>
       <source>了解作者</source>
       <translation>개발자 알아보기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="388"/>
+      <location filename="../../view/pages/setting_page.py" line="391"/>
       <source>发现更多 {} 的作品</source>
       <translation>{}의 다른 작품 더 보기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="364"/>
-      <location filename="../../view/pages/setting_page.py" line="365"/>
+      <location filename="../../view/pages/setting_page.py" line="367"/>
+      <location filename="../../view/pages/setting_page.py" line="368"/>
       <source>提供反馈</source>
       <translation>피드백 보내기</translation>
     </message>
@@ -4654,63 +4679,63 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>최소 재분배 크기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="368"/>
+      <location filename="../../view/pages/setting_page.py" line="371"/>
       <source>查看日志</source>
       <translation>로그 보기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="376"/>
-      <location filename="../../view/pages/setting_page.py" line="588"/>
+      <location filename="../../view/pages/setting_page.py" line="379"/>
+      <location filename="../../view/pages/setting_page.py" line="591"/>
       <source>检查更新</source>
       <translation>업데이트 확인</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="449"/>
+      <location filename="../../view/pages/setting_page.py" line="452"/>
       <source>已配置</source>
       <translation>설정됨</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="449"/>
+      <location filename="../../view/pages/setting_page.py" line="452"/>
       <source>重启软件后生效</source>
       <translation>앱을 다시 시작하면 적용돼요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="457"/>
+      <location filename="../../view/pages/setting_page.py" line="460"/>
       <source>已复制配对令牌</source>
       <translation>페어링 토큰을 복사했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="463"/>
+      <location filename="../../view/pages/setting_page.py" line="466"/>
       <source>已重新生成配对令牌</source>
       <translation>페어링 토큰을 다시 만들었어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="463"/>
+      <location filename="../../view/pages/setting_page.py" line="466"/>
       <source>新令牌已复制到剪贴板</source>
       <translation>새 토큰을 클립보드에 복사했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="478"/>
+      <location filename="../../view/pages/setting_page.py" line="481"/>
       <source>解包失败</source>
       <translation>압축을 풀지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="489"/>
+      <location filename="../../view/pages/setting_page.py" line="492"/>
       <source>未连接</source>
       <translation>연결되지 않음</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="491"/>
+      <location filename="../../view/pages/setting_page.py" line="494"/>
       <source>已连接 v{} (桌面端自管理)</source>
       <translation>v{}에 연결됨 (데스크톱 관리)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="493"/>
+      <location filename="../../view/pages/setting_page.py" line="496"/>
       <source>已连接 v{} (商店安装)</source>
       <translation>v{}에 연결됨 (스토어 설치)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/setting_page.py" line="510"/>
+      <location filename="../../view/pages/setting_page.py" line="513"/>
       <source>选择导出路径</source>
       <translation>내보내기 경로 선택</translation>
     </message>
@@ -4814,38 +4839,38 @@ cURL 명령이 여러 개면 첫 번째만 써요
   <context>
     <name>SystemTrayIcon</name>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="105"/>
-      <location filename="../../view/shell/tray.py" line="184"/>
+      <location filename="../../view/shell/mac_status_item.py" line="103"/>
+      <location filename="../../view/shell/tray.py" line="182"/>
       <source>仪表盘</source>
       <translation>대시보드</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="106"/>
-      <location filename="../../view/shell/tray.py" line="186"/>
+      <location filename="../../view/shell/mac_status_item.py" line="104"/>
+      <location filename="../../view/shell/tray.py" line="184"/>
       <source>新建任务</source>
       <translation>새 작업</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="107"/>
-      <location filename="../../view/shell/tray.py" line="188"/>
+      <location filename="../../view/shell/mac_status_item.py" line="105"/>
+      <location filename="../../view/shell/tray.py" line="186"/>
       <source>全部开始</source>
       <translation>모두 시작</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="108"/>
-      <location filename="../../view/shell/tray.py" line="190"/>
+      <location filename="../../view/shell/mac_status_item.py" line="106"/>
+      <location filename="../../view/shell/tray.py" line="188"/>
       <source>全部暂停</source>
       <translation>모두 일시정지</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="109"/>
-      <location filename="../../view/shell/tray.py" line="192"/>
+      <location filename="../../view/shell/mac_status_item.py" line="107"/>
+      <location filename="../../view/shell/tray.py" line="190"/>
       <source>设置</source>
       <translation>설정</translation>
     </message>
     <message>
-      <location filename="../../view/shell/mac_status_item.py" line="111"/>
-      <location filename="../../view/shell/tray.py" line="195"/>
+      <location filename="../../view/shell/mac_status_item.py" line="109"/>
+      <location filename="../../view/shell/tray.py" line="193"/>
       <source>退出程序</source>
       <translation>프로그램 종료</translation>
     </message>
@@ -5363,33 +5388,48 @@ cURL 명령이 여러 개면 첫 번째만 써요
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="9"/>
-      <source>请求的格式不可用，请稍后重试（{detail}）</source>
-      <translation>요청한 형식으로 받을 수 없어요. 잠시 후 다시 시도해 주세요({detail}).</translation>
+      <source>QuickJS 运行环境异常，请在设置中重新安装 yt-dlp（{detail}）</source>
+      <translation type="unfinished"/>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="10"/>
+      <source>YouTube 解密组件缺失或不可用，请在设置中更新或重新安装 yt-dlp（{detail}）</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
+      <source>YouTube Cookie 已失效或受限，请在设置中清除或重新导入 Cookie（{detail}）</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
+      <source>请求的格式不可用，请在设置中更新 yt-dlp 后重试（{detail}）</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="16"/>
+      <source>未找到 yt-dlp nightly</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="17"/>
+      <source>未找到 yt-dlp-ejs {version}</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
       <source>下载被拒绝（403），链接可能已失效（{detail}）</source>
       <translation>다운로드가 거부됐어요(403). 링크가 만료됐을 수 있어요({detail}).</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="14"/>
       <source>视频信息提取失败：{detail}</source>
       <translation>동영상 정보를 가져오지 못했어요: {detail}</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
+      <location filename="../../../features/yt_dlp_pack/i18n.py" line="15"/>
       <source>未找到可用的视频格式</source>
       <translation>받을 수 있는 동영상 형식을 찾지 못했어요</translation>
-    </message>
-    <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
-      <source>未找到 yt-dlp nightly tarball</source>
-      <translation>yt-dlp nightly tarball을 찾지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.</translation>
-    </message>
-    <message>
-      <location filename="../../../features/yt_dlp_pack/i18n.py" line="14"/>
-      <source>FFmpeg 写入元数据失败（{code}）：{detail}</source>
-      <translation>FFmpeg로 메타데이터를 쓰지 못했어요({code}): {detail}</translation>
     </message>
     <message>
       <location filename="../../../features/m3u8_pack/i18n.py" line="3"/>
@@ -5621,23 +5661,23 @@ cURL 명령이 여러 개면 첫 번째만 써요
     </message>
     <message>
       <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="660"/>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="666"/>
+      <location filename="../../view/pages/task_page.py" line="678"/>
       <source>暂无下载任务</source>
       <translation>아직 다운로드 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>限速（右键修改）</source>
       <translation>속도 제한(오른쪽 버튼으로 수정)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>按分类筛选</source>
       <translation>분류별 필터</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="245"/>
+      <location filename="../../view/pages/task_page.py" line="247"/>
       <source>选择任务</source>
       <translation>작업 선택</translation>
     </message>
@@ -5662,102 +5702,102 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>대기열 순서</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="246"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>计划任务</source>
       <translation>예약 작업</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="361"/>
+      <location filename="../../view/pages/task_page.py" line="365"/>
       <source>搜索任务</source>
       <translation>작업 검색</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="471"/>
+      <location filename="../../view/pages/task_page.py" line="475"/>
       <source>下载限速</source>
       <translation>다운로드 속도 제한</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="555"/>
+      <location filename="../../view/pages/task_page.py" line="561"/>
       <source>删除任务</source>
       <translation>작업 삭제</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="555"/>
+      <location filename="../../view/pages/task_page.py" line="561"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>선택한 다운로드 작업을 삭제할까요?</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="556"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>同时删除已下载的文件</source>
       <translation>다운로드한 파일도 함께 삭제</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="662"/>
+      <location filename="../../view/pages/task_page.py" line="668"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>조건에 맞는 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="664"/>
+      <location filename="../../view/pages/task_page.py" line="670"/>
       <source>没有匹配的任务</source>
       <translation>찾는 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="666"/>
+      <location filename="../../view/pages/task_page.py" line="672"/>
       <source>该分类下暂无任务</source>
       <translation>이 분류에 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="674"/>
       <source>暂无活动任务</source>
       <translation>진행 중인 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="676"/>
       <source>暂无完成任务</source>
       <translation>완료된 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="782"/>
+      <location filename="../../view/pages/task_page.py" line="788"/>
       <source>校验失败</source>
       <translation>체크섬이 맞지 않아요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="879"/>
+      <location filename="../../view/pages/task_page.py" line="885"/>
       <source>无法移到回收站</source>
       <translation>휴지통으로 보내지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="880"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>이전 파일은 그대로 두고 새 파일을 {0} 이름으로 저장했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="888"/>
+      <location filename="../../view/pages/task_page.py" line="894"/>
       <source>无法修改任务</source>
       <translation>작업을 수정하지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="897"/>
+      <location filename="../../view/pages/task_page.py" line="903"/>
       <source>文件删除受限</source>
       <translation>파일을 지우지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="898"/>
+      <location filename="../../view/pages/task_page.py" line="904"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>macOS가 파일 삭제를 막았어요. 시스템 설정 &gt; 개인정보 보호 및 보안 &gt; 전체 디스크 접근 권한에서 Ghost Downloader를 추가해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="909"/>
       <source>前往设置</source>
       <translation>설정 열기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="504"/>
+      <location filename="../../view/pages/task_page.py" line="510"/>
       <source>全部分类</source>
       <translation>모든 분류</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="579"/>
+      <location filename="../../view/pages/task_page.py" line="585"/>
       <source>未分类</source>
       <translation>미분류</translation>
     </message>
@@ -6285,7 +6325,7 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <location filename="../../../features/yt_dlp_pack/android.py" line="37"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="254"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="270"/>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="429"/>
       <source>最佳画质</source>
       <translation>최고 화질</translation>
     </message>
@@ -6293,14 +6333,14 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <location filename="../../../features/yt_dlp_pack/android.py" line="44"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="255"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="271"/>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="438"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="430"/>
       <source>最佳音质</source>
       <translation>최고 음질</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/android.py" line="58"/>
       <location filename="../../../features/yt_dlp_pack/cards.py" line="261"/>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="445"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="437"/>
       <source>自动</source>
       <translation>자동</translation>
     </message>
@@ -6315,17 +6355,17 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>동영상 선택</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="395"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="387"/>
       <source>选择音频语言</source>
       <translation>오디오 언어 선택</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="573"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="565"/>
       <source>未找到播放列表</source>
       <translation>재생목록을 찾지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../../features/yt_dlp_pack/cards.py" line="578"/>
+      <location filename="../../../features/yt_dlp_pack/cards.py" line="570"/>
       <source>加载播放列表失败</source>
       <translation>재생목록을 불러오지 못했어요</translation>
     </message>

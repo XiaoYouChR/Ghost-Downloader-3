@@ -158,7 +158,7 @@ ghd wait tsk_0123
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>323770 words</b></sub>
+        <sub><b>324042 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/hzzmonet"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17541058/medium/6d2519b5176d5dc224526a18f945002e.jpeg" />
@@ -202,6 +202,15 @@ ghd wait tsk_0123
         <sub><b>1010 words</b></sub>
       </td>
       <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/ryuuDre"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/18000817/medium/27dc57e2949e8cebf51ef86794abc1f3.png" />
+          <br />
+          <sub><b>Ryuu</b></sub>
+          <br />
+          <sub><b>(ryuuDre)</b></sub></a>
+        <br />
+        <sub><b>633 words</b></sub>
+      </td>
+      <td align="center" valign="top">
         <a href="https://crowdin.com/profile/s0990"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/14938059/medium/c8029e289a5b05e7d8a92c07163323d8.png" />
           <br />
           <sub><b>Kay Xue學昀楷</b></sub>
@@ -210,6 +219,8 @@ ghd wait tsk_0123
         <br />
         <sub><b>602 words</b></sub>
       </td>
+    </tr>
+    <tr>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/mediaket"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/13669331/medium/ebf8aaccc9d72ed7690ac8aa7e116d8e.jpg" />
           <br />
@@ -218,17 +229,6 @@ ghd wait tsk_0123
           <sub><b>(mediaket)</b></sub></a>
         <br />
         <sub><b>245 words</b></sub>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/ryuuDre"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/18000817/medium/27dc57e2949e8cebf51ef86794abc1f3.png" />
-          <br />
-          <sub><b>Ryuu</b></sub>
-          <br />
-          <sub><b>(ryuuDre)</b></sub></a>
-        <br />
-        <sub><b>179 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />
