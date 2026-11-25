@@ -2843,6 +2843,16 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>MainWindow</name>
     <message>
+        <location filename="../../view/windows/main_window.py" line="375"/>
+        <source>功能包更新</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../view/windows/main_window.py" line="376"/>
+        <source>{0} 将在下次启动时生效</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../view/windows/main_window.py" line="433"/>
         <source>程序发生异常</source>
         <translation type="unfinished"></translation>
