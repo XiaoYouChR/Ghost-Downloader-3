@@ -2,6 +2,8 @@ import asyncio
 from base64 import b64encode
 from pathlib import Path
 
+import pytest
+
 from bittorrent_pack import session as session_module
 from bittorrent_pack.session import TorrentProgress
 from bittorrent_pack.task import BTFile, BTTask, BTTaskStep, BTTorrentFileStep
@@ -10,10 +12,11 @@ from app.models.task import TaskStatus
 
 
 class FakeSession:
-    def __init__(self, onRun=None, progresses: tuple[TorrentProgress, ...] = ()):
+    def __init__(self, onRun=None, progresses: tuple[TorrentProgress, ...] = (), *, cancelSeeding=False):
         self.runSelections: list[set[int]] = []
         self.onRun = onRun
         self.progresses = progresses
+        self.cancelSeeding = cancelSeeding
 
     async def run(self, taskId, params, onProgress=None) -> bytes:
         self.runSelections.append(set(params.selectedIndexes))
@@ -22,6 +25,13 @@ class FakeSession:
         if self.onRun is not None:
             onRun, self.onRun = self.onRun, None
             onRun()
+        return b"resume"
+
+    async def runSeeding(self, taskId, params, isManual, onProgress=None, onResumeData=None) -> bytes:
+        if onResumeData is not None:
+            onResumeData(b"checkpoint")
+        if self.cancelSeeding:
+            raise asyncio.CancelledError
         return b"resume"
 
     def setSelection(self, taskId, selectedIndexes):
@@ -73,6 +83,16 @@ def test_run_downloads_file_selected_near_the_end(monkeypatch, tmp_path):
 
     assert fake.runSelections == [{0}, {0, 1}]
     assert task.status == TaskStatus.COMPLETED
+
+
+def test_seeding_checkpoint_is_kept_when_cancelled(monkeypatch, tmp_path):
+    task = buildTask(tmp_path)
+    monkeypatch.setattr(session_module, "btSession", FakeSession(cancelSeeding=True))
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(task.runSeeding(isManual=True))
+
+    assert task.resumeData == b64encode(b"checkpoint").decode()
 
 
 def test_set_selection_keeps_completed_with_empty_file(monkeypatch, tmp_path):

@@ -3,22 +3,22 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
-from pathlib import Path
-from shutil import disk_usage
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
-from shutil import move
+from pathlib import Path
+from shutil import disk_usage, move
+from time import sleep
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from app.checksum import toChecksum
 from app.config.cfg import cfg, saveLastOutputFolder
 from app.config.paths import APP_DATA_DIR
-from app.platform.filesystem import deletePath, isExisting, splitStemExt
-from app.checksum import toChecksum
 from app.models.task import Task, TaskError, TaskOptions, TaskStatus, deletePlaceholder
+from app.platform.filesystem import deletePath, isExisting, splitStemExt
 from app.signal import Signal
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QFileSystemWatcher
@@ -53,6 +53,9 @@ class Placeholders:
 
 
 class TaskStore:
+    REPLACE_RETRIES = 3
+    REPLACE_RETRY_DELAY = 0.1
+
     def __init__(self, deleteRecoverably: Callable[[Path], bool]):
         self._tasks: dict[str, Task] = {}
         self._loaded = False
@@ -191,7 +194,14 @@ class TaskStore:
             tempFile.parent.mkdir(parents=True, exist_ok=True)
             with open(tempFile, "w", encoding="utf-8") as f:
                 f.writelines(lines)
-            tempFile.replace(self._path)
+            for attempt in range(self.REPLACE_RETRIES):
+                try:
+                    tempFile.replace(self._path)
+                    break
+                except PermissionError:
+                    if attempt + 1 == self.REPLACE_RETRIES:
+                        raise
+                    sleep(self.REPLACE_RETRY_DELAY * (attempt + 1))
         except Exception as e:
             logger.opt(exception=e).error("failed to write tasks.jsonl")
 

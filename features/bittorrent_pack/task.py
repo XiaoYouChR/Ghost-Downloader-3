@@ -141,8 +141,13 @@ class BTTask(Task):
         from loguru import logger
         from .session import btSession
         try:
+            def onResumeData(data: bytes) -> None:
+                self.resumeData = b64encode(data).decode()
+
             resumeData = await btSession.runSeeding(
-                self.taskId, self.buildParams(), isManual, onProgress=self.updateStats)
+                self.taskId, self.buildParams(), isManual,
+                onProgress=self.updateStats, onResumeData=onResumeData,
+            )
             self.resumeData = b64encode(resumeData).decode()
             logger.info("{} 做种达到上限: 分享率 {:.2f}%, 做种时间 {}s",
                         self.name, self.shareRatioPercent, self.seedingTimeSeconds)

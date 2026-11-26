@@ -1,17 +1,41 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import pytest
 
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStatus
+from app.services.task_service import TaskStore
 from tests.conftest import FakeStep
 from tests.helpers import waitUntil
 
 
 def buildTask(outcome: str = "hang", name: str = "a.zip") -> Task:
     return Task(name=name, url=f"http://test/{name}", packId="test", steps=[FakeStep(stepIndex=0, outcome=outcome)])
+
+
+def test_task_store_retries_transient_replace_denial(monkeypatch, tmp_path):
+    store = TaskStore(lambda _path: True)
+    store._path = tmp_path / "tasks.jsonl"
+    store._loaded = True
+    originalReplace = Path.replace
+    attempts = 0
+
+    def replaceWithTransientFailure(path: Path, target: Path) -> Path:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise PermissionError("temporary sharing violation")
+        return originalReplace(path, target)
+
+    monkeypatch.setattr(Path, "replace", replaceWithTransientFailure)
+
+    store.flush()
+
+    assert attempts == 2
+    assert store._path.read_text(encoding="utf-8") == ""
 
 
 

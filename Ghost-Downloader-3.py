@@ -99,6 +99,14 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     engine = createEngine(application)
     coroutineRunner, taskService, featureService = engine.coroutineRunner, engine.taskService, engine.featureService
     browserService, speedMeter = engine.browserService, engine.speedMeter
+    engineStopped = False
+
+    def stopEngine() -> None:
+        nonlocal engineStopped
+        if engineStopped:
+            return
+        engineStopped = True
+        engine.stop()
 
     setupThemeColor(application)
 
@@ -380,8 +388,17 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     updateService.changed.connect(onUpdateChanged)
     checkUpdateAtStartup(updateService)
 
+    shutdownHandler = None
+    if sys.platform == "win32":
+        from app.platform.windows import WindowsShutdownHandler
+        from features.bittorrent_pack.session import btSession
+
+        shutdownHandler = WindowsShutdownHandler(application, lambda: btSession.hasActiveTorrents, stopEngine)
+
     def onAboutToQuit():
-        engine.stop()
+        stopEngine()
+        if shutdownHandler is not None:
+            shutdownHandler.close()
         updateService.apply()
         coroutineRunner.stop()
 

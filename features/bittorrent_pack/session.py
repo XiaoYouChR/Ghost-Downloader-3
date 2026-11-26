@@ -197,6 +197,7 @@ class ActiveTorrent:
     onProgress: Callable[[TorrentProgress], None] | None
     isDone: Callable[[TorrentProgress], bool]
     seedBase: int
+    onResumeData: Callable[[bytes], None] | None = None
     seedStart: int | None = None
     pollCount: int = 0
     resumeWaiter: asyncio.Future | None = None
@@ -248,15 +249,17 @@ class BTSession:
         return await self._run(taskId, params, onProgress, isDone=lambda p: p.isFinished)
 
     async def runSeeding(self, taskId: str, params: TorrentParams, isManual: bool,
-                         onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
+                         onProgress: Callable[[TorrentProgress], None] | None = None,
+                         onResumeData: Callable[[bytes], None] | None = None) -> bytes:
         def isDone(p: TorrentProgress) -> bool:
             return not isManual and p.isSeeding and isSeedingLimitReached(
                 p.shareRatioPercent, p.seedingTimeSeconds)
-        return await self._run(taskId, params, onProgress, isDone)
+        return await self._run(taskId, params, onProgress, isDone, onResumeData)
 
     async def _run(self, taskId: str, params: TorrentParams,
                    onProgress: Callable[[TorrentProgress], None] | None,
-                   isDone: Callable[[TorrentProgress], bool]) -> bytes:
+                   isDone: Callable[[TorrentProgress], bool],
+                   onResumeData: Callable[[bytes], None] | None = None) -> bytes:
         with self._hold():
             handle = self._addTorrent(params)
             handle.resume()
@@ -267,7 +270,7 @@ class BTSession:
             done = asyncio.get_running_loop().create_future()
             entry = ActiveTorrent(
                 handle=handle, done=done, onProgress=onProgress, isDone=isDone,
-                seedBase=params.seedingTimeSeconds,
+                seedBase=params.seedingTimeSeconds, onResumeData=onResumeData,
             )
             self._active[taskId] = entry
 
@@ -348,6 +351,10 @@ class BTSession:
 
     def lastResumeData(self, taskId: str) -> bytes | None:
         return self._resumeCache.pop(taskId, None)
+
+    @property
+    def hasActiveTorrents(self) -> bool:
+        return bool(self._active)
 
     def swarmInfo(self, taskId: str) -> SwarmInfo | None:
         entry = self._active.get(taskId)
@@ -546,7 +553,11 @@ class BTSession:
                 continue
 
             if isinstance(alert, lt.save_resume_data_alert):
-                self._resumeCache[taskId] = lt.write_resume_data_buf(alert.params)
+                resumeData = lt.write_resume_data_buf(alert.params)
+                self._resumeCache[taskId] = resumeData
+                if entry.onResumeData is not None:
+                    # The shutdown path flushes task records after the session closes.
+                    entry.onResumeData(resumeData)
                 if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
                     entry.resumeWaiter.set_result(True)
                 return
