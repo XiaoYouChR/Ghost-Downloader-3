@@ -1,9 +1,9 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.13"
 
 [manifest]
-overrides = [{ name = "pyobjc", marker = "python_full_version < '0'" }]
+overrides = [{ name = "pyobjc", marker = "python_version < '0'" }]
 
 [[package]]
 name = "aioftp"
@@ -390,7 +390,7 @@ wheels = [
 
 [[package]]
 name = "ghost-downloader-3"
-version = "4.5.1"
+version = "4.6.1"
 source = { virtual = "." }
 dependencies = [
     { name = "aioftp", extra = ["socks"] },
