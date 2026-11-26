@@ -198,3 +198,29 @@ time.sleep(60)
 
     assert primaryInstance is not None
     primaryInstance.close()
+
+
+def test_activate_after_wake_activates_window(qapp, cli, window, monkeypatch):
+    monkeypatch.setattr(instance, "INSTANCE_NAME", "GhostDownloader-test-wake-activate")
+    monkeypatch.setattr(instance.sys, "platform", "darwin")
+    application = FakeApplication()
+    primaryInstance = instance.open(application, ["GhostDownloader"], ".")
+    assert primaryInstance is not None
+    try:
+        primaryInstance.start(cli.run)
+
+        application.openRequested.emit("ghostdownloader://wake")
+        application.activated.emit()
+        assert window.activations == 0
+
+        application.activated.emit()
+        assert window.activations == 1
+
+        application.openRequested.emit("ghostdownloader://wake")
+        application.activated.emit()
+        assert window.activations == 1
+
+        application.activated.emit()
+        assert window.activations == 2
+    finally:
+        primaryInstance.close()

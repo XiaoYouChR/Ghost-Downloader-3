@@ -118,7 +118,7 @@ class PrimaryInstance(QObject):
         self._memory = memory
         self._run: Callable[[Invocation], None] | None = None
         self._pending = [invocation] if invocation.argv or sys.platform != "darwin" else []
-        self._isWakeLaunch = False
+        self._shouldSkipActivate = False
         self._server = QLocalServer(self)
         self._server.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
         if not self._server.listen(INSTANCE_NAME):
@@ -180,13 +180,18 @@ class PrimaryInstance(QObject):
         onReadyRead()
 
     def _onOpenRequested(self, uri: str) -> None:
-        if isWakeUri(uri):
-            self._isWakeLaunch = True
-        if uri:
-            self._receive(Invocation([uri], os.getcwd()))
+        if not uri:
+            return
+        self._shouldSkipActivate = isWakeUri(uri)
+        self._receive(Invocation([uri], os.getcwd()))
 
     def _onActivated(self) -> None:
-        if self._run is None or self._isWakeLaunch or sys.platform != "darwin":
+        if sys.platform != "darwin":
+            return
+        if self._shouldSkipActivate:
+            self._shouldSkipActivate = False
+            return
+        if self._run is None:
             return
         self._run(Invocation([], os.getcwd()))
 
