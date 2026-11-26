@@ -150,6 +150,7 @@ class TaskPage(QWidget):
         self._bandSnapshot: set[str] = set()
         self._bandMerge = set.__or__
         self._tickingIds: set[str] = set()
+        self._deleteDeniedBar: InfoBar | None = None
 
         self._refreshListTimer = QTimer(self, singleShot=True)
         self._refreshListTimer.setInterval(0)
@@ -899,6 +900,8 @@ class TaskPage(QWidget):
         )
 
     def _onFileDeleteDenied(self) -> None:
+        if self._deleteDeniedBar is not None:
+            return
         bar = InfoBar.warning(
             self.tr("文件删除受限"),
             self.tr("macOS 阻止了文件删除，请在 系统设置 > 隐私与安全性 > 完全磁盘访问权限 中添加 Ghost Downloader"),
@@ -911,3 +914,8 @@ class TaskPage(QWidget):
             QUrl("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
         ))
         bar.addWidget(button)
+        self._deleteDeniedBar = bar
+        bar.closedSignal.connect(self._onDeleteDeniedBarClosed)
+
+    def _onDeleteDeniedBarClosed(self) -> None:
+        self._deleteDeniedBar = None

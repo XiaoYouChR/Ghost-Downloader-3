@@ -312,7 +312,6 @@ class TaskService:
         self._fileWatcher = fileWatcher
         self._watchedPaths: dict[str, str] = {}
         self._fileWatcher.fileChanged.connect(self._onWatchedFileChanged)
-        self._hasNotifiedDeleteDenied = False
         self._flushWorkId: str | None = None
 
         cfg.maxTaskNum.valueChanged.connect(self._rebalance)
@@ -424,8 +423,7 @@ class TaskService:
         self.cancelChecksum(task)
         self._unwatchFile(task)
         canDelete = shouldDeleteFiles and self._canDeleteIn(task.outputFolder)
-        if shouldDeleteFiles and not canDelete and not self._hasNotifiedDeleteDenied:
-            self._hasNotifiedDeleteDenied = True
+        if shouldDeleteFiles and not canDelete:
             self.fileDeleteDenied.emit()
         def onStopped():
             if canDelete:
