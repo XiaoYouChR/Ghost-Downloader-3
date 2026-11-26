@@ -118,20 +118,21 @@ Ghost Downloader 的翻译统一在 [Crowdin](https://gdi18n.xychr.com) 上进�
 | 命令 | 作用 |
 |:--|:--|
 | `ghd probe <url>` | 预览链接，不添加任务 |
-| `ghd add <url>...` | 添加并开始任务 |
+| `ghd add <url>...` | 添加并开始任务，返回任务 ID |
 | `ghd tasks` | 列出任务 |
 | `ghd task <taskId>` | 查看任务详情 |
 | `ghd pause <taskId>...` | 暂停任务 |
 | `ghd start <taskId>...` | 继续任务 |
 | `ghd remove <taskId>...` | 移除任务，并删除未完成的文件 |
-| `ghd wait <taskId>...` | 等待任务结束 |
+| `ghd remove --delete-files <taskId>...` | 移除任务，并同时删除已完成的文件 |
+| `ghd wait <taskId>...` | 等待任务停止下载。仅当所有任务均已完成时返回退出代码 0。 |
 
 ```sh
 # 查看种子包含哪些文件
 ghd probe "https://example.com/a.torrent"
 # 只下载其中第 0、3 个文件，保存到 ./downloads
 ghd add "https://example.com/a.torrent" --select 0,3 -o ./downloads
-# 等待下载完成
+# 将 tsk_0123 替换为 ghd add 返回的任务 ID
 ghd wait tsk_0123
 ```
 
