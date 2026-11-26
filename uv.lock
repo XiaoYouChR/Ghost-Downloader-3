@@ -1,9 +1,9 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13"
 
 [manifest]
-overrides = [{ name = "pyobjc", marker = "python_version < '0'" }]
+overrides = [{ name = "pyobjc", marker = "python_full_version < '0'" }]
 
 [[package]]
 name = "aioftp"
@@ -438,7 +438,7 @@ requires-dist = [
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'", specifier = ">=10.0" },
     { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'", specifier = ">=10.0" },
     { name = "pyside6", specifier = "~=6.10.3" },
-    { name = "pyside6-fluent-widgets", git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?tag=v1.11.3.1" },
+    { name = "pyside6-fluent-widgets", git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?tag=v1.11.3.2" },
     { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=312" },
     { name = "qrcode", specifier = ">=8.2" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.22.1" },
@@ -877,8 +877,8 @@ wheels = [
 
 [[package]]
 name = "pyside6-fluent-widgets"
-version = "1.11.3.1"
-source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?tag=v1.11.3.1#0d99e637d03817073b802d0a26be046f9f50ee23" }
+version = "1.11.3.2"
+source = { git = "https://github.com/XiaoYouChR/PyQt-Fluent-Widgets.git?tag=v1.11.3.2#df00125460ea7f6148dc89507f932327888b1404" }
 dependencies = [
     { name = "darkdetect" },
     { name = "pyside6" },

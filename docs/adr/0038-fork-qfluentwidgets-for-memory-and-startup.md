@@ -8,13 +8,13 @@ status: accepted
 
 ## 统一实施原则
 
-1. **所有权即生命周期**：进程级 UI 资源（`.rcc` 与应用级 QSS 块）归 `QApplication`，由顶层唯一两个新函数 `qfluentwidgets.load(app)` / `unload()` 显式装卸并挂接 `app.aboutToQuit`；控件级子对象、动画、定时器、样式绑定（`StyleSheetBinding`）与浮层动画组一律挂在父 `QObject` 树上由 Qt 析构连带回收；短期浮窗（`ToolTip`）借 `destroyed -> deleteLater` 联动销毁；跨树全局索引（`qrouter`）仅存弱引用并在 `destroyed` 自动摘除。
+1. **所有权即生命周期**：进程级 UI 资源（`.rcc`、应用级 QSS 块与 `common/icon.py` 内的内置 SVG 着色/渲染器缓存）归 `QApplication`，由顶层唯一两个新函数 `qfluentwidgets.load(app)` / `unload()` 显式装卸并挂接 `app.aboutToQuit`；控件级子对象、动画、定时器、样式绑定（`StyleSheetBinding`）与浮层动画组一律挂在父 `QObject` 树上由 Qt 析构连带回收；`QListWidget` 统一由 Python 创建 `QListWidgetItem` 交由控件接管所有权，避免 PySide6 6.10 下 C++ 侧创建项在销毁后于 Shiboken `BindingManager` 残留 stale wrapper；短期浮窗（`ToolTip`）借 `destroyed -> deleteLater` 联动销毁；跨树全局索引（`qrouter`）仅存弱引用并在 `destroyed` 自动摘除。
 2. **工作跟随可见性**：无限动画与周期定时器（`IndeterminateProgressBar`、`IndeterminateProgressRing`、`StateToolTip`、背景过渡动画）由 `showEvent` / `hideEvent` 门控停机，隐藏态零空转；背景过渡动画按需分配，悬停提示延迟用 `QObject.startTimer` 零堆分配，一次性过渡动画一律 `DeleteWhenStopped`。
 3. **优先 Qt 原生机制，不造平行轮子**：
    - 16 份无裸选择器且无通用 ID 冲突的 `FluentStyleSheet` 合并为单一受管块（`/* qfw:begin */ ... /* qfw:end */`）写入 `QApplication.setStyleSheet()`；其余 18 份非提升样式与自定义样式挂控件自有 `StyleSheetBinding(parent=widget)`，在 Qt 原生 `StyleChange` / `Show` 时按 `(theme, color, fonts)` 更新，替代全局样式表注册表与 `DirtyStyleSheetWatcher`。
    - `BackgroundAnimationWidget` 改用 `changeEvent(EnabledChange | StyleChange | ThemeChange)` + `showEvent` / `hideEvent`，以 `self._backgroundColor is None` 为单一未解析态，移除自装 `eventFilter` 与全局 `qconfig.themeChanged` 订阅。
    - `updateDynamicStyle(widget)` 原地改为 `style.unpolish` -> `style.polish` -> `update`，替换全库全部 `setStyle(QApplication.style())` 调用。
-   - 系统配色优先使用 Qt 6 `QGuiApplication.styleHints().colorScheme()` 与 `colorSchemeChanged`（无 `QGuiApplication` 时懒回退 `darkdetect`）；`common/icon.py` 保留上游 `QDomDocument` 仅改为函数内懒导入（与 `QSvgRenderer` 一并延迟，避免启动期加载）；单次异步回调统一采用三参数 `QTimer.singleShot(ms, receiver, slot)`；跨层级事件过滤器在 `showEvent` / `hideEvent` 成对装卸。
+   - 系统配色优先使用 Qt 6 `QGuiApplication.styleHints().colorScheme()` 与 `colorSchemeChanged`（无 `QGuiApplication` 时懒回退 `darkdetect`）；`common/icon.py` 保留上游 `QDomDocument` 仅改为函数内懒导入（与 `QSvgRenderer` 一并延迟，避免启动期加载），读取 SVG 改用无 `QObject` 开销的 `QResource` / `Path` 并对 `:/` 资源按 `(iconPath, indexes, attrs)` 单层 LRU 缓存 `QSvgRenderer`（在 `unload()` 清空），消除 `paintEvent` 热路径每帧构造 `QFile` 与 `QSvgRenderer`；单次异步回调统一采用三参数 `QTimer.singleShot(ms, receiver, slot)`；跨层级事件过滤器在 `showEvent` / `hideEvent` 成对装卸。
 4. **边界清晰，校验止于入口**：
    - QFW Fork 只管通用控件的懒导出、`.rcc` 与样式引擎、对象生命周期和通用缺陷（收编 `unregisterRouter` 与 `patchStackedWidgetAnimation`）；Ghost Downloader 宿主负责启动顺序（`qconfig.load` -> `Application` -> `qfluentwidgets.load(app)`）、关窗退托盘销毁重建、Win32 DWM / macOS Cocoa 材质、`patchMaskDialogAnimation` 与容器精确选择器纪律（`.MainWindow` / `.QWidget`）。
    - 参数与资源校验止于 `load(app)` 入口，内部信任启动不变量；不建单调用方浅包装类，不留兼容别名，不保留可派生的冗余状态变量。
