@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import traceback
+from contextlib import suppress
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
@@ -373,12 +374,23 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     updateService.changed.connect(onUpdateChanged)
     checkUpdateAtStartup(updateService)
 
-    def onAboutToQuit():
-        engine.stop()
-        updateService.apply()
-        coroutineRunner.stop()
+    def onTerminated() -> None:
+        with suppress(RuntimeError):
+            application.aboutToQuit.disconnect(updateService.apply)
 
-    application.aboutToQuit.connect(onAboutToQuit)
+    application.aboutToQuit.connect(engine.stop)
+    application.aboutToQuit.connect(updateService.apply)
+    application.aboutToQuit.connect(coroutineRunner.stop)
+    application.terminated.connect(onTerminated)
+    if sys.platform == "win32":
+        from app.platform.windows import ShutdownListener
+        shutdownListener = ShutdownListener(
+            application.translate("Shutdown", "正在保存任务进度"),
+            icon=QIcon(":/image/logo.png"),
+        )
+        application.shutdownListener = shutdownListener
+        shutdownListener.triggered.connect(onTerminated)
+        application.aboutToQuit.connect(shutdownListener.close)
 
     from app.cli import Cli
     cli = Cli(taskService, featureService.parse, coroutineRunner.submit,

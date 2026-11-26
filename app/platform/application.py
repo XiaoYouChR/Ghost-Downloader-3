@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from signal import signal, SIGINT
+from signal import SIGINT, signal
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QEvent, Signal
@@ -20,6 +20,7 @@ class Application(QApplication):
     openRequested = Signal(str)
     activated = Signal()
     systemPaletteChanged = Signal()
+    terminated = Signal()
 
     def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
@@ -28,7 +29,44 @@ class Application(QApplication):
             self.setDesktopFileName(DESKTOP_ID)
         self.isFileDragActive: bool = False
         self.clipboardListener: ClipboardListener | None = None
-        signal(SIGINT, self._onInterrupt)
+        if sys.platform == "win32":
+            signal(SIGINT, self._onInterrupt)
+        else:
+            import socket
+            from signal import SIG_DFL, SIGTERM, set_wakeup_fd
+            from PySide6.QtCore import QSocketNotifier
+
+            readSock, writeSock = socket.socketpair()
+            readSock.setblocking(False)
+            writeSock.setblocking(False)
+            prevFd = set_wakeup_fd(writeSock.fileno(), warn_on_full_buffer=False)
+            signal(SIGINT, lambda *_: None)
+            signal(SIGTERM, lambda *_: None)
+            notifier = QSocketNotifier(readSock.fileno(), QSocketNotifier.Type.Read, self)
+
+            def onSignal() -> None:
+                try:
+                    data = readSock.recv(64)
+                except BlockingIOError:
+                    return
+                if SIGTERM in data:
+                    notifier.setEnabled(False)
+                    self.terminated.emit()
+                    self.quit()
+                elif SIGINT in data:
+                    notifier.setEnabled(False)
+                    self._onInterrupt(SIGINT, None)
+
+            def closeSignals() -> None:
+                notifier.setEnabled(False)
+                signal(SIGINT, SIG_DFL)
+                signal(SIGTERM, SIG_DFL)
+                set_wakeup_fd(prevFd)
+                readSock.close()
+                writeSock.close()
+
+            notifier.activated.connect(onSignal)
+            self.aboutToQuit.connect(closeSignals)
 
     def event(self, e: QEvent) -> bool:
         if isinstance(e, QFileOpenEvent):

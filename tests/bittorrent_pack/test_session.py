@@ -293,3 +293,75 @@ async def test_set_selection_downloads_newly_selected_file(config, startServer, 
     finally:
         await session.close()
         seeder.remove_torrent(seederHandle)
+
+
+async def test_close_preserves_seeding_share_ratio(config, tmp_path):
+    torrentData, _ = buildMultiFileTorrent(tmp_path, {"a.bin": b"A" * 32768})
+    sourceRoot = tmp_path / "source"
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        listenPort = probe.getsockname()[1]
+
+    cfg.set(bittorrentConfig.listenPort, listenPort)
+    cfg.set(bittorrentConfig.enableDht, False)
+    cfg.set(bittorrentConfig.enableLsd, False)
+
+    ready, uploaded, restored = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    restoredRatio = 0.0
+
+    def onSeeding(p):
+        if p.isSeeding:
+            ready.set()
+            if p.shareRatioPercent > 0:
+                uploaded.set()
+
+    def onRestored(p):
+        nonlocal restoredRatio
+        if p.isSeeding:
+            restoredRatio = p.shareRatioPercent
+            restored.set()
+
+    session, restarted = BTSession(), BTSession()
+    leecher = lt.session({
+        "listen_interfaces": "127.0.0.1:0", "enable_dht": False, "enable_lsd": False,
+        "enable_upnp": False, "enable_natpmp": False, "ignore_limits_on_local_network": True,
+    })
+    leecherHandle = seedingTask = restartedTask = None
+    try:
+        seedingTask = asyncio.create_task(session.runSeeding(
+            "t1", TorrentParams(torrentData=torrentData, savePath=str(sourceRoot)),
+            isManual=True, onProgress=onSeeding,
+        ))
+        async with asyncio.timeout(5):
+            await ready.wait()
+
+        params = lt.load_torrent_buffer(torrentData)
+        params.save_path = str(tmp_path / "leecher")
+        leecherHandle = leecher.add_torrent(params)
+        leecherHandle.resume()
+        leecherHandle.connect_peer(("127.0.0.1", listenPort))
+
+        async with asyncio.timeout(10):
+            await uploaded.wait()
+
+        await session.close()
+        assert seedingTask.done()
+        resumeData = session.lastResumeData("t1")
+        assert resumeData
+
+        restartedTask = asyncio.create_task(restarted.runSeeding(
+            "t1", TorrentParams(torrentData=torrentData, savePath=str(sourceRoot), resumeData=resumeData),
+            isManual=True, onProgress=onRestored,
+        ))
+        async with asyncio.timeout(10):
+            await restored.wait()
+        assert restoredRatio > 0
+    finally:
+        for task in (restartedTask, seedingTask):
+            if task is not None and not task.done():
+                await cancelRun(task)
+        await restarted.close()
+        await session.close()
+        if leecherHandle is not None:
+            leecher.remove_torrent(leecherHandle)
