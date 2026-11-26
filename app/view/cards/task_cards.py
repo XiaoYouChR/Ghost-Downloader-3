@@ -86,6 +86,7 @@ TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, N("TaskCard", "暂停/继�
     TaskStatus.RUNNING: lambda t: ButtonState(icon=FluentIcon.PAUSE, enabled=t.canPause),
     TaskStatus.COMPLETED: lambda t: ButtonState(
         icon=FluentIcon.PAUSE if t.isSeeding else None,
+        visible=t.canSeed,
         enabled=t.canSeed and (not t.hasOutputFile or isExisting(t.outputPath))),
 })
 
