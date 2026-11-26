@@ -2854,7 +2854,17 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="375"/>
+      <source>功能包更新</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="376"/>
+      <source>{0} 将在下次启动时生效</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="442"/>
       <source>程序发生异常</source>
       <translation>حدث استثناء في البرنامج</translation>
     </message>
@@ -2936,7 +2946,7 @@ http://example.com/{mp4,mkv}/video</translation>
       <translation>عرض التفاصيل</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="434"/>
+      <location filename="../../view/windows/main_window.py" line="443"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2945,32 +2955,32 @@ http://example.com/{mp4,mkv}/video</translation>
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="438"/>
+      <location filename="../../view/windows/main_window.py" line="447"/>
       <source>查看日志</source>
       <translation>عرض السجلات</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="494"/>
       <source>是否完全退出程序？</source>
       <translation>هل تريد الخروج من البرنامج بالكامل؟</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="486"/>
+      <location filename="../../view/windows/main_window.py" line="495"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>عند التشغيل في الخلفية يمكنك إعادة فتحه من أيقونة صينية النظام.</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="498"/>
       <source>退出程序</source>
       <translation>الخروج من البرنامج</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="499"/>
       <source>继续在后台运行</source>
       <translation>الاستمرار في الخلفية</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="491"/>
+      <location filename="../../view/windows/main_window.py" line="500"/>
       <source>记住我的选择</source>
       <translation>تذكّر اختياري</translation>
     </message>
@@ -5618,184 +5628,184 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>TaskPage</name>
     <message>
-      <location filename="../../view/pages/task_page.py" line="168"/>
+      <location filename="../../view/pages/task_page.py" line="169"/>
       <source>全部开始</source>
       <translation>بدء الكل</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="169"/>
+      <location filename="../../view/pages/task_page.py" line="170"/>
       <source>全部暂停</source>
       <translation>إيقاف الكل مؤقتًا</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="183"/>
+      <location filename="../../view/pages/task_page.py" line="184"/>
       <source>按名称排序</source>
       <translation>الترتيب حسب الاسم</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="186"/>
+      <location filename="../../view/pages/task_page.py" line="187"/>
       <source>顺序</source>
       <translation>تصاعدي</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="187"/>
+      <location filename="../../view/pages/task_page.py" line="188"/>
       <source>倒序</source>
       <translation>تنازلي</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>全部任务</source>
       <translation>جميع المهام</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>活动任务</source>
       <translation>المهام النشطة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>完成任务</source>
       <translation>المهام المكتملة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="666"/>
-      <location filename="../../view/pages/task_page.py" line="678"/>
+      <location filename="../../view/pages/task_page.py" line="165"/>
+      <location filename="../../view/pages/task_page.py" line="667"/>
+      <location filename="../../view/pages/task_page.py" line="679"/>
       <source>暂无下载任务</source>
       <translation>لا توجد مهام تنزيل</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="249"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>限速（右键修改）</source>
       <translation>حد السرعة (انقر بالزر الأيمن للتعديل)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="250"/>
+      <location filename="../../view/pages/task_page.py" line="251"/>
       <source>按分类筛选</source>
       <translation>التصفية حسب الفئة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>选择任务</source>
       <translation>تحديد المهام</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="181"/>
+      <location filename="../../view/pages/task_page.py" line="182"/>
       <source>按添加时间</source>
       <translation>حسب وقت الإضافة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="182"/>
+      <location filename="../../view/pages/task_page.py" line="183"/>
       <source>按完成时间</source>
       <translation>حسب وقت الاكتمال</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="184"/>
+      <location filename="../../view/pages/task_page.py" line="185"/>
       <source>按大小排序</source>
       <translation>الترتيب حسب الحجم</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="185"/>
+      <location filename="../../view/pages/task_page.py" line="186"/>
       <source>按队列顺序</source>
       <translation>حسب ترتيب الطابور</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>计划任务</source>
       <translation>المهام المجدولة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="365"/>
+      <location filename="../../view/pages/task_page.py" line="366"/>
       <source>搜索任务</source>
       <translation>البحث في المهام</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="475"/>
+      <location filename="../../view/pages/task_page.py" line="476"/>
       <source>下载限速</source>
       <translation>حد سرعة التنزيل</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>删除任务</source>
       <translation>حذف المهام</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>هل تريد بالتأكيد حذف مهام التنزيل المحددة؟</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="562"/>
+      <location filename="../../view/pages/task_page.py" line="563"/>
       <source>同时删除已下载的文件</source>
       <translation>حذف الملفات التي تم تنزيلها أيضًا</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="669"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>لا توجد مهام مطابقة لشروط التصفية</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="671"/>
       <source>没有匹配的任务</source>
       <translation>لا توجد مهام مطابقة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="673"/>
       <source>该分类下暂无任务</source>
       <translation>لا توجد مهام في هذه الفئة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="674"/>
+      <location filename="../../view/pages/task_page.py" line="675"/>
       <source>暂无活动任务</source>
       <translation>لا توجد مهام نشطة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="676"/>
+      <location filename="../../view/pages/task_page.py" line="677"/>
       <source>暂无完成任务</source>
       <translation>لا توجد مهام مكتملة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="788"/>
+      <location filename="../../view/pages/task_page.py" line="789"/>
       <source>校验失败</source>
       <translation>فشل التحقق</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="885"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>无法移到回收站</source>
       <translation>تعذّر النقل إلى سلة المحذوفات</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="886"/>
+      <location filename="../../view/pages/task_page.py" line="887"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>تم الاحتفاظ بالملف القديم، وحُفظ الملف الجديد باسم {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="894"/>
+      <location filename="../../view/pages/task_page.py" line="895"/>
       <source>无法修改任务</source>
       <translation>تعذّر تعديل المهمة</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="906"/>
       <source>文件删除受限</source>
       <translation>حذف الملفات مقيّد</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="904"/>
+      <location filename="../../view/pages/task_page.py" line="907"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>منع macOS حذف الملفات، يرجى إضافة Ghost Downloader في ‏إعدادات النظام &gt; الخصوصية والأمان &gt; الوصول الكامل إلى القرص</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="909"/>
+      <location filename="../../view/pages/task_page.py" line="912"/>
       <source>前往设置</source>
       <translation>الانتقال إلى الإعدادات</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="510"/>
+      <location filename="../../view/pages/task_page.py" line="511"/>
       <source>全部分类</source>
       <translation>جميع الفئات</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="585"/>
+      <location filename="../../view/pages/task_page.py" line="586"/>
       <source>未分类</source>
       <translation>غير مصنف</translation>
     </message>

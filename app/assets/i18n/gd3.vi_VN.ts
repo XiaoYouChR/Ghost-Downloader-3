@@ -669,12 +669,12 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="109"/>
       <source>解析在线种子链接</source>
-      <translation type="unfinished"/>
+      <translation>Phân tích các liên kết torrent trực tuyến</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="110"/>
       <source>HTTP 链接指向 .torrent 文件时解析为 BT 任务，关闭时仅下载 .torrent 文件</source>
-      <translation type="unfinished"/>
+      <translation>Phân tích các tệp .torrent được liên kết qua HTTP dưới dạng tác vụ BitTorrent; chỉ tải xuống tệp .torrent khi tùy chọn này bị tắt</translation>
     </message>
     <message>
       <location filename="../../../features/bittorrent_pack/config.py" line="112"/>
@@ -2854,7 +2854,17 @@ chọn "Không mô phỏng" để gửi nguyên bản</translation>
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="375"/>
+      <source>功能包更新</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="376"/>
+      <source>{0} 将在下次启动时生效</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="442"/>
       <source>程序发生异常</source>
       <translation>Ứng dụng gặp lỗi ngoại lệ</translation>
     </message>
@@ -2936,7 +2946,7 @@ Chỉ cho phép yêu cầu này nếu bạn vừa bấm &quot;Tự động ghép
       <translation>Xem chi tiết</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="434"/>
+      <location filename="../../view/windows/main_window.py" line="443"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2945,32 +2955,32 @@ Chỉ cho phép yêu cầu này nếu bạn vừa bấm &quot;Tự động ghép
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="438"/>
+      <location filename="../../view/windows/main_window.py" line="447"/>
       <source>查看日志</source>
       <translation>Xem nhật ký</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="494"/>
       <source>是否完全退出程序？</source>
       <translation>Thoát hoàn toàn ứng dụng?</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="486"/>
+      <location filename="../../view/windows/main_window.py" line="495"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>Khi chạy nền, bạn có thể mở lại ứng dụng từ biểu tượng khay hệ thống.</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="498"/>
       <source>退出程序</source>
       <translation>Thoát ứng dụng</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="499"/>
       <source>继续在后台运行</source>
       <translation>Tiếp tục chạy nền</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="491"/>
+      <location filename="../../view/windows/main_window.py" line="500"/>
       <source>记住我的选择</source>
       <translation>Ghi nhớ lựa chọn của tôi</translation>
     </message>
@@ -3383,7 +3393,7 @@ Cờ {2}  Tiến độ {3}</translation>
     <message>
       <location filename="../../view/dialogs/plan_task.py" line="23"/>
       <source>退出程序</source>
-      <translation type="unfinished"/>
+      <translation>Thoát ứng dụng</translation>
     </message>
     <message>
       <location filename="../../view/dialogs/plan_task.py" line="24"/>
@@ -4255,12 +4265,12 @@ khi có luồng hoàn tất hoặc đạt điều kiện Tự động tăng tố
     <message>
       <location filename="../../view/pages/setting_page.py" line="122"/>
       <source>记住上次使用的下载路径</source>
-      <translation type="unfinished"/>
+      <translation>Nhớ vị trí tải xuống gần nhất</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="123"/>
       <source>新建任务默认使用上次下载的文件夹，无记录时使用默认下载路径</source>
-      <translation type="unfinished"/>
+      <translation>Tác vụ mới sẽ dùng thư mục tải xuống gần nhất lầm mặc định; sử dụng đươngf dẫn mặc định nếu không có bản ghi</translation>
     </message>
     <message>
       <location filename="../../view/pages/setting_page.py" line="126"/>
@@ -5399,27 +5409,27 @@ Dữ liệu sẽ được sao chép sang vị trí mới và ứng dụng sẽ t
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="10"/>
       <source>YouTube 解密组件缺失或不可用，请在设置中更新或重新安装 yt-dlp（{detail}）</source>
-      <translation type="unfinished"/>
+      <translation>Thành phần giải mã YouTube bị thiếu hoặc không khả dụng. Vui lòng cập nhật hoặc cài đặt lại yt-dlp ({detail}) trong cài đặt của bạn</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="11"/>
       <source>YouTube Cookie 已失效或受限，请在设置中清除或重新导入 Cookie（{detail}）</source>
-      <translation type="unfinished"/>
+      <translation>YouTube Cookie đã hết hạn hoặc bị thu hồi; vui lòng xóa hoặc nhập lại cookies trong cài đặt ({detail})</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="12"/>
       <source>请求的格式不可用，请在设置中更新 yt-dlp 后重试（{detail}）</source>
-      <translation type="unfinished"/>
+      <translation>Định dạng yêu cầu không khả dụng; vui lòng cập nhật yt-dlp trong cài đặt và thử lại ({detail})</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="16"/>
       <source>未找到 yt-dlp nightly</source>
-      <translation type="unfinished"/>
+      <translation>Không tìm thấy yt-dlp nightly</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="17"/>
       <source>未找到 yt-dlp-ejs {version}</source>
-      <translation type="unfinished"/>
+      <translation>Không tìm thấy yt-dlp-ejs {version}</translation>
     </message>
     <message>
       <location filename="../../../features/yt_dlp_pack/i18n.py" line="13"/>
@@ -5625,185 +5635,185 @@ Dữ liệu sẽ được sao chép sang vị trí mới và ứng dụng sẽ t
   <context>
     <name>TaskPage</name>
     <message>
-      <location filename="../../view/pages/task_page.py" line="168"/>
+      <location filename="../../view/pages/task_page.py" line="169"/>
       <source>全部开始</source>
       <translation>Bắt đầu tất cả</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="169"/>
+      <location filename="../../view/pages/task_page.py" line="170"/>
       <source>全部暂停</source>
       <translation>Tạm dừng tất cả</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="183"/>
+      <location filename="../../view/pages/task_page.py" line="184"/>
       <source>按名称排序</source>
       <translation>Sắp xếp theo tên</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="186"/>
+      <location filename="../../view/pages/task_page.py" line="187"/>
       <source>顺序</source>
       <translation>Tăng dần</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="187"/>
+      <location filename="../../view/pages/task_page.py" line="188"/>
       <source>倒序</source>
       <translation>Giảm dần</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>全部任务</source>
       <translation>Tất cả tác vụ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>活动任务</source>
       <translation>Tác vụ đang chạy</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>完成任务</source>
       <translation>Tác vụ đã hoàn thành</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="666"/>
-      <location filename="../../view/pages/task_page.py" line="678"/>
+      <location filename="../../view/pages/task_page.py" line="165"/>
+      <location filename="../../view/pages/task_page.py" line="667"/>
+      <location filename="../../view/pages/task_page.py" line="679"/>
       <source>暂无下载任务</source>
       <translation>Chưa có tác vụ tải xuống</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="249"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>限速（右键修改）</source>
       <translation>Giới hạn tốc độ (Nhấp chuột phải để sửa)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="250"/>
+      <location filename="../../view/pages/task_page.py" line="251"/>
       <source>按分类筛选</source>
       <translation>Lọc theo danh mục</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>选择任务</source>
       <translation>Chọn tác vụ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="181"/>
+      <location filename="../../view/pages/task_page.py" line="182"/>
       <source>按添加时间</source>
       <translation>Theo thời gian thêm</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="182"/>
+      <location filename="../../view/pages/task_page.py" line="183"/>
       <source>按完成时间</source>
       <translation>Theo thời gian hoàn thành</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="184"/>
+      <location filename="../../view/pages/task_page.py" line="185"/>
       <source>按大小排序</source>
       <translation>Sắp xếp theo kích thước</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="185"/>
+      <location filename="../../view/pages/task_page.py" line="186"/>
       <source>按队列顺序</source>
       <translation>Theo thứ tự hàng đợi</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>计划任务</source>
       <translation>Lên lịch tác vụ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="365"/>
+      <location filename="../../view/pages/task_page.py" line="366"/>
       <source>搜索任务</source>
       <translation>Tìm kiếm tác vụ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="475"/>
+      <location filename="../../view/pages/task_page.py" line="476"/>
       <source>下载限速</source>
       <translation>Giới hạn tốc độ tải</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>删除任务</source>
       <translation>Xóa tác vụ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>Bạn có chắc muốn xóa các tác vụ tải xuống đã chọn không?</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="562"/>
+      <location filename="../../view/pages/task_page.py" line="563"/>
       <source>同时删除已下载的文件</source>
       <translation>Đồng thời xóa các tệp đã tải</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="669"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>Không có tác vụ nào khớp với bộ lọc hiện tại</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="671"/>
       <source>没有匹配的任务</source>
       <translation>Không có tác vụ phù hợp</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="673"/>
       <source>该分类下暂无任务</source>
       <translation>Chưa có tác vụ trong danh mục này</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="674"/>
+      <location filename="../../view/pages/task_page.py" line="675"/>
       <source>暂无活动任务</source>
       <translation>Không có tác vụ đang chạy</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="676"/>
+      <location filename="../../view/pages/task_page.py" line="677"/>
       <source>暂无完成任务</source>
       <translation>Không có tác vụ hoàn thành</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="788"/>
+      <location filename="../../view/pages/task_page.py" line="789"/>
       <source>校验失败</source>
       <translation>Xác minh mã kiểm tra thất bại</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="885"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>无法移到回收站</source>
       <translation>Không thể chuyển vào Thùng rác</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="886"/>
+      <location filename="../../view/pages/task_page.py" line="887"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>Đã giữ tệp cũ, lưu tệp mới thành {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="894"/>
+      <location filename="../../view/pages/task_page.py" line="895"/>
       <source>无法修改任务</source>
       <translation>Không thể sửa tác vụ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="906"/>
       <source>文件删除受限</source>
       <translation>Thao tác tệp bị hạn chế</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="904"/>
+      <location filename="../../view/pages/task_page.py" line="907"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>macOS đã chặn xóa tệp, vui lòng thêm Ghost Downloader vào
 Cài đặt hệ thống &gt; Quyền riêng tư &amp; Bảo mật &gt; Quyền truy cập toàn bộ ổ đĩa</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="909"/>
+      <location filename="../../view/pages/task_page.py" line="912"/>
       <source>前往设置</source>
       <translation>Mở Cài đặt</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="510"/>
+      <location filename="../../view/pages/task_page.py" line="511"/>
       <source>全部分类</source>
       <translation>Tất cả danh mục</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="585"/>
+      <location filename="../../view/pages/task_page.py" line="586"/>
       <source>未分类</source>
       <translation>Chưa phân loại</translation>
     </message>
