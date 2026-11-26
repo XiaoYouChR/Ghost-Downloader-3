@@ -178,7 +178,7 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>324042 words</b></sub>
+        <sub><b>324057 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/hzzmonet"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17541058/medium/6d2519b5176d5dc224526a18f945002e.jpeg" />
@@ -187,7 +187,7 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>(hzzmonet)</b></sub></a>
         <br />
-        <sub><b>15061 words</b></sub>
+        <sub><b>15226 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/oocr"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/18002969/medium/8dc2d6ceade5dc57fd4fccc62d874db0.jpeg" />
@@ -205,7 +205,7 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>(Havokdan)</b></sub></a>
         <br />
-        <sub><b>4481 words</b></sub>
+        <sub><b>4753 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />

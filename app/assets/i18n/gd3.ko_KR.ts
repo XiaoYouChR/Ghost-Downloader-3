@@ -2854,7 +2854,17 @@ cURL 명령이 여러 개면 첫 번째만 써요
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="375"/>
+      <source>功能包更新</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="376"/>
+      <source>{0} 将在下次启动时生效</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="442"/>
       <source>程序发生异常</source>
       <translation>프로그램에 문제가 생겼어요</translation>
     </message>
@@ -2936,7 +2946,7 @@ cURL 명령이 여러 개면 첫 번째만 써요
       <translation>세부 정보 보기</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="434"/>
+      <location filename="../../view/windows/main_window.py" line="443"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2945,32 +2955,32 @@ cURL 명령이 여러 개면 첫 번째만 써요
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="438"/>
+      <location filename="../../view/windows/main_window.py" line="447"/>
       <source>查看日志</source>
       <translation>로그 보기</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="494"/>
       <source>是否完全退出程序？</source>
       <translation>프로그램을 완전히 종료할까요?</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="486"/>
+      <location filename="../../view/windows/main_window.py" line="495"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>백그라운드에서 실행 중일 때는 시스템 트레이 아이콘으로 다시 열 수 있어요</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="498"/>
       <source>退出程序</source>
       <translation>프로그램 종료</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="499"/>
       <source>继续在后台运行</source>
       <translation>백그라운드에서 계속 실행</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="491"/>
+      <location filename="../../view/windows/main_window.py" line="500"/>
       <source>记住我的选择</source>
       <translation>내 선택 기억하기</translation>
     </message>
@@ -5620,184 +5630,184 @@ cURL 명령이 여러 개면 첫 번째만 써요
   <context>
     <name>TaskPage</name>
     <message>
-      <location filename="../../view/pages/task_page.py" line="168"/>
+      <location filename="../../view/pages/task_page.py" line="169"/>
       <source>全部开始</source>
       <translation>모두 시작</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="169"/>
+      <location filename="../../view/pages/task_page.py" line="170"/>
       <source>全部暂停</source>
       <translation>모두 일시정지</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="183"/>
+      <location filename="../../view/pages/task_page.py" line="184"/>
       <source>按名称排序</source>
       <translation>이름순 정렬</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="186"/>
+      <location filename="../../view/pages/task_page.py" line="187"/>
       <source>顺序</source>
       <translation>오름차순</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="187"/>
+      <location filename="../../view/pages/task_page.py" line="188"/>
       <source>倒序</source>
       <translation>내림차순</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>全部任务</source>
       <translation>모든 작업</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>活动任务</source>
       <translation>활성 작업</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>完成任务</source>
       <translation>완료된 작업</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="666"/>
-      <location filename="../../view/pages/task_page.py" line="678"/>
+      <location filename="../../view/pages/task_page.py" line="165"/>
+      <location filename="../../view/pages/task_page.py" line="667"/>
+      <location filename="../../view/pages/task_page.py" line="679"/>
       <source>暂无下载任务</source>
       <translation>아직 다운로드 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="249"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>限速（右键修改）</source>
       <translation>속도 제한(오른쪽 버튼으로 수정)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="250"/>
+      <location filename="../../view/pages/task_page.py" line="251"/>
       <source>按分类筛选</source>
       <translation>분류별 필터</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>选择任务</source>
       <translation>작업 선택</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="181"/>
+      <location filename="../../view/pages/task_page.py" line="182"/>
       <source>按添加时间</source>
       <translation>추가 시간순</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="182"/>
+      <location filename="../../view/pages/task_page.py" line="183"/>
       <source>按完成时间</source>
       <translation>완료 시간순</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="184"/>
+      <location filename="../../view/pages/task_page.py" line="185"/>
       <source>按大小排序</source>
       <translation>크기순 정렬</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="185"/>
+      <location filename="../../view/pages/task_page.py" line="186"/>
       <source>按队列顺序</source>
       <translation>대기열 순서</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>计划任务</source>
       <translation>예약 작업</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="365"/>
+      <location filename="../../view/pages/task_page.py" line="366"/>
       <source>搜索任务</source>
       <translation>작업 검색</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="475"/>
+      <location filename="../../view/pages/task_page.py" line="476"/>
       <source>下载限速</source>
       <translation>다운로드 속도 제한</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>删除任务</source>
       <translation>작업 삭제</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>선택한 다운로드 작업을 삭제할까요?</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="562"/>
+      <location filename="../../view/pages/task_page.py" line="563"/>
       <source>同时删除已下载的文件</source>
       <translation>다운로드한 파일도 함께 삭제</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="669"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>조건에 맞는 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="671"/>
       <source>没有匹配的任务</source>
       <translation>찾는 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="673"/>
       <source>该分类下暂无任务</source>
       <translation>이 분류에 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="674"/>
+      <location filename="../../view/pages/task_page.py" line="675"/>
       <source>暂无活动任务</source>
       <translation>진행 중인 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="676"/>
+      <location filename="../../view/pages/task_page.py" line="677"/>
       <source>暂无完成任务</source>
       <translation>완료된 작업이 없어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="788"/>
+      <location filename="../../view/pages/task_page.py" line="789"/>
       <source>校验失败</source>
       <translation>체크섬이 맞지 않아요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="885"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>无法移到回收站</source>
       <translation>휴지통으로 보내지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="886"/>
+      <location filename="../../view/pages/task_page.py" line="887"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>이전 파일은 그대로 두고 새 파일을 {0} 이름으로 저장했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="894"/>
+      <location filename="../../view/pages/task_page.py" line="895"/>
       <source>无法修改任务</source>
       <translation>작업을 수정하지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="906"/>
       <source>文件删除受限</source>
       <translation>파일을 지우지 못했어요</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="904"/>
+      <location filename="../../view/pages/task_page.py" line="907"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>macOS가 파일 삭제를 막았어요. 시스템 설정 &gt; 개인정보 보호 및 보안 &gt; 전체 디스크 접근 권한에서 Ghost Downloader를 추가해 주세요.</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="909"/>
+      <location filename="../../view/pages/task_page.py" line="912"/>
       <source>前往设置</source>
       <translation>설정 열기</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="510"/>
+      <location filename="../../view/pages/task_page.py" line="511"/>
       <source>全部分类</source>
       <translation>모든 분류</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="585"/>
+      <location filename="../../view/pages/task_page.py" line="586"/>
       <source>未分类</source>
       <translation>미분류</translation>
     </message>

@@ -2854,7 +2854,17 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="375"/>
+      <source>功能包更新</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="376"/>
+      <source>{0} 将在下次启动时生效</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="442"/>
       <source>程序发生异常</source>
       <translation>プログラムで例外が発生しました</translation>
     </message>
@@ -2936,7 +2946,7 @@ http://example.com/{mp4,mkv}/video</translation>
       <translation>詳細を表示</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="434"/>
+      <location filename="../../view/windows/main_window.py" line="443"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2945,32 +2955,32 @@ http://example.com/{mp4,mkv}/video</translation>
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="438"/>
+      <location filename="../../view/windows/main_window.py" line="447"/>
       <source>查看日志</source>
       <translation>ログを表示</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="494"/>
       <source>是否完全退出程序？</source>
       <translation>プログラムを完全に終了しますか？</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="486"/>
+      <location filename="../../view/windows/main_window.py" line="495"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>バックグラウンド実行時はシステムトレイアイコンから再表示できます。</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="498"/>
       <source>退出程序</source>
       <translation>終了</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="499"/>
       <source>继续在后台运行</source>
       <translation>引き続きバックグラウンドで実行</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="491"/>
+      <location filename="../../view/windows/main_window.py" line="500"/>
       <source>记住我的选择</source>
       <translation>選択を記憶</translation>
     </message>
@@ -5618,184 +5628,184 @@ http://example.com/{mp4,mkv}/video</translation>
   <context>
     <name>TaskPage</name>
     <message>
-      <location filename="../../view/pages/task_page.py" line="168"/>
+      <location filename="../../view/pages/task_page.py" line="169"/>
       <source>全部开始</source>
       <translation>すべて開始</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="169"/>
+      <location filename="../../view/pages/task_page.py" line="170"/>
       <source>全部暂停</source>
       <translation>すべて一時停止</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="183"/>
+      <location filename="../../view/pages/task_page.py" line="184"/>
       <source>按名称排序</source>
       <translation>名前順で並べ替え</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="186"/>
+      <location filename="../../view/pages/task_page.py" line="187"/>
       <source>顺序</source>
       <translation>昇順</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="187"/>
+      <location filename="../../view/pages/task_page.py" line="188"/>
       <source>倒序</source>
       <translation>降順</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>全部任务</source>
       <translation>すべてのタスク</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>活动任务</source>
       <translation>進行中のタスク</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>完成任务</source>
       <translation>完了したタスク</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="666"/>
-      <location filename="../../view/pages/task_page.py" line="678"/>
+      <location filename="../../view/pages/task_page.py" line="165"/>
+      <location filename="../../view/pages/task_page.py" line="667"/>
+      <location filename="../../view/pages/task_page.py" line="679"/>
       <source>暂无下载任务</source>
       <translation>ダウンロードタスクはありません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="249"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>限速（右键修改）</source>
       <translation>速度制限（右クリックで変更）</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="250"/>
+      <location filename="../../view/pages/task_page.py" line="251"/>
       <source>按分类筛选</source>
       <translation>カテゴリでフィルター</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>选择任务</source>
       <translation>タスクを選択</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="181"/>
+      <location filename="../../view/pages/task_page.py" line="182"/>
       <source>按添加时间</source>
       <translation>追加日時順</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="182"/>
+      <location filename="../../view/pages/task_page.py" line="183"/>
       <source>按完成时间</source>
       <translation>完了日時順</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="184"/>
+      <location filename="../../view/pages/task_page.py" line="185"/>
       <source>按大小排序</source>
       <translation>サイズ順で並べ替え</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="185"/>
+      <location filename="../../view/pages/task_page.py" line="186"/>
       <source>按队列顺序</source>
       <translation>キュー順</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>计划任务</source>
       <translation>タスクをスケジュール</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="365"/>
+      <location filename="../../view/pages/task_page.py" line="366"/>
       <source>搜索任务</source>
       <translation>タスクを検索</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="475"/>
+      <location filename="../../view/pages/task_page.py" line="476"/>
       <source>下载限速</source>
       <translation>ダウンロード速度制限</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>删除任务</source>
       <translation>タスクを削除</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>選択したダウンロードタスクを削除してもよろしいですか？</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="562"/>
+      <location filename="../../view/pages/task_page.py" line="563"/>
       <source>同时删除已下载的文件</source>
       <translation>ダウンロードしたファイルも同時に削除</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="669"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>フィルター条件に一致するタスクがありません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="671"/>
       <source>没有匹配的任务</source>
       <translation>一致するタスクがありません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="673"/>
       <source>该分类下暂无任务</source>
       <translation>このカテゴリにはタスクがありません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="674"/>
+      <location filename="../../view/pages/task_page.py" line="675"/>
       <source>暂无活动任务</source>
       <translation>進行中のタスクはありません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="676"/>
+      <location filename="../../view/pages/task_page.py" line="677"/>
       <source>暂无完成任务</source>
       <translation>完了したタスクはありません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="788"/>
+      <location filename="../../view/pages/task_page.py" line="789"/>
       <source>校验失败</source>
       <translation>検証に失敗しました</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="885"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>无法移到回收站</source>
       <translation>ゴミ箱に移動できません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="886"/>
+      <location filename="../../view/pages/task_page.py" line="887"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>古いファイルは保持され、新しいファイルは {0} として保存されました</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="894"/>
+      <location filename="../../view/pages/task_page.py" line="895"/>
       <source>无法修改任务</source>
       <translation>タスクを編集できません</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="906"/>
       <source>文件删除受限</source>
       <translation>ファイル削除が制限されています</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="904"/>
+      <location filename="../../view/pages/task_page.py" line="907"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>macOS がファイル削除をブロックしました。システム設定 &gt; プライバシーとセキュリティ &gt; フルディスクアクセス で Ghost Downloader を追加してください</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="909"/>
+      <location filename="../../view/pages/task_page.py" line="912"/>
       <source>前往设置</source>
       <translation>設定に移動</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="510"/>
+      <location filename="../../view/pages/task_page.py" line="511"/>
       <source>全部分类</source>
       <translation>すべてのカテゴリ</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="585"/>
+      <location filename="../../view/pages/task_page.py" line="586"/>
       <source>未分类</source>
       <translation>未分類</translation>
     </message>

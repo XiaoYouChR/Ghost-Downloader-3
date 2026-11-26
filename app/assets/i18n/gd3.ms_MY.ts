@@ -2855,7 +2855,17 @@ pilih "Tiada Emulasi" untuk menghantar seperti asal</translation>
   <context>
     <name>MainWindow</name>
     <message>
-      <location filename="../../view/windows/main_window.py" line="433"/>
+      <location filename="../../view/windows/main_window.py" line="375"/>
+      <source>功能包更新</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="376"/>
+      <source>{0} 将在下次启动时生效</source>
+      <translation type="unfinished"/>
+    </message>
+    <message>
+      <location filename="../../view/windows/main_window.py" line="442"/>
       <source>程序发生异常</source>
       <translation>Pengecualian berlaku</translation>
     </message>
@@ -2937,7 +2947,7 @@ Hanya benarkan permintaan ini jika anda telah meminta &quot;Ganding Automatik&qu
       <translation>Lihat Butiran</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="434"/>
+      <location filename="../../view/windows/main_window.py" line="443"/>
       <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2946,32 +2956,32 @@ Hanya benarkan permintaan ini jika anda telah meminta &quot;Ganding Automatik&qu
 {0}</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="438"/>
+      <location filename="../../view/windows/main_window.py" line="447"/>
       <source>查看日志</source>
       <translation>Lihat Log</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="485"/>
+      <location filename="../../view/windows/main_window.py" line="494"/>
       <source>是否完全退出程序？</source>
       <translation>Keluar dari Aplikasi Sepenuhnya?</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="486"/>
+      <location filename="../../view/windows/main_window.py" line="495"/>
       <source>后台运行时可通过系统托盘图标重新打开。</source>
       <translation>Semasa berjalan di latar belakang, anda boleh membuka semula aplikasi daripada ikon dulang sistem.</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="489"/>
+      <location filename="../../view/windows/main_window.py" line="498"/>
       <source>退出程序</source>
       <translation>Keluar dari Aplikasi</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="490"/>
+      <location filename="../../view/windows/main_window.py" line="499"/>
       <source>继续在后台运行</source>
       <translation>Teruskan berjalan di latar belakang</translation>
     </message>
     <message>
-      <location filename="../../view/windows/main_window.py" line="491"/>
+      <location filename="../../view/windows/main_window.py" line="500"/>
       <source>记住我的选择</source>
       <translation>Ingat pilihan saya</translation>
     </message>
@@ -5624,185 +5634,185 @@ Data akan disalin ke lokasi baharu dan aplikasi akan ditutup selepas itu. Sila l
   <context>
     <name>TaskPage</name>
     <message>
-      <location filename="../../view/pages/task_page.py" line="168"/>
+      <location filename="../../view/pages/task_page.py" line="169"/>
       <source>全部开始</source>
       <translation>Mulakan Semua</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="169"/>
+      <location filename="../../view/pages/task_page.py" line="170"/>
       <source>全部暂停</source>
       <translation>Jedakan Semua</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="183"/>
+      <location filename="../../view/pages/task_page.py" line="184"/>
       <source>按名称排序</source>
       <translation>Susun mengikut Nama</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="186"/>
+      <location filename="../../view/pages/task_page.py" line="187"/>
       <source>顺序</source>
       <translation>Menaik</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="187"/>
+      <location filename="../../view/pages/task_page.py" line="188"/>
       <source>倒序</source>
       <translation>Menurun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>全部任务</source>
       <translation>Semua Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>活动任务</source>
       <translation>Tugas Aktif</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="233"/>
+      <location filename="../../view/pages/task_page.py" line="234"/>
       <source>完成任务</source>
       <translation>Tugas Selesai</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="164"/>
-      <location filename="../../view/pages/task_page.py" line="666"/>
-      <location filename="../../view/pages/task_page.py" line="678"/>
+      <location filename="../../view/pages/task_page.py" line="165"/>
+      <location filename="../../view/pages/task_page.py" line="667"/>
+      <location filename="../../view/pages/task_page.py" line="679"/>
       <source>暂无下载任务</source>
       <translation>Tiada tugas muat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="249"/>
+      <location filename="../../view/pages/task_page.py" line="250"/>
       <source>限速（右键修改）</source>
       <translation>Had Kelajuan (Klik kanan untuk ubah)</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="250"/>
+      <location filename="../../view/pages/task_page.py" line="251"/>
       <source>按分类筛选</source>
       <translation>Tapis Mengikut Kategori</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="247"/>
+      <location filename="../../view/pages/task_page.py" line="248"/>
       <source>选择任务</source>
       <translation>Pilih Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="181"/>
+      <location filename="../../view/pages/task_page.py" line="182"/>
       <source>按添加时间</source>
       <translation>Susun mengikut Masa Ditambah</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="182"/>
+      <location filename="../../view/pages/task_page.py" line="183"/>
       <source>按完成时间</source>
       <translation>Susun mengikut Masa Selesai</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="184"/>
+      <location filename="../../view/pages/task_page.py" line="185"/>
       <source>按大小排序</source>
       <translation>Susun mengikut Saiz</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="185"/>
+      <location filename="../../view/pages/task_page.py" line="186"/>
       <source>按队列顺序</source>
       <translation>Susun mengikut Tertib Giliran</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="248"/>
+      <location filename="../../view/pages/task_page.py" line="249"/>
       <source>计划任务</source>
       <translation>Jadualkan Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="365"/>
+      <location filename="../../view/pages/task_page.py" line="366"/>
       <source>搜索任务</source>
       <translation>Cari Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="475"/>
+      <location filename="../../view/pages/task_page.py" line="476"/>
       <source>下载限速</source>
       <translation>Had Kelajuan Muat Turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>删除任务</source>
       <translation>Padam Tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="561"/>
+      <location filename="../../view/pages/task_page.py" line="562"/>
       <source>确定要删除选中的下载任务吗？</source>
       <translation>Adakah anda pasti mahu memadamkan tugas muat turun yang dipilih?</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="562"/>
+      <location filename="../../view/pages/task_page.py" line="563"/>
       <source>同时删除已下载的文件</source>
       <translation>Padamkan juga fail yang dimuat turun</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="668"/>
+      <location filename="../../view/pages/task_page.py" line="669"/>
       <source>没有匹配筛选条件的任务</source>
       <translation>Tiada tugas yang sepadan dengan penapis semasa</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="670"/>
+      <location filename="../../view/pages/task_page.py" line="671"/>
       <source>没有匹配的任务</source>
       <translation>Tiada tugas yang sepadan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="672"/>
+      <location filename="../../view/pages/task_page.py" line="673"/>
       <source>该分类下暂无任务</source>
       <translation>Tiada tugas di bawah kategori ini</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="674"/>
+      <location filename="../../view/pages/task_page.py" line="675"/>
       <source>暂无活动任务</source>
       <translation>Tiada tugas aktif</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="676"/>
+      <location filename="../../view/pages/task_page.py" line="677"/>
       <source>暂无完成任务</source>
       <translation>Tiada tugas selesai</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="788"/>
+      <location filename="../../view/pages/task_page.py" line="789"/>
       <source>校验失败</source>
       <translation>Pengesahan nilai semakan gagal</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="885"/>
+      <location filename="../../view/pages/task_page.py" line="886"/>
       <source>无法移到回收站</source>
       <translation>Tidak dapat mengalihkan ke tong kitar semula</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="886"/>
+      <location filename="../../view/pages/task_page.py" line="887"/>
       <source>旧文件已保留，新文件另存为 {0}</source>
       <translation>Fail lama dikekalkan; fail baharu disimpan sebagai {0}</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="894"/>
+      <location filename="../../view/pages/task_page.py" line="895"/>
       <source>无法修改任务</source>
       <translation>Tidak dapat mengedit tugas</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="903"/>
+      <location filename="../../view/pages/task_page.py" line="906"/>
       <source>文件删除受限</source>
       <translation>Operasi Fail Disekat</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="904"/>
+      <location filename="../../view/pages/task_page.py" line="907"/>
       <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
       <translation>macOS telah menafikan pemadaman fail; sila tambah Ghost Downloader ke dalam
 Tetapan Sistem &gt; Privasi &amp; Keselamatan &gt; Akses Cakera Penuh</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="909"/>
+      <location filename="../../view/pages/task_page.py" line="912"/>
       <source>前往设置</source>
       <translation>Buka Tetapan</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="510"/>
+      <location filename="../../view/pages/task_page.py" line="511"/>
       <source>全部分类</source>
       <translation>Semua Kategori</translation>
     </message>
     <message>
-      <location filename="../../view/pages/task_page.py" line="585"/>
+      <location filename="../../view/pages/task_page.py" line="586"/>
       <source>未分类</source>
       <translation>Tidak Berkategori</translation>
     </message>
