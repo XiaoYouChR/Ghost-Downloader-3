@@ -27,6 +27,15 @@ def matchFile(originalUrl: str, file: RemoteFile) -> bool:
     return file.canUseRangeRequests and file.fileSize > 0
 
 
+async def probeProxySitesFirst(options: TaskOptions, proxyUrls: list[str]) -> tuple[str, RemoteFile, list[str]]:
+    try:
+        winner, file, fallbackUrls = await probeUrls(options, proxyUrls)
+    except Exception:
+        logger.info("GitHub 代理站均不可用，尝试原地址")
+        return await probeUrls(options, [options.url])
+    return winner, file, [*fallbackUrls, options.url]
+
+
 async def probeUrls(options: TaskOptions, urls: list[str]) -> tuple[str, RemoteFile, list[str]]:
     originalUrl = options.url
 
