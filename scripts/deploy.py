@@ -45,6 +45,7 @@ EXTRA_INCLUDE_MODULES = [
     "http.cookiejar",
     "http.cookies",
     "http.server",
+    "optparse",
     "urllib.error",
     "urllib.response",
     "xml.etree.ElementTree",
@@ -72,9 +73,10 @@ def isModule(dotted: str) -> bool:
         base = REPO / Path(*dotted.split("."))
         return base.with_suffix(".py").is_file() or (base / "__init__.py").is_file()
     try:
-        return importlib.util.find_spec(dotted) is not None
+        spec = importlib.util.find_spec(dotted)
     except (ModuleNotFoundError, ValueError):
         return False
+    return spec is not None and spec.origin not in ("built-in", "frozen")
 
 
 def findImports(files: Iterable[Path], ignoredTopLevels: Iterable[str] = ()) -> set[str]:
@@ -89,12 +91,12 @@ def findImports(files: Iterable[Path], ignoredTopLevels: Iterable[str] = ()) -> 
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     top = alias.name.split(".")[0]
-                    if top and top not in sys.stdlib_module_names and top not in ignored and isModule(alias.name):
+                    if top and top not in ignored and isModule(alias.name):
                         modules.add(alias.name)
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                 module = node.module
                 top = module.split(".")[0]
-                if not top or top in sys.stdlib_module_names or top in ignored:
+                if not top or top in ignored:
                     continue
                 if isModule(module):
                     modules.add(module)
@@ -159,7 +161,7 @@ def findIncludes() -> tuple[list[str], list[str]]:
     internalPackages = {featuresDir.name} | {item.name for item in featuresDir.iterdir() if item.is_dir()}
     ignoredTopLevels = internalPackages | {"qfluentwidgets"}
 
-    # FeaturePack 第三方依赖按导入模块走 --include-module，由 Nuitka 做传递闭包，避免整包带入 tests 等子包
+    # FeaturePack 依赖按导入模块走 --include-module，由 Nuitka 做传递闭包，避免整包带入 tests 等子包
     featureModules = findImports(featureFiles, ignoredTopLevels)
     appModules = findImports(appFiles, ignoredTopLevels)
     qfwModules = findQfwModules([*appFiles, *featureFiles], PACKAGE_EXPORTS)

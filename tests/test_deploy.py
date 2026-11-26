@@ -75,6 +75,8 @@ def test_find_imports_collects_modules_and_submodules(tmp_path: Path):
     source = tmp_path / "pack.py"
     source.write_text(
         "from typing import TYPE_CHECKING\n"
+        "import sys\n"
+        "import email.message\n"
         "import qrcode\n"
         "from qrcode import constants\n"
         "from mpegdash.parser import MPEGDASHParser\n"
@@ -85,6 +87,8 @@ def test_find_imports_collects_modules_and_submodules(tmp_path: Path):
     )
 
     assert findImports([source], ignoredTopLevels={"qfluentwidgets"}) == {
+        "typing",
+        "email.message",
         "qrcode",
         "qrcode.constants",
         "mpegdash.parser",
@@ -104,3 +108,13 @@ def test_build_args_shakes_qfw_and_feature_deps():
     assert "--include-module=qfluentwidgets.multimedia.media_player" not in args
     assert "--include-module=qfluentwidgets.components.widgets.tab_view" not in args
     assert "--report=dist/compilation-report.xml" in args
+
+
+def test_build_args_includes_runtime_and_pack_stdlib():
+    args = buildArgs()
+
+    assert "--include-module=optparse" in args
+    assert "--include-module=email.message" in args
+    assert "--include-module=logging" in args
+    assert "--include-module=ssl" in args
+    assert "--include-module=sys" not in args

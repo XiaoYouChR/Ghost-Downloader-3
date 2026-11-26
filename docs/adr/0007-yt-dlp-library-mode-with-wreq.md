@@ -19,8 +19,11 @@ Switch yt_dlp_pack from subprocess mode to **library mode, extract-only**:
   mirrors so extraction does not depend on reaching GitHub at runtime.
   Total: ~7 MB vs ~130 MB.
 - **Isolation:** all yt-dlp imports are lazy (`importlib.import_module`), so
-  Nuitka's AST scanner in `deploy.py` never sees them. The main binary size is
-  unchanged. `deploy.py` requires zero modifications.
+  Nuitka's AST scanner in `deploy.py` never sees them and `yt_dlp` itself is
+  not bundled into the main binary. Because Nuitka excludes parts of the
+  stdlib from auto-inclusion in standalone mode, stdlib modules required by
+  `yt_dlp` at runtime (such as `optparse`, `http.cookiejar`, `urllib.error`)
+  are explicitly listed in `EXTRA_INCLUDE_MODULES` in `scripts/deploy.py`.
 - **Extraction:** call `yt_dlp.YoutubeDL.extract_info(url, download=False)` with
   `allowed_extractors=['youtube']` inside `asyncio.to_thread()`. yt-dlp solves
   signature cipher + n-challenge via QuickJS-NG and returns fully decrypted,
