@@ -104,3 +104,11 @@ def test_build_args_shakes_qfw_and_feature_deps():
     assert "--include-module=qfluentwidgets.multimedia.media_player" not in args
     assert "--include-module=qfluentwidgets.components.widgets.tab_view" not in args
     assert "--report=dist/compilation-report.xml" in args
+
+
+def test_build_args_includes_yt_dlp_stdlib():
+    # yt-dlp 由 yt_dlp_pack 运行时按需导入，Nuitka 扫描不到，缺任一模块 YouTube 解析即失败
+    args = buildArgs()
+
+    assert "--include-module=optparse" in args
+    assert "--include-module=fileinput" in args
