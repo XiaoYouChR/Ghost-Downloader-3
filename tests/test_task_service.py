@@ -6,7 +6,7 @@ import pytest
 
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStatus
-from tests.conftest import FakeStep
+from tests.conftest import FakeSeedingTask, FakeStep
 from tests.helpers import waitUntil
 
 
@@ -125,3 +125,60 @@ async def test_move_running_to_front_changes_nothing(engine):
     engine.taskService.moveToFront([task.taskId for task in tasks])
 
     assert changed == []
+
+
+async def test_pause_and_delete_last_running_announces_not_running(engine):
+    states = []
+    engine.taskService.runningChanged.connect(states.append)
+    task = buildTask()
+
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.status == TaskStatus.RUNNING)
+    engine.taskService.pause(task)
+    engine.taskService.start(task)
+    await waitUntil(lambda: task.status == TaskStatus.RUNNING)
+    engine.taskService.delete(task, shouldDeleteFiles=False)
+
+    assert states == [True, False, True, False]
+
+
+async def test_pause_with_waiting_task_keeps_running(engine):
+    cfg.set(cfg.maxTaskNum, 1)
+    states = []
+    engine.taskService.runningChanged.connect(states.append)
+    first, second = buildTask(), buildTask()
+    engine.taskService.add(first)
+    engine.taskService.add(second)
+    await waitUntil(lambda: first.status == TaskStatus.RUNNING)
+
+    engine.taskService.pause(first)
+
+    await waitUntil(lambda: second.status == TaskStatus.RUNNING)
+    assert states and all(states)
+
+
+@pytest.mark.parametrize("outcome", ["complete", "fail"])
+async def test_run_announces_not_running_before_all_completed(engine, outcome):
+    events = []
+    engine.taskService.runningChanged.connect(lambda isRunning: events.append(("running", isRunning)))
+    engine.taskService.tasksAllCompleted.connect(lambda: events.append(("allCompleted",)))
+
+    engine.taskService.add(buildTask(outcome))
+
+    await waitUntil(lambda: ("allCompleted",) in events)
+    assert events == [("running", True), ("running", False), ("allCompleted",)]
+
+
+async def test_seeding_does_not_announce_running(engine):
+    states = []
+    engine.taskService.runningChanged.connect(states.append)
+    task = FakeSeedingTask(name="seed.zip", url="http://test/seed.zip", packId="test",
+                           steps=[FakeStep(stepIndex=0, outcome="complete")])
+
+    engine.taskService.add(task)
+    await waitUntil(lambda: task.isSeeding)
+    engine.taskService.stopSeeding(task)
+    engine.taskService.startSeeding(task)
+    await waitUntil(lambda: task.isSeeding)
+
+    assert states == [True, False]

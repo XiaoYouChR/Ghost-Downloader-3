@@ -1,113 +1,150 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 
 from loguru import logger
 
-_held = False
 
+def buildSleepInhibitor() -> Callable[[bool], None]:
+    release: Callable[[], None] | None = None
 
-def hold() -> None:
-    global _held
-    if _held:
-        return
-    try:
-        _inhibit()
-        _held = True
-    except Exception as e:
-        logger.opt(exception=e).warning("Failed to inhibit system sleep")
+    def set(isActive: bool) -> None:
+        nonlocal release
+        if not isActive:
+            if release is None:
+                return
+            fn, release = release, None
+            try:
+                fn()
+            except Exception as e:
+                logger.opt(exception=e).warning("Failed to release sleep inhibit")
+            return
+        if release is not None:
+            return
+        try:
+            release = acquire()
+        except Exception as e:
+            logger.opt(exception=e).warning("Failed to inhibit system sleep")
 
+    return set
 
-def release() -> None:
-    global _held
-    if not _held:
-        return
-    try:
-        _uninhibit()
-    except Exception as e:
-        logger.opt(exception=e).warning("Failed to release sleep inhibit")
-    _held = False
-
-
-# -- platform backends --
 
 if sys.platform == "win32":
     import ctypes
 
-    _ES_CONTINUOUS = 0x80000000
-    _ES_SYSTEM_REQUIRED = 0x00000001
+    ES_CONTINUOUS = 0x80000000
+    ES_SYSTEM_REQUIRED = 0x00000001
+    setThreadExecutionState = ctypes.WinDLL("kernel32").SetThreadExecutionState
+    setThreadExecutionState.argtypes = [ctypes.c_uint32]
+    setThreadExecutionState.restype = ctypes.c_uint32
 
-    def _inhibit() -> None:
-        ctypes.windll.kernel32.SetThreadExecutionState(
-            _ES_CONTINUOUS | _ES_SYSTEM_REQUIRED
-        )
+    def acquire() -> Callable[[], None] | None:
+        try:
+            if not setThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED):
+                logger.warning("SetThreadExecutionState returned 0")
+                return None
+        except OSError as e:
+            logger.opt(exception=e).warning("Failed to inhibit system sleep")
+            return None
 
-    def _uninhibit() -> None:
-        ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS)
+        def release() -> None:
+            try:
+                setThreadExecutionState(ES_CONTINUOUS)
+            except OSError as e:
+                logger.opt(exception=e).warning("Failed to release sleep inhibit")
+
+        return release
 
 elif sys.platform == "darwin":
     import ctypes
-    import ctypes.util
 
-    _iokit = ctypes.cdll.LoadLibrary(ctypes.util.find_library("IOKit"))
-    _cf = ctypes.cdll.LoadLibrary(ctypes.util.find_library("CoreFoundation"))
+    iokit = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/IOKit.framework/IOKit")
+    cf = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
 
-    _cf.CFStringCreateWithCString.restype = ctypes.c_void_p
-    _cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
-    _cf.CFRelease.argtypes = [ctypes.c_void_p]
+    cf.CFStringCreateWithCString.restype = ctypes.c_void_p
+    cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]
+    cf.CFRelease.argtypes = [ctypes.c_void_p]
 
-    _iokit.IOPMAssertionCreateWithName.argtypes = [
+    iokit.IOPMAssertionCreateWithName.argtypes = [
         ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p,
         ctypes.POINTER(ctypes.c_uint32),
     ]
-    _iokit.IOPMAssertionCreateWithName.restype = ctypes.c_int32
-    _iokit.IOPMAssertionRelease.argtypes = [ctypes.c_uint32]
-    _iokit.IOPMAssertionRelease.restype = ctypes.c_int32
+    iokit.IOPMAssertionCreateWithName.restype = ctypes.c_uint32
+    iokit.IOPMAssertionRelease.argtypes = [ctypes.c_uint32]
+    iokit.IOPMAssertionRelease.restype = ctypes.c_uint32
 
-    _kCFStringEncodingUTF8 = 0x08000100
-    _kIOPMAssertionLevelOn = 255
+    CF_STRING_ENCODING_UTF8 = 0x08000100
+    IOPM_ASSERTION_LEVEL_ON = 255
 
-    def _cfstr(s: str) -> ctypes.c_void_p:
-        return _cf.CFStringCreateWithCString(None, s.encode(), _kCFStringEncodingUTF8)
+    def toCfString(text: str) -> ctypes.c_void_p:
+        return cf.CFStringCreateWithCString(None, text.encode(), CF_STRING_ENCODING_UTF8)
 
-    _NO_IDLE_SLEEP = _cfstr("PreventUserIdleSystemSleep")
-    _assertionId = ctypes.c_uint32(0)
+    NO_IDLE_SLEEP = toCfString("PreventUserIdleSystemSleep")
 
-    def _inhibit() -> None:
-        global _assertionId
-        reason = _cfstr("Active download")
-        ret = _iokit.IOPMAssertionCreateWithName(
-            _NO_IDLE_SLEEP, _kIOPMAssertionLevelOn, reason, ctypes.byref(_assertionId),
+    def acquire() -> Callable[[], None]:
+        assertionId = ctypes.c_uint32(0)
+        reason = toCfString("Active download")
+        ret = iokit.IOPMAssertionCreateWithName(
+            NO_IDLE_SLEEP, IOPM_ASSERTION_LEVEL_ON, reason, ctypes.byref(assertionId),
         )
-        _cf.CFRelease(reason)
+        cf.CFRelease(reason)
         if ret != 0:
             raise RuntimeError(f"IOPMAssertionCreateWithName failed: {ret:#x}")
-
-    def _uninhibit() -> None:
-        global _assertionId
-        if _assertionId.value:
-            _iokit.IOPMAssertionRelease(_assertionId.value)
-            _assertionId.value = 0
+        aid = assertionId.value
+        return lambda: iokit.IOPMAssertionRelease(aid)
 
 else:
-    # Linux: systemd-logind D-Bus inhibitor lock
-    _inhibitFd = None
+    INHIBIT_SUSPEND = 4
 
-    def _inhibit() -> None:
-        global _inhibitFd
-        from PySide6.QtDBus import QDBusConnection, QDBusInterface
+    # logind 的 sleep 锁会拦住合盖和手动睡眠。logind 的 idle 锁会被 GNOME 和 KDE 忽略。
+    # 因此先走桌面会话，无桌面会话时再退回 logind idle。
+    # PySide6 的 QDBusInterface.call 会把 int 封送成有符号 i，必须经 QMetaObject.invokeMethod 按签名发 uint32。
+    def acquire() -> Callable[[], None] | None:
+        from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, Qt
+        from PySide6.QtDBus import QDBusConnection, QDBusInterface, QDBusUnixFileDescriptor
 
-        bus = QDBusConnection.systemBus()
+        from app.config.constants import DESKTOP_ID
+
+        sessionBus = QDBusConnection.sessionBus()
+        busIface = sessionBus.interface()
+        if busIface is not None:
+            for service, path, interface, args, uninhibit in (
+                ("org.gnome.SessionManager", "/org/gnome/SessionManager", "org.gnome.SessionManager",
+                 (Q_ARG("QString", DESKTOP_ID), Q_ARG("uint", 0), Q_ARG("QString", "Active download"),
+                  Q_ARG("uint", INHIBIT_SUSPEND)), "Uninhibit"),
+                ("org.freedesktop.PowerManagement", "/org/freedesktop/PowerManagement/Inhibit",
+                 "org.freedesktop.PowerManagement.Inhibit",
+                 (Q_ARG("QString", "Ghost Downloader"), Q_ARG("QString", "Active download")), "UnInhibit"),
+            ):
+                if not busIface.isServiceRegistered(service).value():
+                    continue
+                iface = QDBusInterface(service, path, interface, sessionBus)
+                if not iface.isValid():
+                    continue
+                try:
+                    cookie = QMetaObject.invokeMethod(
+                        iface, "Inhibit", Qt.ConnectionType.DirectConnection, Q_RETURN_ARG("uint"), *args,
+                    )
+                except RuntimeError as e:
+                    logger.debug("Sleep inhibit via {} failed: {}", service, e)
+                    continue
+                if not iface.lastError().isValid() and cookie is not None:
+                    def release(i=iface, m=uninhibit, c=cookie, s=service) -> None:
+                        ok = QMetaObject.invokeMethod(i, m, Qt.ConnectionType.DirectConnection, Q_ARG("uint", c))
+                        if not ok or i.lastError().isValid():
+                            logger.warning("Failed to release sleep inhibit via {}: {}", s, i.lastError().message())
+                    return release
+                logger.debug("Sleep inhibit via {} failed: {}", service, iface.lastError().message())
+
         iface = QDBusInterface(
             "org.freedesktop.login1", "/org/freedesktop/login1",
-            "org.freedesktop.login1.Manager", bus,
+            "org.freedesktop.login1.Manager", QDBusConnection.systemBus(),
         )
-        reply = iface.call("Inhibit", "sleep", "Ghost Downloader", "Active download", "block")
+        reply = iface.call("Inhibit", "idle", "Ghost Downloader", "Active download", "block")
         if reply.type() == reply.MessageType.ReplyMessage:
-            _inhibitFd = reply.arguments()[0]
-        else:
-            raise RuntimeError(reply.errorMessage())
-
-    def _uninhibit() -> None:
-        global _inhibitFd
-        _inhibitFd = None
+            fd = reply.arguments()[0]
+            if isinstance(fd, QDBusUnixFileDescriptor) and fd.isValid():
+                holder = [fd]
+                return holder.clear
+        raise RuntimeError(reply.errorMessage() or "Invalid logind inhibitor file descriptor")

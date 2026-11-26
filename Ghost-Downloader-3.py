@@ -109,6 +109,9 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
 
+    from app.platform.desktop_keepalive import buildSleepInhibitor
+    taskService.runningChanged.connect(buildSleepInhibitor())
+
     application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
     application.clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
@@ -239,10 +242,6 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     if sys.platform == "linux":
         from app.platform.taskbar import setLauncherProgress
         speedMeter.speedChanged.connect(lambda _: setLauncherProgress(taskService.overallProgress()))
-
-    from app.platform.desktop_keepalive import hold, release
-    taskService.taskStarted.connect(lambda _: hold())
-    taskService.tasksAllCompleted.connect(release)
 
     from app.platform.desktop_notification import (
         PopupNotifier, PopupStack, SystemNotifier, buildClipboardRequest,

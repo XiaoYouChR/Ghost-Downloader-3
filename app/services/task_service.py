@@ -278,6 +278,7 @@ class TaskService:
     taskCompleted = Signal(object)
     taskFailed = Signal(object)
     tasksAllCompleted = Signal()
+    runningChanged = Signal(bool)
     seedingStarted = Signal(object)
     seedingStopped = Signal(object)
     checksumStarted = Signal(object)
@@ -658,6 +659,7 @@ class TaskService:
             if task is not None:
                 self._dispatch(task)
         self._refreshSpeedMeter()
+        self.runningChanged.emit(self._queue.runningCount() > 0)
 
     def _refreshSpeedMeter(self) -> None:
         if self._queue.runningCount() or self._seeding:
