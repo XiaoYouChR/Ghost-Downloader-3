@@ -3,10 +3,27 @@
 </h4>
 
 > [!NOTE]
-> <p align="center"><a href="https://www.swiftproxy.net/?ref=GhostDownloader"><img width="550" alt="Swiftproxy AD" src=".github/assets/ad/Swiftproxy_zh.webp" /></a></p>
->
-> [Swiftproxy](https://www.swiftproxy.net/?ref=GhostDownloader) – 全球优质住宅代理网络
-Swiftproxy 提供覆盖全球 220 多个地区的 9000 万+真实住宅 IP，支持动态和静态住宅代理，帮助用户访问不同地区的网络内容，满足跨地区下载、网络测试和自动化浏览等需求。支持 HTTP(S)、SOCKS5 协议及灵活的地理位置定位，并提供免费测试。使用优惠码 `PROXY90` 可享 9 折优惠。
+> <table>
+>   <tbody>
+>     <tr>
+>       <td align="center" valign="middle" width="360">
+>         <a href="https://www.swiftproxy.net/?ref=GhostDownloader"><img width="340" alt="Swiftproxy AD" src=".github/assets/ad/Swiftproxy_zh.webp" /></a>
+>       </td>
+>       <td valign="middle">
+>         <a href="https://www.swiftproxy.net/?ref=GhostDownloader">Swiftproxy</a> – 全球优质住宅代理网络<br />
+>         Swiftproxy 提供覆盖全球 220 多个地区的 9000 万+真实住宅 IP，支持动态和静态住宅代理，帮助用户访问不同地区的网络内容，满足跨地区下载、网络测试和自动化浏览等需求。支持 HTTP(S)、SOCKS5 协议及灵活的地理位置定位，并提供免费测试。使用优惠码 <code>PROXY90</code> 可享 9 折优惠。
+>       </td>
+>     </tr>
+>     <tr>
+>       <td align="center" valign="middle" width="360">
+>         <a href="https://ipstar.io/?referrer=ghost"><img width="340" alt="IPStar AD" src=".github/assets/ad/IPStar_zh.webp" /></a>
+>       </td>
+>       <td valign="middle">
+>         <a href="https://ipstar.io/?referrer=ghost">IPStar</a> 是一家专业的全球住宅IP代理解决方案提供商，在全球190多个国家和地区拥有合法来源的纯净住宅IP资源，IP总量超过9000万，且持续动态更新。代理IP 100%为真实住宅IP，服务稳定可靠，请求成功率高达99.9%以上，并支持超高并发访问，兼容标准的SOCKS5和HTTP(S)协议。价格实惠，流量购买后永不过期，是大数据采集、跨区域海量下载、电商运营等自动化业务的理想选择。现在充值还可享受最高8%的额外返点。
+>       </td>
+>     </tr>
+>   </tbody>
+> </table>
 
 <!-- PROJECT LOGO -->
 <div align="center">

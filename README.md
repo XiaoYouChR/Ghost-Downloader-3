@@ -3,10 +3,27 @@
 </h4>
 
 > [!NOTE]
-> <p align="center"><a href="https://www.swiftproxy.net/?ref=GhostDownloader"><img width="550" alt="Swiftproxy AD" src=".github/assets/ad/Swiftproxy.webp" /></a></p>
->
-> [Swiftproxy](https://www.swiftproxy.net/?ref=GhostDownloader) – Premium Global Residential Proxy Network
-Swiftproxy provides 90M+ real residential IPs across 220+ locations worldwide, helping users access global content and manage location-specific network connections. With rotating and static residential proxies, flexible geo-targeting, and HTTP(S)/SOCKS5 support, Swiftproxy is ideal for cross-region downloads, network testing, and browser automation. Free testing available, with 10% off using code `PROXY90`.
+> <table>
+>   <tbody>
+>     <tr>
+>       <td align="center" valign="middle" width="360">
+>         <a href="https://www.swiftproxy.net/?ref=GhostDownloader"><img width="340" alt="Swiftproxy AD" src=".github/assets/ad/Swiftproxy.webp" /></a>
+>       </td>
+>       <td valign="middle">
+>         <a href="https://www.swiftproxy.net/?ref=GhostDownloader">Swiftproxy</a> – Premium Global Residential Proxy Network<br />
+>         Swiftproxy provides 90M+ real residential IPs across 220+ locations worldwide, helping users access global content and manage location-specific network connections. With rotating and static residential proxies, flexible geo-targeting, and HTTP(S)/SOCKS5 support, Swiftproxy is ideal for cross-region downloads, network testing, and browser automation. Free testing available, with 10% off using code <code>PROXY90</code>.
+>       </td>
+>     </tr>
+>     <tr>
+>       <td align="center" valign="middle" width="360">
+>         <a href="https://ipstar.io/?referrer=ghost"><img width="340" alt="IPStar AD" src=".github/assets/ad/IPStar.webp" /></a>
+>       </td>
+>       <td valign="middle">
+>         <a href="https://ipstar.io/?referrer=ghost">IPStar</a> is a professional provider of global residential IP proxy solutions. We own legally sourced, clean residential IP resources across more than 190 countries and regions worldwide, with a total pool of over 90 million IPs that is continuously updated. Our proxy IPs are 100% genuine residential IPs, delivering stable and reliable service with a request success rate above 99.9%, and supporting ultra-high concurrency. We are compatible with standard SOCKS5 and HTTP(S) protocols. With affordable pricing and traffic that never expires after purchase, IPStar is the ideal choice for big data scraping, large-scale cross-region downloading, e-commerce operations, and other automation tasks. Recharge now to enjoy an extra bonus of up to 8%.
+>       </td>
+>     </tr>
+>   </tbody>
+> </table>
 
 <!-- PROJECT LOGO -->
 <div align="center">
