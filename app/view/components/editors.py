@@ -121,7 +121,7 @@ class FolderPicker(QWidget):
         if folder:
             self._onPathPicked(folder)
 
-    def _openMenu(self, isAnimated: bool = True) -> None:
+    def _openMenu(self, isAnimated: bool = False) -> None:
         menu = RoundMenu(parent=self)
         menu.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         menu.setItemHeight(MENU_ROW_HEIGHT)
