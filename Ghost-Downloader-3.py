@@ -323,9 +323,13 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         showTaskPopup(task, minimized=cfg.taskPopupPlace.value == TaskPopupPlace.TASKBAR)
 
     def onTaskRemoved(taskId: str) -> None:
+        from app.view.shell.task_popup import TaskPopup
+
         candidates.discard(taskId)
-        if popupStack is not None:
-            popupStack.close(f"task:{taskId}")
+        popupId = f"task:{taskId}"
+        # 结果提示沿用进度弹窗的 popupId 但不依赖任务记录，自动移除已完成的任务后仍要保留
+        if popupStack is not None and isinstance(popupStack.popup(popupId), TaskPopup):
+            popupStack.close(popupId)
 
     def onTaskCompleted(task: Task) -> None:
         notice = buildTaskCompleted(task, toFileIcon(task.outputPath))

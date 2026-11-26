@@ -129,6 +129,9 @@ class SettingPage(QWidget):
             SwitchSettingCard(FluentIcon.BROOM, self.tr("自动移除缺失的任务"),
                               self.tr("文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务"),
                               cfg.shouldRemoveMissingTasks),
+            SwitchSettingCard(FluentIcon.ACCEPT, self.tr("自动移除已完成的任务"),
+                              self.tr("任务下载完成后自动从列表中移除，已下载的文件保留在磁盘上"),
+                              cfg.shouldRemoveCompletedTasks),
         ])
 
         self.clientProfileCard = IdentitySettingCard()
