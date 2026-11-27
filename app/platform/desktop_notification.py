@@ -20,7 +20,7 @@ from PySide6.QtGui import QColor, QCursor, QGuiApplication, QPainter, QPixmap, Q
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIcon, IconWidget, InfoBarIcon, PushButton, StrongBodyLabel,
-    TransparentToolButton, isDarkTheme, qconfig,
+    TransparentToolButton, isDarkTheme, qconfig, setCustomStyleSheet,
 )
 
 from app.platform.desktop import openFile, revealInFolder
@@ -50,6 +50,39 @@ CORNER_RADIUS = 8
 DEFAULT_DURATION = 5
 SOUND_INTERVAL = 1.0
 ENTER_DURATION, EXIT_DURATION, MOVE_DURATION = 333, 167, 250
+
+# 浅色亚克力下使用半透明磨砂白按钮以融入卡片；深色模式保持原版 dark/button.qss
+LIGHT_ACTION_BUTTON_QSS = """
+PushButton {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+    border-radius: 5px;
+    color: rgba(0, 0, 0, 0.90);
+    padding: 5px 12px 6px 12px;
+    outline: none;
+}
+PushButton:hover {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.16);
+    color: #000000;
+}
+PushButton:pressed {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.63);
+}
+PushButton:disabled {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.36);
+}
+""".strip()
+
+
+def applyActionButtonStyle(button: PushButton) -> None:
+    setCustomStyleSheet(button, LIGHT_ACTION_BUTTON_QSS, "")
 
 
 def toEasingCurve(x1: float, y1: float, x2: float, y2: float) -> QEasingCurve:
@@ -353,6 +386,8 @@ class Popup(QWidget):
         return self.duration == 0
 
     def _initWidget(self) -> None:
+        from app.startup import syncTheme
+        syncTheme()
         flags = (Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
                  | Qt.WindowType.WindowDoesNotAcceptFocus)
         self.setWindowFlags(flags if self.hasTaskbarButton else flags | Qt.WindowType.Tool)
@@ -504,9 +539,12 @@ class Popup(QWidget):
 
     def _applyAcrylic(self) -> None:
         if self._isAcrylic:
-            self.windowEffect.setAcrylicEffect(self.winId(), "20202030" if isDarkTheme() else "FFFFFF30")
+            self.windowEffect.setAcrylicEffect(self.winId(), "20202030" if isDarkTheme() else "F5F5F5A6")
 
     def showEvent(self, event) -> None:
+        from app.startup import syncTheme
+        if syncTheme():
+            self._onThemeChanged()
         super().showEvent(event)
         # 显示前写入的还原坐标还没落到正确屏幕上
         if event.spontaneous() and not self.isMinimized():
@@ -626,7 +664,7 @@ class NotificationPopup(Popup):
         for line in lines[1:3]:
             label = CaptionLabel(self)
             label.setText(label.fontMetrics().elidedText(line, Qt.TextElideMode.ElideRight, TEXT_WIDTH))
-            label.setTextColor(QColor(0, 0, 0, 155), QColor(255, 255, 255, 155))
+            label.setTextColor(QColor(0, 0, 0, 165), QColor(255, 255, 255, 155))
             self.detailLabels.append(label)
 
         self.buttons = []
@@ -634,6 +672,7 @@ class NotificationPopup(Popup):
             pushButton = PushButton(button.title, self)
             pushButton.setFixedHeight(32)
             pushButton.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            applyActionButtonStyle(pushButton)
             self.buttons.append((pushButton, button))
 
     def _initLayout(self) -> None:
@@ -827,3 +866,4 @@ class PopupNotifier:
         popup = NotificationPopup(notification)
         popup.popupId = popupId
         self._stack.add(popup)
+

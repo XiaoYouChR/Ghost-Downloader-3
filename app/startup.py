@@ -61,6 +61,67 @@ def setupThemeColor(application: Application) -> None:
     application.systemPaletteChanged.connect(refresh)
 
 
+def syncTheme(colorScheme=None) -> bool:
+    """在 ThemeMode.AUTO 下同步全局主题与样式表（即使主窗口未创建或已关闭）。"""
+    import sys
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QGuiApplication
+    from qfluentwidgets import Theme, qconfig
+    from qfluentwidgets.common import style_sheet
+    from app.config.cfg import cfg
+    from app.view.components.labels import IconBodyLabel
+
+    if cfg.themeMode.value != Theme.AUTO:
+        return False
+
+    target = None
+    if colorScheme == Qt.ColorScheme.Dark:
+        target = Theme.DARK
+    elif colorScheme == Qt.ColorScheme.Light:
+        target = Theme.LIGHT
+
+    if target is None and sys.platform == "win32":
+        try:
+            import winreg
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+            ) as key:
+                value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            target = Theme.DARK if int(value) == 0 else Theme.LIGHT
+        except OSError:
+            pass
+
+    if target is None:
+        app = QGuiApplication.instance()
+        scheme = app.styleHints().colorScheme() if app is not None else Qt.ColorScheme.Unknown
+        if scheme == Qt.ColorScheme.Dark:
+            target = Theme.DARK
+        elif scheme == Qt.ColorScheme.Light:
+            target = Theme.LIGHT
+        else:
+            target = Theme.LIGHT
+
+    prevTheme = qconfig.theme
+    installedKey = getattr(style_sheet, "_installedKey", None)
+    needsQssSync = installedKey is not None and installedKey[0] != target
+    if prevTheme == target and not needsQssSync:
+        return False
+
+    qconfig.theme = target
+    if prevTheme != target:
+        qconfig.themeChanged.emit(qconfig.theme)
+    style_sheet.updateStyleSheet()
+    qconfig.themeChangedFinished.emit()
+    IconBodyLabel.clearCache()
+    return True
+
+
+def setupThemeSync(application: Application) -> None:
+    application.styleHints().colorSchemeChanged.connect(syncTheme)
+    syncTheme()
+
+
 def createEngine(application: Application) -> Engine:
     import sys
     from PySide6.QtCore import QFileSystemWatcher, QTimer
@@ -116,3 +177,4 @@ def checkUpdateAtStartup(updateService: UpdateService) -> None:
     if not cfg.shouldCheckUpdateAtStartup.value:
         return
     updateService.check()
+

@@ -72,7 +72,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     from app.signal_bus import signalBus
     from app.services.port_listener import ListenStatus
     from app.services.update_service import UpdateService
-    from app.startup import loadResources, setupThemeColor, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
+    from app.startup import loadResources, setupThemeColor, setupThemeSync, createEngine, deleteBackupDir, loadPacks, checkUpdateAtStartup
 
     def exceptionHook(exceptionType, value, tb):
         _exceptionHook(exceptionType, value, tb)
@@ -102,6 +102,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     browserService, speedMeter = engine.browserService, engine.speedMeter
 
     setupThemeColor(application)
+    setupThemeSync(application)
 
     updateService = UpdateService(coroutineRunner)
 
@@ -417,3 +418,4 @@ if __name__ == "__main__":
     exitCode = app.exec()
     primaryInstance.close()
     sys.exit(exitCode)
+

@@ -13,7 +13,7 @@ from qfluentwidgets import (
 from app.format import toReadableSize
 from app.models.task import SpecialFileSize, TaskStatus
 from app.platform.desktop_notification import (
-    FILE_ICON_SIZE, ICON_SPACING, PADDING, SPACING, TEXT_WIDTH, Popup,
+    FILE_ICON_SIZE, ICON_SPACING, PADDING, SPACING, TEXT_WIDTH, Popup, applyActionButtonStyle,
 )
 
 
@@ -71,7 +71,7 @@ class TaskPopup(Popup):
         self.nameLabel.setToolTip(self._task.name)
         self.statusLabel = BodyLabel(self)
         self.sizeLabel = CaptionLabel(self)
-        self.sizeLabel.setTextColor(QColor(0, 0, 0, 155), QColor(255, 255, 255, 155))
+        self.sizeLabel.setTextColor(QColor(0, 0, 0, 165), QColor(255, 255, 255, 155))
         if self._task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
             self.progressBar = IndeterminateProgressBar(self)
         else:
@@ -81,6 +81,7 @@ class TaskPopup(Popup):
         for button in (self.toggleButton, self.cancelButton):
             button.setFixedHeight(32)
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            applyActionButtonStyle(button)
 
     def _initLayout(self) -> None:
         super()._initLayout()
@@ -173,3 +174,4 @@ class TaskPopup(Popup):
         else:
             self._taskService.pause(self._task)
         self.refresh()
+
