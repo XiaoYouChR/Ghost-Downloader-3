@@ -1,3 +1,26 @@
+/* Match Fluent's colorNeutralBackground1 before the provider mounts. */
+:root {
+  color-scheme: light dark;
+  --popup-light: #ffffff;
+  --popup-dark: #292929;
+  background-color: var(--popup-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    background-color: var(--popup-dark);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  background-color: var(--popup-dark);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
