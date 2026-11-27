@@ -71,10 +71,16 @@ class TaskDraft:
         self.itemsChanged.emit()
 
     def setBaseOptions(self, options: dict) -> None:
+        changed = {
+            name: value for name, value in options.items()
+            if name not in self._baseOptions or self._baseOptions[name] != value
+        }
         self._baseOptions = options
+        if not changed:
+            return
         for item in self._items:
             if item.task is not None:
-                item.task.setOptions(self._buildOptions(item))
+                item.task.setOptions(changed)
         self.itemsChanged.emit()
 
     def setUrlCategory(self, url: str, categoryId: str | None) -> None:
@@ -184,7 +190,7 @@ class TaskDraft:
         failures: list[tuple[Task, TaskError]] = []
         for item in self._items:
             if item.task is not None:
-                if error := self._addTask(item.task, self._buildOptions(item), autoStart):
+                if error := self._addTask(item.task, autoStart):
                     failures.append((item.task, error))
             elif item.parseId:
                 item.confirmedOptions = self._buildOptions(item)
@@ -219,8 +225,7 @@ class TaskDraft:
     def _isParsing(self) -> bool:
         return any(item.parseId for item in self._items)
 
-    def _addTask(self, task: Task, options: dict[str, Any], autoStart: bool) -> TaskError | None:
-        task.setOptions(options)
+    def _addTask(self, task: Task, autoStart: bool) -> TaskError | None:
         folder = task.outputFolder
         try:
             self._add(task, autoStart)
@@ -233,7 +238,8 @@ class TaskDraft:
         if item.confirmedOptions is not None:
             options = item.confirmedOptions
             item.confirmedOptions = None
-            if error := self._addTask(task, options, item.confirmedAutoStart):
+            task.setOptions(options)
+            if error := self._addTask(task, item.confirmedAutoStart):
                 self.addFailed.emit([task], error)
             return
 

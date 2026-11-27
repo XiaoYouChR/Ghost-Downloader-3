@@ -125,7 +125,7 @@ class HuggingFaceParser(TaskParser):
         else:
             name = toSafeFilename(repoId.replace("/", "_"), fallback="huggingface")
 
-        return HuggingFaceTask(
+        task = HuggingFaceTask(
             name=name,
             url=options.url,
             fileSize=sum(f.size for f in files),
@@ -135,6 +135,8 @@ class HuggingFaceParser(TaskParser):
             revision=revision,
             files=files,
         )
+        task.setOptions({"subworkerCount": options.subworkerCount})
+        return task
 
 
 class HuggingFacePack(FeaturePack):
