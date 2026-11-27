@@ -6,8 +6,6 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
     gap: "4px",
     padding: "24px 16px",
     textAlign: "center",
