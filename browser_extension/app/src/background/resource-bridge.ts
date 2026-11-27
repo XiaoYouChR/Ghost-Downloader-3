@@ -1,3 +1,4 @@
+import {basenameOf, toResponseMeta} from "./response-meta";
 import type {Resource, CommandResult, ResourceCollectionState} from "../shared/types";
 import {
     canUseOnlineMergeSelection,
@@ -45,14 +46,6 @@ type ClickPayload = {
   title: string;
 };
 
-type NetworkResponseMeta = {
-  size: number;
-  mime: string;
-  filename: string;
-  supportsRange: boolean;
-  cookie: string;
-};
-
 type DesktopRequestSender = <T extends CommandResult>(payload: Record<string, unknown>, timeoutMs?: number) => Promise<T>;
 
 export function createResourceBridge(options: {
@@ -93,13 +86,6 @@ export function createResourceBridge(options: {
     clearTimeout(bridgePersistTimer);
     bridgePersistTimer = null;
     await saveBridgeState();
-  }
-
-  function basenameOf(path: string): string {
-    const trimmed = path.trim();
-    if (!trimmed) { return ""; }
-    const slashIndex = Math.max(trimmed.lastIndexOf("/"), trimmed.lastIndexOf("\\"));
-    return slashIndex >= 0 ? trimmed.slice(slashIndex + 1) : trimmed;
   }
 
   function isCapturableUrl(url: string): boolean {
@@ -215,46 +201,6 @@ export function createResourceBridge(options: {
     }
     const matchedTabId = await tabIdByPageUrl(details.initiator ?? "");
     return matchedTabId ?? currentTabId();
-  }
-
-  function toResponseMeta(headers: chrome.webRequest.HttpHeader[] | undefined): NetworkResponseMeta {
-    const meta: NetworkResponseMeta = { size: 0, mime: "", filename: "", supportsRange: false, cookie: "" };
-    let contentLengthSize = 0;
-    let contentRangeSize = 0;
-    const cookies: string[] = [];
-    for (const header of headers ?? []) {
-      const name = (header.name ?? "").toLowerCase();
-      const value = (header.value ?? "").trim();
-      if (name === "content-length") {
-        const size = Number.parseInt(value, 10);
-        contentLengthSize = Number.isFinite(size) && size > 0 ? size : contentLengthSize;
-      } else if (name === "content-type") {
-        meta.mime = value.split(";")[0]?.trim().toLowerCase() ?? "";
-      } else if (name === "content-disposition") {
-        const match = /filename\*\s*=\s*UTF-8''([^;]+)|filename\s*=\s*"?([^";]+)"?/i.exec(value);
-        const filename = match?.[1] ?? match?.[2] ?? "";
-        try {
-          meta.filename = basenameOf(decodeURIComponent(filename));
-        } catch {
-          meta.filename = basenameOf(filename);
-        }
-      } else if (name === "accept-ranges") {
-        meta.supportsRange = value.toLowerCase().includes("bytes");
-      } else if (name === "content-range") {
-        const size = Number.parseInt(value.split("/")[1] ?? "", 10);
-        contentRangeSize = Number.isFinite(size) && size > 0 ? size : contentRangeSize;
-        meta.supportsRange = true;
-      } else if (name === "set-cookie") {
-        const pair = value.split(";", 1)[0]?.trim() ?? "";
-        const eqIndex = pair.indexOf("=");
-        if (eqIndex > 0 && eqIndex < pair.length - 1) {
-          cookies.push(pair);
-        }
-      }
-    }
-    meta.size = contentRangeSize || contentLengthSize;
-    meta.cookie = cookies.join("; ");
-    return meta;
   }
 
   function shouldCapture(url: string, type: string, extension: string, mime: string): boolean {
@@ -401,7 +347,7 @@ export function createResourceBridge(options: {
     });
   }
 
-  async function routeBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
+  async function sendBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
     const matchedResource = cache.resourceByUrl(finalUrl) ?? cache.resourceByUrl(downloadItem.url);
     const filename =
@@ -413,31 +359,25 @@ export function createResourceBridge(options: {
     const headerSnapshot = cache.headerSnapshotByUrl(finalUrl) ?? cache.headerSnapshotByUrl(downloadItem.url);
     const headers = cache.headersForUrl(finalUrl, downloadItem.referrer);
 
-    try {
-      const result = await options.sendDesktopRequest<CommandResult>({
-        type: "create_task",
-        source: "download",
-        title: filename,
-        payload: {
-          url: finalUrl,
-          headers,
-          filename: filename,
-          size:
-            typeof downloadItem.totalBytes === "number" && downloadItem.totalBytes > 0
-              ? downloadItem.totalBytes
-              : matchedResource?.size || headerSnapshot?.size || 0,
-          supportsRange: Boolean(
-            matchedResource?.supportsRange
-            || headerSnapshot?.supportsRange
-            || downloadItem.canResume === true,
-          ),
-        },
-      });
-      await openActionPopup(result);
-    } catch {
-      // Browser download was already intercepted — the user already lost it from the
-      // browser's download tray, so a desktop handoff failure here is unrecoverable anyway.
-    }
+    return options.sendDesktopRequest<CommandResult>({
+      type: "create_task",
+      source: "download",
+      title: filename,
+      payload: {
+        url: finalUrl,
+        headers,
+        filename: filename,
+        size:
+          typeof downloadItem.totalBytes === "number" && downloadItem.totalBytes > 0
+            ? downloadItem.totalBytes
+            : matchedResource?.size || headerSnapshot?.size || 0,
+        supportsRange: Boolean(
+          matchedResource?.supportsRange
+          || headerSnapshot?.supportsRange
+          || downloadItem.canResume === true,
+        ),
+      },
+    });
   }
 
   async function sendHttpResourceToDesktop(resource: Resource): Promise<CommandResult> {
@@ -744,7 +684,7 @@ export function createResourceBridge(options: {
     enrichTabPoster: (tabId: number, posterUrl: string) =>
       cache.enrichTabPoster(tabId, posterUrl),
     headersForUrl: (url: string, fallbackReferer?: string) => cache.headersForUrl(url, fallbackReferer),
-    routeBrowserDownload,
+    sendBrowserDownload,
     onNavigationCommitted,
     onRequestHeaders,
     onTabRemoved,

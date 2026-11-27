@@ -1,3 +1,4 @@
+import {extensionBrowserTarget} from "../shared/browser";
 import type {CommandResult} from "../shared/types";
 import {SHOULD_OPEN_POPUP_ON_SENT_KEY} from "./constants";
 
@@ -126,7 +127,29 @@ export async function openActionPopup(...results: CommandResult[]): Promise<void
 
   try {
     await chrome.action.openPopup();
-  } catch {
-    // The action that called us already succeeded — popup open is best-effort.
+  } catch (error) {
+    // Older Firefox releases require a gesture for the toolbar popup.
+    if (extensionBrowserTarget() === "firefox" && String(error).includes("requires a user gesture")) {
+      await openPopupWindow().catch(() => {});
+    }
   }
+}
+
+async function openPopupWindow(): Promise<void> {
+  const source = await chrome.windows.getLastFocused();
+  if (!source.focused) {
+    return;
+  }
+  const path = chrome.runtime.getManifest().action?.default_popup;
+  if (!path) {
+    return;
+  }
+  const url = chrome.runtime.getURL(path);
+  const tabs = await queryTabs({windowType: "popup", url});
+  const existing = tabs.find(tab => tab.incognito === source.incognito);
+  if (existing) {
+    await chrome.windows.update(existing.windowId, {focused: true});
+    return;
+  }
+  await chrome.windows.create({type: "popup", url, incognito: source.incognito, width: 480, height: 680});
 }

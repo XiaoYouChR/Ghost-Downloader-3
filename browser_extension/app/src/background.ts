@@ -25,8 +25,9 @@ import {
     openActionPopup,
     queryTabs,
 } from "./background/chrome-helpers";
-import {onResponseStartedExtraInfoSpec, onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
-import {domainFromUrl} from "./shared/utils";
+import {registerFirefoxDownloads} from "./background/firefox-download";
+import {extensionBrowserTarget, onResponseStartedExtraInfoSpec, onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
+import {domainFromUrl, fileExtension} from "./shared/utils";
 import {loadBaseIcons, updateIconForTasks} from "./background/icon-progress";
 import {enqueue, flush, pendingCount} from "./background/task-queue";
 
@@ -374,59 +375,47 @@ async function shouldBypassDownload(): Promise<boolean> {
   }
 }
 
-async function takeBrowserDownload(
-  downloadItem: chrome.downloads.DownloadItem,
-  suggest?: () => void,
-) {
+async function canTakeDownload(url: string, filename: string, size: number, pageUrl: string) {
+  if (await shouldBypassDownload()) { return false; }
+  await ready;
+  if (!shouldTakeDownloads || !/^https?:/i.test(url)) { return false; }
+  if (pageUrl && skipDomains.has(domainFromUrl(pageUrl))) { return false; }
+
+  const name = filename || new URL(url).pathname.split("/").pop() || "";
+  const ext = fileExtension(name);
+  if (ext && skipExtensions.has(ext)) { return false; }
+  return minTakeSizeKB <= 0 || (size < 0 ? shouldTakeUnknownSize : size >= minTakeSizeKB * 1024);
+}
+
+async function takeBrowserDownload(item: chrome.downloads.DownloadItem, suggest?: () => void) {
   let isCancelled = false;
   try {
-    if (await shouldBypassDownload()) {
+    if (!await canTakeDownload(item.finalUrl || item.url, item.filename, item.totalBytes ?? -1, item.referrer)) {
       return;
     }
+    const result = await resourceBridge.sendBrowserDownload(item);
+    if (!result.ok) { return; }
 
-    const finalUrl = downloadItem.finalUrl || downloadItem.url;
-    await ready;
-
-    if (!shouldTakeDownloads || !/^https?:/i.test(finalUrl)) {
-      return;
-    }
-
-    if (skipDomains.size > 0 && downloadItem.referrer) {
-      const referrerDomain = domainFromUrl(downloadItem.referrer);
-      if (referrerDomain && skipDomains.has(referrerDomain)) { return; }
-    }
-
-    if (skipExtensions.size > 0) {
-      const filename = downloadItem.filename || new URL(finalUrl).pathname.split("/").pop() || "";
-      const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-      if (ext && skipExtensions.has(ext)) { return; }
-    }
-
-    if (minTakeSizeKB > 0) {
-      const totalBytes = downloadItem.totalBytes ?? -1;
-      if (totalBytes < 0 && !shouldTakeUnknownSize) { return; }
-      if (totalBytes >= 0 && totalBytes < minTakeSizeKB * 1024) { return; }
-    }
-
-    try {
-      await cancelDownload(downloadItem.id);
-      isCancelled = true;
-      await eraseDownloadFromHistory(downloadItem.id);
-    } catch {
-      // Cleanup failed but the browser will still finish the download as fallback.
-    }
+    await cancelDownload(item.id);
+    isCancelled = true;
+    void openActionPopup(result);
+    await eraseDownloadFromHistory(item.id);
+  } catch {
+    // Failed handoff leaves the original download in the browser.
   } finally {
-    if (!isCancelled) {
-      suggest?.();
-    }
+    if (!isCancelled) { suggest?.(); }
   }
-
-  await resourceBridge.routeBrowserDownload(downloadItem);
 }
 
 function sendReply(sendResponse: (response?: unknown) => void, response: Promise<unknown>) {
   void response.then(sendResponse);
   return true;
+}
+
+if (extensionBrowserTarget() === "firefox") {
+  registerFirefoxDownloads(canTakeDownload, payload => sendTaskOrEnqueue({
+    type: "create_task", source: "download", title: payload.filename, payload,
+  }));
 }
 
 if (supportsDownloadDeterminingFilename()) {
