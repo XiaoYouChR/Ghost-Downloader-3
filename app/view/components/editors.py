@@ -12,6 +12,7 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import cfg
+from app.config.constants import RECENT_FOLDER_LIMIT
 
 
 class AutoSizingEdit(PlainTextEdit):
@@ -45,7 +46,6 @@ class AutoSizingEdit(PlainTextEdit):
         return self._sizeForLines(count).expandedTo(self.minimumSizeHint())
 
 
-RECENT_FOLDER_LIMIT: Final[int] = 20
 LINE_EDIT_PADDING: Final[int] = 60
 MENU_ROW_HEIGHT: Final[int] = 36
 

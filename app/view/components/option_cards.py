@@ -99,6 +99,8 @@ class OutputFolderCard(OptionCard):
         self.titleLabel = BodyLabel(self.tr("选择下载路径"), self)
         self.folderPicker = FolderPicker(lambda: cfg.downloadFolder.value, self.tr("默认"), self)
         self.folderPicker.setPath(str(initial or currentOutputFolder()))
+        self._hasPickedFolder = initial is not None
+        self.folderPicker.pathChanged.connect(self._onFolderPicked)
 
         self._initLayout()
 
@@ -111,11 +113,16 @@ class OutputFolderCard(OptionCard):
         layout.addStretch(1)
         layout.addWidget(self.folderPicker, stretch=3)
 
-    def options(self) -> dict[str, Path]:
-        return {"outputFolder": Path(self.folderPicker.path())}
+    def _onFolderPicked(self, path: str) -> None:
+        self._hasPickedFolder = True
+
+    def options(self) -> dict:
+        return {"outputFolder": Path(self.folderPicker.path()),
+                "shouldSuggestFolder": not self._hasPickedFolder}
 
     def reset(self) -> None:
         self.folderPicker.setPath(str(currentOutputFolder()))
+        self._hasPickedFolder = False
 
 
 class SubworkerCountCard(OptionCard):

@@ -224,3 +224,18 @@ def test_activate_after_wake_activates_window(qapp, cli, window, monkeypatch):
         assert window.activations == 2
     finally:
         primaryInstance.close()
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+async def test_add_suggests_folder_unless_explicit(cli, engine, tmp_path, downloadFolder, explicit):
+    from app.config.cfg import cfg
+
+    folder = tmp_path / "artist1"
+    folder.mkdir()
+    cfg.set(cfg.shouldSuggestFolder, True)
+    cfg.set(cfg.recentFolders, [str(folder)])
+    args = ["--folder", str(downloadFolder)] if explicit else []
+    output, exitCode = await run(cli, "add", "http://test/artist1.cbz", *args)
+
+    assert exitCode == 0
+    assert engine.taskService.tasks[-1].outputFolder == (downloadFolder if explicit else folder)

@@ -387,7 +387,7 @@ class MainWindow(MSFluentWindow):
                 self._showReleaseDetails()
                 return
             self._coroutineRunner.submit(
-                self._featureService.parse(TaskOptions(url=url)),
+                self._featureService.parse(TaskOptions(url=url, shouldSuggestFolder=True)),
                 done=self._add,
                 owner=self,
             )
@@ -421,7 +421,7 @@ class MainWindow(MSFluentWindow):
 
                 def onUrl(url):
                     self._coroutineRunner.submit(
-                        self._featureService.parse(TaskOptions(url=url)),
+                        self._featureService.parse(TaskOptions(url=url, shouldSuggestFolder=True)),
                         done=self._add,
                         owner=self,
                     )

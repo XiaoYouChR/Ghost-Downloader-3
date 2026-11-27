@@ -94,6 +94,8 @@ class DraftCard(QWidget):
         cfg.isCategoryEnabled.valueChanged.connect(self._refreshCategoryButton)
 
     def _refreshConflictIcon(self) -> None:
+        _, folder = self._categoryService.outputFolderOf(self._task)
+        self.nameLabel.setToolTip(str(folder / self._task.name))
         self.conflictIcon.setVisible(self._probeConflict(self._task) is not None)
 
     def _refreshFileIcon(self) -> None:

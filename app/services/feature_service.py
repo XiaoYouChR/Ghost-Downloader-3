@@ -101,10 +101,15 @@ class FeatureService:
     async def parse(self, options: TaskOptions) -> Task:
         host = toHost(options.url)
         if not host:
-            return await self._parse(options)
-
-        async with self._parseSlotsByHost.setdefault(host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
-            return await self._parse(options)
+            task = await self._parse(options)
+        else:
+            async with self._parseSlotsByHost.setdefault(host, asyncio.Semaphore(PARSE_LIMIT_PER_HOST)):
+                task = await self._parse(options)
+        task.shouldSuggestFolder = options.shouldSuggestFolder
+        if cfg.shouldSuggestFolder.value and options.shouldSuggestFolder:
+            from app.services.folder_matching import loadRecentFolders
+            task.suggestionFolders = await asyncio.to_thread(loadRecentFolders, tuple(cfg.recentFolders.value))
+        return task
 
     async def _parse(self, options: TaskOptions) -> Task:
         options = toPresetOptions(options)

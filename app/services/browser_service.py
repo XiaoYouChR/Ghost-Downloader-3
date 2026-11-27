@@ -127,6 +127,7 @@ def toTaskOptions(source: TaskSource, payload: dict) -> TaskOptions:
             return MergeTaskOptions(
                 url=video.url if video else "",
                 outputFolder=outputFolder,
+                shouldSuggestFolder=not bool(rawPath),
                 video=video,
                 audio=audio,
             )
@@ -135,6 +136,7 @@ def toTaskOptions(source: TaskSource, payload: dict) -> TaskOptions:
             return PageTaskOptions(
                 url=toStr(payload, "url"),
                 outputFolder=outputFolder,
+                shouldSuggestFolder=not bool(rawPath),
                 pageUrl=toStr(payload, "pageUrl"),
                 pageTitle=toStr(payload, "pageTitle"),
                 headers=hdrs,
@@ -144,6 +146,7 @@ def toTaskOptions(source: TaskSource, payload: dict) -> TaskOptions:
             return replace(
                 toResourceTaskOptions(payload),
                 outputFolder=outputFolder,
+                shouldSuggestFolder=not bool(rawPath),
                 subworkerCount=toInt(payload, "preBlockNum", cfg.preBlockNum.value),
             )
         case _:

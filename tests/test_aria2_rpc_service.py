@@ -305,3 +305,27 @@ async def test_request_batch_over_websocket(aria2):
         [response] = json.loads(await ws.recv())
 
     assert response["result"]["version"] == VERSION
+
+
+class TestFolderSuggestion:
+    @pytest.fixture(params=["desktop", "android"])
+    def engine(self, request, startEngine):
+        return startEngine(request.param)
+
+    @pytest.mark.parametrize("target", ["automatic", "dir", "out"])
+    async def test_add_keeps_explicit_target(self, aria2, engine, tmp_path, downloadFolder, target):
+        folder = tmp_path / "artist1"
+        folder.mkdir()
+        cfg.set(cfg.shouldSuggestFolder, True)
+        cfg.set(cfg.recentFolders, [str(folder)])
+        options = {"dir": str(downloadFolder)} if target == "dir" else {}
+        if target == "out":
+            options["out"] = "chosen/artist1.cbz"
+        result = await aria2.request("aria2.addUri", [["http://test/artist1.cbz"], options])
+        await waitUntil(lambda: bool(engine.taskService.tasks))
+
+        expected = folder if target == "automatic" else downloadFolder
+        if target == "out":
+            expected /= "chosen"
+        assert isGid(result["result"])
+        assert engine.taskService.tasks[-1].outputFolder == expected
