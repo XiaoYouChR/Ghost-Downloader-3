@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 import sys
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QStackedLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    ComboBoxSettingCard, FluentIcon, HyperlinkCard, HyperlinkButton, InfoBar,
-    InfoBarPosition, MessageBox, PrimaryPushSettingCard, PushButton, PushSettingCard,
-    RangeSettingCard, SwitchSettingCard, ToolButton, ToolTipFilter,
+    BodyLabel, ComboBoxSettingCard, FluentIcon, HyperlinkCard, HyperlinkButton, InfoBar,
+    InfoBarPosition, MessageBox, PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard,
+    RangeSettingCard, SettingCard, SwitchSettingCard, ToolButton, ToolTipFilter,
 )
 
 from app.view.components.scroll_area import FastScrollArea, PAGE_MARGIN
@@ -33,6 +34,85 @@ from app.view.components.setting_cards import (
 from app.view.components.editors import FolderPicker, addRecentFolder
 
 
+class LoadingPage(QWidget):
+
+    def __init__(
+        self,
+        content: QWidget,
+        steps: Sequence[Callable[[], None]],
+        text: str,
+        parent=None,
+    ):
+        super().__init__(parent)
+        self._content = content
+        self._steps = list(steps)
+        self._pendingSearchText = ""
+        self._timer = QTimer(self)
+
+        self._loadingView = QWidget(self)
+        self._ring = ProgressRing(self._loadingView, useAni=False)
+        self._stack = QStackedLayout(self)
+
+        self._initWidget()
+        self._initLayout(text)
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self._timer.setSingleShot(True)
+        self._ring.setFixedSize(56, 56)
+        self._ring.setStrokeWidth(4)
+        self._ring.setRange(0, max(1, len(self._steps)))
+        self._ring.setValue(0)
+
+    def _initLayout(self, text: str) -> None:
+        layout = QVBoxLayout(self._loadingView)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(12)
+        layout.addWidget(self._ring, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(BodyLabel(text, self._loadingView), 0, Qt.AlignmentFlag.AlignHCenter)
+
+        self._stack.setContentsMargins(0, 0, 0, 0)
+        self._stack.addWidget(self._loadingView)
+        self._stack.addWidget(self._content)
+
+    def _bind(self) -> None:
+        self._timer.timeout.connect(self._runNextStep)
+
+    @property
+    def searchPlaceholder(self) -> str:
+        return self._content.searchPlaceholder
+
+    def setSearchText(self, text: str) -> None:
+        if self._loadingView is not None:
+            self._pendingSearchText = text
+            return
+        self._content.setSearchText(text)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        # 在首次绘制后通过单次定时器分片构建，避免阻塞首帧且不引入 processEvents 重入
+        if self._loadingView is not None and not self._timer.isActive():
+            self._timer.start(0)
+
+    def _runNextStep(self) -> None:
+        if not self._steps:
+            self._finish()
+            return
+        self._steps.pop(0)()
+        self._ring.setValue(self._ring.value() + 1)
+        self._timer.start(0)
+
+    def _finish(self) -> None:
+        self._stack.setCurrentWidget(self._content)
+        self._stack.removeWidget(self._loadingView)
+        self._loadingView.deleteLater()
+        self._loadingView = None
+        self._ring = None
+        if self._pendingSearchText:
+            self._content.setSearchText(self._pendingSearchText)
+            self._pendingSearchText = ""
+
+
 class SettingPage(QWidget):
 
     def __init__(self, featureService, browserService, browserListener, aria2RpcListener, coroutineRunner, categoryService, taskService, updateService, parent=None):
@@ -53,24 +133,28 @@ class SettingPage(QWidget):
         self.groupNav = SettingGroupNav(self.scrollArea, self)
         self.hBoxLayout = QHBoxLayout(self)
 
-        self.generalGroup = CollapsibleSettingCardGroup(self.tr("下载设置"), "general", self.container)
-        self.networkGroup = CollapsibleSettingCardGroup(self.tr("网络设置"), "network", self.container)
-        self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
-        self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
-        self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
-        self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
-        self.aboutGroup = CollapsibleSettingCardGroup(self.tr("关于"), "about", self.container)
-
         from app.view.pages.task_page import EmptyStatusWidget
         self.emptyStatusWidget = EmptyStatusWidget(FluentIcon.SEARCH_MIRROR, self.tr("未找到匹配的设置项"), self)
         self.emptyStatusWidget.hide()
 
         self._initWidget()
-        self._initCards()
         self._initLayout()
-        self._bind()
-        self._refreshBrowserStatus()
-        self._refreshAria2Status()
+
+    def buildSteps(self) -> list[Callable[[], None]]:
+        steps: list[Callable[[], None]] = [
+            self._initGeneralGroup,
+            self._initNetworkGroup,
+            self._initBrowserGroup,
+            self._initAria2Group,
+            self._initPersonalGroup,
+            self._initSoftwareGroup,
+            self._initAboutGroup,
+        ]
+        for pack in self._featureService.packs:
+            if pack.config:
+                steps.append(lambda p=pack: self._initPackGroup(p))
+        steps.append(self._finishInit)
+        return steps
 
     def addSettingGroup(self, group: CollapsibleSettingCardGroup) -> None:
         self.vBoxLayout.insertWidget(self.vBoxLayout.count() - 1, group)
@@ -85,8 +169,8 @@ class SettingPage(QWidget):
         rightMargin = max(0, PAGE_MARGIN - self.scrollArea.viewportMargins().right())
         self.vBoxLayout.setContentsMargins(PAGE_MARGIN, PAGE_MARGIN, rightMargin, PAGE_MARGIN)
 
-    def _initCards(self) -> None:
-        from qfluentwidgets import SettingCard
+    def _initGeneralGroup(self) -> None:
+        self.generalGroup = CollapsibleSettingCardGroup(self.tr("下载设置"), "general", self.container)
         self.downloadFolderCard = SettingCard(FluentIcon.FOLDER, self.tr("下载路径"), self.tr("文件默认保存位置"))
         self.downloadFolderPicker = FolderPicker(
             lambda: cfg.downloadFolder.defaultValue, self.tr("系统默认"), self.downloadFolderCard
@@ -130,7 +214,10 @@ class SettingPage(QWidget):
                               self.tr("文件被删除、移走或所在磁盘未连接时，自动从列表中移除已完成的任务"),
                               cfg.shouldRemoveMissingTasks),
         ])
+        self.addSettingGroup(self.generalGroup)
 
+    def _initNetworkGroup(self) -> None:
+        self.networkGroup = CollapsibleSettingCardGroup(self.tr("网络设置"), "network", self.container)
         self.clientProfileCard = IdentitySettingCard()
         self.networkGroup.addSettingCards([
             ProxySettingCard(cfg.proxyServer, featureService=self._featureService),
@@ -143,7 +230,10 @@ class SettingPage(QWidget):
             self.clientProfileCard,
             HeadersPresetSettingCard(),
         ])
+        self.addSettingGroup(self.networkGroup)
 
+    def _initBrowserGroup(self) -> None:
+        self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
         self.browserEnableCard = SwitchSettingCard(
             FluentIcon.CONNECT, self.tr("启用浏览器扩展"),
             self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用"),
@@ -218,7 +308,10 @@ class SettingPage(QWidget):
             self.browserPortCard,
         ])
         self.browserGroup.addSettingCards(browserCards)
+        self.addSettingGroup(self.browserGroup)
 
+    def _initAria2Group(self) -> None:
+        self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
         self.aria2EnableCard = SwitchSettingCard(
             FluentIcon.LINK, self.tr("启用 Aria2 RPC 兼容"), self.tr("兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接"), cfg.isAria2RpcEnabled,
         )
@@ -242,7 +335,10 @@ class SettingPage(QWidget):
                 cfg.aria2RpcEmulateFingerprint,
             ),
         ])
+        self.addSettingGroup(self.aria2RpcGroup)
 
+    def _initPersonalGroup(self) -> None:
+        self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
         self.zoomCard = PercentSpinBoxSettingCard(
             FluentIcon.ZOOM, self.tr("界面缩放"),
             self.tr("改变应用程序界面的缩放比例, 0% 为自动"),
@@ -294,7 +390,10 @@ class SettingPage(QWidget):
                                 texts=[self.tr("使用系统设置"), *map(toLanguageText, cfg.language.options[1:])]),
         )
         self.personalGroup.addSettingCards(personalCards)
+        self.addSettingGroup(self.personalGroup)
 
+    def _initSoftwareGroup(self) -> None:
+        self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
         self.autoRunCard = SwitchSettingCard(
             FluentIcon.VPN, self.tr("开机启动"),
             self.tr("在系统启动时静默运行 Ghost Downloader"),
@@ -362,7 +461,10 @@ class SettingPage(QWidget):
             self.migrateCard,
         ])
         self.softwareGroup.addSettingCards(softwareCards)
+        self.addSettingGroup(self.softwareGroup)
 
+    def _initAboutGroup(self) -> None:
+        self.aboutGroup = CollapsibleSettingCardGroup(self.tr("关于"), "about", self.container)
         self.feedbackCard = PrimaryPushSettingCard(
             self.tr("提供反馈"), FluentIcon.FEEDBACK,
             self.tr("提供反馈"),
@@ -390,22 +492,23 @@ class SettingPage(QWidget):
             HyperlinkCard(AUTHOR_URL, self.tr("打开作者的个人空间"), FluentIcon.PROJECTOR,
                           self.tr("了解作者"), self.tr("发现更多 {} 的作品").format(AUTHOR)),
         ])
-
-    def _initLayout(self) -> None:
-        self.addSettingGroup(self.generalGroup)
-        self.addSettingGroup(self.networkGroup)
-        self.addSettingGroup(self.browserGroup)
-        self.addSettingGroup(self.aria2RpcGroup)
-        self.addSettingGroup(self.personalGroup)
-        self.addSettingGroup(self.softwareGroup)
-        for group in self._featureService.settingGroups(self.container):
-            self.addSettingGroup(group)
         self.addSettingGroup(self.aboutGroup)
 
+    def _initPackGroup(self, pack) -> None:
+        for group in pack.config.settingGroups(self.container):
+            self.addSettingGroup(group)
+
+    def _initLayout(self) -> None:
         self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.hBoxLayout.setSpacing(0)
         self.hBoxLayout.addWidget(self.groupNav)
         self.hBoxLayout.addWidget(self.scrollArea, 1)
+
+    def _finishInit(self) -> None:
+        self._bind()
+        self._refreshBrowserStatus()
+        self._refreshAria2Status()
+        restoreGroupOrder(self.vBoxLayout, self.aboutGroup.objectName())
         self.groupNav.refresh()
 
     def _bind(self) -> None:
@@ -643,3 +746,14 @@ class SettingPage(QWidget):
         restoreGroupOrder(self.vBoxLayout, self.aboutGroup.objectName())
         self.groupNav.refresh()
         super().showEvent(event)
+
+
+def createSettingPage(
+    featureService, browserService, browserListener, aria2RpcListener,
+    coroutineRunner, categoryService, taskService, updateService, parent=None,
+) -> QWidget:
+    page = SettingPage(
+        featureService, browserService, browserListener, aria2RpcListener,
+        coroutineRunner, categoryService, taskService, updateService,
+    )
+    return LoadingPage(page, page.buildSteps(), page.tr("正在加载设置..."), parent=parent)

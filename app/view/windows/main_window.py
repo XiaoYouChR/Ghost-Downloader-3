@@ -175,8 +175,8 @@ class MainWindow(MSFluentWindow):
         ))
 
     def showSettings(self) -> None:
-        from app.view.pages.setting_page import SettingPage
-        self._showPage("SettingPage", lambda: SettingPage(
+        from app.view.pages.setting_page import createSettingPage
+        self._showPage("SettingPage", lambda: createSettingPage(
             self._featureService, self._browserService, self._browserListener, self._aria2RpcListener,
             self._coroutineRunner, self._categoryService, self._taskService,
             self._updateService, parent=self,
