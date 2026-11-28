@@ -447,3 +447,120 @@ def test_bilibili_draft_card_danmaku_controls(qtbot, engine):
     finally:
         cfg.isCategoryEnabled.valueChanged.disconnect(card._refreshCategoryButton)
 
+
+async def test_run_subtitle_side_file_and_errors(tmp_path: Path, startServer, monkeypatch):
+    import json
+    from urllib.parse import urlsplit
+    from aiohttp import web
+    import bili_pack.account as account
+    import bili_pack.stream as stream
+    from app.models.task import TaskError, TaskStatus
+    from bili_pack.task import BiliPage, BilibiliSubtitleStep, BilibiliTask
+
+    assert urlsplit(stream.PLAYER_API).path == "/x/player/wbi/v2"
+
+    mode = "ok"
+    wbiData = {
+        "wbi_img": {
+            "img_url": "https://i0.hdslb.com/bfs/wbi/7cd084941338484aae1ad9425b84077c.png",
+            "sub_url": "https://i0.hdslb.com/bfs/wbi/4932caff0ff746eab6f01bf08b70ac45.png",
+        }
+    }
+    seenQueries: list[dict[str, str]] = []
+    seenCookies: list[str] = []
+
+    async def handler(request: web.Request) -> web.Response:
+        if request.path.endswith("/nav"):
+            return web.Response(text=json.dumps({"code": 0, "data": wbiData}), content_type="application/json")
+        if request.path.endswith("/spi"):
+            return web.Response(text=json.dumps({"code": 0, "data": {"b_3": "test-buvid3"}}), content_type="application/json")
+        if request.path.endswith("/sub.json"):
+            return web.Response(
+                text=json.dumps({
+                    "body": [
+                        {"from": 1.25, "to": 3.5, "content": "第一句字幕"},
+                        {"from": 4.0, "to": 5.0, "content": "   "},
+                        {"from": 6.0, "to": 8.125, "content": "第二句字幕"},
+                    ]
+                }),
+                content_type="application/json",
+            )
+        seenQueries.append(dict(request.query))
+        seenCookies.append(request.headers.get("cookie", ""))
+        if mode == "412":
+            return web.Response(status=412, text="blocked")
+        if mode == "mismatch":
+            data = {
+                "aid": 999999,
+                "bvid": "BV1wrong",
+                "cid": 888888,
+                "subtitle": {"subtitles": [{"lan": "zh-CN", "lan_doc": "中文", "subtitle_url": f"{baseUrl}/sub.json"}]},
+            }
+        elif mode == "none":
+            data = {"aid": 100, "bvid": "BV1ok", "cid": 200, "subtitle": {"subtitles": []}}
+        else:
+            data = {
+                "aid": int(request.query.get("aid") or 100),
+                "bvid": request.query.get("bvid") or "BV1ok",
+                "cid": int(request.query["cid"]),
+                "subtitle": {"subtitles": [{"lan": "zh-CN", "lan_doc": "中文", "subtitle_url": f"{baseUrl}/sub.json"}]},
+            }
+        return web.Response(text=json.dumps({"code": 0, "data": data}), content_type="application/json")
+
+    baseUrl = (await startServer(handler)).rstrip("/")
+    monkeypatch.setattr(account, "LOGIN_INFO_API", f"{baseUrl}/nav")
+    monkeypatch.setattr(stream, "BUVID_API", f"{baseUrl}/spi")
+    monkeypatch.setattr(stream, "PLAYER_API", f"{baseUrl}/player")
+
+    def buildStep(name: str, *, aid: int = 100, headers: dict[str, str] | None = None) -> BilibiliSubtitleStep:
+        task = BilibiliTask(
+            name=f"{name}.mp4",
+            url="https://www.bilibili.com/video/BV1ok",
+            outputFolder=tmp_path,
+            files=[BiliPage(index=0, relativePath="", cid=200, aid=aid, bvid="BV1ok", headers=headers or {}, _duration=10)],
+            subtitleLanguages=["zh-CN"],
+            _baseName=name,
+        )
+        task.update()
+        step = next(s for s in task.steps if isinstance(s, BilibiliSubtitleStep))
+        for s in task.steps:
+            if s is not step:
+                s.setStatus(TaskStatus.COMPLETED)
+        Path(step.outputPath).write_text("", encoding="utf-8")
+        return step
+
+    # 1. 有 aid 时走 WBI + aid + cid 并补全 buvid3，写出合法 SRT
+    step = buildStep("ok", aid=100, headers={"cookie": "SESSDATA=test"})
+    await runStep(step)
+    assert seenQueries[0]["aid"] == "100" and seenQueries[0]["cid"] == "200" and "bvid" not in seenQueries[0]
+    assert seenQueries[0].get("wts") and len(seenQueries[0].get("w_rid", "")) == 32
+    assert "buvid3=test-buvid3" in seenCookies[0]
+    assert Path(step.outputPath).read_text(encoding="utf-8") == (
+        "1\n00:00:01,250 --> 00:00:03,500\n第一句字幕\n\n2\n00:00:06,000 --> 00:00:08,125\n第二句字幕\n"
+    )
+
+    # 2. aid 为 0 时回退传 bvid + cid
+    fallback = buildStep("fallback", aid=0)
+    await runStep(fallback)
+    assert seenQueries[1]["bvid"] == "BV1ok" and seenQueries[1]["cid"] == "200" and "aid" not in seenQueries[1]
+    assert "第一句字幕" in Path(fallback.outputPath).read_text(encoding="utf-8")
+
+    # 3. 串号响应拒绝落盘；412 抛 TaskError 且保留占位符；无字幕清理占位符
+    mode = "mismatch"
+    mismatched = buildStep("mismatch")
+    with pytest.raises(TaskError, match="字幕下载失败"):
+        await runStep(mismatched)
+    assert Path(mismatched.outputPath).read_text(encoding="utf-8") == ""
+
+    mode = "412"
+    blocked = buildStep("blocked")
+    with pytest.raises(TaskError, match="412"):
+        await runStep(blocked)
+    assert Path(blocked.outputPath).exists()
+
+    mode = "none"
+    missing = buildStep("missing")
+    await runStep(missing)
+    assert not Path(missing.outputPath).exists()
+
+

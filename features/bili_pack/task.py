@@ -610,60 +610,33 @@ class BilibiliSubtitleStep(TaskStep):
         reportSpeed: Callable[[int], None],
         waitForSpeedLimit: Callable[[], Awaitable[None]],
     ) -> None:
-        from app.client import buildClient
+        from .stream import fetchSubtitleSrt, fetchSubtitles
 
         page = pageByIndex(self.task, self.fileIndex)
-        pageHeaders = dict(page.headers) if page and page.headers else {}
-        referer = pageHeaders.get("referer") or "https://www.bilibili.com"
-        cookie = pageHeaders.get("cookie") or ""
-        listHeaders = {"referer": referer}
-        if cookie:
-            listHeaders["cookie"] = cookie
-
-        if page and not page.subtitles:
-            from .stream import fetchSubtitles
-            subClient = buildClient(emulation=None, headers=listHeaders)
-            try:
-                page.subtitles = await fetchSubtitles(subClient, page)
-            finally:
-                subClient.close()
-        subtitle = next((s for s in (page.subtitles if page else []) if s["lan"] == self.language), None)
-        url = subtitle.get("subtitle_url", "") if subtitle else ""
-        if not url:
+        if page is None:
             deletePlaceholder(Path(self.outputPath))
             return
-        if url.startswith("//"):
-            url = "https:" + url
 
-        def toSrtTime(seconds: float) -> str:
-            total_ms = int(round(seconds * 1000))
-            h, rem = divmod(total_ms // 1000, 3600)
-            m, s = divmod(rem, 60)
-            return f"{h:02d}:{m:02d}:{s:02d},{total_ms % 1000:03d}"
-
-        client = buildClient(headers={"referer": referer})
         try:
-            response = await client.get(url)
-            response.raise_for_status()
-            payload = await response.json()
+            if not page.subtitles:
+                page.subtitles = await fetchSubtitles(
+                    page.cid, aid=page.aid, bvid=page.bvid, headers=page.headers,
+                )
+            subtitle = next((s for s in page.subtitles if s["lan"] == self.language), None)
+            url = subtitle.get("subtitle_url", "") if subtitle else ""
+            srt = await fetchSubtitleSrt(url, headers=page.headers) if url else ""
+        except TaskError:
+            raise
         except Exception as e:
             raise TaskError("字幕下载失败") from e
-        finally:
-            client.close()
 
-        lines: list[str] = []
-        seq = 0
-        for entry in payload.get("body") or []:
-            content = str(entry.get("content", "")).strip()
-            if not content:
-                continue
-            seq += 1
-            lines.append(str(seq))
-            lines.append(f"{toSrtTime(float(entry.get('from', 0)))} --> {toSrtTime(float(entry.get('to', 0)))}")
-            lines.append(content)
-            lines.append("")
-        if seq:
-            Path(self.outputPath).write_text("\n".join(lines), encoding="utf-8")
+        if not srt:
+            deletePlaceholder(Path(self.outputPath))
+            return
+
+        outputPath = Path(self.outputPath)
+        outputPath.parent.mkdir(parents=True, exist_ok=True)
+        outputPath.write_text(srt, encoding="utf-8")
 
 
 @dataclass(kw_only=True)
