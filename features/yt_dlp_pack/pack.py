@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse, parse_qs, quote
 
@@ -20,6 +21,17 @@ if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime, PackServices
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
+CHANNEL_VIDEO_PATH = re.compile(
+    r"^(?:@[^/]+|c/[^/]+|user/[^/]+|channel/[^/]+)(?:/(?:videos|shorts|streams|live))?$",
+    re.IGNORECASE,
+)
+
+
+def isPlaylistUrl(url: str) -> bool:
+    parsed = urlparse(url)
+    if parse_qs(parsed.query).get("list"):
+        return True
+    return bool(CHANNEL_VIDEO_PATH.match(parsed.path.strip("/")))
 
 
 class YouTubeParser(TaskParser):
@@ -31,7 +43,7 @@ class YouTubeParser(TaskParser):
 
     async def parse(self, options: TaskOptions) -> Task:
         url = options.url.strip()
-        isPlaylist = bool(parse_qs(urlparse(url).query).get("list"))
+        isPlaylist = isPlaylistUrl(url)
 
         cookieHeader = options.headers.get("cookie") or options.headers.get("Cookie")
         if cookieHeader:
