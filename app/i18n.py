@@ -39,6 +39,21 @@ def toLocalizedError(error) -> str:
     return text.format_map(error.params) if error.params else text
 
 
+def toDurationText(seconds: int) -> str:
+    from PySide6.QtCore import QCoreApplication
+    if seconds < 60:
+        return QCoreApplication.translate("TaskPopup", "{0} 秒").format(seconds)
+    minutes, secs = divmod(seconds, 60)
+    if seconds < 3600:
+        if secs:
+            return QCoreApplication.translate("TaskPopup", "{0} 分 {1} 秒").format(minutes, secs)
+        return QCoreApplication.translate("TaskPopup", "{0} 分").format(minutes)
+    hours, minutes = divmod(minutes, 60)
+    if minutes:
+        return QCoreApplication.translate("TaskPopup", "{0} 小时 {1} 分").format(hours, minutes)
+    return QCoreApplication.translate("TaskPopup", "{0} 小时").format(hours)
+
+
 N("TaskErrors", "进程异常退出（{code}）：{detail}")
 N("TaskErrors", "发生了意外错误：{detail}")
 N("TaskErrors", "不支持该链接")

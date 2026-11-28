@@ -19,8 +19,8 @@ from qfluentwidgets.components.widgets.menu import TextEditMenu
 
 from app.checksum import matchChecksum
 from app.config.cfg import cfg
-from app.format import toReadableSize, toReadableTime
-from app.i18n import toLocalizedError
+from app.format import toReadableSize
+from app.i18n import toDurationText, toLocalizedError
 from app.models.task import TaskStatus
 from app.platform.desktop import revealInFolder
 from app.view.components.category_settings import toCategoryName
@@ -187,12 +187,16 @@ class HeaderCard(QWidget):
     def _toStatusText(self, speed: int, received: int) -> str:
         task = self._task
         if task.status == TaskStatus.RUNNING:
-            parts = [f"{toReadableSize(speed)}/s"]
+            if task.fileSize > 0 and speed > 0:
+                remaining = toDurationText(int((task.fileSize - received) / speed))
+                return self.tr("速度 {0}/s，已下载 {1} / {2}，剩余 {3}").format(
+                    toReadableSize(speed), toReadableSize(received), toReadableSize(task.fileSize), remaining)
             if task.fileSize > 0:
-                parts.append(f"{toReadableSize(received)} / {toReadableSize(task.fileSize)}")
-                if speed > 0:
-                    parts.append(toReadableTime(int((task.fileSize - received) / speed)))
-            return " · ".join(parts)
+                return self.tr("正在计算速度，已下载 {0} / {1}").format(
+                    toReadableSize(received), toReadableSize(task.fileSize))
+            if speed > 0:
+                return self.tr("速度 {0}/s，已下载 {1}").format(toReadableSize(speed), toReadableSize(received))
+            return self.tr("正在计算速度，已下载 {0}").format(toReadableSize(received))
         if task.status == TaskStatus.COMPLETED:
             return self.tr("做种中") if task.isSeeding else self.tr("已完成")
         if task.status == TaskStatus.FAILED:

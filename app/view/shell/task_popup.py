@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QCoreApplication, QFileInfo, Qt
+from PySide6.QtCore import QFileInfo, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout
 from qfluentwidgets import (
@@ -11,24 +11,11 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
+from app.i18n import toDurationText
 from app.models.task import SpecialFileSize, TaskStatus
 from app.platform.desktop_notification import (
     FILE_ICON_SIZE, ICON_SPACING, PADDING, SPACING, TEXT_WIDTH, Popup,
 )
-
-
-def toRemainingText(seconds: int) -> str:
-    if seconds < 60:
-        return QCoreApplication.translate("TaskPopup", "{0} 秒").format(seconds)
-    minutes, secs = divmod(seconds, 60)
-    if seconds < 3600:
-        if secs:
-            return QCoreApplication.translate("TaskPopup", "{0} 分 {1} 秒").format(minutes, secs)
-        return QCoreApplication.translate("TaskPopup", "{0} 分").format(minutes)
-    hours, minutes = divmod(minutes, 60)
-    if minutes:
-        return QCoreApplication.translate("TaskPopup", "{0} 小时 {1} 分").format(hours, minutes)
-    return QCoreApplication.translate("TaskPopup", "{0} 小时").format(hours)
 
 
 if TYPE_CHECKING:
@@ -126,7 +113,7 @@ class TaskPopup(Popup):
         if task.status == TaskStatus.RUNNING and speed > 0 and task.fileSize > 0:
             remaining = int((task.fileSize - received) / speed)
             self.statusLabel.setText(self.tr("速度 {0}/s，剩余 {1}").format(
-                toReadableSize(speed), toRemainingText(remaining)))
+                toReadableSize(speed), toDurationText(remaining)))
         elif task.status == TaskStatus.RUNNING and speed > 0:
             self.statusLabel.setText(self.tr("速度 {0}/s").format(toReadableSize(speed)))
         elif task.status == TaskStatus.RUNNING:
@@ -141,9 +128,13 @@ class TaskPopup(Popup):
         else:
             self.sizeLabel.setText(self.tr("已下载 {0}").format(toReadableSize(received)))
 
+        hasFileSize = task.fileSize > 0
         isPaused = task.status == TaskStatus.PAUSED
         if isinstance(self.progressBar, ProgressBar):
             self.progressBar.setValue(int(progress))
+        title = f"{int(progress)}% {task.name}" if hasFileSize else task.name
+        if self.windowTitle() != title:
+            self.setWindowTitle(title)
         if isPaused:
             self.progressBar.pause()
         else:
@@ -153,8 +144,7 @@ class TaskPopup(Popup):
 
         if sys.platform == "win32":
             from app.platform.taskbar import setWindowsProgress
-            isKnown = isinstance(self.progressBar, ProgressBar)
-            setWindowsProgress(int(self.winId()), task.status, progress if isKnown else None)
+            setWindowsProgress(int(self.winId()), task.status, progress if hasFileSize else None)
 
     def _onTaskPaused(self, task: Task) -> None:
         if task.taskId == self._task.taskId:
