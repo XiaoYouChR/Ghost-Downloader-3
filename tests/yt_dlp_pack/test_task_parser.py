@@ -31,7 +31,9 @@ async def parseTask(url: str, tmp_path, monkeypatch) -> YouTubeTask:
         return ""
 
     monkeypatch.setattr(YouTubeParser, "_fetchTitle", fakeFetchTitle)
-    task = await YouTubeParser().parse(TaskOptions(url=url, outputFolder=tmp_path))
+    task = await YouTubeParser().parse(
+        TaskOptions(url=url, outputFolder=tmp_path, headers={})
+    )
     assert isinstance(task, YouTubeTask)
     return task
 
