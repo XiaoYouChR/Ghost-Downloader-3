@@ -116,6 +116,7 @@ class MainWindow(MSFluentWindow):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._pages: dict[str, QWidget] = {}
+        self._searchTexts: dict[str, str] = {}
         self._progressToast = None
         self._draft = TaskDraft(self._coroutineRunner, self._featureService, self._taskService.add)
         self.searchEdit = SearchLineEdit(self.titleBar)
@@ -193,6 +194,8 @@ class MainWindow(MSFluentWindow):
 
     def _showPage(self, routeKey: str, createPage: Callable[[], QWidget]) -> None:
         page = self._pages.get(routeKey)
+        if page is not None and page is self.stackedWidget.currentWidget():
+            return
         if page is None:
             page = createPage()
             page.setObjectName(routeKey)
@@ -210,12 +213,13 @@ class MainWindow(MSFluentWindow):
     def _onSearchTextChanged(self, text: str) -> None:
         page = self.stackedWidget.currentWidget()
         if hasattr(page, 'setSearchText'):
+            self._searchTexts[page.objectName()] = text
             page.setSearchText(text)
 
     def _updateSearchTarget(self, page: QWidget) -> None:
-        self.searchEdit.clear()
         if hasattr(page, 'searchPlaceholder'):
             self.searchEdit.setPlaceholderText(page.searchPlaceholder)
+            self.searchEdit.setText(self._searchTexts.get(page.objectName(), ""))
             self.searchEdit.show()
         else:
             self.searchEdit.hide()
