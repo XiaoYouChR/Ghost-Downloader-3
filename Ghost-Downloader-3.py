@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import os
 import sys
 import traceback
@@ -35,7 +36,7 @@ def setupEnvironment() -> None:
         setupHiddenSubprocess()
 
     from app.view.qfw_patch import (
-        patchLinuxFrameless, patchMaskDialogAnimation, patchWindowsFrameless,
+        patchLinuxFrameless, patchMacFrameless, patchMaskDialogAnimation, patchWindowsFrameless,
     )
     # Wayland 上在绘制中截图会递归重绘，卡住合成器 #1017
     if sys.platform != "linux":
@@ -44,6 +45,8 @@ def setupEnvironment() -> None:
         patchLinuxFrameless()
     if sys.platform == "win32":
         patchWindowsFrameless()
+    elif sys.platform == "darwin":
+        patchMacFrameless()
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
     if cfg.dpiScale.value != 0:
@@ -125,6 +128,11 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
     def onWindowDestroyed():
         nonlocal window
         window = None
+        from PySide6.QtGui import QPixmapCache
+        from app.view.components.labels import IconBodyLabel
+        QPixmapCache.clear()
+        IconBodyLabel.clearCache()
+        gc.collect()
         emptyWorkingSetIfIdle()
 
     def createWindow() -> MainWindow:
@@ -193,7 +201,7 @@ def startApp(application: Application, primaryInstance: PrimaryInstance, isSilen
         deleteBackupDir()
     elif sys.platform == "darwin":
         loadPacks(featureService, coroutineRunner, speedMeter)
-        createWindow().setupPacks()
+        show()
         engine.start()
         deleteBackupDir()
     else:

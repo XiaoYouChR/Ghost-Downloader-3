@@ -32,7 +32,6 @@ from app.view.pages.task_page import TaskPage
 
 if sys.platform == "darwin":
     import Cocoa
-    from qframelesswindow.mac import MacFramelessWindowBase
     from qframelesswindow.utils.mac_utils import getNSWindow
 
 if TYPE_CHECKING:
@@ -114,8 +113,7 @@ class MainWindow(MSFluentWindow):
         self._updateService = updateService
         self._plan = plan
         self.setMicaEffectEnabled(False)
-        if sys.platform != "darwin":
-            self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._pages: dict[str, QWidget] = {}
         self._progressToast = None
@@ -184,9 +182,6 @@ class MainWindow(MSFluentWindow):
             self._updateService, parent=self,
         ))
 
-    def systemTitleBarRect(self, size) -> QRect:
-        return QRect(0, 10, 75, size.height())
-
     def _normalBackgroundColor(self):
         if sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
             if isDarkTheme():
@@ -244,8 +239,6 @@ class MainWindow(MSFluentWindow):
         self._draft.parseFailed.connect(self._onDraftParseFailed, owner=self)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
-        self.titleBar.closeBtn.clicked.disconnect(self.close)
-        self.titleBar.closeBtn.clicked.connect(self._onCloseClicked)
         self.searchEdit.textChanged.connect(self._onSearchTextChanged)
 
         QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
@@ -258,7 +251,7 @@ class MainWindow(MSFluentWindow):
             self._speedMeter.speedChanged.connect(self._onSpeedChanged, owner=self)
         elif sys.platform == "darwin":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectMac)
-            QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self._onCloseClicked)
+            QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self.close)
 
 
     def addUrls(self, urls: list[str]) -> None:
@@ -470,44 +463,6 @@ class MainWindow(MSFluentWindow):
         status = TaskStatus.RUNNING if self._taskService.runningCount() > 0 else None
         setWindowsProgress(int(self.winId()), status, self._taskService.overallProgress())
 
-    def _onCloseClicked(self) -> None:
-        for dialog in self.findChildren(MaskDialogBase):
-            if dialog.isVisible():
-                dialog.reject()
-                return
-        if sys.platform == "darwin" and self.isFullScreen():
-            self.showNormal()
-            QTimer.singleShot(1000, self._onCloseClicked)
-            return
-
-        mode = cfg.closeMode.value
-
-        if sys.platform == "darwin" and mode != CloseMode.QUIT:
-            if not self.isMaximized():
-                geo = self.geometry()
-                cfg.set(cfg.geometry, (geo.x(), geo.y(), geo.width(), geo.height()))
-            self.hide()
-            return
-
-        if mode == CloseMode.ASK:
-            dialog = MessageBox(
-                self.tr("是否完全退出程序？"),
-                self.tr("后台运行时可通过系统托盘图标重新打开。"),
-                self,
-            )
-            dialog.yesButton.setText(self.tr("退出程序"))
-            dialog.cancelButton.setText(self.tr("继续在后台运行"))
-            checkbox = CheckBox(self.tr("记住我的选择"), dialog)
-            dialog.textLayout.addWidget(checkbox)
-            mode = CloseMode.QUIT if dialog.exec() else CloseMode.BACKGROUND
-            if checkbox.isChecked():
-                cfg.set(cfg.closeMode, mode)
-            dialog.deleteLater()
-
-        self.close()
-        if mode == CloseMode.QUIT:
-            QApplication.quit()
-
     def dragEnterEvent(self, event) -> None:
         if QApplication.instance().isFileDragActive:
             event.ignore()
@@ -553,15 +508,43 @@ class MainWindow(MSFluentWindow):
             self._refreshSearchEditGeometry()
 
     def closeEvent(self, event) -> None:
-        if event.spontaneous():
+        for dialog in self.findChildren(MaskDialogBase):
+            if dialog.isVisible():
+                dialog.reject()
+                event.ignore()
+                return
+        if sys.platform == "darwin" and self.isFullScreen():
+            self.showNormal()
+            QTimer.singleShot(1000, self.close)
             event.ignore()
-            self._onCloseClicked()
             return
+
+        mode = cfg.closeMode.value
+        if mode == CloseMode.ASK and sys.platform != "darwin":
+            dialog = MessageBox(
+                self.tr("是否完全退出程序？"),
+                self.tr("后台运行时可通过系统托盘图标重新打开。"),
+                self,
+            )
+            dialog.yesButton.setText(self.tr("退出程序"))
+            dialog.cancelButton.setText(self.tr("继续在后台运行"))
+            checkbox = CheckBox(self.tr("记住我的选择"), dialog)
+            dialog.textLayout.addWidget(checkbox)
+            mode = CloseMode.QUIT if dialog.exec() else CloseMode.BACKGROUND
+            if checkbox.isChecked():
+                cfg.set(cfg.closeMode, mode)
+            dialog.deleteLater()
+
         if not self.isMaximized():
             geo = self.geometry()
             cfg.set(cfg.geometry, (geo.x(), geo.y(), geo.width(), geo.height()))
         qrouter.unregister(self.stackedWidget)
+        if sys.platform == "darwin" and self._macVisualEffectView is not None:
+            self._macVisualEffectView.removeFromSuperview()
+            self._macVisualEffectView = None
         event.accept()
+        if mode == CloseMode.QUIT:
+            QApplication.quit()
 
     def setVisible(self, visible: bool) -> None:
         # 主窗口隐藏时 setGeometry 不传给原生窗口，事件循环一跑就被改回，所以在首次显示前设置
@@ -582,6 +565,7 @@ class MainWindow(MSFluentWindow):
         if self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
         if sys.platform == "darwin":
+            self.updateFrameless()
             self._refreshBackgroundEffect()
 
     def changeEvent(self, event) -> None:
@@ -727,17 +711,6 @@ class MainWindow(MSFluentWindow):
     def _setMacAcrylicAppearance(self) -> None:
         name = Cocoa.NSAppearanceNameDarkAqua if isDarkTheme() else Cocoa.NSAppearanceNameAqua
         self._macVisualEffectView.setAppearance_(Cocoa.NSAppearance.appearanceNamed_(name))
-
-if sys.platform == "darwin":
-    def _updateSystemTitleBar(self):
-        self._extendTitleBarToClientArea()
-        self.setSystemTitleBarButtonVisible(self.isSystemButtonVisible())
-        nsWindow = self._MacFramelessWindowBase__nsWindow
-        nsWindow.setMovableByWindowBackground_(False)
-        nsWindow.setMovable_(False)
-        nsWindow.setTitleVisibility_(Cocoa.NSWindowTitleHidden)
-
-    MacFramelessWindowBase._updateSystemTitleBar = _updateSystemTitleBar
 
 
 if sys.platform == "win32":

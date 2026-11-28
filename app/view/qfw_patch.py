@@ -118,3 +118,65 @@ def patchWindowsFrameless() -> None:
         return True, EDGE_HITS[resizableEdges(self, HIT_EDGES[result])]
 
     windows.WindowsFramelessWindowBase.nativeEvent = nativeEvent
+
+
+def patchMacFrameless() -> None:
+    import Cocoa
+    from PySide6.QtCore import QPoint
+    from qframelesswindow.mac import MacFramelessWindowBase
+    from qframelesswindow.utils.mac_utils import getNSWindow
+
+    def _extendTitleBarToClientArea(self) -> None:
+        nsWindow = getNSWindow(self.winId())
+        if nsWindow is None:
+            return
+        self._MacFramelessWindowBase__nsWindow = nsWindow
+        mask = nsWindow.styleMask()
+        if not (mask & Cocoa.NSWindowStyleMaskFullSizeContentView):
+            nsWindow.setStyleMask_(mask | Cocoa.NSWindowStyleMaskFullSizeContentView)
+        if not nsWindow.titlebarAppearsTransparent():
+            nsWindow.setTitlebarAppearsTransparent_(True)
+        if nsWindow.titleVisibility() != Cocoa.NSWindowTitleHidden:
+            nsWindow.setTitleVisibility_(Cocoa.NSWindowTitleHidden)
+        nsWindow.setMovableByWindowBackground_(False)
+        nsWindow.setMovable_(False)
+        if nsWindow.toolbar() is None:
+            toolbar = Cocoa.NSToolbar.alloc().initWithIdentifier_("GhostDownloaderTitlebar")
+            toolbar.setShowsBaselineSeparator_(False)
+            nsWindow.setToolbar_(toolbar)
+        if nsWindow.toolbarStyle() != Cocoa.NSWindowToolbarStyleUnified:
+            nsWindow.setToolbarStyle_(Cocoa.NSWindowToolbarStyleUnified)
+        if nsWindow.titlebarSeparatorStyle() != Cocoa.NSTitlebarSeparatorStyleNone:
+            nsWindow.setTitlebarSeparatorStyle_(Cocoa.NSTitlebarSeparatorStyleNone)
+
+    def _updateSystemButtonRect(self) -> None:
+        if not self.isSystemButtonVisible():
+            return
+        nsWindow = getattr(self, "_MacFramelessWindowBase__nsWindow", None) or getNSWindow(self.winId())
+        if nsWindow is None:
+            return
+        left = nsWindow.standardWindowButton_(Cocoa.NSWindowCloseButton)
+        mid = nsWindow.standardWindowButton_(Cocoa.NSWindowMiniaturizeButton)
+        right = nsWindow.standardWindowButton_(Cocoa.NSWindowZoomButton)
+        if not (left and mid and right):
+            return
+        titlebar = right.superview()
+        if titlebar is None:
+            return
+        titlebarHeight = titlebar.frame().size.height
+        spacing = mid.frame().origin.x - left.frame().origin.x
+        width = mid.frame().size.width
+        height = mid.frame().size.height
+
+        center = QPoint(37, self.titleBar.height() // 2)
+        midOrigin = Cocoa.NSPoint(center.x() - width / 2, titlebarHeight - center.y() - height / 2)
+        for button, origin in (
+            (left, Cocoa.NSPoint(midOrigin.x - spacing, midOrigin.y)),
+            (mid, midOrigin),
+            (right, Cocoa.NSPoint(midOrigin.x + spacing, midOrigin.y)),
+        ):
+            if button.frame().origin != origin:
+                button.setFrameOrigin_(origin)
+
+    MacFramelessWindowBase._extendTitleBarToClientArea = _extendTitleBarToClientArea
+    MacFramelessWindowBase._updateSystemButtonRect = _updateSystemButtonRect

@@ -11,12 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject, QSharedMemory
+from PySide6.QtCore import QObject, QSharedMemory, Qt
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from app.config.constants import DESKTOP_ID, DESKTOP_OBJECT_PATH
 from app.config.paths import EXECUTABLE_PATH
-from app.platform.url_scheme import isWakeUri
 
 if TYPE_CHECKING:
     from app.platform.application import Application
@@ -118,7 +117,6 @@ class PrimaryInstance(QObject):
         self._memory = memory
         self._run: Callable[[Invocation], None] | None = None
         self._pending = [invocation] if invocation.argv or sys.platform != "darwin" else []
-        self._shouldSkipActivate = False
         self._server = QLocalServer(self)
         self._server.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
         if not self._server.listen(INSTANCE_NAME):
@@ -128,7 +126,7 @@ class PrimaryInstance(QObject):
                 logger.error("Failed to listen on {}: {}", INSTANCE_NAME, self._server.errorString())
         self._server.newConnection.connect(self._onConnected)
         application.openRequested.connect(self._onOpenRequested)
-        application.activated.connect(self._onActivated)
+        application.activated.connect(self._onActivated, Qt.ConnectionType.QueuedConnection)
         if sys.platform == "linux":
             from PySide6.QtDBus import QDBusConnection
             bus = QDBusConnection.sessionBus()
@@ -182,16 +180,10 @@ class PrimaryInstance(QObject):
     def _onOpenRequested(self, uri: str) -> None:
         if not uri:
             return
-        self._shouldSkipActivate = isWakeUri(uri)
         self._receive(Invocation([uri], os.getcwd()))
 
     def _onActivated(self) -> None:
-        if sys.platform != "darwin":
-            return
-        if self._shouldSkipActivate:
-            self._shouldSkipActivate = False
-            return
-        if self._run is None:
+        if sys.platform != "darwin" or self._run is None:
             return
         self._run(Invocation([], os.getcwd()))
 

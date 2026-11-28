@@ -385,7 +385,7 @@ jobs:
       matrix:
         include:
           - architecture: arm64
-            runner: macos-15
+            runner: macos-26
             openssl_workaround: 'false'
           - architecture: x86_64
             runner: macos-15-intel
@@ -434,7 +434,7 @@ jobs:
 
       - name: Build updater
         run: |
-          cmake -B build-updater -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }} tools/updater
+          cmake -B build-updater -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }} -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 tools/updater
           cmake --build build-updater
           cp build-updater/updater "dist/Ghost Downloader.app/Contents/MacOS/"
           cp macos/hpatchz "dist/Ghost Downloader.app/Contents/MacOS/"

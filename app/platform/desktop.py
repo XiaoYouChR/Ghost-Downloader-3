@@ -236,14 +236,16 @@ def openChromiumUrl(url: str) -> bool:
 def raiseWindow(window: QWidget) -> None:
     _sendForegroundInput()
     window.show()
-    window.setWindowState(
-        (window.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive
-    )
+    if window.isMinimized():
+        window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
     window.raise_()
     window.activateWindow()
     if sys.platform == "win32":
         import ctypes
         ctypes.windll.user32.SetForegroundWindow(int(window.winId()))
+    elif sys.platform == "darwin":
+        from AppKit import NSApp, NSApplication
+        (NSApp or NSApplication.sharedApplication()).activateIgnoringOtherApps_(True)
 
 
 def startFileDrag(paths: list[Path], source: QWidget) -> None:

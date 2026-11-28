@@ -210,17 +210,19 @@ def test_activate_after_wake_activates_window(qapp, cli, window, monkeypatch):
         primaryInstance.start(cli.run)
 
         application.openRequested.emit("ghostdownloader://wake")
-        application.activated.emit()
+        qapp.processEvents()
         assert window.activations == 0
 
         application.activated.emit()
+        qapp.processEvents()
         assert window.activations == 1
 
         application.openRequested.emit("ghostdownloader://wake")
-        application.activated.emit()
+        qapp.processEvents()
         assert window.activations == 1
 
         application.activated.emit()
+        qapp.processEvents()
         assert window.activations == 2
     finally:
         primaryInstance.close()

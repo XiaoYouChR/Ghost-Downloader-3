@@ -816,9 +816,6 @@ class OobeWindow(FluentWidget):
         desktop = QApplication.primaryScreen().availableGeometry()
         self.move(desktop.center() - self.rect().center())
 
-    def systemTitleBarRect(self, size) -> QRect:
-        return QRect(0, 10, 75, size.height())
-
     def _initContent(self) -> None:
         self.content = QWidget(self)
         self.welcomePage = WelcomePage(self.content)

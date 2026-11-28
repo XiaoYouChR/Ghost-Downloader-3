@@ -15,6 +15,20 @@ from app.config.constants import DESKTOP_ID
 if TYPE_CHECKING:
     from app.view.shell.clipboard_listener import ClipboardListener
 
+if sys.platform == "darwin":
+    import objc
+    from AppKit import NSApp, NSApplication, NSObject
+
+    class DockReopenDelegate(NSObject):
+        onReopen = None
+
+        @objc.typedSelector(b"B@:@B")
+        def applicationShouldHandleReopen_hasVisibleWindows_(self, _app, hasVisibleWindows):
+            if not hasVisibleWindows and self.onReopen is not None:
+                self.onReopen()
+                return False
+            return True
+
 
 class Application(QApplication):
     openRequested = Signal(str)
@@ -29,6 +43,13 @@ class Application(QApplication):
             self.setDesktopFileName(DESKTOP_ID)
         self.isFileDragActive: bool = False
         self.clipboardListener: ClipboardListener | None = None
+        if sys.platform == "darwin":
+            delegate = (NSApp or NSApplication.sharedApplication()).delegate()
+            if delegate is not None and delegate.respondsToSelector_("setReflectionDelegate:"):
+                self._reopenDelegate = DockReopenDelegate.alloc().init()
+                self._reopenDelegate.onReopen = self.activated.emit
+                delegate.setReflectionDelegate_(self._reopenDelegate)
+                self.aboutToQuit.connect(lambda: delegate.setReflectionDelegate_(None))
         if sys.platform == "win32":
             signal(SIGINT, self._onInterrupt)
         else:
@@ -72,8 +93,6 @@ class Application(QApplication):
         if isinstance(e, QFileOpenEvent):
             self.openRequested.emit(e.url().toString() if not e.url().isEmpty() else Path(e.file()).as_uri())
             return True
-        if e.type() == QEvent.Type.ApplicationActivate:
-            self.activated.emit()
         if e.type() == QEvent.Type.ApplicationPaletteChange:
             self.systemPaletteChanged.emit()
         return super().event(e)
