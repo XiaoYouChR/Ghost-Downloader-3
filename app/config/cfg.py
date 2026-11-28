@@ -252,7 +252,7 @@ class Config(QConfig):
     speedLimitation = RangeConfigItem(
         "GeneralDownload", "SpeedLimitation", 4194304, RangeValidator(1024, 104857600)
     )
-    shouldVerifySsl = ConfigItem("GeneralDownload", "shouldVerifySsl", False, BoolValidator(), restart=True)
+    shouldVerifySsl = ConfigItem("GeneralDownload", "shouldVerifySsl", True, BoolValidator(), restart=True)
     proxyServer = ConfigItem("GeneralDownload", "ProxyServer", "Auto", ProxyValidator())
     recentCustomProxy = ConfigItem("GeneralDownload", "RecentCustomProxy", "", RecentCustomProxyValidator())
     preBlockNum = RangeConfigItem("GeneralDownload", "PreBlockNum", 8, RangeValidator(1, 256))
